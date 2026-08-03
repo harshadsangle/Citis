@@ -14,12 +14,12 @@ interface CTASectionProps {
 }
 
 export function CTASection({
-  title = "Let’s build what is next.",
-  description = "Bring us your toughest technology challenge. Our specialists will help you find a clear, practical path forward.",
+  title = "Let’s build what learners need next.",
+  description = "Bring us your education, capability, or industry-collaboration priority. Our specialists will help you find a clear, practical path forward.",
   primaryLabel = "Start a conversation",
   primaryHref = "/contact",
-  secondaryLabel = "Explore our work",
-  secondaryHref = "/case-studies",
+  secondaryLabel = "Explore our impact",
+  secondaryHref = "/highlights/case-studies",
   className,
 }: CTASectionProps) {
   return (

@@ -37,7 +37,7 @@ export function ContactForm({ className }: { className?: string }) {
       <div className={cn("surface rounded-xl p-8 text-center", className)}>
         <CheckCircle2 className="mx-auto size-12 text-success" />
         <h3 className="mt-5 font-heading text-2xl font-semibold">Thank you for reaching out</h3>
-        <p className="mt-3 text-sm leading-6 text-muted-foreground">A CITIS specialist will get back to you within one business day.</p>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">A CITIS education or partnership specialist will get back to you within one business day.</p>
         <Button variant="outline" className="mt-6" onClick={() => setSubmitted(false)}>Send another message</Button>
       </div>
     );
@@ -49,12 +49,12 @@ export function ContactForm({ className }: { className?: string }) {
     <form onSubmit={handleSubmit(onSubmit)} className={cn("surface space-y-5 rounded-xl p-6 sm:p-8", className)} noValidate>
       <div className="grid gap-5 sm:grid-cols-2">
         <div><Label htmlFor="contact-name">Name *</Label><Input id="contact-name" autoComplete="name" className="mt-2" placeholder="Your full name" aria-invalid={!!errors.name} {...register("name")} />{fieldError(errors.name?.message)}</div>
-        <div><Label htmlFor="contact-email">Work email *</Label><Input id="contact-email" type="email" autoComplete="email" className="mt-2" placeholder="you@company.com" aria-invalid={!!errors.email} {...register("email")} />{fieldError(errors.email?.message)}</div>
+        <div><Label htmlFor="contact-email">Email *</Label><Input id="contact-email" type="email" autoComplete="email" className="mt-2" placeholder="you@institution.edu" aria-invalid={!!errors.email} {...register("email")} />{fieldError(errors.email?.message)}</div>
         <div><Label htmlFor="contact-phone">Phone</Label><Input id="contact-phone" type="tel" autoComplete="tel" className="mt-2" placeholder="+91 98765 43210" aria-invalid={!!errors.phone} {...register("phone")} />{fieldError(errors.phone?.message)}</div>
-        <div><Label htmlFor="contact-company">Company</Label><Input id="contact-company" autoComplete="organization" className="mt-2" placeholder="Your company" {...register("company")} /></div>
+        <div><Label htmlFor="contact-company">Institution / organisation</Label><Input id="contact-company" autoComplete="organization" className="mt-2" placeholder="Your institution or organisation" {...register("company")} /></div>
       </div>
-      <div><Label htmlFor="contact-subject">How can we help?</Label><Input id="contact-subject" className="mt-2" placeholder="Cloud transformation, product engineering…" {...register("subject")} /></div>
-      <div><Label htmlFor="contact-message">Message *</Label><Textarea id="contact-message" className="mt-2" placeholder="Tell us about your goals and current challenge." aria-invalid={!!errors.message} {...register("message")} />{fieldError(errors.message?.message)}</div>
+      <div><Label htmlFor="contact-subject">How can we help?</Label><Input id="contact-subject" className="mt-2" placeholder="University programme, school STEM, academy enrollment…" {...register("subject")} /></div>
+      <div><Label htmlFor="contact-message">Message *</Label><Textarea id="contact-message" className="mt-2" placeholder="Tell us about your learners, goals, and current challenge." aria-invalid={!!errors.message} {...register("message")} />{fieldError(errors.message?.message)}</div>
       <Controller
         control={control}
         name="consent"
