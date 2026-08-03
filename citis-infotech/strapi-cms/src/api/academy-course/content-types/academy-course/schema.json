@@ -1,0 +1,77 @@
+{
+  "kind": "collectionType",
+  "collectionName": "academy_courses",
+  "info": {
+    "singularName": "academy-course",
+    "pluralName": "academy-courses",
+    "displayName": "Academy Course",
+    "description": "Courses offered through the CITIS Academy"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "summary": {
+      "type": "text",
+      "required": true,
+      "maxLength": 500
+    },
+    "description": {
+      "type": "richtext",
+      "required": true
+    },
+    "level": {
+      "type": "enumeration",
+      "enum": ["beginner", "intermediate", "advanced", "all-levels"],
+      "default": "all-levels"
+    },
+    "duration": {
+      "type": "string"
+    },
+    "deliveryMode": {
+      "type": "enumeration",
+      "enum": ["online", "in-person", "hybrid", "self-paced"],
+      "required": true
+    },
+    "learningOutcomes": {
+      "type": "json"
+    },
+    "curriculum": {
+      "type": "json"
+    },
+    "prerequisites": {
+      "type": "json"
+    },
+    "coverImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "enrollmentUrl": {
+      "type": "string"
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "order": {
+      "type": "integer",
+      "default": 0
+    },
+    "seo": {
+      "type": "json"
+    }
+  }
+}

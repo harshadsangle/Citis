@@ -1,0 +1,19 @@
+FROM node:20-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+FROM node:20-bookworm-slim AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+COPY --from=build --chown=node:node /app/dist ./dist
+RUN mkdir -p /app/uploads/images /app/uploads/resumes /app/uploads/media \
+  && chown -R node:node /app/uploads
+USER node
+VOLUME ["/app/uploads"]
+EXPOSE 5000
+CMD ["node", "dist/server.js"]

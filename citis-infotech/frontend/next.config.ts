@@ -1,5 +1,8 @@
 import type { NextConfig } from "next";
 
+const apiHost = process.env.NEXT_PUBLIC_API_HOST ?? "localhost";
+const strapiHost = process.env.NEXT_PUBLIC_STRAPI_HOST ?? "localhost";
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -7,12 +10,10 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [
-      { protocol: "https", hostname: "res.cloudinary.com" },
-      { protocol: "https", hostname: "*.cloudinary.com" },
-      {
-        protocol: "https",
-        hostname: process.env.NEXT_PUBLIC_STRAPI_HOST ?? "cms.citisinfotech.com",
-      },
+      { protocol: "http", hostname: apiHost, port: "5000", pathname: "/uploads/**" },
+      { protocol: "http", hostname: strapiHost, port: "1337", pathname: "/uploads/**" },
+      { protocol: "https", hostname: apiHost, pathname: "/uploads/**" },
+      { protocol: "https", hostname: strapiHost, pathname: "/uploads/**" },
     ],
   },
   async headers() {
@@ -27,7 +28,7 @@ const nextConfig: NextConfig = {
       {
         key: "Content-Security-Policy",
         value:
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com; font-src 'self' data:; connect-src 'self' https:; frame-src 'self' https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests",
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://localhost:1337 https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://localhost:1337 https:; frame-src 'self' https://www.openstreetmap.org; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
       },
     ];
 

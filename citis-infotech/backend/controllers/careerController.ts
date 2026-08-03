@@ -1,9 +1,10 @@
 import Career from '../models/Career';
 import JobApplication from '../models/JobApplication';
+import { AppError } from '../middleware/errorHandler';
+import { toPublicUrl } from '../middleware/upload';
 import { sendCareerApplication } from '../services/emailService';
 import { successResponse } from '../utils/apiResponse';
 import { asyncHandler, crudController } from '../utils/crud';
-import { AppError } from '../middleware/errorHandler';
 
 const crud = crudController(Career, {
   searchFields: ['title', 'department', 'location', 'description'],
@@ -26,7 +27,7 @@ export const apply = asyncHandler(async (req, res) => {
   const career = await Career.findById(req.params.id);
   if (!career || career.status !== 'open') throw new AppError('This position is not accepting applications', 400);
   if (!req.file) throw new AppError('Resume is required', 422);
-  const resume = (req.file as Express.Multer.File & { path: string }).path;
+  const resume = toPublicUrl(req.file, 'resumes');
   const application = await JobApplication.create({
     career: career._id,
     name: req.body.name,

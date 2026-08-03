@@ -1,24 +1,60 @@
 import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface GoogleMapProps {
-  query?: string;
+interface OfficeMapProps {
+  /** Latitude for the map marker (defaults to Bengaluru). */
+  lat?: number;
+  /** Longitude for the map marker (defaults to Bengaluru). */
+  lng?: number;
+  /** Zoom level for OpenStreetMap embed. */
+  zoom?: number;
   title?: string;
+  addressLabel?: string;
   className?: string;
 }
 
-export function GoogleMap({ query = "CITIS Infotech Bengaluru", title = "CITIS InfoTech office location", className }: GoogleMapProps) {
-  const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-  if (!key) {
-    return (
-      <div className={cn("flex min-h-80 items-center justify-center rounded-xl border border-border bg-slate-100 dark:bg-slate-900", className)}>
-        <div className="max-w-sm px-6 text-center"><MapPin className="mx-auto size-9 text-primary" /><p className="mt-4 font-heading font-semibold">{title}</p><a className="mt-2 inline-block text-sm text-primary hover:underline" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`} target="_blank" rel="noreferrer">Open in Google Maps</a></div>
-      </div>
-    );
-  }
+/**
+ * Free OpenStreetMap embed — no Google Maps API key or paid map service required.
+ */
+export function OfficeMap({
+  lat = 12.9716,
+  lng = 77.5946,
+  zoom = 14,
+  title = "CITIS InfoTech office location",
+  addressLabel = "CITIS InfoTech, Bengaluru",
+  className,
+}: OfficeMapProps) {
+  const delta = 0.04;
+  const bbox = `${lng - delta}%2C${lat - delta}%2C${lng + delta}%2C${lat + delta}`;
+  const embedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+  const openSrc = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}`;
+
   return (
     <div className={cn("overflow-hidden rounded-xl border border-border bg-muted", className)}>
-      <iframe title={title} src={`https://www.google.com/maps/embed/v1/place?key=${key}&q=${encodeURIComponent(query)}`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen className="h-96 w-full border-0" />
+      <iframe
+        title={title}
+        src={embedSrc}
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        className="h-96 w-full border-0"
+      />
+      <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 text-sm">
+        <p className="flex items-center gap-2 text-muted-foreground">
+          <MapPin className="size-4 shrink-0 text-primary" />
+          {addressLabel}
+        </p>
+        <a
+          href={openSrc}
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium text-primary hover:underline"
+        >
+          Open map
+        </a>
+      </div>
     </div>
   );
 }
+
+/** @deprecated Prefer OfficeMap — kept as alias for existing imports. */
+export const GoogleMap = OfficeMap;

@@ -9,8 +9,52 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getStrapiMedia } from "@/services/strapi";
 import type { Testimonial } from "@/types";
 
-export function TestimonialsSlider({ testimonials }: { testimonials: Testimonial[] }) {
-  if (!testimonials.length) return null;
+type SliderItem = {
+  id?: string | number;
+  name: string;
+  role: string;
+  company: string;
+  quote: string;
+  rating?: number;
+  avatarUrl?: string;
+};
+
+interface TestimonialsSliderProps {
+  testimonials?: Testimonial[];
+  /** Static marketing fallbacks when CMS data is unavailable. */
+  items?: ReadonlyArray<{
+    name: string;
+    role: string;
+    company: string;
+    content?: string;
+    quote?: string;
+    rating?: number;
+  }>;
+}
+
+export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderProps) {
+  const slides: SliderItem[] =
+    testimonials?.map((item) => ({
+      id: item.id,
+      name: item.name,
+      role: item.role,
+      company: item.company,
+      quote: item.quote,
+      rating: item.rating,
+      avatarUrl: item.avatar ? getStrapiMedia(item.avatar) : undefined,
+    })) ??
+    items?.map((item, index) => ({
+      id: index,
+      name: item.name,
+      role: item.role,
+      company: item.company,
+      quote: item.quote ?? item.content ?? "",
+      rating: item.rating,
+    })) ??
+    [];
+
+  if (!slides.length) return null;
+
   return (
     <Swiper
       modules={[A11y, Autoplay, Pagination]}
@@ -21,22 +65,37 @@ export function TestimonialsSlider({ testimonials }: { testimonials: Testimonial
       breakpoints={{ 768: { slidesPerView: 2 } }}
       className="!pb-12"
     >
-      {testimonials.map((item) => (
-        <SwiperSlide key={item.id} className="h-auto">
+      {slides.map((item) => (
+        <SwiperSlide key={item.id ?? item.name} className="h-auto">
           <figure className="surface flex h-full flex-col rounded-xl p-7 sm:p-8">
             <div className="flex items-center justify-between">
               <Quote className="size-9 text-primary/25" />
               <div className="flex text-amber-500" aria-label={`${item.rating ?? 5} out of 5 stars`}>
-                {Array.from({ length: item.rating ?? 5 }).map((_, index) => <Star key={index} className="size-3.5 fill-current" />)}
+                {Array.from({ length: item.rating ?? 5 }).map((_, index) => (
+                  <Star key={index} className="size-3.5 fill-current" />
+                ))}
               </div>
             </div>
-            <blockquote className="mt-6 flex-1 font-heading text-lg leading-8 text-foreground">&ldquo;{item.quote}&rdquo;</blockquote>
+            <blockquote className="mt-6 flex-1 font-heading text-lg leading-8 text-foreground">
+              &ldquo;{item.quote}&rdquo;
+            </blockquote>
             <figcaption className="mt-7 flex items-center gap-3 border-t border-border pt-5">
               <Avatar>
-                {item.avatar && <AvatarImage src={getStrapiMedia(item.avatar)} alt={item.name} />}
-                <AvatarFallback>{item.name.split(" ").map((name) => name[0]).join("").slice(0, 2)}</AvatarFallback>
+                {item.avatarUrl ? <AvatarImage src={item.avatarUrl} alt={item.name} /> : null}
+                <AvatarFallback>
+                  {item.name
+                    .split(" ")
+                    .map((name) => name[0])
+                    .join("")
+                    .slice(0, 2)}
+                </AvatarFallback>
               </Avatar>
-              <span><span className="block text-sm font-semibold">{item.name}</span><span className="block text-xs text-muted-foreground">{item.role}, {item.company}</span></span>
+              <span>
+                <span className="block text-sm font-semibold">{item.name}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {item.role}, {item.company}
+                </span>
+              </span>
             </figcaption>
           </figure>
         </SwiperSlide>

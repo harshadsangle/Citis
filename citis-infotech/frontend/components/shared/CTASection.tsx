@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface CTASectionProps {
+  eyebrow?: string;
   title?: string;
   description?: string;
   primaryLabel?: string;
@@ -14,6 +15,7 @@ interface CTASectionProps {
 }
 
 export function CTASection({
+  eyebrow = "Strategy call, no obligation",
   title = "Let’s build what learners need next.",
   description = "Bring us your education, capability, or industry-collaboration priority. Our specialists will help you find a clear, practical path forward.",
   primaryLabel = "Start a conversation",
@@ -29,7 +31,7 @@ export function CTASection({
         <div className="absolute -right-4 -bottom-32 size-80 rounded-full bg-blue-400/20 blur-3xl" />
         <div className="relative grid items-end gap-8 lg:grid-cols-[1fr_auto]">
           <div className="max-w-2xl">
-            <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-blue-100"><CheckCircle2 className="size-4 text-orange-300" />Strategy call, no obligation</p>
+            <p className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-blue-100"><CheckCircle2 className="size-4 text-orange-300" />{eyebrow}</p>
             <h2 className="font-heading text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">{title}</h2>
             <p className="mt-4 max-w-xl leading-7 text-blue-100">{description}</p>
           </div>

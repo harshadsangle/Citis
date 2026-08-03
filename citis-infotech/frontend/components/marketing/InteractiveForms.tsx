@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -119,8 +119,49 @@ export function ForgotPasswordForm() {
 
 export function ResetPasswordForm() {
   const [done, setDone] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [token, setToken] = useState("");
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof resetSchema>>({ resolver: zodResolver(resetSchema) });
-  const onSubmit = async (values: z.infer<typeof resetSchema>) => { await apiFetch("/auth/reset-password", { method: "POST", body: JSON.stringify({ password: values.password }), revalidate: false }); setDone(true); };
+
+  useEffect(() => {
+    setToken(new URLSearchParams(window.location.search).get("token") || "");
+  }, []);
+
+  const onSubmit = async (values: z.infer<typeof resetSchema>) => {
+    setServerError("");
+    if (!token) {
+      setServerError("Reset token is missing. Open the link from your email again.");
+      return;
+    }
+    try {
+      await apiFetch(`/auth/reset-password/${encodeURIComponent(token)}`, {
+        method: "POST",
+        body: JSON.stringify({ password: values.password }),
+        revalidate: false,
+      });
+      setDone(true);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "Could not reset password.");
+    }
+  };
   if (done) return <FormSuccess title="Password updated" copy="Your password has been reset. You can now sign in with your new credentials." />;
-  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><Label htmlFor="new-password">New password</Label><Input id="new-password" className="mt-2" type="password" autoComplete="new-password" {...register("password")} />{message(errors.password?.message)}</div><div><Label htmlFor="confirm-password">Confirm password</Label><Input id="confirm-password" className="mt-2" type="password" autoComplete="new-password" {...register("confirmPassword")} />{message(errors.confirmPassword?.message)}</div><Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Set new password"}</Button></form>;
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      <div>
+        <Label htmlFor="new-password">New password</Label>
+        <Input id="new-password" className="mt-2" type="password" autoComplete="new-password" {...register("password")} />
+        {message(errors.password?.message)}
+        <p className="mt-1 text-xs text-muted-foreground">Use at least 8 characters with upper, lower, and a number.</p>
+      </div>
+      <div>
+        <Label htmlFor="confirm-password">Confirm password</Label>
+        <Input id="confirm-password" className="mt-2" type="password" autoComplete="new-password" {...register("confirmPassword")} />
+        {message(errors.confirmPassword?.message)}
+      </div>
+      {serverError ? <p className="text-sm text-red-600">{serverError}</p> : null}
+      <Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>
+        {isSubmitting ? <LoaderCircle className="animate-spin" /> : "Set new password"}
+      </Button>
+    </form>
+  );
 }

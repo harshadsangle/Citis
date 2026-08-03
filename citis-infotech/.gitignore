@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Framework and build output
+.next/
+**/.next/
+dist/
+**/dist/
+build/
+coverage/
+.turbo/
+.cache/
+
+# Environment and secrets (examples remain tracked)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Strapi
+.strapi/
+**/.strapi/
+.tmp/
+**/.tmp/
+strapi-cms/public/uploads/
+strapi-cms/.cache/
+strapi-cms/database/
+*.db
+*.db-journal
+
+# User uploads
+uploads/
+**/uploads/
+!**/uploads/.gitkeep
+!backend/uploads/
+!backend/uploads/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor and operating system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local Docker overrides and runtime data
+docker-compose.override.yml
+docker/data/

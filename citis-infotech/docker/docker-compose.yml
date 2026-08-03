@@ -1,0 +1,144 @@
+name: citis-infotech
+
+# Local development / self-hosted stack. No paid third-party services required.
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Optional free local SMTP catcher (Mailpit). Point backend SMTP_HOST=mailpit SMTP_PORT=1025
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: ../docker/Dockerfile.backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017/citis_infotech
+      CLIENT_URL: http://localhost:3000
+      API_PUBLIC_URL: http://localhost:5000
+      UPLOADS_DIR: /app/uploads
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-local-dev-access-secret-change-me-32chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-local-dev-refresh-secret-change-me-32c}
+      JWT_ACCESS_EXPIRES: 15m
+      JWT_REFRESH_EXPIRES: 7d
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURE: "false"
+      EMAIL_FROM: CITIS InfoTech <noreply@localhost>
+      ADMIN_EMAIL: admin@localhost
+    ports:
+      - "5000:5000"
+    volumes:
+      - backend-uploads:/app/uploads
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  strapi:
+    build:
+      context: ../strapi-cms
+      dockerfile: ../docker/Dockerfile.strapi
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 1337
+      PUBLIC_URL: http://localhost:1337
+      CLIENT_URL: http://localhost:3000
+      APP_KEYS: ${APP_KEYS:-local-key-one,local-key-two,local-key-three,local-key-four}
+      API_TOKEN_SALT: ${API_TOKEN_SALT:-local-api-token-salt-change-before-deploy}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:-local-admin-jwt-secret-change-before-deploy}
+      TRANSFER_TOKEN_SALT: ${TRANSFER_TOKEN_SALT:-local-transfer-token-salt-change-before-deploy}
+      JWT_SECRET: ${JWT_SECRET:-local-users-jwt-secret-change-before-deploy}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-local-encryption-key-change-before-deploy}
+      DATABASE_CLIENT: sqlite
+      DATABASE_FILENAME: /opt/app/.tmp/data.db
+    ports:
+      - "1337:1337"
+    volumes:
+      - strapi-data:/opt/app/.tmp
+      - strapi-uploads:/opt/app/public/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:1337/_health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/Dockerfile.frontend
+      args:
+        NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
+        NEXT_PUBLIC_STRAPI_URL: http://localhost:1337
+        NEXT_PUBLIC_STRAPI_TOKEN: ${NEXT_PUBLIC_STRAPI_TOKEN:-}
+        NEXT_PUBLIC_MAP_LAT: "12.9716"
+        NEXT_PUBLIC_MAP_LNG: "77.5946"
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+      strapi:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+volumes:
+  mongo-data:
+  backend-uploads:
+  strapi-data:
+  strapi-uploads:

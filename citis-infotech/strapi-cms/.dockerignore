@@ -1,0 +1,10 @@
+node_modules
+build
+dist
+.cache
+.tmp
+.git
+.env*
+!.env.example
+public/uploads
+npm-debug.log*

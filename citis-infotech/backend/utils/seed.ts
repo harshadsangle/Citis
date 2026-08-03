@@ -67,7 +67,7 @@ async function seed() {
       rating: 5, featured: true, order: 1,
     }, { upsert: true, new: true, setDefaultsOnInsert: true }),
     Client.findOneAndUpdate({ name: 'CITIS Partner' }, {
-      logo: 'https://res.cloudinary.com/demo/image/upload/sample.jpg', featured: true, order: 1,
+      logo: '/icons/icon-192.svg', featured: true, order: 1,
     }, { upsert: true, new: true, setDefaultsOnInsert: true }),
     CaseStudy.findOneAndUpdate({ slug: 'scalable-workforce-learning' }, {
       title: 'Scalable Workforce Learning', client: 'CITIS Partner', industry: 'Education',

@@ -8,6 +8,7 @@ import morgan from 'morgan';
 import { connectDB, disconnectDB } from './config/db';
 import { AppError, errorHandler, notFound } from './middleware/errorHandler';
 import { generalLimiter } from './middleware/rateLimiter';
+import { getUploadsRoot } from './middleware/upload';
 import routes from './routes';
 
 const app = express();
@@ -32,6 +33,15 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use('/api', generalLimiter);
+
+// Local disk storage for media, resumes, and images (no paid CDN required)
+app.use(
+  '/uploads',
+  express.static(getUploadsRoot(), {
+    fallthrough: true,
+    maxAge: process.env.NODE_ENV === 'production' ? '7d' : 0,
+  }),
+);
 
 app.get('/health', (_req, res) => res.status(200).json({
   success: true, status: 'ok', timestamp: new Date().toISOString(),

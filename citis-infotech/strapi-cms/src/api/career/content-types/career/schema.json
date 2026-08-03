@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "careers",
+  "info": {
+    "singularName": "career",
+    "pluralName": "careers",
+    "displayName": "Career",
+    "description": "Open employment and internship opportunities"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 200
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "department": {
+      "type": "string",
+      "required": true
+    },
+    "location": {
+      "type": "string",
+      "required": true
+    },
+    "employmentType": {
+      "type": "enumeration",
+      "enum": ["full-time", "part-time", "internship", "contract"],
+      "required": true
+    },
+    "description": {
+      "type": "richtext",
+      "required": true
+    },
+    "requirements": {
+      "type": "json"
+    },
+    "responsibilities": {
+      "type": "json"
+    },
+    "benefits": {
+      "type": "json"
+    },
+    "salary": {
+      "type": "json",
+      "private": true
+    },
+    "applicationUrl": {
+      "type": "string"
+    },
+    "closingDate": {
+      "type": "date"
+    }
+  }
+}

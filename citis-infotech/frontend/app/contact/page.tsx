@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { ContactForm } from "@/components/shared/ContactForm";
 import { FAQ } from "@/components/shared/FAQ";
-import { GoogleMap } from "@/components/shared/GoogleMap";
+import { OfficeMap } from "@/components/shared/GoogleMap";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent } from "@/components/ui/card";
 import { OFFICES, SOCIAL_LINKS } from "@/lib/constants";
@@ -30,7 +30,7 @@ export default function ContactPage() {
           <AnimatedSection delay={0.1}><div className="mb-7"><SectionHeading eyebrow="Send an inquiry" title="What would you like to achieve?" description="Share enough context for us to connect you with the right academic, programme, product, or partnership specialist." /></div><ContactForm /></AnimatedSection>
         </div>
       </section>
-      <section className="border-y border-border bg-slate-100/70 py-16 dark:bg-slate-900/60 sm:py-24"><div className="container-site"><AnimatedSection><SectionHeading eyebrow="Find us" title="CITIS InfoTech, Bengaluru" /></AnimatedSection><AnimatedSection className="mt-8"><GoogleMap query="CITIS Infotech Bengaluru Karnataka" className="min-h-96" /></AnimatedSection></div></section>
+      <section className="border-y border-border bg-slate-100/70 py-16 dark:bg-slate-900/60 sm:py-24"><div className="container-site"><AnimatedSection><SectionHeading eyebrow="Find us" title="CITIS InfoTech, Bengaluru" /></AnimatedSection><AnimatedSection className="mt-8"><OfficeMap addressLabel="CITIS InfoTech, Bengaluru" className="min-h-96" /></AnimatedSection></div></section>
       <FAQ title="Before you get in touch" items={[
         { question: "What information is helpful in an initial inquiry?", answer: "Share your institution or organisation, intended learners, priority outcome, approximate scale, current stage, and any important timeline. It is fine if the solution is not yet defined." },
         { question: "How quickly will CITIS respond?", answer: "We aim to respond within one business day. Complex partnership inquiries may take up to two business days to route to the right specialist." },

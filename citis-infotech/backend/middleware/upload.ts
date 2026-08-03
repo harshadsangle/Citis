@@ -1,79 +1,66 @@
+import fs from 'fs';
+import path from 'path';
 import multer from 'multer';
-import cloudinary from '../config/cloudinary';
 
-type ResourceType = 'image' | 'raw';
-type StoredFile = Express.Multer.File & { filename?: string; resourceType?: ResourceType };
+const uploadsRoot = path.resolve(process.env.UPLOADS_DIR || path.join(process.cwd(), 'uploads'));
 
-class CloudinaryStorage implements multer.StorageEngine {
-  constructor(
-    private folder: string,
-    private resourceType: (file: Express.Multer.File) => ResourceType,
-    private transformImages = false,
-  ) {}
+const ensureDir = (dir: string) => {
+  fs.mkdirSync(dir, { recursive: true });
+};
 
-  _handleFile(
-    _req: Express.Request,
-    file: Express.Multer.File,
-    callback: (error?: unknown, info?: Partial<Express.Multer.File>) => void,
-  ): void {
-    const resourceType = this.resourceType(file);
-    const stream = cloudinary.uploader.upload_stream({
-      folder: this.folder,
-      resource_type: resourceType,
-      ...(this.transformImages && resourceType === 'image'
-        ? { transformation: [{ quality: 'auto', fetch_format: 'auto' }] }
-        : {}),
-    }, (error, result) => {
-      if (error) return callback(error);
-      if (!result) return callback(new Error('Cloudinary upload returned no result'));
-      return callback(undefined, {
-        path: result.secure_url,
-        filename: result.public_id,
-        size: result.bytes,
-        resourceType,
-      } as Partial<Express.Multer.File>);
-    });
-    file.stream.pipe(stream);
-  }
+const publicBaseUrl = () =>
+  (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}`).replace(/\/$/, '');
 
-  _removeFile(_req: Express.Request, file: StoredFile, callback: (error: Error | null) => void): void {
-    if (!file.filename) return callback(null);
-    cloudinary.uploader.destroy(file.filename, {
-      resource_type: file.resourceType || 'image',
-      invalidate: true,
-    }).then(() => callback(null)).catch(callback);
-  }
-}
+const makeStorage = (subdir: string) => {
+  const destination = path.join(uploadsRoot, subdir);
+  ensureDir(destination);
+  return multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, destination),
+    filename: (_req, file, cb) => {
+      const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
+      cb(null, `${Date.now()}-${safe}`);
+    },
+  });
+};
 
-const imageStorage = new CloudinaryStorage('citis-infotech/images', () => 'image', true);
-const resumeStorage = new CloudinaryStorage('citis-infotech/resumes', () => 'raw');
-const mediaStorage = new CloudinaryStorage(
-  'citis-infotech/media',
-  (file) => file.mimetype.startsWith('image/') ? 'image' : 'raw',
-  true,
-);
+/** Attach a public URL on the file after disk storage completes. */
+export const toPublicUrl = (file: Express.Multer.File, subdir: string): string =>
+  `${publicBaseUrl()}/uploads/${subdir}/${file.filename}`;
+
+export const getUploadsRoot = () => uploadsRoot;
 
 const mediaTypes = new Set([
-  'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf',
-  'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
 export const uploadImage = multer({
-  storage: imageStorage,
+  storage: makeStorage('images'),
   limits: { fileSize: 8 * 1024 * 1024, files: 10 },
   fileFilter: (_req, file, cb) => cb(null, /^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)),
 });
 
 export const uploadResume = multer({
-  storage: resumeStorage,
+  storage: makeStorage('resumes'),
   limits: { fileSize: 10 * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, cb) =>
-    cb(null, ['application/pdf', 'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'].includes(file.mimetype)),
+    cb(
+      null,
+      [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      ].includes(file.mimetype),
+    ),
 });
 
 export const uploadMedia = multer({
-  storage: mediaStorage,
+  storage: makeStorage('media'),
   limits: { fileSize: 15 * 1024 * 1024, files: 10 },
   fileFilter: (_req, file, cb) => cb(null, mediaTypes.has(file.mimetype)),
 });

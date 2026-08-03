@@ -1,34 +1,27 @@
 import {
-  BarChart3,
-  Bot,
-  Boxes,
+  Award,
+  BookOpen,
   BriefcaseBusiness,
   Building2,
-  Cloud,
-  Code2,
-  Factory,
-  HeartPulse,
-  Landmark,
+  GraduationCap,
   Lightbulb,
-  MessagesSquare,
-  MonitorSmartphone,
-  Network,
   Newspaper,
   Rocket,
-  ShieldCheck,
-  ShoppingCart,
+  School,
   Sparkles,
   Users,
+  Wrench,
 } from "lucide-react";
 
 export const SITE_CONFIG = {
   name: "CITIS InfoTech",
   legalName: "CITIS Infotech Pvt. Ltd.",
   description:
-    "Technology consulting, digital engineering, cloud, data and AI solutions that move ambitious businesses forward.",
+    "Technology-enabled education solutions for universities, schools, industries, and learners — bridging academia and industry for future-ready talent.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.citisinfotech.com",
   email: "info@citisinfotech.com",
   phone: "+91 80 4123 4567",
+  tagline: "Empowering Education. Enabling Futures.",
 } as const;
 
 export const NAV_LINKS = [
@@ -37,76 +30,143 @@ export const NAV_LINKS = [
   { label: "Engagements", href: "/engagements", megaMenu: "engagements" },
   { label: "Products", href: "/products", megaMenu: "products" },
   { label: "Highlights", href: "/highlights", megaMenu: "highlights" },
+  { label: "Future Academy", href: "/future-academy" },
   { label: "Careers", href: "/careers" },
   { label: "Contact", href: "/contact" },
 ] as const;
 
 export const MEGA_MENUS = {
   engagements: {
-    eyebrow: "How we help",
-    title: "Engineering outcomes, not just software",
+    eyebrow: "Who we serve",
+    title: "Education solutions across the learning continuum",
     featured: {
-      label: "Explore our capabilities",
+      label: "Explore all engagements",
       href: "/engagements",
-      description: "From strategy to scale, one accountable technology partner.",
+      description: "University, school, vocational, CoE, and placement programs.",
     },
     items: [
-      { title: "Digital Engineering", href: "/engagements/digital-engineering", description: "Modern web, mobile and platform experiences.", icon: Code2 },
-      { title: "Cloud & DevOps", href: "/engagements/cloud-devops", description: "Secure, resilient cloud transformation.", icon: Cloud },
-      { title: "Data & AI", href: "/engagements/data-ai", description: "Turn trusted data into intelligent action.", icon: Bot },
-      { title: "Cybersecurity", href: "/engagements/cybersecurity", description: "Protect systems, customers and growth.", icon: ShieldCheck },
-      { title: "Product Consulting", href: "/engagements/product-consulting", description: "Validate, design and launch faster.", icon: Lightbulb },
-      { title: "Dedicated Teams", href: "/engagements/dedicated-teams", description: "Specialist teams that integrate seamlessly.", icon: Users },
+      {
+        title: "University Solutions",
+        href: "/engagements/university",
+        description: "Curriculum, labs, and industry-integrated learning.",
+        icon: GraduationCap,
+      },
+      {
+        title: "School Solutions",
+        href: "/engagements/school",
+        description: "ICT, STEM, and tomorrow’s classroom models.",
+        icon: School,
+      },
+      {
+        title: "Vocational Education",
+        href: "/engagements/vocational",
+        description: "Skill pathways aligned to employability.",
+        icon: Wrench,
+      },
+      {
+        title: "Centre of Excellence",
+        href: "/engagements/centre-of-excellence",
+        description: "Domain labs and capability centers.",
+        icon: Award,
+      },
+      {
+        title: "Placements & Internships",
+        href: "/engagements/placements",
+        description: "Industry readiness and career outcomes.",
+        icon: BriefcaseBusiness,
+      },
+      {
+        title: "Partner With Us",
+        href: "/partner",
+        description: "Collaboration models for institutions and industry.",
+        icon: Users,
+      },
     ],
   },
   products: {
-    eyebrow: "Our products",
-    title: "Purpose-built platforms for modern operations",
+    eyebrow: "Learning academies",
+    title: "Purpose-built academies for next-gen skills",
     featured: {
-      label: "View product portfolio",
+      label: "View all products",
       href: "/products",
-      description: "Composable solutions designed around real business workflows.",
+      description: "AI, app development, and entrepreneurship programs.",
     },
     items: [
-      { title: "CITIS Connect", href: "/products/connect", description: "Unified customer engagement platform.", icon: MessagesSquare },
-      { title: "CITIS Insights", href: "/products/insights", description: "Decision intelligence and live analytics.", icon: BarChart3 },
-      { title: "CITIS Flow", href: "/products/flow", description: "Automate work across teams and systems.", icon: Network },
-      { title: "Commerce Suite", href: "/products/commerce", description: "Scalable omnichannel commerce operations.", icon: ShoppingCart },
-      { title: "Industry Cloud", href: "/products/industry-cloud", description: "Secure, ready-to-adapt cloud foundations.", icon: Boxes },
-      { title: "Experience Studio", href: "/products/experience-studio", description: "Build consistent digital journeys.", icon: MonitorSmartphone },
+      {
+        title: "AI Future Academy",
+        href: "/products/ai-future-academy",
+        description: "Practical AI, ML, and intelligent systems learning.",
+        icon: Sparkles,
+      },
+      {
+        title: "AppWizz Academy",
+        href: "/products/appwizz-academy",
+        description: "Full-stack and mobile app development pathways.",
+        icon: Rocket,
+      },
+      {
+        title: "MoxieMind Academy",
+        href: "/products/moxiemind",
+        description: "Entrepreneurship, innovation, and venture building.",
+        icon: Lightbulb,
+      },
+      {
+        title: "CITIS Future Academy",
+        href: "/future-academy",
+        description: "Courses, certifications, and learning paths.",
+        icon: BookOpen,
+      },
     ],
   },
   highlights: {
     eyebrow: "Ideas & impact",
-    title: "What we are learning and building",
+    title: "Stories from campuses, classrooms, and industry",
     featured: {
       label: "See all highlights",
       href: "/highlights",
-      description: "Practical insights from our teams and client partnerships.",
+      description: "Blogs, case studies, and institutional success stories.",
     },
     items: [
-      { title: "Case Studies", href: "/case-studies", description: "Measurable results from complex challenges.", icon: Rocket },
-      { title: "Insights", href: "/insights", description: "Perspectives on technology and transformation.", icon: Sparkles },
-      { title: "Newsroom", href: "/news", description: "Company news, announcements and media.", icon: Newspaper },
-      { title: "Financial Services", href: "/industries/financial-services", description: "Digital trust for financial institutions.", icon: Landmark },
-      { title: "Healthcare", href: "/industries/healthcare", description: "Connected, human-centered care.", icon: HeartPulse },
-      { title: "Manufacturing", href: "/industries/manufacturing", description: "Smarter, more resilient operations.", icon: Factory },
+      {
+        title: "Blogs",
+        href: "/highlights/blogs",
+        description: "Perspectives on EdTech, skills, and pedagogy.",
+        icon: Newspaper,
+      },
+      {
+        title: "Case Studies",
+        href: "/highlights/case-studies",
+        description: "Measurable outcomes from university and school programs.",
+        icon: Rocket,
+      },
+      {
+        title: "About CITIS",
+        href: "/about",
+        description: "Vision, mission, and associations.",
+        icon: Building2,
+      },
+      {
+        title: "Careers",
+        href: "/careers",
+        description: "Join our education transformation team.",
+        icon: BriefcaseBusiness,
+      },
     ],
   },
 } as const;
 
 export const OFFICES = [
   {
-    name: "Bangalore Office",
-    address: "No. 48, 2nd Floor, 100 Feet Road, Indiranagar, Bengaluru, Karnataka 560038",
-    phone: "+91 80 4123 4567",
-    email: "bangalore@citisinfotech.com",
-  },
-  {
     name: "Corporate Office",
     address: "CITIS Tech Park, Outer Ring Road, Bellandur, Bengaluru, Karnataka 560103",
     phone: "+91 80 4890 1200",
     email: "corporate@citisinfotech.com",
+  },
+  {
+    name: "Bangalore Office",
+    address: "No. 48, 2nd Floor, 100 Feet Road, Indiranagar, Bengaluru, Karnataka 560038",
+    phone: "+91 80 4123 4567",
+    email: "bangalore@citisinfotech.com",
   },
 ] as const;
 
@@ -118,10 +178,10 @@ export const SOCIAL_LINKS = [
 ] as const;
 
 export const STATISTICS = [
-  { value: 15, suffix: "+", label: "Years of innovation" },
-  { value: 250, suffix: "+", label: "Digital specialists" },
-  { value: 180, suffix: "+", label: "Solutions delivered" },
-  { value: 12, suffix: "", label: "Countries served" },
+  { value: 150, suffix: "+", label: "Partner institutions" },
+  { value: 50000, suffix: "+", label: "Learners impacted" },
+  { value: 200, suffix: "+", label: "Industry mentors" },
+  { value: 95, suffix: "%", label: "Placement readiness" },
 ] as const;
 
 export const FOOTER_LINKS = [
@@ -130,26 +190,64 @@ export const FOOTER_LINKS = [
     links: [
       { label: "About us", href: "/about" },
       { label: "Careers", href: "/careers", icon: BriefcaseBusiness },
-      { label: "Partners", href: "/partners" },
+      { label: "Partner with us", href: "/partner" },
       { label: "Contact", href: "/contact" },
     ],
   },
   {
-    title: "Explore",
+    title: "Engagements",
     links: [
-      { label: "Engagements", href: "/engagements" },
-      { label: "Products", href: "/products" },
-      { label: "Case studies", href: "/case-studies" },
-      { label: "Insights", href: "/insights" },
+      { label: "University Solutions", href: "/engagements/university" },
+      { label: "School Solutions", href: "/engagements/school" },
+      { label: "Vocational Education", href: "/engagements/vocational" },
+      { label: "Centre of Excellence", href: "/engagements/centre-of-excellence" },
     ],
   },
   {
-    title: "Industries",
+    title: "Learn",
     links: [
-      { label: "Financial services", href: "/industries/financial-services" },
-      { label: "Healthcare", href: "/industries/healthcare" },
-      { label: "Retail", href: "/industries/retail" },
-      { label: "Manufacturing", href: "/industries/manufacturing", icon: Building2 },
+      { label: "AI Future Academy", href: "/products/ai-future-academy" },
+      { label: "AppWizz Academy", href: "/products/appwizz-academy" },
+      { label: "Future Academy", href: "/future-academy" },
+      { label: "Blogs", href: "/highlights/blogs" },
     ],
   },
+] as const;
+
+export const HOME_TESTIMONIALS = [
+  {
+    name: "Dr. Ananya Rao",
+    role: "Dean of Engineering",
+    company: "National Institute of Technology",
+    content:
+      "CITIS transformed our curriculum into an industry-aligned learning journey. Students graduate with portfolios, not just transcripts.",
+    rating: 5,
+  },
+  {
+    name: "Rajesh Menon",
+    role: "HR Director",
+    company: "TechVista Global",
+    content:
+      "Interns from CITIS programs arrive ready to contribute. The IILP model bridges the gap we used to spend months closing.",
+    rating: 5,
+  },
+  {
+    name: "Priya Sharma",
+    role: "Principal",
+    company: "Horizon International School",
+    content:
+      "Their STEM and ICT programs made technology feel accessible and exciting for every learner in our school.",
+    rating: 5,
+  },
+] as const;
+
+export const HOME_CLIENTS = [
+  "NIT Consortium",
+  "Horizon Schools",
+  "TechVista",
+  "EduBridge Trust",
+  "State Skill Mission",
+  "InnoLabs",
+  "CampusWorks",
+  "FutureSkills Hub",
 ] as const;
