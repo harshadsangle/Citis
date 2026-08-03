@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
-import { Footer } from "@/components/layout/Footer";
-import { Navbar } from "@/components/layout/Navbar";
+import { ConditionalShell } from "@/components/layout/ConditionalShell";
 import { QueryProvider } from "@/components/layout/QueryProvider";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
@@ -81,9 +80,7 @@ export default function RootLayout({
           <QueryProvider>
             <ScrollProgress />
             <OfflineBanner />
-            <Navbar />
-            <main id="main-content">{children}</main>
-            <Footer />
+            <ConditionalShell>{children}</ConditionalShell>
             <ServiceWorkerRegister />
           </QueryProvider>
         </ThemeProvider>
