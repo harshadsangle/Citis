@@ -1,0 +1,31 @@
+import { Router } from 'express';
+import analyticsRoutes from './analyticsRoutes';
+import authRoutes from './authRoutes';
+import blogRoutes from './blogRoutes';
+import careerRoutes from './careerRoutes';
+import caseStudyRoutes from './caseStudyRoutes';
+import clientRoutes from './clientRoutes';
+import contactRoutes from './contactRoutes';
+import inquiryRoutes from './inquiryRoutes';
+import mediaRoutes from './mediaRoutes';
+import newsletterRoutes from './newsletterRoutes';
+import productRoutes from './productRoutes';
+import testimonialRoutes from './testimonialRoutes';
+import userRoutes from './userRoutes';
+
+const router = Router();
+router.use('/auth', authRoutes);
+router.use('/users', userRoutes);
+router.use('/blogs', blogRoutes);
+router.use('/products', productRoutes);
+router.use('/careers', careerRoutes);
+router.use('/testimonials', testimonialRoutes);
+router.use('/clients', clientRoutes);
+router.use('/contacts', contactRoutes);
+router.use('/newsletter', newsletterRoutes);
+router.use('/inquiries', inquiryRoutes);
+router.use('/case-studies', caseStudyRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/media', mediaRoutes);
+
+export default router;
