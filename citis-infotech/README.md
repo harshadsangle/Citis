@@ -103,11 +103,35 @@ DATABASE_FILENAME=.tmp/data.db
 
 ## Run on localhost
 
-Start MongoDB, then:
+**Do not run `npm audit fix --force`.** It can downgrade Next.js to an ancient broken version.
+
+Start MongoDB first (required for the API):
+
+```bash
+# macOS
+brew services start mongodb-community
+
+# Ubuntu/Debian (example)
+sudo systemctl start mongod
+
+# Or only Mongo via Docker
+docker run -d --name citis-mongo -p 27017:27017 mongo:8
+```
+
+Then:
 
 ```bash
 npm run dev
 ```
+
+You should see lines like:
+
+```text
+[frontend] ▲ Next.js ... ready on http://localhost:3000
+[backend]  API listening on http://localhost:5000
+```
+
+If the API exits with a Mongo connection error, MongoDB is not running on port 27017.
 
 Optional Strapi in another terminal:
 
@@ -123,6 +147,7 @@ npm run develop --prefix strapi-cms
 | Uploads | http://localhost:5000/uploads/... |
 | Strapi | http://localhost:1337 |
 | Strapi admin | http://localhost:1337/admin |
+
 
 ## Docker Compose (optional)
 

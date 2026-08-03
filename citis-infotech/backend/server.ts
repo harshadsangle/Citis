@@ -59,8 +59,16 @@ const start = async () => {
       throw new Error(`${name} must contain at least 32 characters`);
     }
   }
-  await connectDB();
-  server = app.listen(port, () => console.log(`API listening on port ${port}`));
+  try {
+    await connectDB();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `MongoDB connection failed (${message}). Start MongoDB locally on 27017 ` +
+        `or update MONGODB_URI in backend/.env, then run npm run dev again.`,
+    );
+  }
+  server = app.listen(port, () => console.log(`API listening on http://localhost:${port}`));
 };
 
 const shutdown = (signal: string) => {
