@@ -52,19 +52,20 @@ export default function Home() {
           <AnimatedSection delay={0.12} className="relative">
             <div className="absolute -top-8 -left-8 size-40 rounded-full bg-accent/20 blur-3xl" />
             <div className="absolute -right-6 -bottom-10 size-48 rounded-full bg-primary/20 blur-3xl" />
-            <div className="relative overflow-hidden rounded-[2rem] shadow-[0_30px_80px_rgba(15,76,129,0.25)]">
+            <div className="relative overflow-hidden rounded-[2rem] shadow-[0_30px_80px_rgba(15,76,129,0.25)] ring-1 ring-[#0F4C81]/10">
               <NextImage
-                src="/images/campus-dusk.jpg"
-                alt="Modern CITIS campus atmosphere"
+                src="/images/excellence-innovation.jpg"
+                alt="CITIS InfoTech — technology-enabled learning and innovation"
                 width={1100}
                 height={780}
                 className="aspect-[5/4] w-full object-cover"
+                priority
               />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#071221] via-[#071221]/40 to-transparent p-6 sm:p-8">
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0F4C81] via-[#0F4C81]/55 to-transparent p-6 sm:p-8">
                 <p className="font-heading text-xl font-semibold text-white sm:text-2xl">
-                  Excellence meets innovation
+                  Inspired by excellence
                 </p>
-                <p className="mt-2 text-sm text-blue-100">Technology-enabled education across India</p>
+                <p className="mt-2 text-sm text-orange-200">Driven by innovation · K–12 & Higher Education</p>
               </div>
             </div>
           </AnimatedSection>
