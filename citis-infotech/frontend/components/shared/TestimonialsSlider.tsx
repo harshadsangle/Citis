@@ -67,22 +67,22 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
     >
       {slides.map((item) => (
         <SwiperSlide key={item.id ?? item.name} className="h-auto">
-          <figure className="surface flex h-full flex-col rounded-[1.5rem] border border-border/60 bg-gradient-to-br from-card to-slate-50/80 p-7 shadow-[0_16px_50px_rgba(15,76,129,0.08)] sm:p-8 dark:to-slate-900/50">
+          <figure className="flex h-full flex-col rounded-[1.5rem] border border-[#0F4C81]/15 bg-white p-7 text-[#0b1524] shadow-[0_16px_50px_rgba(15,76,129,0.12)] sm:p-8">
             <div className="flex items-center justify-between">
-              <Quote className="size-10 text-accent/70" />
+              <Quote className="size-10 text-[#FF7A00]" />
               <div className="flex text-amber-500" aria-label={`${item.rating ?? 5} out of 5 stars`}>
                 {Array.from({ length: item.rating ?? 5 }).map((_, index) => (
                   <Star key={index} className="size-3.5 fill-current" />
                 ))}
               </div>
             </div>
-            <blockquote className="mt-6 flex-1 font-heading text-xl leading-9 font-medium text-foreground">
+            <blockquote className="mt-6 flex-1 font-heading text-xl leading-9 font-semibold text-[#0b1524]">
               &ldquo;{item.quote}&rdquo;
             </blockquote>
-            <figcaption className="mt-7 flex items-center gap-3 border-t border-border pt-5">
+            <figcaption className="mt-7 flex items-center gap-3 border-t border-[#0F4C81]/15 pt-5">
               <Avatar>
                 {item.avatarUrl ? <AvatarImage src={item.avatarUrl} alt={item.name} /> : null}
-                <AvatarFallback>
+                <AvatarFallback className="bg-[#0F4C81] text-white">
                   {item.name
                     .split(" ")
                     .map((name) => name[0])
@@ -91,8 +91,8 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
                 </AvatarFallback>
               </Avatar>
               <span>
-                <span className="block text-sm font-semibold">{item.name}</span>
-                <span className="block text-xs text-muted-foreground">
+                <span className="block text-sm font-bold text-[#0b1524]">{item.name}</span>
+                <span className="block text-xs font-medium text-[#0F4C81]/80">
                   {item.role}, {item.company}
                 </span>
               </span>
