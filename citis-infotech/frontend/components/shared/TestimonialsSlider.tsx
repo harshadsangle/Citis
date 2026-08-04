@@ -67,16 +67,16 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
     >
       {slides.map((item) => (
         <SwiperSlide key={item.id ?? item.name} className="h-auto">
-          <figure className="surface flex h-full flex-col rounded-xl p-7 sm:p-8">
+          <figure className="surface flex h-full flex-col rounded-[1.5rem] border border-border/60 bg-gradient-to-br from-card to-slate-50/80 p-7 shadow-[0_16px_50px_rgba(15,76,129,0.08)] sm:p-8 dark:to-slate-900/50">
             <div className="flex items-center justify-between">
-              <Quote className="size-9 text-primary/25" />
+              <Quote className="size-10 text-accent/70" />
               <div className="flex text-amber-500" aria-label={`${item.rating ?? 5} out of 5 stars`}>
                 {Array.from({ length: item.rating ?? 5 }).map((_, index) => (
                   <Star key={index} className="size-3.5 fill-current" />
                 ))}
               </div>
             </div>
-            <blockquote className="mt-6 flex-1 font-heading text-lg leading-8 text-foreground">
+            <blockquote className="mt-6 flex-1 font-heading text-xl leading-9 font-medium text-foreground">
               &ldquo;{item.quote}&rdquo;
             </blockquote>
             <figcaption className="mt-7 flex items-center gap-3 border-t border-border pt-5">

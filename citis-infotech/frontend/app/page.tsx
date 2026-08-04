@@ -1,10 +1,10 @@
 import NextImage from "next/image";
 import Link from "next/link";
 import { ArrowRight, Quote } from "lucide-react";
-import { AmbientBackdrop, EducationNetworkArt, WhyChooseIcon } from "@/components/marketing/HomeVisuals";
+import { HomeHero, PillarMarquee } from "@/components/marketing/HomeHero";
+import { AmbientBackdrop, WhyChooseIcon } from "@/components/marketing/HomeVisuals";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { ClientLogoCarousel } from "@/components/shared/ClientLogoCarousel";
-import { SectionHeading } from "@/components/shared/SectionHeading";
 import { TestimonialsSlider } from "@/components/shared/TestimonialsSlider";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,191 +15,235 @@ import {
   WHY_CHOOSE_US,
 } from "@/lib/constants";
 
+const PILLARS = [
+  "Digital-first learning",
+  "Industry-integrated curricula",
+  "Skills-based education",
+  "Experiential learning",
+  "Zero-day readiness",
+  "NEP-aligned pathways",
+];
+
 export default function Home() {
   return (
     <>
-      {/* Full-bleed hero — brand + headline + CTA + dominant image */}
-      <section className="relative isolate min-h-[calc(100vh-var(--header-height))] overflow-hidden">
-        <NextImage
-          src="/images/hero-campus.jpg"
-          alt="CITIS InfoTech — technology-enabled learning environments"
-          fill
-          priority
-          className="object-cover object-center"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(8,18,36,0.88)_0%,rgba(15,76,129,0.72)_48%,rgba(8,18,36,0.45)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(255,122,0,0.22),transparent_45%)]" />
-        <div className="container-site relative flex min-h-[calc(100vh-var(--header-height))] flex-col justify-end pb-16 pt-24 sm:pb-20 lg:justify-center lg:pb-24">
-          <AnimatedSection className="max-w-3xl text-white">
-            <p className="mb-5 font-heading text-sm font-semibold tracking-[0.28em] text-orange-300 uppercase sm:text-base">
+      <HomeHero
+        title={HOME_COPY.excellence.title}
+        support="Empowering K–12 and Higher Education institutions with future-ready, industry-relevant learning."
+      />
+      <PillarMarquee items={PILLARS} />
+
+      <section className="relative overflow-hidden py-20 sm:py-28">
+        <AmbientBackdrop tone="light" />
+        <div className="container-site grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+          <AnimatedSection>
+            <p className="section-eyebrow">
+              <span className="h-px w-8 bg-accent" />
               {SITE_CONFIG.name}
             </p>
-            <h1 className="font-heading text-4xl leading-[1.05] font-semibold tracking-[-0.03em] text-balance sm:text-5xl lg:text-6xl xl:text-7xl">
-              {HOME_COPY.excellence.title}
-            </h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-blue-50/90 sm:text-lg">
-              A leading technology-enabled education company empowering K–12 and Higher Education
-              institutions across India.
-            </p>
-            <div className="mt-9">
-              <Button asChild variant="accent" size="lg" className="shadow-lg shadow-orange-500/25">
-                <Link href="/future-academy">
-                  CITIS Future Academy
-                  <ArrowRight />
-                </Link>
-              </Button>
-            </div>
-          </AnimatedSection>
-        </div>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background to-transparent" />
-      </section>
-
-      {/* Full wireframe excellence body */}
-      <section className="relative overflow-hidden border-b border-border py-16 sm:py-20">
-        <AmbientBackdrop tone="light" />
-        <div className="container-site grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
-          <AnimatedSection>
-            <p className="text-sm font-semibold tracking-[0.2em] text-primary uppercase">{SITE_CONFIG.name}</p>
-            <h2 className="mt-3 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+            <h2 className="mt-5 font-heading text-4xl leading-[1.05] font-bold tracking-[-0.03em] text-balance sm:text-5xl">
               {HOME_COPY.excellence.title}
             </h2>
-            <p className="mt-6 text-base leading-8 text-muted-foreground">{HOME_COPY.excellence.body}</p>
+            <div className="mt-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-accent to-primary" />
+            <p className="mt-8 text-base leading-8 text-muted-foreground sm:text-lg sm:leading-9">
+              {HOME_COPY.excellence.body}
+            </p>
+            <Button asChild variant="accent" className="mt-10 rounded-full px-7">
+              <Link href="/future-academy">
+                CITIS Future Academy
+                <ArrowRight />
+              </Link>
+            </Button>
           </AnimatedSection>
-          <AnimatedSection delay={0.1} className="relative">
-            <div className="overflow-hidden rounded-[1.75rem] border border-border shadow-2xl shadow-primary/10">
+          <AnimatedSection delay={0.12} className="relative">
+            <div className="absolute -top-8 -left-8 size-40 rounded-full bg-accent/20 blur-3xl" />
+            <div className="absolute -right-6 -bottom-10 size-48 rounded-full bg-primary/20 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[2rem] shadow-[0_30px_80px_rgba(15,76,129,0.25)]">
               <NextImage
-                src="/images/beyond-curriculum.jpg"
-                alt="Hands-on STEM and digital learning"
-                width={960}
-                height={720}
-                className="h-auto w-full object-cover"
+                src="/images/campus-dusk.jpg"
+                alt="Modern CITIS campus atmosphere"
+                width={1100}
+                height={780}
+                className="aspect-[5/4] w-full object-cover"
               />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#071221] via-[#071221]/40 to-transparent p-6 sm:p-8">
+                <p className="font-heading text-xl font-semibold text-white sm:text-2xl">
+                  Excellence meets innovation
+                </p>
+                <p className="mt-2 text-sm text-blue-100">Technology-enabled education across India</p>
+              </div>
             </div>
-            <EducationNetworkArt className="mt-6 opacity-90" />
           </AnimatedSection>
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-b border-border py-20 sm:py-24">
-        <AmbientBackdrop tone="light" />
-        <div className="container-site grid items-start gap-12 lg:grid-cols-[0.95fr_1.05fr]">
-          <AnimatedSection className="relative overflow-hidden rounded-[1.75rem]">
-            <NextImage
-              src="/images/industry-academia.jpg"
-              alt="Educators collaborating in a modern learning space"
-              width={1100}
-              height={720}
-              className="min-h-[22rem] w-full object-cover lg:min-h-[32rem]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0F4C81]/70 via-transparent to-transparent" />
-            <p className="absolute bottom-6 left-6 right-6 font-heading text-xl font-semibold text-white">
-              The Changing Face of Education
-            </p>
-          </AnimatedSection>
-          <AnimatedSection delay={0.08}>
-            <SectionHeading title={HOME_COPY.changingFace.title} />
-            <div className="mt-8 space-y-6 text-base leading-8 text-muted-foreground">
+      <section className="relative overflow-hidden bg-[#071221] py-20 text-white sm:py-28">
+        <div className="absolute inset-0 opacity-40">
+          <NextImage src="/images/industry-academia.jpg" alt="" fill className="object-cover" sizes="100vw" />
+        </div>
+        <div className="absolute inset-0 bg-[linear-gradient(160deg,#071221_10%,rgba(15,76,129,0.82)_55%,rgba(7,18,33,0.95)_100%)]" />
+        <div className="container-site relative">
+          <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+            <AnimatedSection>
+              <p className="section-eyebrow text-orange-300">
+                <span className="h-px w-8 bg-orange-300" />
+                Education landscape
+              </p>
+              <h2 className="mt-5 font-heading text-4xl leading-[1.05] font-bold tracking-[-0.03em] sm:text-5xl">
+                {HOME_COPY.changingFace.title}
+              </h2>
+              <div className="mt-8 space-y-4">
+                {["Digital-first classrooms", "Industry-integrated curricula", "Skills & employability"].map(
+                  (item) => (
+                    <div
+                      key={item}
+                      className="rounded-2xl border border-white/15 bg-white/5 px-5 py-4 text-sm font-semibold backdrop-blur"
+                    >
+                      {item}
+                    </div>
+                  ),
+                )}
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.1} className="space-y-6 text-base leading-8 text-blue-100 sm:text-lg sm:leading-9">
               {HOME_COPY.changingFace.paragraphs.map((paragraph) => (
                 <p key={paragraph.slice(0, 48)}>{paragraph}</p>
               ))}
-            </div>
-          </AnimatedSection>
+            </AnimatedSection>
+          </div>
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-b border-border py-20 sm:py-24">
-        <AmbientBackdrop tone="light" />
-        <div className="container-site grid items-center gap-12 lg:grid-cols-2">
-          <AnimatedSection>
-            <SectionHeading title={HOME_COPY.beyondCurriculum.title} />
-            <p className="mt-6 text-base leading-8 text-muted-foreground">{HOME_COPY.beyondCurriculum.body}</p>
-          </AnimatedSection>
-          <AnimatedSection delay={0.1} className="relative">
-            <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-primary/15 via-transparent to-accent/20 blur-xl" />
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-xl">
-              <NextImage
-                src="/images/beyond-curriculum.jpg"
-                alt="Learners building practical STEM skills"
-                width={960}
-                height={720}
-                className="aspect-[4/3] w-full object-cover"
-              />
-            </div>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      <section className="relative isolate overflow-hidden py-20 text-white sm:py-24">
-        <NextImage
-          src="/images/industry-academia.jpg"
-          alt=""
-          fill
-          className="object-cover object-center opacity-35"
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,#0a1a2f_0%,#0F4C81_55%,#163a5f_100%)]/90" />
-        <AmbientBackdrop tone="accent" />
-        <div className="container-site relative max-w-4xl">
-          <AnimatedSection>
-            <h2 className="font-heading text-3xl font-semibold sm:text-4xl lg:text-5xl">
-              {HOME_COPY.industryAcademia.title}
-            </h2>
-            <p className="mt-6 text-base leading-8 text-blue-100">{HOME_COPY.industryAcademia.body}</p>
-          </AnimatedSection>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden py-20 sm:py-24">
+      <section className="relative overflow-hidden py-20 sm:py-28">
         <AmbientBackdrop tone="light" />
         <div className="container-site">
-          <AnimatedSection>
-            <SectionHeading title="Why Choose Us" />
-          </AnimatedSection>
-          <div className="mt-12 grid gap-4 md:grid-cols-2">
-            {WHY_CHOOSE_US.map((item, index) => (
-              <AnimatedSection key={item.title} delay={Math.min(index * 0.03, 0.3)}>
-                <div className="group flex h-full gap-4 rounded-2xl border border-border bg-card/90 p-5 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-lg sm:p-6">
-                  <WhyChooseIcon index={index} />
-                  <div>
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="text-xs font-bold tracking-wider text-accent uppercase">
-                        {String(index + 1).padStart(2, "0")}
-                      </span>
-                      <h3 className="font-heading text-lg font-semibold">{item.title}</h3>
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-muted-foreground">{item.description}</p>
-                  </div>
+          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+            <AnimatedSection className="order-2 lg:order-1">
+              <div className="relative">
+                <div className="absolute -inset-3 rotate-2 rounded-[2.2rem] bg-gradient-to-br from-accent/30 to-primary/20" />
+                <div className="relative overflow-hidden rounded-[2rem]">
+                  <NextImage
+                    src="/images/beyond-curriculum.jpg"
+                    alt="Hands-on learning beyond the curriculum"
+                    width={1000}
+                    height={800}
+                    className="aspect-[5/4] w-full object-cover"
+                  />
                 </div>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.08} className="order-1 lg:order-2">
+              <p className="section-eyebrow">
+                <span className="h-px w-8 bg-accent" />
+                Beyond textbooks
+              </p>
+              <h2 className="mt-5 font-heading text-4xl leading-[1.05] font-bold tracking-[-0.03em] sm:text-5xl">
+                {HOME_COPY.beyondCurriculum.title}
+              </h2>
+              <div className="mt-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-primary to-accent" />
+              <p className="mt-8 text-base leading-8 text-muted-foreground sm:text-lg sm:leading-9">
+                {HOME_COPY.beyondCurriculum.body}
+              </p>
+            </AnimatedSection>
+          </div>
+        </div>
+      </section>
+
+      <section className="relative isolate overflow-hidden py-20 sm:py-28">
+        <NextImage
+          src="/images/campus-dusk.jpg"
+          alt=""
+          fill
+          className="object-cover object-center"
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-[#0F4C81]/88 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#071221] via-[#0F4C81]/80 to-transparent" />
+        <div className="container-site relative max-w-4xl text-white">
+          <AnimatedSection>
+            <p className="section-eyebrow text-orange-300">
+              <span className="h-px w-8 bg-orange-300" />
+              Collaboration
+            </p>
+            <h2 className="mt-5 font-heading text-4xl leading-[1.05] font-bold tracking-[-0.03em] sm:text-5xl lg:text-6xl">
+              {HOME_COPY.industryAcademia.title}
+            </h2>
+            <p className="mt-8 text-base leading-8 text-blue-50 sm:text-lg sm:leading-9">
+              {HOME_COPY.industryAcademia.body}
+            </p>
+            <Button asChild variant="accent" className="mt-10 rounded-full px-7 shadow-lg shadow-orange-500/30">
+              <Link href="/engagements/university">
+                University Solutions
+                <ArrowRight />
+              </Link>
+            </Button>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden py-20 sm:py-28">
+        <AmbientBackdrop tone="light" />
+        <div className="container-site">
+          <AnimatedSection className="max-w-3xl">
+            <p className="section-eyebrow">
+              <span className="h-px w-8 bg-accent" />
+              Partnership value
+            </p>
+            <h2 className="mt-5 font-heading text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Why Choose Us</h2>
+            <p className="mt-4 text-lg text-muted-foreground">
+              Fifteen reasons institutions partner with CITIS InfoTech.
+            </p>
+          </AnimatedSection>
+          <div className="mt-14 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {WHY_CHOOSE_US.map((item, index) => (
+              <AnimatedSection key={item.title} delay={Math.min(index * 0.025, 0.28)}>
+                <article className="group relative h-full overflow-hidden rounded-[1.5rem] border border-border/80 bg-white/80 p-6 shadow-[0_10px_40px_rgba(15,76,129,0.06)] backdrop-blur transition duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-[0_20px_50px_rgba(15,76,129,0.14)] dark:bg-card/80 sm:p-7">
+                  <div className="absolute -top-10 -right-8 size-28 rounded-full bg-gradient-to-br from-accent/15 to-primary/10 transition group-hover:scale-125" />
+                  <div className="relative flex items-start gap-4">
+                    <WhyChooseIcon index={index} />
+                    <div>
+                      <p className="giant-index absolute -top-2 -right-1 select-none">
+                        {String(index + 1).padStart(2, "0")}
+                      </p>
+                      <h3 className="relative pr-14 font-heading text-lg font-bold leading-snug">{item.title}</h3>
+                      <p className="relative mt-3 text-sm leading-7 text-muted-foreground">{item.description}</p>
+                    </div>
+                  </div>
+                </article>
               </AnimatedSection>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="relative overflow-hidden border-y border-border py-20 sm:py-24">
-        <AmbientBackdrop tone="light" />
-        <div className="container-site">
+      <section className="relative overflow-hidden bg-[#071221] py-20 text-white sm:py-28">
+        <div className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_15%_20%,rgba(255,122,0,0.35),transparent_30%),radial-gradient(circle_at_85%_70%,rgba(37,99,235,0.4),transparent_35%)]" />
+        <div className="container-site relative">
           <AnimatedSection className="mx-auto max-w-2xl text-center">
-            <Quote className="mx-auto size-10 text-accent/80" />
-            <SectionHeading align="center" title="Testimonials" />
+            <Quote className="mx-auto size-12 text-orange-300/80" />
+            <h2 className="mt-5 font-heading text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Testimonials</h2>
           </AnimatedSection>
-          <AnimatedSection delay={0.08} className="mt-12">
-            <TestimonialsSlider items={HOME_TESTIMONIALS} />
+          <AnimatedSection delay={0.1} className="mt-12">
+            <div className="[&_.surface]:border-white/10 [&_.surface]:bg-white/5 [&_.surface]:text-white [&_.surface]:shadow-none [&_blockquote]:text-white [&_figcaption]:border-white/10 [&_span]:text-blue-100">
+              <TestimonialsSlider items={HOME_TESTIMONIALS} />
+            </div>
           </AnimatedSection>
         </div>
       </section>
 
-      <section className="relative overflow-hidden py-16 sm:py-20">
+      <section className="relative overflow-hidden py-16 sm:py-24">
         <AmbientBackdrop tone="light" />
         <div className="container-site">
-          <AnimatedSection>
-            <SectionHeading align="center" title="Key Clientele" />
+          <AnimatedSection className="text-center">
+            <p className="section-eyebrow mx-auto justify-center">
+              <span className="h-px w-8 bg-accent" />
+              Trusted partners
+              <span className="h-px w-8 bg-accent" />
+            </p>
+            <h2 className="mt-5 font-heading text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Key Clientele</h2>
           </AnimatedSection>
-          <AnimatedSection delay={0.08} className="mt-10">
-            <div className="rounded-[1.5rem] border border-border bg-card/80 p-6 shadow-sm backdrop-blur sm:p-8">
-              <ClientLogoCarousel logos={HOME_CLIENTS} />
-            </div>
+          <AnimatedSection delay={0.08} className="mt-12">
+            <ClientLogoCarousel logos={HOME_CLIENTS} />
           </AnimatedSection>
         </div>
       </section>

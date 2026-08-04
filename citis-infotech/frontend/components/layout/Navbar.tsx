@@ -42,7 +42,12 @@ export function Navbar() {
   useEffect(() => setMobileOpen(false), [pathname]);
 
   return (
-    <header className={cn("sticky top-0 z-50 h-[var(--header-height)] border-b transition-all duration-300", scrolled ? "border-border bg-background/92 shadow-sm backdrop-blur-xl" : "border-transparent bg-background/80 backdrop-blur-lg")}>
+    <header className={cn(
+      "sticky top-0 z-50 h-[var(--header-height)] border-b transition-all duration-300",
+      scrolled
+        ? "border-border/70 bg-background/85 shadow-[0_10px_40px_rgba(15,76,129,0.08)] backdrop-blur-2xl"
+        : "border-transparent bg-background/70 backdrop-blur-xl",
+    )}>
       <div className="container-site flex h-full items-center justify-between">
         <Brand />
         <nav className="hidden h-full items-center gap-0.5 lg:flex" aria-label="Primary navigation" onMouseLeave={() => setOpenMenu(null)}>
@@ -51,10 +56,9 @@ export function Navbar() {
             const menu = "megaMenu" in item ? item.megaMenu : undefined;
             return (
               <div key={item.href} className="flex h-full items-center" onMouseEnter={() => setOpenMenu(menu ?? null)}>
-                <Link href={item.href} className={cn("relative flex h-10 items-center gap-1 rounded-md px-3 text-sm font-medium transition-colors hover:bg-muted hover:text-primary", active && "text-primary")}>
+                <Link href={item.href} className={cn("relative flex h-10 items-center gap-1 rounded-full px-3.5 text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary", active && "bg-primary/10 text-primary")}>
                   {item.label}
                   {menu && <ChevronDown className={cn("size-3.5 transition-transform", openMenu === menu && "rotate-180")} />}
-                  {active && <span className="absolute right-3 bottom-0 left-3 h-0.5 rounded-full bg-accent" />}
                 </Link>
                 {menu && (
                   <AnimatePresence>
@@ -86,7 +90,7 @@ export function Navbar() {
           >
             {mounted && resolvedTheme === "dark" ? <Sun /> : <Moon />}
           </Button>
-          <Button asChild className="hidden xl:inline-flex" variant="accent">
+          <Button asChild className="hidden rounded-full xl:inline-flex" variant="accent">
             <Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link>
           </Button>
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen((value) => !value)}>
@@ -115,7 +119,7 @@ export function Navbar() {
                   </div>
                 );
               })}
-              <Button asChild variant="accent" className="mt-4"><Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link></Button>
+              <Button asChild variant="accent" className="mt-4 rounded-full"><Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link></Button>
             </nav>
           </motion.div>
         )}

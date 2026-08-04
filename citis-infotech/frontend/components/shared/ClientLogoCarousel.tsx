@@ -9,7 +9,6 @@ import { getStrapiMedia } from "@/services/strapi";
 
 interface ClientLogoCarouselProps {
   clients?: Client[];
-  /** Simple name list for static marketing pages. */
   logos?: ReadonlyArray<string>;
 }
 
@@ -22,7 +21,7 @@ export function ClientLogoCarousel({ clients, logos }: ClientLogoCarouselProps) 
           loop={clients.length > 5}
           speed={900}
           autoplay={{ delay: 2200, disableOnInteraction: false, pauseOnMouseEnter: true }}
-          spaceBetween={24}
+          spaceBetween={20}
           slidesPerView={2}
           breakpoints={{ 480: { slidesPerView: 3 }, 768: { slidesPerView: 4 }, 1024: { slidesPerView: 6 } }}
         >
@@ -33,7 +32,7 @@ export function ClientLogoCarousel({ clients, logos }: ClientLogoCarouselProps) 
                 target={client.website ? "_blank" : undefined}
                 rel={client.website ? "noreferrer" : undefined}
                 aria-label={client.name}
-                className="flex h-20 items-center justify-center rounded-lg border border-border bg-card px-6 opacity-65 grayscale transition-all hover:opacity-100 hover:grayscale-0"
+                className="flex h-24 items-center justify-center rounded-2xl border border-border bg-gradient-to-br from-white to-slate-50 px-6 opacity-80 shadow-sm grayscale transition-all hover:-translate-y-1 hover:opacity-100 hover:grayscale-0 hover:shadow-md dark:from-card dark:to-slate-900"
               >
                 <Image
                   src={getStrapiMedia(client.logo)}
@@ -52,21 +51,23 @@ export function ClientLogoCarousel({ clients, logos }: ClientLogoCarouselProps) 
 
   if (!logos?.length) return null;
 
+  const loop = logos.length < 6 ? [...logos, ...logos] : logos;
+
   return (
-    <div aria-label="Our clients" className="overflow-hidden py-4">
+    <div aria-label="Our clients" className="overflow-hidden py-2">
       <Swiper
         modules={[Autoplay]}
-        loop={logos.length > 5}
-        speed={900}
-        autoplay={{ delay: 2200, disableOnInteraction: false, pauseOnMouseEnter: true }}
-        spaceBetween={24}
+        loop
+        speed={1100}
+        autoplay={{ delay: 1800, disableOnInteraction: false, pauseOnMouseEnter: true }}
+        spaceBetween={18}
         slidesPerView={2}
-        breakpoints={{ 480: { slidesPerView: 3 }, 768: { slidesPerView: 4 }, 1024: { slidesPerView: 6 } }}
+        breakpoints={{ 480: { slidesPerView: 3 }, 768: { slidesPerView: 4 }, 1024: { slidesPerView: 5 } }}
       >
-        {logos.map((name) => (
-          <SwiperSlide key={name}>
-            <div className="flex h-20 items-center justify-center rounded-lg border border-border bg-card px-6">
-              <span className="font-heading text-sm font-semibold tracking-wide text-muted-foreground">
+        {loop.map((name, index) => (
+          <SwiperSlide key={`${name}-${index}`}>
+            <div className="flex h-28 items-center justify-center rounded-2xl border border-border/80 bg-gradient-to-br from-white via-slate-50 to-[#eef5fb] px-5 shadow-[0_10px_30px_rgba(15,76,129,0.06)] transition hover:-translate-y-1 hover:border-primary/30 dark:from-card dark:via-slate-900 dark:to-slate-950">
+              <span className="bg-gradient-to-r from-primary to-[#1d6bb8] bg-clip-text text-center font-heading text-sm font-bold tracking-wide text-transparent sm:text-base">
                 {name}
               </span>
             </div>

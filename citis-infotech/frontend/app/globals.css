@@ -10,8 +10,8 @@
   --accent: #ff7a00;
   --accent-foreground: #ffffff;
   --success: #22c55e;
-  --background: #f8fafc;
-  --foreground: #111827;
+  --background: #f4f7fb;
+  --foreground: #0b1524;
   --card: #ffffff;
   --card-foreground: #111827;
   --popover: #ffffff;
@@ -67,8 +67,8 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-poppins);
+  --font-sans: var(--font-manrope);
+  --font-heading: var(--font-syne);
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-md: calc(var(--radius) - 0.125rem);
   --radius-lg: var(--radius);
@@ -124,7 +124,7 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: var(--font-manrope), "Segoe UI", sans-serif;
   text-rendering: optimizeLegibility;
 }
 
@@ -162,17 +162,38 @@ button, a, input, textarea, select {
 }
 
 @utility brand-gradient {
-  background-image: linear-gradient(135deg, #0f4c81 0%, #2563eb 100%);
+  background-image: linear-gradient(135deg, #0f4c81 0%, #1d6bb8 52%, #ff7a00 160%);
 }
 
 @utility text-gradient {
-  background-image: linear-gradient(110deg, #0f4c81, #2563eb);
+  background-image: linear-gradient(110deg, #0f4c81, #1d6bb8 55%, #ff7a00);
   background-clip: text;
   color: transparent;
 }
 
 .dark .text-gradient {
-  background-image: linear-gradient(110deg, #93c5fd, #60a5fa);
+  background-image: linear-gradient(110deg, #93c5fd, #60a5fa 50%, #fdba74);
+}
+
+@utility section-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--font-syne), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+@utility giant-index {
+  font-family: var(--font-syne), sans-serif;
+  font-size: clamp(3.5rem, 8vw, 6rem);
+  line-height: 0.85;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  color: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

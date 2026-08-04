@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Poppins } from "next/font/google";
+import { Manrope, Syne } from "next/font/google";
 import { ConditionalShell } from "@/components/layout/ConditionalShell";
 import { QueryProvider } from "@/components/layout/QueryProvider";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
@@ -11,16 +11,16 @@ import { SITE_CONFIG } from "@/lib/constants";
 import { organizationJsonLd } from "@/lib/seo";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
 });
 
-const poppins = Poppins({
-  variable: "--font-poppins",
+const syne = Syne({
+  variable: "--font-syne",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -84,7 +84,7 @@ export default function RootLayout({
   const jsonLd = organizationJsonLd();
   return (
     <html lang="en-IN" suppressHydrationWarning>
-      <body className={`${inter.variable} ${poppins.variable} antialiased`}>
+      <body className={`${manrope.variable} ${syne.variable} antialiased`}>
         <ThemeProvider>
           <QueryProvider>
             <ScrollProgress />

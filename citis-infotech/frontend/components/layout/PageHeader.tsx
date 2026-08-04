@@ -10,23 +10,24 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, breadcrumbs = [], eyebrow }: PageHeaderProps) {
   return (
-    <section className="relative overflow-hidden border-b border-border bg-slate-100/70 py-16 dark:bg-slate-900 sm:py-20">
-      <div className="absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_80%_20%,rgba(37,99,235,.15),transparent_35%)]" />
+    <section className="relative overflow-hidden border-b border-border bg-[#071221] py-16 text-white sm:py-20">
+      <div className="absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_85%_15%,rgba(255,122,0,0.28),transparent_28%),radial-gradient(circle_at_10%_80%,rgba(37,99,235,0.35),transparent_32%)]" />
+      <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:42px_42px]" />
       <div className="container-site relative">
         <Breadcrumb className="mb-7">
-          <BreadcrumbList>
-            <BreadcrumbItem><BreadcrumbLink asChild><Link href="/">Home</Link></BreadcrumbLink></BreadcrumbItem>
+          <BreadcrumbList className="text-blue-100/80">
+            <BreadcrumbItem><BreadcrumbLink asChild><Link href="/" className="hover:text-white">Home</Link></BreadcrumbLink></BreadcrumbItem>
             {breadcrumbs.map((item) => (
               <BreadcrumbItem key={item.label}>
-                <BreadcrumbSeparator />
-                {item.href ? <BreadcrumbLink asChild><Link href={item.href}>{item.label}</Link></BreadcrumbLink> : <BreadcrumbPage>{item.label}</BreadcrumbPage>}
+                <BreadcrumbSeparator className="text-blue-200/50" />
+                {item.href ? <BreadcrumbLink asChild><Link href={item.href} className="hover:text-white">{item.label}</Link></BreadcrumbLink> : <BreadcrumbPage className="text-white">{item.label}</BreadcrumbPage>}
               </BreadcrumbItem>
             ))}
           </BreadcrumbList>
         </Breadcrumb>
-        {eyebrow && <p className="mb-3 text-sm font-bold tracking-[0.18em] text-secondary uppercase">{eyebrow}</p>}
-        <h1 className="max-w-4xl font-heading text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{title}</h1>
-        {description && <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">{description}</p>}
+        {eyebrow && <p className="mb-3 text-sm font-bold tracking-[0.2em] text-orange-300 uppercase">{eyebrow}</p>}
+        <h1 className="max-w-4xl font-heading text-4xl leading-tight font-bold tracking-[-0.03em] text-balance sm:text-5xl lg:text-6xl">{title}</h1>
+        {description && <p className="mt-5 max-w-2xl text-base leading-8 text-blue-100/90 sm:text-lg">{description}</p>}
       </div>
     </section>
   );
