@@ -116,14 +116,20 @@ export default function Home() {
             <AnimatedSection className="order-2 lg:order-1">
               <div className="relative">
                 <div className="absolute -inset-3 rotate-2 rounded-[2.2rem] bg-gradient-to-br from-accent/30 to-primary/20" />
-                <div className="relative overflow-hidden rounded-[2rem]">
+                <div className="relative overflow-hidden rounded-[2rem] shadow-[0_24px_60px_rgba(15,76,129,0.18)] ring-1 ring-[#0F4C81]/10">
                   <NextImage
-                    src="/images/beyond-curriculum.jpg"
-                    alt="Hands-on learning beyond the curriculum"
+                    src="/images/move-beyond-curriculum.jpg"
+                    alt="Hands-on STEM learning beyond the curriculum"
                     width={1000}
                     height={800}
                     className="aspect-[5/4] w-full object-cover"
                   />
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0F4C81] via-[#0F4C81]/50 to-transparent p-5 sm:p-7">
+                    <p className="font-heading text-lg font-semibold text-white sm:text-xl">
+                      Learn beyond the curriculum
+                    </p>
+                    <p className="mt-1 text-sm text-orange-200">Projects · Skills · Real-world application</p>
+                  </div>
                 </div>
               </div>
             </AnimatedSection>
