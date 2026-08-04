@@ -224,9 +224,7 @@ export default function Home() {
             <h2 className="mt-5 font-heading text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Testimonials</h2>
           </AnimatedSection>
           <AnimatedSection delay={0.1} className="mt-12">
-            <div className="[&_.surface]:border-white/10 [&_.surface]:bg-white/5 [&_.surface]:text-white [&_.surface]:shadow-none [&_blockquote]:text-white [&_figcaption]:border-white/10 [&_span]:text-blue-100">
               <TestimonialsSlider items={HOME_TESTIMONIALS} />
-            </div>
           </AnimatedSection>
         </div>
       </section>
