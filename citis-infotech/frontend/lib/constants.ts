@@ -260,12 +260,12 @@ export const HOME_TESTIMONIALS = [
 ] as const;
 
 export const HOME_CLIENTS = [
-  "University Partners",
-  "School Networks",
-  "Industry Partners",
-  "Skill Missions",
-  "Centres of Excellence",
-  "Vocational Institutes",
+  { name: "University Partners", logo: "/images/clients/university-partners.svg" },
+  { name: "School Networks", logo: "/images/clients/school-networks.svg" },
+  { name: "Industry Partners", logo: "/images/clients/industry-partners.svg" },
+  { name: "Skill Missions", logo: "/images/clients/skill-missions.svg" },
+  { name: "Centres of Excellence", logo: "/images/clients/centres-of-excellence.svg" },
+  { name: "Vocational Institutes", logo: "/images/clients/vocational-institutes.svg" },
 ] as const;
 
 /** Exact Why Choose Us points from the CITIS wireframe. */
