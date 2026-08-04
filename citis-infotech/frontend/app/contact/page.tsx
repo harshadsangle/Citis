@@ -40,11 +40,13 @@ export default function ContactPage() {
                           {office.address}
                         </p>
                         <a
-                          href={`tel:${office.phone.replace(/\s/g, "")}`}
+                          href={SITE_CONFIG.whatsappUrl}
+                          target="_blank"
+                          rel="noreferrer"
                           className="flex items-center gap-3 hover:text-primary"
                         >
                           <Phone className="size-4 text-primary" />
-                          {office.phone}
+                          {office.phone} (WhatsApp)
                         </a>
                         <a href={`mailto:${office.email}`} className="flex items-center gap-3 hover:text-primary">
                           <Mail className="size-4 text-primary" />
@@ -65,8 +67,13 @@ export default function ContactPage() {
               </p>
               <p>
                 Helpline:{" "}
-                <a className="font-medium text-primary" href={`tel:${SITE_CONFIG.phone.replace(/\s/g, "")}`}>
-                  {SITE_CONFIG.phone}
+                <a
+                  className="font-medium text-primary"
+                  href={SITE_CONFIG.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {SITE_CONFIG.phone} (WhatsApp)
                 </a>
               </p>
             </AnimatedSection>
