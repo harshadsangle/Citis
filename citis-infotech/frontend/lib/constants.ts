@@ -1,12 +1,16 @@
 import {
   Award,
   BriefcaseBusiness,
+  Compass,
   GraduationCap,
+  Handshake,
   Lightbulb,
   Newspaper,
   Rocket,
   School,
+  ShieldCheck,
   Sparkles,
+  Users,
   Wrench,
 } from "lucide-react";
 
@@ -21,12 +25,12 @@ export const SITE_CONFIG = {
   tagline: "Inspired by Excellence and Innovation",
 } as const;
 
-/** Header nav: Home is via brand logo; Careers & Future Academy are not header tabs. */
+/** Header: no Home / Careers / Partner / Future Academy tabs. About before Contact. */
 export const NAV_LINKS = [
   { label: "Engagements", href: "/engagements", megaMenu: "engagements" },
   { label: "Products", href: "/products", megaMenu: "products" },
   { label: "Highlights", href: "/highlights", megaMenu: "highlights" },
-  { label: "About", href: "/about" },
+  { label: "About", href: "/about", megaMenu: "about" },
   { label: "Contact", href: "/contact" },
 ] as const;
 
@@ -43,84 +47,119 @@ export const MEGA_MENUS = {
       {
         title: "University Solutions",
         href: "/engagements/university",
-        description: "Ways to collaborate, domain expertise, progression model, IILP.",
+        description: "Ways to Collaborate, Domain Expertise, Progression Model, IILP.",
         icon: GraduationCap,
       },
       {
         title: "School Solutions",
         href: "/engagements/school",
-        description: "Tomorrow’s Schools, ICT Integration, STEM Education.",
+        description: "Tomorrow’s Schools, ICT Integration, STEM Education Solution.",
         icon: School,
       },
       {
         title: "Vocational Education",
         href: "/engagements/vocational",
-        description: "Skill pathways aligned to employability.",
+        description: "Vocational education pathways.",
         icon: Wrench,
       },
       {
         title: "Centre of Excellence",
         href: "/engagements/centre-of-excellence",
-        description: "Centre of Excellence and services offered.",
+        description: "Centre of Excellence and Services offered by Us.",
         icon: Award,
       },
       {
-        title: "Placements & Internships",
+        title: "Placements and Internships",
         href: "/engagements/placements",
-        description: "Industry readiness and career outcomes.",
+        description: "Placements and internships.",
         icon: BriefcaseBusiness,
       },
     ],
   },
   products: {
     eyebrow: "Products",
-    title: "Purpose-built academies for next-gen skills",
+    title: "CITIS academies",
     featured: {
       label: "View all products",
       href: "/products",
-      description: "AI, app development, and entrepreneurship programs.",
+      description: "AI Future Academy, AppWizz Academy, MoxieMind Entrepreneurship Academy.",
     },
     items: [
       {
         title: "AI Future Academy",
         href: "/products/ai-future-academy",
-        description: "Practical AI, ML, and intelligent systems learning.",
+        description: "AI Future Academy",
         icon: Sparkles,
       },
       {
         title: "AppWizz Academy",
         href: "/products/appwizz-academy",
-        description: "Full-stack and mobile app development pathways.",
+        description: "AppWizz Academy",
         icon: Rocket,
       },
       {
         title: "MoxieMind Entrepreneurship Academy",
         href: "/products/moxiemind",
-        description: "Entrepreneurship, innovation, and venture building.",
+        description: "MoxieMind Entrepreneurship Academy",
         icon: Lightbulb,
       },
     ],
   },
   highlights: {
     eyebrow: "Highlights",
-    title: "Case studies and blogs",
+    title: "Case Studies and Blogs",
     featured: {
       label: "See all highlights",
       href: "/highlights",
-      description: "Case studies and blogs from campuses and industry.",
+      description: "Case Studies and Blogs.",
     },
     items: [
       {
         title: "Case Studies",
         href: "/highlights/case-studies",
-        description: "Institutional outcomes and programme impact.",
+        description: "Case Studies",
         icon: Rocket,
       },
       {
         title: "Blogs",
         href: "/highlights/blogs",
-        description: "Perspectives on EdTech, skills, and pedagogy.",
+        description: "Blogs",
         icon: Newspaper,
+      },
+    ],
+  },
+  about: {
+    eyebrow: "About",
+    title: "About CITIS InfoTech",
+    featured: {
+      label: "About Us",
+      href: "/about",
+      description: "About Us, Vision and Mission, Quality Policy, Our Associations.",
+    },
+    items: [
+      {
+        title: "About Us",
+        href: "/about",
+        description: "About Us",
+        icon: Users,
+      },
+      {
+        title: "Vision and Mission",
+        href: "/about/vision-mission",
+        description: "Vision and Mission",
+        icon: Compass,
+      },
+      {
+        title: "Quality Policy",
+        href: "/about/quality-policy",
+        description: "Quality Policy",
+        icon: ShieldCheck,
+      },
+      {
+        title: "Our Associations",
+        href: "/about/associations",
+        description: "Our Associations",
+        icon: Handshake,
       },
     ],
   },
@@ -160,9 +199,12 @@ export const FOOTER_LINKS = [
   {
     title: "Company",
     links: [
-      { label: "About us", href: "/about" },
-      { label: "Careers", href: "/careers" },
+      { label: "About Us", href: "/about" },
+      { label: "Vision and Mission", href: "/about/vision-mission" },
+      { label: "Quality Policy", href: "/about/quality-policy" },
+      { label: "Our Associations", href: "/about/associations" },
       { label: "Contact", href: "/contact" },
+      { label: "Careers", href: "/careers" },
     ],
   },
   {
@@ -172,14 +214,17 @@ export const FOOTER_LINKS = [
       { label: "School Solutions", href: "/engagements/school" },
       { label: "Vocational Education", href: "/engagements/vocational" },
       { label: "Centre of Excellence", href: "/engagements/centre-of-excellence" },
+      { label: "Placements and Internships", href: "/engagements/placements" },
     ],
   },
   {
-    title: "Learn",
+    title: "Products",
     links: [
       { label: "AI Future Academy", href: "/products/ai-future-academy" },
       { label: "AppWizz Academy", href: "/products/appwizz-academy" },
+      { label: "MoxieMind Entrepreneurship Academy", href: "/products/moxiemind" },
       { label: "CITIS Future Academy", href: "/future-academy" },
+      { label: "Case Studies", href: "/highlights/case-studies" },
       { label: "Blogs", href: "/highlights/blogs" },
     ],
   },
@@ -187,40 +232,38 @@ export const FOOTER_LINKS = [
 
 export const HOME_TESTIMONIALS = [
   {
-    name: "Dr. Ananya Rao",
-    role: "Dean of Engineering",
-    company: "National Institute of Technology",
+    name: "Partner Institution",
+    role: "Academic Leader",
+    company: "Higher Education",
     content:
-      "CITIS transformed our curriculum into an industry-aligned learning journey. Students graduate with portfolios, not just transcripts.",
+      "CITIS InfoTech programs help our students gain industry-aligned skills and career readiness.",
     rating: 5,
   },
   {
-    name: "Rajesh Menon",
-    role: "HR Director",
-    company: "TechVista Global",
+    name: "Industry Partner",
+    role: "Talent Lead",
+    company: "Technology Sector",
     content:
-      "Interns from CITIS programs arrive ready to contribute. The IILP model bridges the gap we used to spend months closing.",
+      "Students from CITIS programs demonstrate practical competencies and zero-day deployment readiness.",
     rating: 5,
   },
   {
-    name: "Priya Sharma",
+    name: "School Partner",
     role: "Principal",
-    company: "Horizon International School",
+    company: "K–12 Institution",
     content:
-      "Their STEM and ICT programs made technology feel accessible and exciting for every learner in our school.",
+      "CITIS school solutions support ICT integration and STEM education for future-ready learners.",
     rating: 5,
   },
 ] as const;
 
 export const HOME_CLIENTS = [
-  "NIT Consortium",
-  "Horizon Schools",
-  "TechVista",
-  "EduBridge Trust",
-  "State Skill Mission",
-  "InnoLabs",
-  "CampusWorks",
-  "FutureSkills Hub",
+  "University Partners",
+  "School Networks",
+  "Industry Partners",
+  "Skill Missions",
+  "Centres of Excellence",
+  "Vocational Institutes",
 ] as const;
 
 /** Exact Why Choose Us points from the CITIS wireframe. */

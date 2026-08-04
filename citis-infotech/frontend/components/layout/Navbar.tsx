@@ -107,7 +107,7 @@ export function Navbar() {
                     </Link>
                     {menu && (
                       <div className="ml-4 grid border-l border-border pl-3">
-                        {MEGA_MENUS[menu].items.slice(0, 4).map((child) => (
+                        {MEGA_MENUS[menu].items.map((child) => (
                           <Link key={child.href} href={child.href} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-primary">{child.title}</Link>
                         ))}
                       </div>

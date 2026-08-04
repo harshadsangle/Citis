@@ -3,7 +3,8 @@ import { SITE_CONFIG } from "@/lib/constants";
 import { BLOG_POSTS, CASE_STUDIES, JOBS } from "@/lib/site-content";
 
 const routes = [
-  "", "/about", "/engagements", "/engagements/university", "/engagements/school",
+  "", "/about", "/about/vision-mission", "/about/quality-policy", "/about/associations",
+  "/engagements", "/engagements/university", "/engagements/school",
   "/engagements/vocational", "/engagements/centre-of-excellence", "/engagements/placements",
   "/products", "/products/ai-future-academy", "/products/appwizz-academy", "/products/moxiemind",
   "/partner", "/highlights", "/highlights/blogs", "/highlights/case-studies",
