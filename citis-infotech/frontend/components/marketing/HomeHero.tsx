@@ -64,27 +64,6 @@ export function HomeHero({
             </span>
           </h1>
           <p className="mt-7 max-w-xl text-lg leading-8 text-blue-50/90 sm:text-xl">{support}</p>
-          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Button
-              asChild
-              variant="accent"
-              size="lg"
-              className="h-13 rounded-full px-8 text-base shadow-[0_12px_40px_rgba(255,122,0,0.35)]"
-            >
-              <Link href="/future-academy">
-                CITIS Future Academy
-                <ArrowRight />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="h-13 rounded-full border-white/30 bg-white/5 px-8 text-base text-white backdrop-blur hover:bg-white/15 hover:text-white"
-            >
-              <Link href="/engagements">Explore Engagements</Link>
-            </Button>
-          </div>
         </motion.div>
       </motion.div>
 
