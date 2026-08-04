@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronDown, Menu, Moon, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { CitisLogo } from "@/components/layout/CitisLogo";
 import { MegaMenu, type MegaMenuKey } from "@/components/layout/MegaMenu";
 import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { HighContrastToggle } from "@/components/shared/HighContrastToggle";
@@ -14,14 +15,7 @@ import { MEGA_MENUS, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 function Brand() {
-  return (
-    <Link href="/" className="group flex items-center gap-2.5" aria-label="CITIS InfoTech home">
-      <span className="brand-gradient grid size-10 place-items-center rounded-lg font-heading text-lg font-bold text-white shadow-sm">C</span>
-      <span className="font-heading text-lg font-semibold tracking-tight">
-        CITIS <span className="text-primary">InfoTech</span>
-      </span>
-    </Link>
-  );
+  return <CitisLogo className="text-[0.95rem] sm:text-[1.05rem]" />;
 }
 
 export function Navbar() {

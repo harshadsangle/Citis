@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { FaLinkedinIn, FaYoutube } from "react-icons/fa";
+import { CitisLogo } from "@/components/layout/CitisLogo";
 import { NewsletterForm } from "@/components/shared/NewsletterForm";
 import { FOOTER_LINKS, OFFICES, SITE_CONFIG, SOCIAL_LINKS } from "@/lib/constants";
 
@@ -11,13 +12,10 @@ export function Footer() {
     <footer className="border-t border-slate-700 bg-[#0b1424] text-slate-300">
       <div className="container-site py-14 sm:py-18">
         <div className="grid gap-12 border-b border-slate-700/80 pb-12 lg:grid-cols-[1.1fr_1fr]">
-          <div>
-            <Link href="/" className="inline-flex items-center gap-3 text-white">
-              <span className="brand-gradient grid size-11 place-items-center rounded-lg font-heading text-xl font-bold">C</span>
-              <span className="font-heading text-xl font-semibold">CITIS InfoTech</span>
-            </Link>
-            <p className="mt-5 max-w-lg text-sm leading-7 text-slate-400">{SITE_CONFIG.description}</p>
-          </div>
+            <div>
+              <CitisLogo className="text-[1.05rem] text-white" />
+              <p className="mt-5 max-w-lg text-sm leading-7 text-slate-400">{SITE_CONFIG.description}</p>
+            </div>
           <div className="rounded-xl border border-slate-700 bg-slate-800/40 p-5 sm:p-6">
             <h2 className="font-heading text-lg font-semibold text-white">Ideas worth building on</h2>
             <p className="mt-1.5 text-sm text-slate-400">Monthly technology insights, practical and concise.</p>
