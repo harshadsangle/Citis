@@ -48,12 +48,6 @@ export default function Home() {
             <p className="mt-8 text-base leading-8 text-muted-foreground sm:text-lg sm:leading-9">
               {HOME_COPY.excellence.body}
             </p>
-            <Button asChild variant="accent" className="mt-10 rounded-full px-7">
-              <Link href="/future-academy">
-                CITIS Future Academy
-                <ArrowRight />
-              </Link>
-            </Button>
           </AnimatedSection>
           <AnimatedSection delay={0.12} className="relative">
             <div className="absolute -top-8 -left-8 size-40 rounded-full bg-accent/20 blur-3xl" />
