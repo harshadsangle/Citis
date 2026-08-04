@@ -84,7 +84,7 @@ export function FloatingBadge({
   className,
   delay = 0,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
   delay?: number;
 }) {
