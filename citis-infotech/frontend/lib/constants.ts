@@ -22,6 +22,8 @@ export const SITE_CONFIG = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.citisinfotech.com",
   email: "info@citisinfotech.in",
   phone: "+91 7204992221",
+  phoneE164: "917204992221",
+  whatsappUrl: "https://wa.me/917204992221",
   tagline: "Inspired by Excellence and Innovation",
 } as const;
 

@@ -31,7 +31,7 @@ export function Footer() {
               </div>
             ))}
             <div className="space-y-2 text-sm">
-              <a href={`tel:${SITE_CONFIG.phone.replace(/\s/g, "")}`} className="flex items-center gap-2 hover:text-white"><Phone className="size-4" />{SITE_CONFIG.phone}</a>
+              <a href={SITE_CONFIG.whatsappUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-white"><Phone className="size-4" />{SITE_CONFIG.phone} (WhatsApp)</a>
               <a href={`mailto:${SITE_CONFIG.email}`} className="flex items-center gap-2 hover:text-white"><Mail className="size-4" />{SITE_CONFIG.email}</a>
             </div>
           </div>
