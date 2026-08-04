@@ -9,7 +9,6 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { MegaMenu, type MegaMenuKey } from "@/components/layout/MegaMenu";
-import { GlobalSearch } from "@/components/shared/GlobalSearch";
 import { HighContrastToggle } from "@/components/shared/HighContrastToggle";
 import { MEGA_MENUS, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -74,7 +73,6 @@ export function Navbar() {
           })}
         </nav>
         <div className="flex items-center gap-2">
-          <GlobalSearch className="hidden md:block" />
           <HighContrastToggle />
           <Button
             variant="ghost"
