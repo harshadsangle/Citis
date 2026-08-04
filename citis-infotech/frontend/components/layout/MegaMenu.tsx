@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { MEGA_MENUS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -9,41 +10,53 @@ export type MegaMenuKey = keyof typeof MEGA_MENUS;
 
 export function MegaMenu({ menu, className }: { menu: MegaMenuKey; className?: string }) {
   const content = MEGA_MENUS[menu];
+  const pathname = usePathname();
 
   return (
-    <div className={cn("w-[min(960px,calc(100vw-2rem))] rounded-xl border border-border bg-card p-3 text-card-foreground shadow-2xl", className)}>
-      <div className="grid grid-cols-[0.72fr_1.8fr] gap-3">
-        <Link
-          href={content.featured.href}
-          className="brand-gradient group flex min-h-72 flex-col justify-between overflow-hidden rounded-lg p-7 text-white"
-        >
-          <div>
-            <p className="mb-3 text-xs font-bold tracking-[0.16em] text-blue-100 uppercase">{content.eyebrow}</p>
-            <h3 className="font-heading text-2xl leading-tight font-semibold">{content.title}</h3>
-            <p className="mt-4 text-sm leading-6 text-blue-100">{content.featured.description}</p>
-          </div>
-          <span className="inline-flex items-center gap-2 text-sm font-semibold">
-            {content.featured.label}
-            <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-          </span>
-        </Link>
-        <div className="grid grid-cols-2 gap-1 p-2">
-          {content.items.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link key={item.href} href={item.href} className="group flex gap-3 rounded-lg p-4 transition-colors hover:bg-muted">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:-translate-y-0.5">
-                  <Icon className="size-5" />
+    <div
+      className={cn(
+        "min-w-[260px] overflow-hidden rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
+        className,
+      )}
+    >
+      <p className="px-3 pt-2 pb-1 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
+        {content.eyebrow}
+      </p>
+      <ul className="flex flex-col gap-1">
+        {content.items.map((item) => {
+          const Icon = item.icon;
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className={cn(
+                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                  active
+                    ? "bg-[#0F4C81] text-white"
+                    : "text-[#0b1524] hover:bg-[#0F4C81]/08 hover:text-[#0F4C81]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid size-9 shrink-0 place-items-center rounded-md",
+                    active ? "bg-white/15 text-orange-300" : "bg-[#0F4C81]/10 text-[#0F4C81]",
+                  )}
+                >
+                  <Icon className="size-4" />
                 </span>
-                <span>
-                  <span className="block font-heading text-sm font-semibold transition-colors group-hover:text-primary">{item.title}</span>
-                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{item.description}</span>
-                </span>
+                <span className="flex-1 font-heading text-sm font-semibold">{item.title}</span>
+                <ArrowRight
+                  className={cn(
+                    "size-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100",
+                    active && "opacity-80",
+                  )}
+                />
               </Link>
-            );
-          })}
-        </div>
-      </div>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

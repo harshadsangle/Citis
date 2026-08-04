@@ -48,10 +48,25 @@ export function Navbar() {
             const active = pathname.startsWith(item.href);
             const menu = "megaMenu" in item ? item.megaMenu : undefined;
             return (
-              <div key={item.href} className="flex h-full items-center" onMouseEnter={() => setOpenMenu(menu ?? null)}>
-                <Link href={item.href} className={cn("relative flex h-10 items-center gap-1 rounded-full px-3.5 text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary", active && "bg-primary/10 text-primary")}>
+              <div
+                key={item.href}
+                className="relative flex h-full items-center"
+                onMouseEnter={() => setOpenMenu(menu ?? null)}
+              >
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "relative flex h-10 items-center gap-1 rounded-full px-3.5 text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary",
+                    active && "bg-primary/10 text-primary",
+                    openMenu === menu && menu && "bg-primary/10 text-primary",
+                  )}
+                >
                   {item.label}
-                  {menu && <ChevronDown className={cn("size-3.5 transition-transform", openMenu === menu && "rotate-180")} />}
+                  {menu && (
+                    <ChevronDown
+                      className={cn("size-3.5 transition-transform", openMenu === menu && "rotate-180")}
+                    />
+                  )}
                 </Link>
                 {menu && (
                   <AnimatePresence>
@@ -61,7 +76,7 @@ export function Navbar() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 6 }}
                         transition={{ duration: 0.18 }}
-                        className="absolute top-[calc(100%-0.35rem)] left-1/2 -translate-x-1/2 pt-3"
+                        className="absolute top-full left-0 z-50 pt-2"
                       >
                         <MegaMenu menu={menu} />
                       </motion.div>
