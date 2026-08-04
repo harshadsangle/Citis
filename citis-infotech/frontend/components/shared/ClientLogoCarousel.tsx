@@ -66,8 +66,8 @@ export function ClientLogoCarousel({ clients, logos }: ClientLogoCarouselProps) 
       >
         {loop.map((name, index) => (
           <SwiperSlide key={`${name}-${index}`}>
-            <div className="flex h-28 items-center justify-center rounded-2xl border border-border/80 bg-gradient-to-br from-white via-slate-50 to-[#eef5fb] px-5 shadow-[0_10px_30px_rgba(15,76,129,0.06)] transition hover:-translate-y-1 hover:border-primary/30 dark:from-card dark:via-slate-900 dark:to-slate-950">
-              <span className="bg-gradient-to-r from-primary to-[#1d6bb8] bg-clip-text text-center font-heading text-sm font-bold tracking-wide text-transparent sm:text-base">
+            <div className="flex h-28 items-center justify-center rounded-2xl border border-[#0F4C81]/15 bg-white px-5 shadow-[0_8px_28px_rgba(15,76,129,0.08)] transition hover:-translate-y-1 hover:border-[#FF7A00]/40 hover:shadow-[0_12px_32px_rgba(255,122,0,0.12)]">
+              <span className="text-center font-heading text-sm font-bold tracking-wide text-[#0F4C81] sm:text-base">
                 {name}
               </span>
             </div>

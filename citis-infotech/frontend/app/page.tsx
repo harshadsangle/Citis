@@ -229,16 +229,18 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden py-16 sm:py-24">
-        <AmbientBackdrop tone="light" />
-        <div className="container-site">
+      <section className="relative overflow-hidden border-t border-[#0F4C81]/10 bg-[#f7fafc] py-16 sm:py-24">
+        <div className="absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_20%_20%,rgba(255,122,0,0.08),transparent_35%),radial-gradient(circle_at_80%_80%,rgba(15,76,129,0.08),transparent_40%)]" />
+        <div className="container-site relative">
           <AnimatedSection className="text-center">
             <p className="section-eyebrow mx-auto justify-center">
               <span className="h-px w-8 bg-accent" />
               Trusted partners
               <span className="h-px w-8 bg-accent" />
             </p>
-            <h2 className="mt-5 font-heading text-4xl font-bold tracking-[-0.03em] sm:text-5xl">Key Clientele</h2>
+            <h2 className="mt-5 font-heading text-4xl font-bold tracking-[-0.03em] text-[#0b1524] sm:text-5xl">
+              Key Clientele
+            </h2>
           </AnimatedSection>
           <AnimatedSection delay={0.08} className="mt-12">
             <ClientLogoCarousel logos={HOME_CLIENTS} />
