@@ -47,7 +47,7 @@ export function Navbar() {
         <Brand />
         <nav className="hidden h-full items-center gap-0.5 lg:flex" aria-label="Primary navigation" onMouseLeave={() => setOpenMenu(null)}>
           {NAV_LINKS.map((item) => {
-            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const active = pathname.startsWith(item.href);
             const menu = "megaMenu" in item ? item.megaMenu : undefined;
             return (
               <div key={item.href} className="flex h-full items-center" onMouseEnter={() => setOpenMenu(menu ?? null)}>
@@ -86,8 +86,8 @@ export function Navbar() {
           >
             {mounted && resolvedTheme === "dark" ? <Sun /> : <Moon />}
           </Button>
-          <Button asChild className="hidden xl:inline-flex">
-            <Link href="/contact">Start a conversation <ArrowRight /></Link>
+          <Button asChild className="hidden xl:inline-flex" variant="accent">
+            <Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link>
           </Button>
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen((value) => !value)}>
             {mobileOpen ? <X /> : <Menu />}
@@ -115,7 +115,7 @@ export function Navbar() {
                   </div>
                 );
               })}
-              <Button asChild variant="accent" className="mt-4"><Link href="/contact">Start a conversation <ArrowRight /></Link></Button>
+              <Button asChild variant="accent" className="mt-4"><Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link></Button>
             </nav>
           </motion.div>
         )}
