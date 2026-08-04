@@ -1,5 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
-const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
 
 export class ApiError extends Error {
   constructor(
@@ -18,14 +17,37 @@ type FetchOptions = RequestInit & {
   token?: string;
 };
 
+function readCookie(name: string) {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+function sessionId() {
+  if (typeof window === "undefined") return "";
+  const key = "citis_session_id";
+  let value = window.localStorage.getItem(key);
+  if (!value) {
+    value = crypto.randomUUID();
+    window.localStorage.setItem(key, value);
+  }
+  return value;
+}
+
 async function request<T>(baseUrl: string, path: string, options: FetchOptions = {}) {
   const { revalidate, tags, token, headers, ...init } = options;
+  const method = (init.method || "GET").toUpperCase();
+  const csrf = typeof document !== "undefined" ? readCookie("citis_csrf") : "";
+
   const response = await fetch(`${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`, {
     ...init,
+    credentials: "include",
     headers: {
       Accept: "application/json",
       ...(init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "X-Session-Id": sessionId(),
+      ...(csrf && !["GET", "HEAD"].includes(method) ? { "X-CSRF-Token": csrf } : {}),
       ...headers,
     },
     next:
@@ -57,11 +79,9 @@ export function apiFetch<T>(path: string, options?: FetchOptions) {
   return request<T>(API_URL, path, options);
 }
 
+/** @deprecated Strapi removed from required stack — use Express APIs. */
 export function strapiFetch<T>(path: string, options?: FetchOptions) {
-  return request<T>(STRAPI_URL, path, {
-    token: process.env.STRAPI_API_TOKEN,
-    ...options,
-  });
+  return request<T>(API_URL, path, options);
 }
 
-export { API_URL, STRAPI_URL };
+export { API_URL };

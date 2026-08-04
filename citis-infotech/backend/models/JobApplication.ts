@@ -1,8 +1,16 @@
 import { Document, Schema, Types, model } from 'mongoose';
 
 export interface IJobApplication extends Document {
-  career: Types.ObjectId; name: string; email: string; phone?: string; resume: string;
-  coverLetter?: string; status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected';
+  career: Types.ObjectId;
+  name: string;
+  email: string;
+  phone?: string;
+  resume: string;
+  coverLetter?: string;
+  coverLetterFile?: string;
+  skills: string[];
+  status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected';
+  adminNotes?: string;
 }
 
 const schema = new Schema<IJobApplication>({
@@ -12,7 +20,10 @@ const schema = new Schema<IJobApplication>({
   phone: { type: String, trim: true, maxlength: 30 },
   resume: { type: String, required: true },
   coverLetter: { type: String, maxlength: 5000 },
+  coverLetterFile: String,
+  skills: [{ type: String, trim: true }],
   status: { type: String, enum: ['pending', 'reviewed', 'shortlisted', 'rejected'], default: 'pending', index: true },
+  adminNotes: { type: String, maxlength: 2000 },
 }, { timestamps: true });
 
 schema.index({ career: 1, email: 1 }, { unique: true });

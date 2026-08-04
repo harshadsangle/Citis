@@ -41,6 +41,7 @@ export const applyJobSchema = z.object({
   linkedIn: z.string().url().optional().or(z.literal("")),
   portfolio: z.string().url().optional().or(z.literal("")),
   coverLetter: z.string().max(3000).optional(),
+  skills: z.string().max(500).optional(),
   resume: z
     .custom<File>((value) => typeof File !== "undefined" && value instanceof File, "Resume is required")
     .refine((file) => file.size <= 5 * 1024 * 1024, "Resume must be 5MB or smaller")

@@ -61,8 +61,19 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   });
   const onSubmit = async (values: ApplyJobInput) => {
     setServerError("");
-    try { await careerService.apply(values); setDone(true); }
-    catch (error) { setServerError(error instanceof Error ? error.message : "We could not submit your application. Please try again."); }
+    try {
+      await careerService.apply(jobId, {
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        resume: values.resume,
+        coverLetter: values.coverLetter,
+        skills: values.skills,
+      });
+      setDone(true);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "We could not submit your application. Please try again.");
+    }
   };
   if (done) return <FormSuccess title="Application submitted" copy={`Thank you for applying for ${jobTitle}. Our talent team will be in touch if your experience matches the role.`} />;
   return (
@@ -76,6 +87,7 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
       </div>
       <div><Label htmlFor="apply-portfolio">Portfolio</Label><Input id="apply-portfolio" className="mt-2" type="url" placeholder="https://" {...register("portfolio")} />{message(errors.portfolio?.message)}</div>
       <div><Label htmlFor="apply-cover">Why CITIS InfoTech?</Label><Textarea id="apply-cover" className="mt-2 min-h-28" {...register("coverLetter")} />{message(errors.coverLetter?.message)}</div>
+      <div><Label htmlFor="apply-skills">Skills</Label><Input id="apply-skills" className="mt-2" placeholder="React, Node.js, Instructional design…" {...register("skills")} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message)}</div>
       <div><Label htmlFor="apply-resume">Résumé * <span className="font-normal text-muted-foreground">(PDF, DOC, DOCX; max 5 MB)</span></Label><label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label><Input id="apply-resume" className="sr-only" type="file" accept=".pdf,.doc,.docx" onChange={(event) => setValue("resume", event.target.files?.[0] as File, { shouldValidate: true })} />{message(errors.resume?.message)}</div>
       {serverError && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button type="submit" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <><LoaderCircle className="animate-spin" />Submitting…</> : <>Submit application<Send /></>}</Button>

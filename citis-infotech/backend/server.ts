@@ -8,6 +8,7 @@ import morgan from 'morgan';
 import { connectDB, disconnectDB } from './config/db';
 import { AppError, errorHandler, notFound } from './middleware/errorHandler';
 import { generalLimiter } from './middleware/rateLimiter';
+import { csrfProtection } from './middleware/csrf';
 import { getUploadsRoot } from './middleware/upload';
 import routes from './routes';
 
@@ -26,6 +27,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Session-Id'],
 }));
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
@@ -33,6 +35,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use('/api', generalLimiter);
+app.use('/api/v1', csrfProtection);
 
 // Local disk storage for media, resumes, and images (no paid CDN required)
 app.use(

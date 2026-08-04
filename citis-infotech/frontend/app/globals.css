@@ -174,3 +174,26 @@ button, a, input, textarea, select {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* High-contrast accessibility mode (local toggle, no external a11y service) */
+html.high-contrast {
+  --background: #ffffff;
+  --foreground: #000000;
+  --card: #ffffff;
+  --muted: #f3f3f3;
+  --muted-foreground: #111111;
+  --border: #000000;
+  --primary: #0000aa;
+  --accent: #aa4400;
+}
+html.high-contrast body {
+  letter-spacing: 0.01em;
+}
+html.high-contrast a:focus-visible,
+html.high-contrast button:focus-visible,
+html.high-contrast input:focus-visible,
+html.high-contrast select:focus-visible,
+html.high-contrast textarea:focus-visible {
+  outline: 3px solid #0000aa;
+  outline-offset: 3px;
+}

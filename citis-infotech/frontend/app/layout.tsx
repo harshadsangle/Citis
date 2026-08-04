@@ -6,6 +6,7 @@ import { ScrollProgress } from "@/components/layout/ScrollProgress";
 import { ServiceWorkerRegister } from "@/components/layout/ServiceWorkerRegister";
 import { ThemeProvider } from "@/components/layout/ThemeProvider";
 import { OfflineBanner } from "@/components/shared/OfflineBanner";
+import { AnalyticsTracker } from "@/components/shared/AnalyticsTracker";
 import { SITE_CONFIG } from "@/lib/constants";
 import { organizationJsonLd } from "@/lib/seo";
 import "./globals.css";
@@ -88,6 +89,7 @@ export default function RootLayout({
           <QueryProvider>
             <ScrollProgress />
             <OfflineBanner />
+            <AnalyticsTracker />
             <ConditionalShell>{children}</ConditionalShell>
             <ServiceWorkerRegister />
           </QueryProvider>
