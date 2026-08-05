@@ -1,12 +1,10 @@
 import NextImage from "next/image";
-import Link from "next/link";
-import { ArrowRight, Quote } from "lucide-react";
+import { Quote } from "lucide-react";
 import { HomeHero, PillarMarquee } from "@/components/marketing/HomeHero";
 import { AmbientBackdrop, WhyChooseIcon } from "@/components/marketing/HomeVisuals";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { ClientLogoCarousel } from "@/components/shared/ClientLogoCarousel";
 import { TestimonialsSlider } from "@/components/shared/TestimonialsSlider";
-import { Button } from "@/components/ui/button";
 import {
   HOME_CLIENTS,
   HOME_COPY,
@@ -172,12 +170,6 @@ export default function Home() {
             <p className="mt-8 text-base leading-8 text-blue-50 sm:text-lg sm:leading-9">
               {HOME_COPY.industryAcademia.body}
             </p>
-            <Button asChild variant="accent" className="mt-10 rounded-full px-7 shadow-lg shadow-orange-500/30">
-              <Link href="/engagements/university">
-                University Solutions
-                <ArrowRight />
-              </Link>
-            </Button>
           </AnimatedSection>
         </div>
       </section>
