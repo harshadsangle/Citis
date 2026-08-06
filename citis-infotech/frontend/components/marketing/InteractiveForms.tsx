@@ -103,7 +103,9 @@ export function LoginForm() {
     setServerError("");
     try {
       const response = await authService.login(values.email, values.password);
-      if (typeof window !== "undefined") (values.remember ? localStorage : sessionStorage).setItem("citis-token", response.data.token);
+      const token = response.data.accessToken || response.data.token;
+      if (!token) throw new Error("No access token returned");
+      if (typeof window !== "undefined") (values.remember ? localStorage : sessionStorage).setItem("citis-token", token);
       window.location.assign("/");
     } catch (error) { setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again."); }
   };

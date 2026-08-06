@@ -125,6 +125,7 @@ export interface CaseStudy extends BaseContent {
 
 export interface Contact {
   id?: ID;
+  _id?: string;
   name: string;
   email: string;
   phone?: string;
@@ -132,7 +133,10 @@ export interface Contact {
   subject?: string;
   message: string;
   consent?: boolean;
+  status?: "new" | "read" | "replied";
   createdAt?: string;
+  updatedAt?: string;
+  repliedAt?: string;
 }
 
 export interface Inquiry extends Contact {
@@ -173,7 +177,8 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
-  token: string;
+  token?: string;
+  accessToken?: string;
   refreshToken?: string;
 }
 

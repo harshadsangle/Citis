@@ -31,7 +31,7 @@ export const updateContact = asyncHandler(async (req, res) => {
   if (!['new', 'read', 'replied'].includes(status)) throw new AppError('Invalid status', 422);
   const contact = await Contact.findByIdAndUpdate(req.params.id, {
     status, ...(status === 'replied' ? { repliedAt: new Date() } : {}),
-  }, { new: true, runValidators: true });
+  }, { returnDocument: 'after', runValidators: true });
   if (!contact) throw new AppError('Contact not found', 404);
   return successResponse(res, contact, 'Contact updated');
 });

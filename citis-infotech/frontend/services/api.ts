@@ -24,6 +24,30 @@ export const contactService = {
       body: JSON.stringify(payload),
       revalidate: false,
     }),
+  list: (token: string, params?: { search?: string; status?: string; page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.set("search", params.search);
+    if (params?.status) query.set("status", params.status);
+    query.set("page", String(params?.page || 1));
+    query.set("limit", String(params?.limit || 50));
+    return apiFetch<ApiResponse<Contact[]> & { meta?: Record<string, unknown> }>(`/contacts?${query}`, {
+      token,
+      revalidate: false,
+    });
+  },
+  updateStatus: (token: string, id: string, status: "new" | "read" | "replied") =>
+    apiFetch<ApiResponse<Contact>>(`/contacts/${id}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ status }),
+      revalidate: false,
+    }),
+  remove: (token: string, id: string) =>
+    apiFetch<ApiResponse<null>>(`/contacts/${id}`, {
+      method: "DELETE",
+      token,
+      revalidate: false,
+    }),
   submitInquiry: (payload: Inquiry) =>
     apiFetch<ApiResponse<Inquiry>>("/inquiries", {
       method: "POST",
