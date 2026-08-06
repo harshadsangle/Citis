@@ -1,3 +1,5 @@
+import { IMPORTED_BLOG_POSTS } from "@/lib/imported-blog-posts";
+
 export type Article = {
   slug: string;
   title: string;
@@ -10,6 +12,7 @@ export type Article = {
 };
 
 export const BLOG_POSTS: Article[] = [
+  ...(IMPORTED_BLOG_POSTS as Article[]),
   {
     slug: "responsible-ai-campus-learning",
     title: "Building responsible AI literacy across the campus",
