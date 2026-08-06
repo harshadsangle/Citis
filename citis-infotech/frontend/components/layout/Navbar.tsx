@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ChevronDown, Menu, Moon, Sun, X } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { MegaMenu, type MegaMenuKey } from "@/components/layout/MegaMenu";
@@ -19,13 +18,10 @@ function Brand() {
 
 export function Navbar() {
   const pathname = usePathname();
-  const { resolvedTheme, setTheme } = useTheme();
   const [openMenu, setOpenMenu] = useState<MegaMenuKey | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => setMounted(true), []);
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
     onScroll();
@@ -99,14 +95,6 @@ export function Navbar() {
         </nav>
         <div className="flex items-center gap-2">
           <HighContrastToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Toggle color theme"
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-          >
-            {mounted && resolvedTheme === "dark" ? <Sun /> : <Moon />}
-          </Button>
           <Button asChild className="hidden rounded-full xl:inline-flex" variant="accent">
             <Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link>
           </Button>
