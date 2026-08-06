@@ -174,14 +174,23 @@ export const OFFICES = [
       "Plot No. 20, Office No. 201, ‘Vihaan’, Bramhavrunda Colony No. 2, Vishal Nagar, Pimple Nilakh, Pune 411027, Maharashtra, India",
     phone: "+91 7204992221",
     email: "info@citisinfotech.in",
+    lat: 18.5868,
+    lng: 73.7809,
   },
   {
     name: "Bengaluru Office",
     address: "4th Floor, HM Geneva House, Cunningham Road, Bangalore – 560052",
     phone: "+91 7204992221",
     email: "info@citisinfotech.in",
+    lat: 12.9864,
+    lng: 77.5953,
   },
 ] as const;
+
+/** Google Maps search / directions URL for an office address (no API key). */
+export function googleMapsUrl(address: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+}
 
 export const SOCIAL_LINKS = [
   { label: "LinkedIn", href: "https://www.linkedin.com/company/citis-infotech" },

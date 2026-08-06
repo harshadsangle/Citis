@@ -2,11 +2,13 @@ import { MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OfficeMapProps {
-  /** Latitude for the map marker (defaults to Bengaluru). */
+  /** Latitude for the map marker. */
   lat?: number;
-  /** Longitude for the map marker (defaults to Bengaluru). */
+  /** Longitude for the map marker. */
   lng?: number;
-  /** Zoom level for OpenStreetMap embed. */
+  /** Full address used for Google Maps search embed + open link. */
+  address?: string;
+  /** Zoom level for coordinate-based embeds. */
   zoom?: number;
   title?: string;
   addressLabel?: string;
@@ -14,20 +16,23 @@ interface OfficeMapProps {
 }
 
 /**
- * Free OpenStreetMap embed — no Google Maps API key or paid map service required.
+ * Google Maps embed — uses the public maps embed URL (no Maps Platform API key).
  */
 export function OfficeMap({
-  lat = 12.9716,
-  lng = 77.5946,
-  zoom = 14,
+  lat,
+  lng,
+  address,
+  zoom = 16,
   title = "CITIS InfoTech office location",
-  addressLabel = "CITIS InfoTech, Bengaluru",
+  addressLabel,
   className,
 }: OfficeMapProps) {
-  const delta = 0.04;
-  const bbox = `${lng - delta}%2C${lat - delta}%2C${lng + delta}%2C${lat + delta}`;
-  const embedSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
-  const openSrc = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=${zoom}/${lat}/${lng}`;
+  const query =
+    address?.trim() ||
+    (lat !== undefined && lng !== undefined ? `${lat},${lng}` : "Bengaluru, India");
+  const embedSrc = `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=${zoom}&output=embed`;
+  const openSrc = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  const label = addressLabel || address || query;
 
   return (
     <div className={cn("overflow-hidden rounded-xl border border-border bg-muted", className)}>
@@ -36,20 +41,21 @@ export function OfficeMap({
         src={embedSrc}
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
-        className="h-96 w-full border-0"
+        allowFullScreen
+        className="h-72 w-full border-0 sm:h-80"
       />
       <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-4 py-3 text-sm">
-        <p className="flex items-center gap-2 text-muted-foreground">
+        <p className="flex min-w-0 items-center gap-2 text-muted-foreground">
           <MapPin className="size-4 shrink-0 text-primary" />
-          {addressLabel}
+          <span className="truncate">{label}</span>
         </p>
         <a
           href={openSrc}
           target="_blank"
           rel="noreferrer"
-          className="font-medium text-primary hover:underline"
+          className="shrink-0 font-medium text-primary hover:underline"
         >
-          Open map
+          Open in Google Maps
         </a>
       </div>
     </div>

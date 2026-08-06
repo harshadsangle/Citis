@@ -3,7 +3,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import { FaLinkedinIn, FaYoutube } from "react-icons/fa";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { NewsletterForm } from "@/components/shared/NewsletterForm";
-import { FOOTER_LINKS, OFFICES, SITE_CONFIG, SOCIAL_LINKS } from "@/lib/constants";
+import { FOOTER_LINKS, OFFICES, SITE_CONFIG, SOCIAL_LINKS, googleMapsUrl } from "@/lib/constants";
 
 const socialIcons = [FaLinkedinIn, null, FaYoutube, null];
 
@@ -27,7 +27,20 @@ export function Footer() {
             {OFFICES.map((office) => (
               <div key={office.name}>
                 <h3 className="font-heading text-sm font-semibold text-white">{office.name}</h3>
-                <p className="mt-2 flex max-w-xs gap-2 text-xs leading-6 text-slate-400"><MapPin className="mt-1 size-3.5 shrink-0" />{office.address}</p>
+                <p className="mt-2 flex max-w-xs gap-2 text-xs leading-6 text-slate-400">
+                  <MapPin className="mt-1 size-3.5 shrink-0" />
+                  <span>
+                    {office.address}{" "}
+                    <a
+                      href={googleMapsUrl(office.address)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-slate-300 underline-offset-2 hover:text-white hover:underline"
+                    >
+                      Google Maps
+                    </a>
+                  </span>
+                </p>
               </div>
             ))}
             <div className="space-y-2 text-sm">
