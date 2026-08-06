@@ -8,14 +8,23 @@ import { cn } from "@/lib/utils";
 
 export type MegaMenuKey = keyof typeof MEGA_MENUS;
 
-export function MegaMenu({ menu, className }: { menu: MegaMenuKey; className?: string }) {
+export function MegaMenu({
+  menu,
+  className,
+  onNavigate,
+}: {
+  menu: MegaMenuKey;
+  className?: string;
+  onNavigate?: () => void;
+}) {
   const content = MEGA_MENUS[menu];
   const pathname = usePathname();
 
   return (
     <div
+      role="menu"
       className={cn(
-        "min-w-[260px] overflow-hidden rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
+        "min-w-[280px] overflow-hidden rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
         className,
       )}
     >
@@ -25,11 +34,14 @@ export function MegaMenu({ menu, className }: { menu: MegaMenuKey; className?: s
       <ul className="flex flex-col gap-1">
         {content.items.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          // Exact match only — parent "/about" must not stay active on "/about/vision-mission"
+          const active = pathname === item.href;
           return (
-            <li key={item.href}>
+            <li key={item.href} role="none">
               <Link
+                role="menuitem"
                 href={item.href}
+                onClick={onNavigate}
                 className={cn(
                   "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
                   active

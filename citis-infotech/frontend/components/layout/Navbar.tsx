@@ -45,29 +45,39 @@ export function Navbar() {
         <Brand />
         <nav className="hidden h-full items-center gap-0.5 lg:flex" aria-label="Primary navigation" onMouseLeave={() => setOpenMenu(null)}>
           {NAV_LINKS.map((item) => {
-            const active = pathname.startsWith(item.href);
             const menu = "megaMenu" in item ? item.megaMenu : undefined;
+            const active = menu
+              ? pathname === item.href || pathname.startsWith(`${item.href}/`)
+              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const linkClass = cn(
+              "relative flex h-10 items-center gap-1 rounded-full px-3.5 text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary",
+              active && "bg-primary/10 text-primary",
+              openMenu === menu && menu && "bg-primary/10 text-primary",
+            );
             return (
               <div
                 key={item.href}
                 className="relative flex h-full items-center"
                 onMouseEnter={() => setOpenMenu(menu ?? null)}
               >
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "relative flex h-10 items-center gap-1 rounded-full px-3.5 text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary",
-                    active && "bg-primary/10 text-primary",
-                    openMenu === menu && menu && "bg-primary/10 text-primary",
-                  )}
-                >
-                  {item.label}
-                  {menu && (
+                {menu ? (
+                  <button
+                    type="button"
+                    className={linkClass}
+                    aria-expanded={openMenu === menu}
+                    aria-haspopup="menu"
+                    onClick={() => setOpenMenu((current) => (current === menu ? null : menu))}
+                  >
+                    {item.label}
                     <ChevronDown
                       className={cn("size-3.5 transition-transform", openMenu === menu && "rotate-180")}
                     />
-                  )}
-                </Link>
+                  </button>
+                ) : (
+                  <Link href={item.href} className={linkClass}>
+                    {item.label}
+                  </Link>
+                )}
                 {menu && (
                   <AnimatePresence>
                     {openMenu === menu && (
@@ -78,7 +88,7 @@ export function Navbar() {
                         transition={{ duration: 0.18 }}
                         className="absolute top-full left-0 z-50 pt-2"
                       >
-                        <MegaMenu menu={menu} />
+                        <MegaMenu menu={menu} onNavigate={() => setOpenMenu(null)} />
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -111,17 +121,43 @@ export function Navbar() {
             <nav className="container-site flex flex-col gap-1 py-5" aria-label="Mobile navigation">
               {NAV_LINKS.map((item) => {
                 const menu = "megaMenu" in item ? item.megaMenu : undefined;
+                const sectionActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                 return (
                   <div key={item.href}>
-                    <Link href={item.href} className={cn("flex items-center justify-between rounded-lg px-3 py-3 font-heading text-base font-medium hover:bg-muted", pathname.startsWith(item.href) && "bg-primary/10 text-primary")}>
-                      {item.label}<ArrowRight className="size-4" />
-                    </Link>
-                    {menu && (
-                      <div className="ml-4 grid border-l border-border pl-3">
-                        {MEGA_MENUS[menu].items.map((child) => (
-                          <Link key={child.href} href={child.href} className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-primary">{child.title}</Link>
-                        ))}
-                      </div>
+                    {menu ? (
+                      <>
+                        <p className={cn("px-3 py-2 font-heading text-base font-medium text-muted-foreground", sectionActive && "text-primary")}>
+                          {item.label}
+                        </p>
+                        <div className="ml-2 grid border-l border-border pl-2">
+                          {MEGA_MENUS[menu].items.map((child) => {
+                            const childActive = pathname === child.href;
+                            return (
+                              <Link
+                                key={child.href}
+                                href={child.href}
+                                className={cn(
+                                  "rounded-md px-3 py-2 text-sm hover:bg-muted hover:text-primary",
+                                  childActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
+                                )}
+                              >
+                                {child.title}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex items-center justify-between rounded-lg px-3 py-3 font-heading text-base font-medium hover:bg-muted",
+                          sectionActive && "bg-primary/10 text-primary",
+                        )}
+                      >
+                        {item.label}
+                        <ArrowRight className="size-4" />
+                      </Link>
                     )}
                   </div>
                 );

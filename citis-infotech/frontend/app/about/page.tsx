@@ -42,17 +42,19 @@ export default function AboutPage() {
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {aboutLinks.map((item, index) => (
               <AnimatedSection key={item.href} delay={index * 0.05}>
-                <Card className="h-full transition-all hover:border-primary/30">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{item.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Link href={item.href} className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                      View
-                      <ArrowRight className="size-4" />
-                    </Link>
-                  </CardContent>
-                </Card>
+                <Link href={item.href} className="block h-full">
+                  <Card className="h-full transition-all hover:border-primary/30 hover:shadow-md">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{item.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <span className="inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                        View
+                        <ArrowRight className="size-4" />
+                      </span>
+                    </CardContent>
+                  </Card>
+                </Link>
               </AnimatedSection>
             ))}
           </div>
