@@ -28,11 +28,11 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
   return (
     <>
       <article>
-        <header className="relative overflow-hidden border-b border-border bg-[#152238] py-16 text-white sm:py-24">
-          <div className="absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_88%_12%,rgba(245,158,11,0.28),transparent_30%),radial-gradient(circle_at_8%_78%,rgba(59,130,246,0.22),transparent_34%)]" />
+        <header className="relative overflow-hidden border-b border-border bg-[#eef3f8] py-16 text-slate-900 sm:py-24">
+          <div className="absolute inset-0 opacity-70 [background-image:radial-gradient(circle_at_88%_12%,rgba(14,116,144,0.12),transparent_32%),radial-gradient(circle_at_10%_80%,rgba(37,99,235,0.10),transparent_36%)]" />
           <div className="container-site relative">
-            <Link href="/highlights/blogs" className="inline-flex items-center gap-2 text-sm font-semibold text-amber-300 hover:text-amber-200"><ArrowLeft className="size-4" />All articles</Link>
-            <div className="mt-8 max-w-4xl"><Badge className="border-amber-300/30 bg-amber-400/15 text-amber-100">{post.category}</Badge><h1 className="mt-5 font-heading text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{post.title}</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-slate-200/90">{post.excerpt}</p><div className="mt-7 flex flex-wrap items-center gap-5 text-sm text-slate-300"><span>{post.author}</span><span className="flex items-center gap-1.5"><CalendarDays className="size-4" />{new Date(post.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span><span className="flex items-center gap-1.5"><Clock className="size-4" />{post.readTime}</span></div></div>
+            <Link href="/highlights/blogs" className="inline-flex items-center gap-2 text-sm font-semibold text-teal-700 hover:text-teal-800"><ArrowLeft className="size-4" />All articles</Link>
+            <div className="mt-8 max-w-4xl"><Badge variant="secondary">{post.category}</Badge><h1 className="mt-5 font-heading text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{post.title}</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">{post.excerpt}</p><div className="mt-7 flex flex-wrap items-center gap-5 text-sm text-slate-500"><span>{post.author}</span><span className="flex items-center gap-1.5"><CalendarDays className="size-4" />{new Date(post.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span><span className="flex items-center gap-1.5"><Clock className="size-4" />{post.readTime}</span></div></div>
           </div>
         </header>
         <div className="bg-[#e8edf5]">

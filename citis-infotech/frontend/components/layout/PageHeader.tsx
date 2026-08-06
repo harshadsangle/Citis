@@ -7,51 +7,73 @@ interface PageHeaderProps {
   description?: string;
   breadcrumbs?: Array<{ label: string; href?: string }>;
   eyebrow?: string;
-  /** Page-specific hero fields. `about` = teal, `blogs` = ink blue with amber accents. */
+  /** Page-specific hero fields. `about` = teal, `blogs` = light editorial field. */
   tone?: "default" | "about" | "blogs";
 }
 
 const tones = {
   default: {
     bg: "bg-[#071221]",
+    text: "text-white",
     glow: "[background-image:radial-gradient(circle_at_85%_15%,rgba(255,122,0,0.28),transparent_28%),radial-gradient(circle_at_10%_80%,rgba(37,99,235,0.35),transparent_32%)]",
+    grid: "opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:42px_42px]",
     crumb: "text-blue-100/80",
     sep: "text-blue-200/50",
+    crumbHover: "hover:text-white",
+    page: "text-white",
     eyebrow: "text-orange-300",
     description: "text-blue-100/90",
   },
   about: {
     bg: "bg-[#0c4a6e]",
+    text: "text-white",
     glow: "[background-image:radial-gradient(circle_at_85%_15%,rgba(56,189,248,0.28),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(14,116,144,0.45),transparent_34%)]",
+    grid: "opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:42px_42px]",
     crumb: "text-sky-100/85",
     sep: "text-sky-200/50",
+    crumbHover: "hover:text-white",
+    page: "text-white",
     eyebrow: "text-sky-200",
     description: "text-sky-100/90",
   },
   blogs: {
-    bg: "bg-[#152238]",
-    glow: "[background-image:radial-gradient(circle_at_88%_12%,rgba(245,158,11,0.32),transparent_30%),radial-gradient(circle_at_8%_78%,rgba(59,130,246,0.28),transparent_34%)]",
-    crumb: "text-amber-100/80",
-    sep: "text-amber-200/45",
-    eyebrow: "text-amber-300",
-    description: "text-slate-200/90",
+    bg: "bg-[#eef3f8]",
+    text: "text-slate-900",
+    glow: "[background-image:radial-gradient(circle_at_88%_12%,rgba(14,116,144,0.12),transparent_32%),radial-gradient(circle_at_10%_80%,rgba(37,99,235,0.10),transparent_36%)]",
+    grid: "opacity-40 [background-image:linear-gradient(rgba(15,23,42,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.04)_1px,transparent_1px)] [background-size:42px_42px]",
+    crumb: "text-slate-500",
+    sep: "text-slate-400",
+    crumbHover: "hover:text-slate-900",
+    page: "text-slate-900",
+    eyebrow: "text-teal-700",
+    description: "text-slate-600",
   },
 } as const;
 
 export function PageHeader({ title, description, breadcrumbs = [], eyebrow, tone = "default" }: PageHeaderProps) {
   const t = tones[tone];
   return (
-    <section className={cn("relative overflow-hidden border-b border-border py-16 text-white sm:py-20", t.bg)}>
-      <div className={cn("absolute inset-0 opacity-50", t.glow)} />
-      <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:42px_42px]" />
+    <section className={cn("relative overflow-hidden border-b border-border py-16 sm:py-20", t.bg, t.text)}>
+      <div className={cn("absolute inset-0 opacity-70", t.glow)} />
+      <div className={cn("absolute inset-0", t.grid)} />
       <div className="container-site relative">
         <Breadcrumb className="mb-7">
           <BreadcrumbList className={t.crumb}>
-            <BreadcrumbItem><BreadcrumbLink asChild><Link href="/" className="hover:text-white">Home</Link></BreadcrumbLink></BreadcrumbItem>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link href="/" className={t.crumbHover}>Home</Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
             {breadcrumbs.map((item) => (
               <BreadcrumbItem key={item.label}>
                 <BreadcrumbSeparator className={t.sep} />
-                {item.href ? <BreadcrumbLink asChild><Link href={item.href} className="hover:text-white">{item.label}</Link></BreadcrumbLink> : <BreadcrumbPage className="text-white">{item.label}</BreadcrumbPage>}
+                {item.href ? (
+                  <BreadcrumbLink asChild>
+                    <Link href={item.href} className={t.crumbHover}>{item.label}</Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage className={t.page}>{item.label}</BreadcrumbPage>
+                )}
               </BreadcrumbItem>
             ))}
           </BreadcrumbList>
