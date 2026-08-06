@@ -20,22 +20,25 @@ export default function VisionMissionPage() {
           { label: "About Us", href: "/about" },
           { label: "Vision and Mission" },
         ]}
+        tone="about"
       />
-      <section className="container-site max-w-4xl py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionHeading title="Vision" />
-          <p className="mt-6 text-base leading-8 text-muted-foreground">
-            Inspired by excellence and driven by innovation, CITIS InfoTech shapes the next generation of
-            skilled professionals for a dynamic, technology-driven world.
-          </p>
-        </AnimatedSection>
-        <AnimatedSection className="mt-14" delay={0.08}>
-          <SectionHeading title="Mission" />
-          <p className="mt-6 text-base leading-8 text-muted-foreground">
-            To empower K–12 and Higher Education institutions with future-ready solutions that integrate
+      <section className="bg-[#e8f4f8]">
+        <div className="container-site max-w-4xl py-16 sm:py-24">
+          <AnimatedSection>
+            <SectionHeading title="Vision" />
+            <p className="mt-6 text-base leading-8 text-muted-foreground">
+              Inspired by excellence and driven by innovation, CITIS InfoTech shapes the next generation of
+              skilled professionals for a dynamic, technology-driven world.
+            </p>
+          </AnimatedSection>
+          <AnimatedSection className="mt-14" delay={0.08}>
+            <SectionHeading title="Mission" />
+            <p className="mt-6 text-base leading-8 text-muted-foreground">
+              To empower K–12 and Higher Education institutions with future-ready solutions that integrate
             academic learning with industry relevance, bridging the gap between education and employability.
-          </p>
-        </AnimatedSection>
+            </p>
+          </AnimatedSection>
+        </div>
       </section>
     </>
   );

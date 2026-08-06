@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { applyJobSchema, loginSchema, partnerSchema, type ApplyJobInput, type LoginInput, type PartnerInput } from "@/lib/validations";
-import { authService, careerService, partnerService } from "@/services/api";
+import { authService } from "@/services/api";
+import { SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 
 const message = (text?: string) => text && <p className="mt-1.5 text-xs text-destructive">{text}</p>;
 
@@ -31,10 +32,28 @@ export function PartnerInquiryForm() {
   });
   const onSubmit = async (values: PartnerInput) => {
     setServerError("");
-    try { await partnerService.apply(values); setDone(true); }
+    try {
+      openMailto({
+        to: SUPPORT_EMAIL,
+        subject: `Partnership inquiry — ${values.partnershipType || "general"}`,
+        body: [
+          `Name: ${values.name}`,
+          `Email: ${values.email}`,
+          `Phone: ${values.phone || "—"}`,
+          `Organisation: ${values.company}`,
+          `Website: ${values.website || "—"}`,
+          `Partnership model: ${values.partnershipType}`,
+          "",
+          values.message,
+          "",
+          `— Sent from the CITIS InfoTech partner form`,
+        ].join("\n"),
+      });
+      setDone(true);
+    }
     catch (error) { setServerError(error instanceof Error ? error.message : "Your inquiry could not be sent. Please try again."); }
   };
-  if (done) return <FormSuccess title="Partnership inquiry received" copy="Our partnerships team will review your goals and respond within two business days." />;
+  if (done) return <FormSuccess title="Partnership inquiry draft ready" copy="Your email app should open a message to support@citis.in. Send it to complete your inquiry." />;
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="surface space-y-5 rounded-xl p-6 sm:p-8" noValidate>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -62,22 +81,31 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   const onSubmit = async (values: ApplyJobInput) => {
     setServerError("");
     try {
-      await careerService.apply(jobId, {
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        resume: values.resume,
-        coverLetter: values.coverLetter,
-        skills: values.skills,
-        linkedIn: values.linkedIn,
-        portfolio: values.portfolio,
+      openMailto({
+        to: SUPPORT_EMAIL,
+        subject: `Job application — ${jobTitle}`,
+        body: [
+          `Role: ${jobTitle}`,
+          `Name: ${values.name}`,
+          `Email: ${values.email}`,
+          `Phone: ${values.phone}`,
+          `LinkedIn: ${values.linkedIn || "—"}`,
+          `Portfolio: ${values.portfolio || "—"}`,
+          `Skills: ${values.skills || "—"}`,
+          "",
+          values.coverLetter || "",
+          "",
+          "Please attach your résumé to this email before sending.",
+          "",
+          `— Sent from the CITIS InfoTech careers form`,
+        ].join("\n"),
       });
       setDone(true);
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "We could not submit your application. Please try again.");
     }
   };
-  if (done) return <FormSuccess title="Application submitted" copy={`Thank you for applying for ${jobTitle}. Our talent team will be in touch if your experience matches the role.`} />;
+  if (done) return <FormSuccess title="Application draft ready" copy={`Your email app should open a message to support@citis.in for ${jobTitle}. Attach your résumé, then send the email.`} />;
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="surface space-y-5 rounded-xl p-6 sm:p-8" noValidate>
       <input type="hidden" {...register("jobId")} />

@@ -20,7 +20,7 @@ export const SITE_CONFIG = {
   description:
     "A leading technology-enabled education company empowering K–12 and Higher Education institutions with future-ready solutions that integrate academic learning with industry relevance.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.citisinfotech.com",
-  email: "info@citisinfotech.in",
+  email: "support@citis.in",
   phone: "+91 7204992221",
   phoneE164: "917204992221",
   whatsappUrl: "https://wa.me/917204992221",
@@ -173,7 +173,7 @@ export const OFFICES = [
     address:
       "Plot No. 20, Office No. 201, ‘Vihaan’, Bramhavrunda Colony No. 2, Vishal Nagar, Pimple Nilakh, Pune 411027, Maharashtra, India",
     phone: "+91 7204992221",
-    email: "info@citisinfotech.in",
+    email: "support@citis.in",
     lat: 18.5868,
     lng: 73.7809,
   },
@@ -181,7 +181,7 @@ export const OFFICES = [
     name: "Bengaluru Office",
     address: "4th Floor, HM Geneva House, Cunningham Road, Bangalore – 560052",
     phone: "+91 7204992221",
-    email: "info@citisinfotech.in",
+    email: "support@citis.in",
     lat: 12.9864,
     lng: 77.5953,
   },

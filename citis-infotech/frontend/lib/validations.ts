@@ -43,10 +43,13 @@ export const applyJobSchema = z.object({
   coverLetter: z.string().max(3000).optional(),
   skills: z.string().max(500).optional(),
   resume: z
-    .custom<File>((value) => typeof File !== "undefined" && value instanceof File, "Resume is required")
-    .refine((file) => file.size <= 5 * 1024 * 1024, "Resume must be 5MB or smaller")
+    .custom<File>((value) => value === undefined || (typeof File !== "undefined" && value instanceof File))
+    .optional()
+    .refine((file) => !file || file.size <= 5 * 1024 * 1024, "Resume must be 5MB or smaller")
     .refine(
-      (file) => ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type),
+      (file) =>
+        !file ||
+        ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(file.type),
       "Upload a PDF, DOC, or DOCX file",
     ),
 });

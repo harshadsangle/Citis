@@ -20,16 +20,19 @@ export default function QualityPolicyPage() {
           { label: "About Us", href: "/about" },
           { label: "Quality Policy" },
         ]}
+        tone="about"
       />
-      <section className="container-site max-w-4xl py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionHeading title="Quality Policy" />
-          <p className="mt-6 text-base leading-8 text-muted-foreground">
-            CITIS InfoTech is committed to excellence in curriculum design, delivery, assessment,
-            certifications, and placement assistance—ensuring outcome-focused, industry-aligned learning
-            experiences for institutions and learners.
-          </p>
-        </AnimatedSection>
+      <section className="bg-[#e8f4f8]">
+        <div className="container-site max-w-4xl py-16 sm:py-24">
+          <AnimatedSection>
+            <SectionHeading title="Quality Policy" />
+            <p className="mt-6 text-base leading-8 text-muted-foreground">
+              CITIS InfoTech is committed to excellence in curriculum design, delivery, assessment,
+              certifications, and placement assistance—ensuring outcome-focused, industry-aligned learning
+              experiences for institutions and learners.
+            </p>
+          </AnimatedSection>
+        </div>
       </section>
     </>
   );
