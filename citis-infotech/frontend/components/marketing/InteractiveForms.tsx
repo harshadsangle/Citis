@@ -69,6 +69,8 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
         resume: values.resume,
         coverLetter: values.coverLetter,
         skills: values.skills,
+        linkedIn: values.linkedIn,
+        portfolio: values.portfolio,
       });
       setDone(true);
     } catch (error) {

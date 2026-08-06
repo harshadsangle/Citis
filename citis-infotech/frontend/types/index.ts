@@ -156,6 +156,67 @@ export interface JobApplication {
   resume: File;
 }
 
+export interface NewsletterSubscriber {
+  id?: ID;
+  _id?: string;
+  email: string;
+  isActive: boolean;
+  subscribedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PartnerInquiry {
+  id?: ID;
+  _id?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  organization?: string;
+  website?: string;
+  partnershipType: string;
+  message: string;
+  status?: "new" | "read" | "replied";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminCareer {
+  id?: ID;
+  _id?: string;
+  title: string;
+  slug: string;
+  department: string;
+  location: string;
+  type: "full-time" | "part-time" | "internship" | "contract";
+  description: string;
+  requirements?: string[];
+  responsibilities?: string[];
+  benefits?: string[];
+  status: "open" | "closed";
+  applicationsCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminJobApplication {
+  id?: ID;
+  _id?: string;
+  career?: AdminCareer | string;
+  name: string;
+  email: string;
+  phone?: string;
+  resume: string;
+  coverLetter?: string;
+  linkedIn?: string;
+  portfolio?: string;
+  skills?: string[];
+  status: "pending" | "reviewed" | "shortlisted" | "rejected";
+  adminNotes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface PartnerApplication {
   name: string;
   email: string;

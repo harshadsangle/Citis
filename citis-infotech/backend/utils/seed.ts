@@ -56,11 +56,69 @@ async function seed() {
       curriculum: [{ title: 'Platform Essentials', duration: '2 hours' }],
       category: productCategory._id, status: 'published', order: 1,
     }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }),
-    Career.findOneAndUpdate({ slug: 'instructional-designer' }, {
-      title: 'Instructional Designer', department: 'Learning Design', location: 'Remote',
-      type: 'full-time', description: 'Design evidence-based, engaging digital learning experiences.',
-      requirements: ['Experience designing online learning'], responsibilities: ['Create learning journeys'],
-      benefits: ['Remote work'], status: 'open',
+    Career.findOneAndUpdate({ slug: 'learning-experience-designer' }, {
+      title: 'Learning Experience Designer', department: 'Learning Design', location: 'Bengaluru / Hybrid',
+      type: 'full-time',
+      description: 'Design rigorous, inclusive learning experiences for university and workforce programmes.',
+      requirements: [
+        'Experience designing adult or higher-education learning.',
+        'Strong portfolio showing outcomes, assessment, and digital pedagogy.',
+        'Clear writing, facilitation, and stakeholder collaboration skills.',
+      ],
+      responsibilities: [
+        'Translate competency maps into learning journeys, activities, and assessments.',
+        'Co-create with faculty, subject experts, and industry mentors.',
+        'Use learner evidence to iterate content and facilitation guides.',
+      ],
+      benefits: ['Hybrid work', 'Learning budget'], status: 'open',
+    }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }),
+    Career.findOneAndUpdate({ slug: 'stem-program-manager' }, {
+      title: 'STEM Programme Manager', department: 'School Education', location: 'Bengaluru with travel',
+      type: 'full-time',
+      description: 'Lead multi-school STEM implementation from educator onboarding through impact review.',
+      requirements: [
+        'Programme management experience in K–12 education.',
+        'Understanding of inquiry-based STEM and teacher development.',
+        'Comfort with data, field travel, and senior stakeholder communication.',
+      ],
+      responsibilities: [
+        'Own delivery plans, school relationships, and facilitator quality.',
+        'Coach field teams and coordinate teacher learning communities.',
+        'Track participation, implementation fidelity, and learner outcomes.',
+      ],
+      benefits: ['Travel support', 'Field learning'], status: 'open',
+    }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }),
+    Career.findOneAndUpdate({ slug: 'full-stack-engineer-learning-platforms' }, {
+      title: 'Full-stack Engineer — Learning Platforms', department: 'Product & Engineering',
+      location: 'Bengaluru / Hybrid', type: 'full-time',
+      description: 'Build accessible, reliable learning products used by educators and learners at scale.',
+      requirements: [
+        'Production experience with TypeScript, React, Node.js, and relational data.',
+        'Strong API, testing, and cloud engineering fundamentals.',
+        'Care for accessibility, privacy, and maintainable product design.',
+      ],
+      responsibilities: [
+        'Develop product capabilities across modern web services and interfaces.',
+        'Partner with design and learning teams on accessible user experiences.',
+        'Improve observability, security, performance, and release quality.',
+      ],
+      benefits: ['Hybrid work', 'Hardware stipend'], status: 'open',
+    }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }),
+    Career.findOneAndUpdate({ slug: 'university-partnerships-lead' }, {
+      title: 'University Partnerships Lead', department: 'Institutional Partnerships',
+      location: 'India / Remote', type: 'full-time',
+      description: 'Build long-term university partnerships around curriculum, capability, and student progression.',
+      requirements: [
+        'Experience in higher-education partnerships or academic solutions.',
+        'Consultative discovery and proposal development capability.',
+        'Executive communication and complex programme ownership.',
+      ],
+      responsibilities: [
+        'Discover institutional priorities and shape measurable programmes.',
+        'Coordinate academic, product, delivery, and industry stakeholders.',
+        'Steward partnership reviews, expansion plans, and outcome reporting.',
+      ],
+      benefits: ['Remote work', 'Travel for key partners'], status: 'open',
     }, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }),
     Testimonial.findOneAndUpdate({ name: 'Sample Learner', company: 'CITIS Partner' }, {
       role: 'Learning Lead', content: 'CITIS helped our team launch effective learning at scale.',

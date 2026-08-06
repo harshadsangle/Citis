@@ -6,9 +6,11 @@ import { asyncHandler, crudController } from '../utils/crud';
 const crud = crudController(Newsletter, {
   searchFields: ['email'],
   filterFields: ['isActive'],
+  allowedFields: ['isActive'],
 });
 
 export const getSubscribers = crud.list;
+export const updateSubscriber = crud.update;
 
 export const subscribe = asyncHandler(async (req, res) => {
   const email = String(req.body.email).toLowerCase().trim();

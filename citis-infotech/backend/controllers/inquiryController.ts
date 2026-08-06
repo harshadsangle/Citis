@@ -13,8 +13,12 @@ export const updateInquiry = crud.update;
 
 export const createInquiry = asyncHandler(async (req, res) => {
   const inquiry = await Inquiry.create({
-    name: req.body.name, email: req.body.email, phone: req.body.phone,
-    organization: req.body.organization, partnershipType: req.body.partnershipType,
+    name: req.body.name,
+    email: req.body.email,
+    phone: req.body.phone,
+    organization: req.body.organization,
+    website: req.body.website,
+    partnershipType: req.body.partnershipType,
     message: req.body.message,
   });
   return successResponse(res, inquiry, 'Inquiry submitted', 201);

@@ -1,4 +1,5 @@
-import Career from '../models/Career';
+import { Request } from 'express';
+import Career, { ICareer } from '../models/Career';
 import JobApplication from '../models/JobApplication';
 import { AppError } from '../middleware/errorHandler';
 import { toPublicUrl } from '../middleware/upload';
@@ -35,8 +36,7 @@ export const createCareer = crud.create;
 export const updateCareer = crud.update;
 export const deleteCareer = crud.remove;
 
-export const apply = asyncHandler(async (req, res) => {
-  const career = await Career.findById(req.params.id);
+async function createApplication(req: Request, career: ICareer) {
   if (!career || career.status !== 'open') {
     throw new AppError('This position is not accepting applications', 400);
   }
@@ -55,6 +55,8 @@ export const apply = asyncHandler(async (req, res) => {
     phone: req.body.phone,
     resume,
     coverLetter: req.body.coverLetter,
+    linkedIn: req.body.linkedIn,
+    portfolio: req.body.portfolio,
     skills,
   });
   await Career.updateOne({ _id: career._id }, { $inc: { applicationsCount: 1 } });
@@ -67,6 +69,20 @@ export const apply = asyncHandler(async (req, res) => {
     type: 'application',
     link: '/admin/careers',
   });
+  return application;
+}
+
+export const apply = asyncHandler(async (req, res) => {
+  const career = await Career.findById(req.params.id);
+  if (!career) throw new AppError('This position is not accepting applications', 400);
+  const application = await createApplication(req, career);
+  return successResponse(res, application, 'Application submitted', 201);
+});
+
+export const applyBySlug = asyncHandler(async (req, res) => {
+  const career = await Career.findOne({ slug: String(req.params.slug).toLowerCase().trim() });
+  if (!career) throw new AppError('This position is not accepting applications', 400);
+  const application = await createApplication(req, career);
   return successResponse(res, application, 'Application submitted', 201);
 });
 

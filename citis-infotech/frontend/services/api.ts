@@ -1,21 +1,17 @@
 import { apiFetch } from "@/lib/api";
 import type {
+  AdminCareer,
+  AdminJobApplication,
   ApiResponse,
   AuthResponse,
   Career,
   Contact,
   Inquiry,
+  NewsletterSubscriber,
   PartnerApplication,
+  PartnerInquiry,
   User,
 } from "@/types";
-
-function toFormData(application: Record<string, string | Blob | undefined>) {
-  const data = new FormData();
-  Object.entries(application).forEach(([key, value]) => {
-    if (value !== undefined && value !== "") data.append(key, value);
-  });
-  return data;
-}
 
 export const contactService = {
   submit: (payload: Contact) =>
@@ -62,12 +58,38 @@ export const contactService = {
     }),
 };
 
+export const newsletterService = {
+  list: (token: string, params?: { search?: string; isActive?: string; page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.set("search", params.search);
+    if (params?.isActive) query.set("isActive", params.isActive);
+    query.set("page", String(params?.page || 1));
+    query.set("limit", String(params?.limit || 100));
+    return apiFetch<ApiResponse<NewsletterSubscriber[]> & { meta?: Record<string, unknown> }>(
+      `/newsletter?${query}`,
+      { token, revalidate: false },
+    );
+  },
+  setActive: (token: string, id: string, isActive: boolean) =>
+    apiFetch<ApiResponse<NewsletterSubscriber>>(`/newsletter/${id}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ isActive }),
+      revalidate: false,
+    }),
+};
+
 export const careerService = {
-  list: () => apiFetch<ApiResponse<Career[]>>("/careers", { tags: ["careers"] }),
+  list: (token?: string) =>
+    apiFetch<ApiResponse<AdminCareer[] | Career[]>>("/careers", {
+      token,
+      tags: token ? undefined : ["careers"],
+      revalidate: token ? false : undefined,
+    }),
   get: (slug: string) =>
     apiFetch<ApiResponse<Career>>(`/careers/slug/${slug}`, { tags: [`career-${slug}`] }),
   apply: (
-    careerId: string,
+    careerSlug: string,
     application: {
       name: string;
       email: string;
@@ -75,6 +97,8 @@ export const careerService = {
       resume: File;
       coverLetter?: string;
       skills?: string;
+      linkedIn?: string;
+      portfolio?: string;
     },
   ) => {
     const data = new FormData();
@@ -83,27 +107,69 @@ export const careerService = {
     if (application.phone) data.append("phone", application.phone);
     if (application.coverLetter) data.append("coverLetter", application.coverLetter);
     if (application.skills) data.append("skills", application.skills);
+    if (application.linkedIn) data.append("linkedIn", application.linkedIn);
+    if (application.portfolio) data.append("portfolio", application.portfolio);
     data.append("resume", application.resume);
-    return apiFetch<ApiResponse<{ applicationId: string }>>(`/careers/${careerId}/apply`, {
+    return apiFetch<ApiResponse<AdminJobApplication>>(`/careers/slug/${careerSlug}/apply`, {
       method: "POST",
       body: data,
       revalidate: false,
     });
   },
+  listApplications: (token: string, params?: { career?: string; status?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.career) query.set("career", params.career);
+    if (params?.status) query.set("status", params.status);
+    const suffix = query.toString() ? `?${query}` : "";
+    return apiFetch<ApiResponse<AdminJobApplication[]>>(`/careers/applications${suffix}`, {
+      token,
+      revalidate: false,
+    });
+  },
+  updateApplication: (
+    token: string,
+    applicationId: string,
+    payload: { status?: AdminJobApplication["status"]; adminNotes?: string },
+  ) =>
+    apiFetch<ApiResponse<AdminJobApplication>>(`/careers/applications/${applicationId}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify(payload),
+      revalidate: false,
+    }),
 };
 
 export const partnerService = {
   apply: (payload: PartnerApplication) =>
-    apiFetch<ApiResponse<PartnerApplication>>("/inquiries", {
+    apiFetch<ApiResponse<PartnerInquiry>>("/inquiries", {
       method: "POST",
       body: JSON.stringify({
         name: payload.name,
         email: payload.email,
         phone: payload.phone,
         organization: payload.company,
-        type: payload.partnershipType || "partnership",
+        website: payload.website,
+        partnershipType: payload.partnershipType,
         message: payload.message,
       }),
+      revalidate: false,
+    }),
+  list: (token: string, params?: { search?: string; status?: string; page?: number; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.set("search", params.search);
+    if (params?.status) query.set("status", params.status);
+    query.set("page", String(params?.page || 1));
+    query.set("limit", String(params?.limit || 100));
+    return apiFetch<ApiResponse<PartnerInquiry[]> & { meta?: Record<string, unknown> }>(
+      `/inquiries?${query}`,
+      { token, revalidate: false },
+    );
+  },
+  updateStatus: (token: string, id: string, status: "new" | "read" | "replied") =>
+    apiFetch<ApiResponse<PartnerInquiry>>(`/inquiries/${id}`, {
+      method: "PATCH",
+      token,
+      body: JSON.stringify({ status }),
       revalidate: false,
     }),
 };

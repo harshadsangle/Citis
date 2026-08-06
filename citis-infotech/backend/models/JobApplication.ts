@@ -8,6 +8,8 @@ export interface IJobApplication extends Document {
   resume: string;
   coverLetter?: string;
   coverLetterFile?: string;
+  linkedIn?: string;
+  portfolio?: string;
   skills: string[];
   status: 'pending' | 'reviewed' | 'shortlisted' | 'rejected';
   adminNotes?: string;
@@ -21,6 +23,8 @@ const schema = new Schema<IJobApplication>({
   resume: { type: String, required: true },
   coverLetter: { type: String, maxlength: 5000 },
   coverLetterFile: String,
+  linkedIn: { type: String, trim: true, maxlength: 300 },
+  portfolio: { type: String, trim: true, maxlength: 300 },
   skills: [{ type: String, trim: true }],
   status: { type: String, enum: ['pending', 'reviewed', 'shortlisted', 'rejected'], default: 'pending', index: true },
   adminNotes: { type: String, maxlength: 2000 },

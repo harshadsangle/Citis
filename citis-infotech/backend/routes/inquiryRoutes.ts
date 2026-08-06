@@ -11,6 +11,9 @@ router.post('/', publicWriteLimiter, [
   body('email').isEmail().normalizeEmail(),
   body('partnershipType').trim().isLength({ min: 2, max: 100 }),
   body('message').trim().isLength({ min: 10, max: 5000 }),
+  body('website').optional({ values: 'falsy' }).isString().isLength({ max: 300 }),
+  body('organization').optional({ values: 'falsy' }).isString().isLength({ max: 200 }),
+  body('phone').optional({ values: 'falsy' }).isString().isLength({ max: 30 }),
 ], validate, inquiries.createInquiry);
 router.use(protect, authorize('super_admin', 'admin'));
 router.get('/', inquiries.getInquiries);
