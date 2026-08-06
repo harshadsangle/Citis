@@ -11,6 +11,7 @@ import { generalLimiter } from './middleware/rateLimiter';
 import { csrfProtection } from './middleware/csrf';
 import { getUploadsRoot } from './middleware/upload';
 import routes from './routes';
+import './models';
 
 const app = express();
 app.disable('x-powered-by');

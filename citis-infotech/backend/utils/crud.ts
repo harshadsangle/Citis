@@ -79,7 +79,7 @@ export function crudController(model: Model<any>, options: Options = {}) {
       data.publishedAt = new Date();
     }
     const item = await model.findByIdAndUpdate(req.params.id, data, {
-      new: true, runValidators: true,
+      returnDocument: 'after', runValidators: true,
     });
     if (!item) throw new AppError('Resource not found', 404);
     return successResponse(res, item, 'Resource updated');
