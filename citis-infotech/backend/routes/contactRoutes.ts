@@ -9,8 +9,9 @@ const router = Router();
 router.post('/', publicWriteLimiter, [
   body('name').trim().isLength({ min: 2, max: 100 }),
   body('email').isEmail().normalizeEmail(),
-  body('phone').optional().trim().isLength({ max: 30 }),
-  body('subject').trim().isLength({ min: 3, max: 200 }),
+  body('phone').optional({ values: 'falsy' }).trim().isLength({ max: 30 }),
+  body('company').optional({ values: 'falsy' }).trim().isLength({ max: 120 }),
+  body('subject').optional({ values: 'falsy' }).trim().isLength({ min: 3, max: 200 }),
   body('message').trim().isLength({ min: 10, max: 5000 }),
 ], validate, contacts.createContact);
 router.use(protect, authorize('super_admin', 'admin'));

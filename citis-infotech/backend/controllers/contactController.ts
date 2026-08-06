@@ -15,8 +15,12 @@ export const deleteContact = crud.remove;
 
 export const createContact = asyncHandler(async (req, res) => {
   const contact = await Contact.create({
-    name: req.body.name, email: req.body.email, phone: req.body.phone,
-    subject: req.body.subject, message: req.body.message,
+    name: req.body.name,
+    email: req.body.email,
+    phone: req.body.phone || undefined,
+    company: req.body.company || undefined,
+    subject: req.body.subject?.trim() || 'General inquiry',
+    message: req.body.message,
   });
   void sendContactNotification(contact).catch((error) => console.error('Contact email failed:', error.message));
   return successResponse(res, contact, 'Message sent', 201);
