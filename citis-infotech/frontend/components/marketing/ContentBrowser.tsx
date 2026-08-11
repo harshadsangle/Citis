@@ -45,7 +45,7 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
 
       <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {visible.map((item) => (
-          <Card key={item.slug} className="group flex h-full flex-col overflow-hidden transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
+          <Card key={item.slug} className="group flex h-full flex-col overflow-hidden text-slate-900 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg dark:text-card-foreground">
             <div className="brand-gradient relative h-40 overflow-hidden p-6 text-white">
               <div className="absolute -top-12 -right-12 size-40 rounded-full border border-white/15" />
               {isBlogs ? <BookOpen className="size-8 text-orange-300" /> : <span className="text-xs font-bold tracking-[0.16em] text-orange-300 uppercase">Impact story</span>}
@@ -56,12 +56,12 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
                 <Badge variant="outline">{item.category}</Badge>
                 {item.date && <span className="flex items-center gap-1 text-xs text-muted-foreground"><CalendarDays className="size-3" />{new Date(item.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>}
               </div>
-              <CardTitle className="mt-3 text-balance">{item.title}</CardTitle>
-              <CardDescription className="line-clamp-3">{item.excerpt}</CardDescription>
+              <CardTitle className="mt-3 text-balance text-slate-900 dark:text-card-foreground">{item.title}</CardTitle>
+              <CardDescription className="line-clamp-3 text-slate-600 dark:text-muted-foreground">{item.excerpt}</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="mb-4 text-xs text-muted-foreground">{item.meta}</p>
-              <Link href={`/highlights/${kind}/${item.slug}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary">Read {isBlogs ? "article" : "case study"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></Link>
+              <p className="mb-4 text-xs text-slate-600 dark:text-muted-foreground">{item.meta}</p>
+              <Link href={`/highlights/${kind}/${item.slug}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary dark:text-primary">Read {isBlogs ? "article" : "case study"}<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></Link>
             </CardContent>
           </Card>
         ))}
