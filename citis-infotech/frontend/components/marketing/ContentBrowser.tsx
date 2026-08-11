@@ -34,11 +34,11 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
           <label className="relative block w-full max-w-xl">
             <span className="sr-only">Search {isBlogs ? "articles" : "case studies"}</span>
             <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} className="h-12 pl-11" placeholder={isBlogs ? "Search articles, topics, or authors…" : "Search outcomes, sectors, or services…"} />
+             <Input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} className="h-12 pl-11 text-slate-900 dark:text-foreground" placeholder={isBlogs ? "Search articles, topics, or authors…" : "Search outcomes, sectors, or services…"} />
           </label>
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" />
-            {categories.map((item) => <Button key={item} type="button" size="sm" variant={category === item ? "default" : "outline"} onClick={() => updateCategory(item)}>{item}</Button>)}
+             {categories.map((item) => <Button key={item} type="button" size="sm" variant={category === item ? "default" : "outline"} className={category === item ? undefined : "text-slate-700 dark:text-foreground"} onClick={() => updateCategory(item)}>{item}</Button>)}
           </div>
         </div>
       </div>
@@ -54,7 +54,7 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
             <CardHeader className="flex-1">
               <div className="flex items-center justify-between gap-3">
                 <Badge variant="outline">{item.category}</Badge>
-                {item.date && <span className="flex items-center gap-1 text-xs text-muted-foreground"><CalendarDays className="size-3" />{new Date(item.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>}
+                 {item.date && <span className="flex items-center gap-1 text-xs text-slate-600 dark:text-muted-foreground"><CalendarDays className="size-3" />{new Date(item.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>}
               </div>
               <CardTitle className="mt-3 text-balance text-slate-900 dark:text-card-foreground">{item.title}</CardTitle>
               <CardDescription className="line-clamp-3 text-slate-600 dark:text-muted-foreground">{item.excerpt}</CardDescription>
