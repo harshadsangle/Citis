@@ -29,7 +29,7 @@ export default function AboutPage() {
         breadcrumbs={[{ label: "About Us" }]}
         tone="about"
       />
-      <section className="bg-[#e8f4f8]">
+      <section className="bg-[#e8f4f8] dark:bg-slate-900">
         <div className="container-site py-16 sm:py-24">
           <AnimatedSection>
             <SectionHeading title="About Us" />

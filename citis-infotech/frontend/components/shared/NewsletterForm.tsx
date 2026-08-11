@@ -62,7 +62,7 @@ export function NewsletterForm({ className, variant = "light" }: { className?: s
         </Button>
       </div>
       {(errors.email?.message || serverError) && (
-        <p className="mt-2 text-xs text-orange-300">{errors.email?.message ?? serverError}</p>
+        <p className={cn("mt-2 text-xs", variant === "dark" ? "text-orange-300" : "text-destructive")}>{errors.email?.message ?? serverError}</p>
       )}
     </form>
   );

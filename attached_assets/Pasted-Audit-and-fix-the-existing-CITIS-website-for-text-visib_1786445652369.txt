@@ -1,0 +1,53 @@
+Audit and fix the existing CITIS website for text visibility and contrast issues.
+
+Some text on the website is appearing white on white or white on very light backgrounds, making it difficult or impossible to read.
+
+Please inspect the ENTIRE existing frontend codebase and fix all text visibility issues.
+
+Requirements:
+
+1. Do NOT rebuild or redesign the website.
+2. Do NOT remove or change existing sections, features, components, animations, or functionality.
+3. Preserve the existing CITIS branding, layout, typography, colors, and overall visual design.
+4. Find all instances where text has poor contrast with its background.
+5. Pay particular attention to:
+
+   * White text on white/light backgrounds
+   * Text inside cards
+   * Hero sections
+   * Navbar and dropdowns
+   * Buttons
+   * Forms and input fields
+   * Footer
+   * Headings and paragraphs
+   * Text over images
+   * Gradient backgrounds
+   * Hover and focus states
+   * Mobile/responsive layouts
+6. Inspect Tailwind classes, CSS files, component styles, inherited styles, and theme styles to identify the actual cause.
+7. If white text is being inherited unnecessarily, replace it with an appropriate dark/visible text color rather than adding unnecessary backgrounds.
+8. If text is intentionally white over an image or dark background, keep it white.
+9. Maintain a professional CITIS color scheme and consistent typography throughout the website.
+10. Ensure sufficient color contrast for readability and aim for WCAG AA accessibility standards.
+11. Check both desktop and mobile/responsive layouts.
+12. Do not make unnecessary changes to the UI.
+
+Before making changes, inspect the existing project structure and identify the components responsible for the contrast problems.
+
+After making the fixes:
+
+* Run the frontend locally.
+* Verify the major pages and sections.
+* Make sure the website still builds successfully.
+* Check that no important text is invisible or difficult to read.
+* Fix any errors caused by your changes.
+
+IMPORTANT:
+Only modify the code necessary to solve the text visibility/contrast problems. Preserve everything else exactly as it currently works.
+
+At the end, give me a short summary of:
+
+1. Which files/components you changed
+2. What was causing the white-on-white text
+3. What you changed to fix it
+4. Whether the project builds/runs successfully

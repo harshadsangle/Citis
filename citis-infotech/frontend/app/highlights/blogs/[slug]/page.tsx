@@ -35,7 +35,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
             <div className="mt-8 max-w-4xl"><Badge variant="secondary">{post.category}</Badge><h1 className="mt-5 font-heading text-4xl leading-tight font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">{post.title}</h1><p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">{post.excerpt}</p><div className="mt-7 flex flex-wrap items-center gap-5 text-sm text-slate-500"><span>{post.author}</span><span className="flex items-center gap-1.5"><CalendarDays className="size-4" />{new Date(post.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span><span className="flex items-center gap-1.5"><Clock className="size-4" />{post.readTime}</span></div></div>
           </div>
         </header>
-        <div className="bg-[#e8edf5]">
+        <div className="bg-[#e8edf5] dark:bg-slate-900">
         <div className="container-site grid gap-10 py-14 lg:grid-cols-[minmax(0,1fr)_13rem] lg:gap-16 lg:py-20">
           <div className="mx-auto max-w-3xl">
             {post.content.map((section) => <section key={section.heading} className="mb-10"><h2 className="font-heading text-2xl font-semibold sm:text-3xl">{section.heading}</h2>{section.paragraphs.map((paragraph) => <p key={paragraph} className="mt-5 text-base leading-8 text-muted-foreground">{paragraph}</p>)}</section>)}
@@ -45,7 +45,7 @@ export default async function BlogDetailPage({ params }: { params: Promise<{ slu
         </div>
         </div>
       </article>
-      <section className="border-y border-border bg-[#e8edf5] py-16"><div className="container-site"><h2 className="font-heading text-3xl font-semibold">Continue exploring</h2><div className="mt-8 grid gap-5 md:grid-cols-3">{related.map((item) => <Card key={item.slug} className="group h-full"><CardContent className="p-6"><Badge variant="outline">{item.category}</Badge><h3 className="mt-4 font-heading text-lg font-semibold">{item.title}</h3><p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.excerpt}</p><Link href={`/highlights/blogs/${item.slug}`} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">Read article<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></Link></CardContent></Card>)}</div></div></section>
+      <section className="border-y border-border bg-[#e8edf5] py-16 dark:bg-slate-900"><div className="container-site"><h2 className="font-heading text-3xl font-semibold">Continue exploring</h2><div className="mt-8 grid gap-5 md:grid-cols-3">{related.map((item) => <Card key={item.slug} className="group h-full"><CardContent className="p-6"><Badge variant="outline">{item.category}</Badge><h3 className="mt-4 font-heading text-lg font-semibold">{item.title}</h3><p className="mt-3 line-clamp-2 text-sm leading-6 text-muted-foreground">{item.excerpt}</p><Link href={`/highlights/blogs/${item.slug}`} className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">Read article<ArrowRight className="size-4 transition-transform group-hover:translate-x-1" /></Link></CardContent></Card>)}</div></div></section>
       <CTASection title="Explore what this could mean for your institution" description="Our team can help translate emerging ideas into responsible, measurable education programmes." />
     </>
   );

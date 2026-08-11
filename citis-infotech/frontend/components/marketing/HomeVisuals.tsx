@@ -56,7 +56,7 @@ export function WhyChooseIcon({ index, className }: { index: number; className?:
 /** Soft floating orbs + grid for section atmosphere */
 export function AmbientBackdrop({ tone = "light" }: { tone?: "light" | "dark" | "accent" }) {
   const tones = {
-    light: "from-[#e8f1fa] via-[#f8fafc] to-[#fff7ed]",
+    light: "from-[#e8f1fa] via-[#f8fafc] to-[#fff7ed] dark:from-slate-900 dark:via-slate-800 dark:to-slate-900",
     dark: "from-[#0b1c33] via-[#0F4C81] to-[#163a5f]",
     accent: "from-[#0F4C81] via-[#1a3d66] to-[#0f172a]",
   } as const;

@@ -23,7 +23,7 @@ export default function BlogsPage() {
         ]}
         tone="blogs"
       />
-      <div className="bg-[#e8edf5]">
+      <div className="bg-[#e8edf5] dark:bg-slate-900">
         <ContentBrowser kind="blogs" />
       </div>
       <CTASection
