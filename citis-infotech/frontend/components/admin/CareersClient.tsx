@@ -35,10 +35,7 @@ function careerTitle(row: AdminJobApplication) {
   return "Open role";
 }
 
-const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1").replace(
-  /\/api\/v1\/?$/,
-  "",
-);
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_URL?.trim() ?? "").replace(/\/api\/v1\/?$/, "");
 
 function resumeHref(path: string) {
   if (path.startsWith("http")) return path;
