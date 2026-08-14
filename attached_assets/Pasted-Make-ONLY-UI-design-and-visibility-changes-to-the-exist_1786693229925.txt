@@ -1,0 +1,90 @@
+Make ONLY UI/design and visibility changes to the existing website.
+
+IMPORTANT: DO NOT CHANGE ANY CONTENT OR TEXT.
+
+I repeat: DO NOT add, remove, rewrite, paraphrase, shorten, or modify ANY existing text anywhere on the website.
+
+Requirements:
+
+1. REMOVE DARK MODE
+- Remove dark mode completely.
+- Remove the dark/light mode toggle.
+- The website must have LIGHT MODE ONLY.
+- Do not change any other functionality.
+
+2. FIX TEXT VISIBILITY
+- Every word on every page must be clearly visible.
+- There must be NO white text on white backgrounds.
+- There must be NO low-contrast text.
+- Ensure headings, paragraphs, navigation, buttons, cards, blogs, forms, footer, labels, and all other text are clearly readable.
+- Use appropriate text/background contrast throughout the entire website.
+
+3. MAKE THE WEBSITE EVEN AND CONSISTENT
+- Fix uneven spacing, padding, margins, and alignment.
+- Make sections visually balanced.
+- Keep cards, buttons, images, headings, and other elements consistently aligned.
+- Maintain the existing design style and structure.
+- Do not unnecessarily redesign the website.
+
+4. CHECK THE ENTIRE WEBSITE
+Review EVERY existing page and section, including:
+- Homepage
+- About Us
+- School Solutions
+- Vocational Education
+- Blogs
+- Contact Us
+- Partner With Us
+- Centre of Excellence
+- Placements
+- Navigation
+- Footer
+- Forms
+- Any other existing pages/sections
+
+5. RESPONSIVENESS
+Make sure everything remains clearly visible and properly aligned on:
+- Desktop
+- Laptop
+- Tablet
+- Mobile
+
+6. CONTENT MUST REMAIN EXACTLY THE SAME
+DO NOT:
+- Change any heading
+- Change any paragraph
+- Change any button text
+- Change any navigation text
+- Change any blog text
+- Change any labels
+- Add new text
+- Remove existing text
+- Add placeholder content
+- Rewrite existing content
+
+The ONLY functionality to remove is DARK MODE.
+
+7. PRESERVE FUNCTIONALITY
+Do not break:
+- Navigation
+- Links
+- Forms
+- Components
+- Images
+- Existing functionality
+- Page structure
+
+8. FINAL CHECK
+Before finishing, inspect every page and section.
+
+Make sure:
+- Light mode only
+- No dark mode toggle
+- No white-on-white text
+- No low-contrast text
+- Every existing word is clearly visible
+- Spacing and alignment are consistent
+- Existing content remains EXACTLY unchanged
+
+IMPORTANT:
+Do not make any content decisions yourself. If something looks visually wrong, fix ONLY its styling, layout, color, spacing, or visibility. Do not change the actual content.

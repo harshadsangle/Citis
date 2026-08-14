@@ -8,7 +8,6 @@ import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { MegaMenu, type MegaMenuKey } from "@/components/layout/MegaMenu";
-import { HighContrastToggle } from "@/components/shared/HighContrastToggle";
 import { MEGA_MENUS, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -94,7 +93,6 @@ export function Navbar() {
           })}
         </nav>
         <div className="flex items-center gap-2">
-          <HighContrastToggle />
           <Button asChild className="hidden rounded-full xl:inline-flex" variant="accent">
             <Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link>
           </Button>
