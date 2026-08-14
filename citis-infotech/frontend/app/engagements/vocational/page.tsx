@@ -1,12 +1,11 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import { VocationalEducationPage } from "@/components/marketing/VocationalEducationPage";
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
   title: "Vocational Education",
   path: "/engagements/vocational",
-  description: "Vocational Education — CITIS InfoTech.",
+  description: "Vocational Education & Skill Development — Building Skills. Creating Opportunities. Connecting Education with Industry.",
 });
 
 export default function VocationalPage() {
@@ -14,18 +13,14 @@ export default function VocationalPage() {
     <>
       <PageHeader
         eyebrow="Engagements"
-        title="Vocational Education"
-        description="Vocational Education"
+        title="Vocational Education & Skill Development"
+        description="Building Skills. Creating Opportunities. Connecting Education with Industry."
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
           { label: "Vocational Education" },
         ]}
       />
-      <section className="container-site max-w-4xl py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionHeading title="Vocational Education" />
-        </AnimatedSection>
-      </section>
+      <VocationalEducationPage />
     </>
   );
 }
