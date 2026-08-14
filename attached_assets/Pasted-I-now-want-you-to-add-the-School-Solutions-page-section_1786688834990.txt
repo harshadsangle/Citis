@@ -1,0 +1,216 @@
+I now want you to add the **School Solutions** page/section to my existing website using the content provided in the attached/reference document.
+
+## 🚨 EXTREMELY IMPORTANT — DO NOT CHANGE THE CONTENT
+
+The content provided in the document is **FINAL and APPROVED**.
+
+Treat the attached document as the **ONLY source of truth**.
+
+**DO NOT change the content in any way.**
+
+You must NOT:
+
+* Rewrite any sentence.
+* Paraphrase anything.
+* Summarize anything.
+* Shorten the content.
+* Expand the content.
+* Correct grammar or spelling.
+* Change punctuation.
+* Change capitalization.
+* Replace words with synonyms.
+* Rename headings.
+* Rename sections.
+* Remove any content.
+* Add any content.
+* Add your own marketing copy.
+* Add your own descriptions.
+* Add statistics or claims that are not provided.
+* Add testimonials.
+* Add features that are not provided.
+* Invent information about CITIS.
+* Change the order of the content.
+
+**Do not use your own knowledge to fill gaps.**
+
+If something is not present in the document, **DO NOT create it yourself.**
+
+## CONTENT TO IMPLEMENT
+
+Use the **complete original content** from the provided document, including:
+
+* School Solutions
+* Tomorrow's Schools
+* Preparing Schools for the Future
+* CITIS AI Future Academy
+* Future Skills
+* ICT Integration
+* Technology as an Enabler of Learning
+* Digital Learning Ecosystem
+* Coding & Computational Thinking
+* STEM Education Solution
+* Learn. Experiment. Discover. Innovate.
+* Virtual Science Labs
+* CODMOS – Coding & Digital Making
+* Integrated STEM Ecosystem
+* Benefits to Schools
+* Future-Ready Students
+* Stronger Academic & Experiential Learning
+* Differentiated School Positioning
+* Teacher Capability Building
+* Integrated Technology Ecosystem
+* Increased Student Engagement
+* Innovation & Problem-Solving Culture
+* Scalable Implementation
+* Parent & Community Value
+* A Long-Term Transformation Partner
+* The CITIS proposition for schools is simple:
+* Equip the school. Empower the teacher. Inspire the student. Prepare for tomorrow.
+
+**These are only the section names for reference. You must copy the complete actual text from the attached document. Do not replace the original content with this list.**
+
+## EXACT CONTENT REQUIREMENT
+
+Copy the actual text from the provided document exactly as it appears.
+
+Do not recreate the content from memory.
+
+Do not rewrite it to make it "better."
+
+Do not make it more professional.
+
+Do not shorten it.
+
+Do not expand it.
+
+Do not add explanations.
+
+Preserve the exact:
+
+* Wording
+* Headings
+* Paragraphs
+* Terminology
+* Numbering
+* Order
+* Statements
+* Lists
+
+## BENEFITS TO SCHOOLS
+
+The document contains **10 numbered benefits**.
+
+Keep all 10 exactly as provided and in the same order:
+
+1. Future-Ready Students
+2. Stronger Academic & Experiential Learning
+3. Differentiated School Positioning
+4. Teacher Capability Building
+5. Integrated Technology Ecosystem
+6. Increased Student Engagement
+7. Innovation & Problem-Solving Culture
+8. Scalable Implementation
+9. Parent & Community Value
+10. A Long-Term Transformation Partner
+
+Do not rename, combine, remove, or reorder them.
+
+## FINAL STATEMENT
+
+Keep the final statement exactly as provided:
+
+**Equip the school. Empower the teacher. Inspire the student. Prepare for tomorrow.**
+
+Do not modify it.
+
+## WEBSITE DESIGN
+
+You may improve the **visual presentation and layout only**.
+
+You may use:
+
+* Modern section layouts
+* Cards
+* Grids
+* Typography hierarchy
+* Icons
+* Visual separators
+* Spacing
+* Responsive layouts
+* Subtle animations
+* Hover effects
+* Professional section designs
+
+However, **design changes must never change the written content**.
+
+The page should match the existing CITIS website's design language.
+
+## EXISTING WEBSITE
+
+First inspect my existing project and understand its current structure.
+
+Maintain the existing:
+
+* Header
+* Navigation
+* Footer
+* Fonts
+* Branding
+* Design system
+* Components
+* Responsive behavior
+* Existing functionality
+* Light/dark mode if already implemented
+
+Do NOT rebuild the entire website.
+
+Do NOT unnecessarily modify existing pages.
+
+Do NOT break existing functionality.
+
+Only implement the **School Solutions** page/section.
+
+## PRODUCT / SOLUTION CONTENT
+
+The source contains information about:
+
+* CITIS AI Future Academy
+* CODMOS
+* Virtual Science Labs
+* ICT Integration
+* Digital Learning Ecosystem
+* Coding & Computational Thinking
+* STEM Education Solution
+* Integrated STEM Ecosystem
+
+Use **only the descriptions provided in the source document**.
+
+Do not add product specifications, pricing, features, statistics, certifications, partnerships, testimonials, or claims that are not explicitly present.
+
+## FINAL VERIFICATION
+
+Before completing the implementation, compare the website against the source document and verify:
+
+1. Every section is included.
+2. Every heading is included.
+3. Every paragraph is included.
+4. Every list item is included.
+5. All 10 benefits are included.
+6. The benefits remain in the original order.
+7. The original content sequence is preserved.
+8. No text has been rewritten.
+9. No text has been removed.
+10. No new content has been added.
+11. No unsupported claims have been introduced.
+12. Existing website functionality still works.
+13. The page is responsive on desktop, tablet, and mobile.
+
+### FINAL RULE
+
+**CONTENT = DO NOT TOUCH.**
+
+**DESIGN / LAYOUT = YOU MAY IMPROVE.**
+
+Your only creative freedom is how you visually present the exact content provided in the document.
+
+**Do not add even a single sentence, heading, feature, claim, or description that is not present in the source document.**
