@@ -1,0 +1,144 @@
+I want you to add the **University Solutions** content provided in the attached/reference file to my existing website.
+
+### VERY IMPORTANT — CONTENT MUST NOT BE CHANGED
+
+The content I have provided is FINAL and APPROVED.
+
+**DO NOT change the content in any way.**
+
+Specifically:
+
+* Do NOT rewrite any sentence.
+* Do NOT paraphrase anything.
+* Do NOT shorten the content.
+* Do NOT summarize the content.
+* Do NOT correct grammar or spelling.
+* Do NOT change capitalization.
+* Do NOT change terminology.
+* Do NOT remove any section.
+* Do NOT add any new information.
+* Do NOT invent additional content.
+* Do NOT replace words with synonyms.
+* Do NOT change headings or subheadings.
+* Do NOT change CTA text.
+* Do NOT modify the order of the content.
+* Do NOT add marketing copy of your own.
+* Do NOT add statistics, numbers, claims, certifications, partners, testimonials, or features that are not present in the provided content.
+
+The attached content must be treated as the **single source of truth**.
+
+### WEBSITE IMPLEMENTATION
+
+Add this content to my existing website while maintaining the website's existing:
+
+* Header
+* Navigation
+* Footer
+* Fonts
+* Design system
+* Overall branding
+* Responsive behavior
+* Existing components
+* Existing functionality
+
+Do not unnecessarily modify existing pages or components.
+
+Create the page/section using the exact content provided in the reference file.
+
+### CONTENT STRUCTURE
+
+Preserve the exact content hierarchy and sequence from the provided material, including sections such as:
+
+* University Solutions
+* Redefining Higher Education
+* The CITIS University Progression Model™
+* Our University Engagement Models
+* Emerging Technology Domains
+* Centre of Excellence
+* Faculty Development Programs
+* Career/Employability content
+* Why Universities Choose CITIS
+* Benefits for Universities
+* Our Implementation Approach
+* Partner with CITIS
+* Ways to Collaborate
+* Industry Integrated Learning Programs (IILP)
+* Honours Degree Programs
+* Minor Degree Programs
+* Credit-Based Skill Courses
+* Open Elective Programs
+* Certificate Programs
+* Centre of Excellence (CoE)
+* Faculty Development Programs (FDP)
+* Curriculum Design & Academic Consulting
+* Learning Management System (LMS) & Digital Learning
+* Industry Connect & Internships
+* Placement & Career Development
+* Research, Innovation & Entrepreneurship
+* Customized Academic Partnerships
+* Why Partner with CITIS?
+* Let's Shape the Future of Higher Education Together
+
+These are only examples of the sections present in the provided content. **Use the complete attached content exactly as provided. Do not omit anything.**
+
+### DESIGN
+
+Make the page visually professional and modern while keeping the content unchanged.
+
+You may modify **layout and presentation only**, for example:
+
+* Cards
+* Grids
+* Spacing
+* Typography hierarchy
+* Icons
+* Sections
+* Animations
+* Responsive layout
+* Buttons
+* Visual separators
+* Hover effects
+
+However, these design changes must NEVER alter the actual written content.
+
+### CTA BUTTONS
+
+Keep CTA text exactly as provided, including:
+
+"Schedule a Consultation"
+
+"Download University Brochure"
+
+"Request a Proposal"
+
+Do not rename these buttons.
+
+### IMPORTANT IMPLEMENTATION RULE
+
+Before making changes, inspect my existing project structure and determine the correct page/component where this content should be added.
+
+Do not rebuild the entire website.
+
+Do not replace existing functionality.
+
+Only make the changes required to integrate this content properly.
+
+### FINAL VERIFICATION
+
+After implementation, verify that:
+
+1. Every section from the provided content exists.
+2. Every heading is present.
+3. Every paragraph is present.
+4. Every bullet/list item is present.
+5. The sequence has been preserved.
+6. No text has been rewritten.
+7. No text has been removed.
+8. No new claims or information have been added.
+9. CTA text is unchanged.
+10. The page works correctly on desktop, tablet, and mobile.
+11. Existing website functionality has not been broken.
+
+**Again: CONTENT IS FINAL. DO NOT CHANGE THE CONTENT.**
+
+Only improve the **website presentation and implementation**, not the words themselves.
