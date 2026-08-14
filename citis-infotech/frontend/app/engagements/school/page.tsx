@@ -1,39 +1,27 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import { SchoolPage } from "@/components/marketing/SchoolPage";
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
   title: "School Solutions",
   path: "/engagements/school",
-  description: "Tomorrow’s Schools, ICT Integration, STEM Education Solution.",
+  description:
+    "CITIS Infotech works with schools to build future-ready, technology-enabled and innovation-driven learning ecosystems through AI, coding, ICT integration, STEM education and virtual science learning.",
 });
 
-const sections = [
-  { title: "Tomorrow’s Schools" },
-  { title: "ICT Integration" },
-  { title: "STEM Education Solution" },
-];
-
-export default function SchoolPage() {
+export default function SchoolPageRoute() {
   return (
     <>
       <PageHeader
         eyebrow="Engagements"
         title="School Solutions"
-        description="School Solutions"
+        description="Building future-ready, technology-enabled and innovation-driven learning ecosystems"
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
           { label: "School Solutions" },
         ]}
       />
-      <section className="container-site max-w-4xl space-y-14 py-16 sm:py-24">
-        {sections.map((section, index) => (
-          <AnimatedSection key={section.title} delay={index * 0.05}>
-            <SectionHeading title={section.title} />
-          </AnimatedSection>
-        ))}
-      </section>
+      <SchoolPage />
     </>
   );
 }
