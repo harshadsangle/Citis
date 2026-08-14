@@ -1,0 +1,202 @@
+I now want you to add the **About Us** section/page to my existing website using the content provided in the attached/reference document.
+
+## 🚨 EXTREMELY IMPORTANT — DO NOT CHANGE THE CONTENT
+
+The content provided in the document is **FINAL**.
+
+Treat the provided document as the **ONLY source of truth** for this page.
+
+**DO NOT change the content in any way.**
+
+You must NOT:
+
+* Rewrite any sentence.
+* Paraphrase any sentence.
+* Summarize the content.
+* Shorten the content.
+* Expand the content.
+* Correct grammar or spelling.
+* Change punctuation.
+* Change capitalization.
+* Replace words with synonyms.
+* Rename headings.
+* Rename sections.
+* Remove any content.
+* Add any content.
+* Add your own marketing copy.
+* Add your own descriptions.
+* Add statistics that are not provided.
+* Add testimonials.
+* Add claims.
+* Add partners or organizations that are not mentioned.
+* Add images with invented captions.
+* Invent information about CITIS.
+* Change the order of the provided content.
+
+**DO NOT make assumptions about what CITIS does or add information from your own knowledge.**
+
+If something is not included in the provided document, **DO NOT create it yourself**.
+
+## CONTENT TO IMPLEMENT
+
+Implement the complete content from the document, including all sections and subsections exactly as provided.
+
+This includes:
+
+* About
+* About Us
+* CTA
+* WHO WE ARE
+* OUR PURPOSE
+* Vision and Mission
+* OUR VISION
+* OUR MISSION
+* OUR PHILOSOPHY
+* WHAT MAKES US DIFFERENT
+* OUR VALUES
+* OUR APPROACH
+* Quality Policy
+* Our Quality Commitments
+* Our Quality Promise
+* Our Associations
+* Collaborating with Global Leaders to Transform Education
+* Our Collaboration Ecosystem
+* Global Technology Partners
+* International Certification Bodies
+* Universities and Higher Education Institutions
+* Industry Partners
+* Government and Educational Bodies
+* Research and Innovation Partners
+* Why Our Associations Matter
+* Our Technology & Academic Network
+* Association Logos
+* Skill Development and Vocation Education
+* Education Consultants and Advisors
+
+**These are not replacement content or a summary. They are the sections that must be implemented from the provided document. Use the COMPLETE original text from the document.**
+
+## EXACT CONTENT REQUIREMENT
+
+Copy the actual text from the provided document into the website.
+
+Do not recreate the text from memory.
+
+Do not rewrite it.
+
+Do not improve it.
+
+Do not make it sound more professional.
+
+Do not make it shorter.
+
+The wording in the document must remain exactly as provided.
+
+## WEBSITE DESIGN
+
+You may improve the **visual presentation and layout** of the About Us page, but you may ONLY change the design—not the content.
+
+You may use:
+
+* Modern section layouts
+* Cards
+* Grids
+* Typography hierarchy
+* Icons
+* Visual separators
+* Spacing
+* Responsive layouts
+* Animations
+* Hover effects
+* Image/logo areas where appropriate
+* Professional CTA sections
+
+However, none of these design changes should modify the written content.
+
+## EXISTING WEBSITE
+
+First inspect my existing project.
+
+Maintain the existing:
+
+* Header
+* Navigation
+* Footer
+* Fonts
+* Brand identity
+* Design system
+* Existing components
+* Responsive behavior
+* Existing functionality
+* Theme/light-dark mode if already implemented
+
+Do NOT rebuild the website.
+
+Do NOT unnecessarily modify existing pages.
+
+Do NOT break existing functionality.
+
+Only implement what is required for the new **About Us** section/page.
+
+## CTA
+
+Use the CTA text exactly as provided in the document:
+
+**Partner With CITIS**
+
+**Download Corporate Profile**
+
+Do not rename or rewrite these buttons.
+
+## ASSOCIATIONS / LOGOS
+
+The document contains an **Association Logos** section.
+
+Do not invent or add logos for organizations that are not provided.
+
+If actual logo assets are already available in the project, use the appropriate existing assets.
+
+If the actual logos/assets are not available, create the appropriate layout/placeholders without inventing organization names or claims.
+
+## IMPORTANT
+
+Do not add a generic "About CITIS" introduction.
+
+Do not add "Our Team."
+
+Do not add "Leadership."
+
+Do not add "Our Clients."
+
+Do not add "Testimonials."
+
+Do not add "Awards."
+
+Do not add any other sections unless they are present in the provided document.
+
+## FINAL VERIFICATION
+
+Before completing the task, verify the implementation against the source document.
+
+Check that:
+
+1. All provided sections are included.
+2. All provided headings are included.
+3. All paragraphs are included.
+4. All bullet points are included.
+5. The original sequence is preserved.
+6. No text has been rewritten.
+7. No text has been removed.
+8. No new content has been added.
+9. CTA text is unchanged.
+10. No unsupported claims have been introduced.
+11. Existing website functionality still works.
+12. The page is responsive on desktop, tablet, and mobile.
+13. The About Us page follows the existing website's design language.
+
+### FINAL RULE
+
+**CONTENT = DO NOT TOUCH.**
+
+**DESIGN / LAYOUT = YOU MAY IMPROVE.**
+
+The only creative freedom you have is in presenting the provided content professionally on the website. The actual words, sentences, headings, lists, and information must remain exactly as provided in the document.

@@ -1,38 +1,28 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import { AssociationsPage } from "@/components/marketing/AssociationsPage";
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
   title: "Our Associations",
   path: "/about/associations",
-  description: "Our Associations — CITIS InfoTech.",
+  description:
+    "Collaborating with Global Leaders to Transform Education — CITIS Infotech LLP partners with globally recognized technology companies, certification bodies, universities, and industry leaders.",
 });
 
-export default function AssociationsPage() {
+export default function AssociationsRoute() {
   return (
     <>
       <PageHeader
         eyebrow="About"
         title="Our Associations"
-        description="Our Associations"
+        description="Collaborating with Global Leaders to Transform Education"
         breadcrumbs={[
           { label: "About Us", href: "/about" },
           { label: "Our Associations" },
         ]}
         tone="about"
       />
-      <section className="bg-[#e8f4f8]">
-        <div className="container-site max-w-4xl py-16 sm:py-24">
-          <AnimatedSection>
-            <SectionHeading title="Our Associations" />
-            <p className="mt-6 text-base leading-8 text-muted-foreground">
-              CITIS InfoTech partners with academic institutions, industry organizations, and education
-              networks to deliver industry–academia collaboration and future-ready learning programs.
-            </p>
-          </AnimatedSection>
-        </div>
-      </section>
+      <AssociationsPage />
     </>
   );
 }
