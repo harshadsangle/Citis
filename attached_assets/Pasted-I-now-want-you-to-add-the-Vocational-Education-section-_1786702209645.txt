@@ -1,0 +1,169 @@
+I now want you to add the **Vocational Education** section/page to my existing website using the content provided in the attached/reference document.
+
+## 🚨 EXTREMELY IMPORTANT — DO NOT CHANGE THE CONTENT
+
+The content provided in the document is **FINAL and APPROVED**.
+
+Treat the provided document as the **ONLY source of truth**.
+
+**DO NOT change the content in any way.**
+
+You must NOT:
+
+* Rewrite any sentence.
+* Paraphrase anything.
+* Summarize anything.
+* Shorten the content.
+* Expand the content.
+* Correct grammar or spelling.
+* Change punctuation.
+* Change capitalization.
+* Replace words with synonyms.
+* Rename headings.
+* Rename sections.
+* Remove any content.
+* Add any content.
+* Add your own marketing copy.
+* Add your own descriptions.
+* Add statistics or claims that are not provided.
+* Add testimonials.
+* Add features that are not provided.
+* Invent information about CITIS.
+* Change the order of the content.
+
+**Do not use your own knowledge to fill gaps.**
+
+If something is not present in the provided document, **DO NOT create it yourself.**
+
+## CONTENT TO IMPLEMENT
+
+Use the complete original **Vocational Education** content from the provided document.
+
+Do not confuse this section with the other website sections such as:
+
+* University Solutions
+* School Solutions
+* About Us
+* Products
+* Centre of Excellence
+
+The requested task is specifically to implement the **Vocational Education** section.
+
+If the provided document contains only the title/navigation reference for Vocational Education and does not contain detailed Vocational Education body content, **DO NOT invent or generate the missing body content**.
+
+Only implement the Vocational Education content that is actually present in the provided source.
+
+## EXACT CONTENT REQUIREMENT
+
+Copy the actual text from the provided document exactly as it appears.
+
+Do not recreate it from memory.
+
+Do not rewrite it to make it "better."
+
+Do not make it more professional.
+
+Do not shorten it.
+
+Do not expand it.
+
+Do not add explanations.
+
+Preserve the original wording, headings, terminology, sequence, and meaning.
+
+## WEBSITE DESIGN
+
+You may improve the **visual presentation and layout only**.
+
+You may use:
+
+* Modern section layouts
+* Cards
+* Grids
+* Typography hierarchy
+* Icons
+* Visual separators
+* Spacing
+* Responsive layouts
+* Subtle animations
+* Hover effects
+* Professional section designs
+
+However, **design changes must never change the written content**.
+
+The page should visually match the existing CITIS website and the pages already implemented.
+
+## EXISTING WEBSITE
+
+First inspect my existing project and understand its current structure.
+
+Maintain the existing:
+
+* Header
+* Navigation
+* Footer
+* Fonts
+* Branding
+* Design system
+* Components
+* Responsive behavior
+* Existing functionality
+* Light/dark mode if already implemented
+
+Do NOT rebuild the entire website.
+
+Do NOT unnecessarily modify existing pages.
+
+Do NOT break existing functionality.
+
+Only implement the required **Vocational Education** page/section.
+
+## NO INVENTED CONTENT
+
+This is extremely important.
+
+If the source document does not provide:
+
+* A heading
+* A paragraph
+* A description
+* A feature
+* A benefit
+* A service
+* A statistic
+* A CTA
+* A product description
+* A certification
+* A partner
+* A testimonial
+
+then **DO NOT create one yourself**.
+
+Do not use generic vocational-education content from the internet or your own knowledge.
+
+## FINAL VERIFICATION
+
+Before completing the implementation, compare the website content against the source document and verify:
+
+1. Every provided Vocational Education section is included.
+2. Every provided heading is included.
+3. Every provided paragraph is included.
+4. Every provided list item is included.
+5. The original sequence is preserved.
+6. No text has been rewritten.
+7. No text has been removed.
+8. No new content has been added.
+9. No unsupported claims have been introduced.
+10. Existing website functionality still works.
+11. The page is responsive on desktop, tablet, and mobile.
+12. The design is consistent with the existing website.
+
+### FINAL RULE
+
+**CONTENT = DO NOT TOUCH.**
+
+**DESIGN / LAYOUT = YOU MAY IMPROVE.**
+
+Your only creative freedom is how you visually present the exact content that is actually provided in the source document.
+
+**If detailed Vocational Education content is missing from the source document, stop at the available content. Do not fill the gap yourself.**
