@@ -1,31 +1,27 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import PlacementsPage from "@/components/marketing/PlacementsPage";
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
   title: "Placements and Internships",
   path: "/engagements/placements",
-  description: "Placements and Internships — CITIS InfoTech.",
+  description:
+    "CITIS Infotech bridges education and careers through structured internship programs, placement readiness, industry connect and career guidance.",
 });
 
-export default function PlacementsPage() {
+export default function PlacementsPageRoute() {
   return (
     <>
       <PageHeader
         eyebrow="Engagements"
-        title="Placements and Internships"
-        description="Placements and Internships"
+        title="Placements & Internships"
+        description="Connecting Education with Careers"
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
-          { label: "Placements and Internships" },
+          { label: "Placements & Internships" },
         ]}
       />
-      <section className="container-site max-w-4xl py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionHeading title="Placements and Internships" />
-        </AnimatedSection>
-      </section>
+      <PlacementsPage />
     </>
   );
 }

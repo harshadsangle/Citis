@@ -1,0 +1,314 @@
+I now want you to add the next content from the attached/reference document to my existing website.
+
+The content to be implemented is:
+
+1. **Centre of Excellence**
+2. **Placements & Internships**
+
+## 🚨 EXTREMELY IMPORTANT — DO NOT CHANGE THE CONTENT
+
+The content provided in the attached document is **FINAL and APPROVED**.
+
+Treat the attached document as the **ONLY source of truth**.
+
+**DO NOT change the content in any way.**
+
+You must NOT:
+
+* Rewrite any sentence.
+* Paraphrase anything.
+* Summarize anything.
+* Shorten anything.
+* Expand anything.
+* Correct grammar or spelling.
+* Change punctuation.
+* Change capitalization.
+* Replace words with synonyms.
+* Rename headings.
+* Rename sections.
+* Remove any content.
+* Add any content.
+* Add your own marketing copy.
+* Add your own descriptions.
+* Add statistics or claims that are not provided.
+* Add testimonials.
+* Add features that are not provided.
+* Invent information about CITIS.
+* Change the order of the content.
+* Fill gaps using your own knowledge.
+
+**If the information is not present in the document, DO NOT create it yourself.**
+
+---
+
+# 1. CENTRE OF EXCELLENCE
+
+Implement the complete **Centre of Excellence** content exactly as provided in the document.
+
+This includes all of the following content and sections:
+
+* Centre of Excellence
+* Building Institutional Capability in Emerging Technologies
+* Centre of Excellence for AI
+* AI CoE Ecosystem
+* Centre of Excellence for Cyber Security
+* Services Offered by CITIS
+* CoE Strategy & Design
+* Infrastructure & Technology Enablement
+* Curriculum & Program Development
+* Faculty Development
+* Student Training & Projects
+* Industry Interaction
+* Research & Innovation
+* Certifications & Career Pathways
+* Our Technology & Industry Ecosystem
+* NVIDIA
+* Cisco
+* TCS
+* From Lab to Innovation Ecosystem
+
+Use the **complete original text** from the document.
+
+Do not use the above list as replacement content.
+
+The list is only provided to identify the sections. The actual text must be copied from the attached source document.
+
+Preserve every paragraph, heading, numbered section, description, and sequence exactly as provided.
+
+Also preserve the following ecosystem exactly as written:
+
+**AI Infrastructure → Faculty Enablement → Student Learning → Projects → Research → Innovation → Industry Collaboration**
+
+And:
+
+**Learn → Practise → Build → Innovate → Research → Collaborate → Certify → Create Impact**
+
+Do not modify these.
+
+---
+
+# 2. PLACEMENTS & INTERNSHIPS
+
+Implement the complete **Placements & Internships** content exactly as provided in the document.
+
+This includes:
+
+* Placements & Internships
+* Connecting Education with Careers
+* Our Placement Approach
+* From Campus to Career
+* Internship Programs
+* Learn Through Real-World Experience
+* Internship Journey
+* Industry Projects
+* Learning by Solving Real Problems
+* Placement Readiness
+* Preparing Students for the World of Work
+* Career Guidance & Counselling
+* Helping Learners Make Informed Career Choices
+* Industry Connect
+* Bringing Employers Closer to Learners
+* Placement Partnerships
+* Technology & Emerging Skills
+* Artificial Intelligence & Generative AI
+* Data & Analytics
+* Cybersecurity
+* Software & Digital Technologies
+* Business & Professional Skills
+* Internship-to-Placement Pathway
+* Placement Support for Institutions
+* Placement Strategy
+* Student Employability
+* Industry Connect
+* Internship Ecosystem
+* Pre-Placement Training
+* Recruitment Support
+* Placement Analytics
+* Benefits to Students
+* Benefits to Universities & Colleges
+* Beyond Placement
+
+Again, this list is only for identifying the content structure.
+
+**Do NOT replace the actual content with this list.**
+
+Copy the complete original text from the attached document.
+
+---
+
+# EXACT CONTENT REQUIREMENT
+
+The attached document is the source of truth.
+
+Copy the content exactly as it appears.
+
+Do not recreate it from memory.
+
+Do not rewrite it.
+
+Do not make it sound more professional.
+
+Do not make it shorter.
+
+Do not add explanations.
+
+Do not remove information.
+
+Do not add information.
+
+Preserve:
+
+* Exact wording
+* Exact headings
+* Exact paragraphs
+* Exact terminology
+* Exact numbering
+* Exact bullet points
+* Exact sequences
+* Exact arrows and flow structures
+* Exact final statements
+
+---
+
+# WEBSITE DESIGN
+
+You may improve the **visual presentation and layout only**.
+
+You may use:
+
+* Modern section layouts
+* Cards
+* Grids
+* Typography hierarchy
+* Icons
+* Visual separators
+* Spacing
+* Responsive layouts
+* Subtle animations
+* Hover effects
+* Professional layouts
+* Technology-themed visual elements
+
+However:
+
+**DESIGN CHANGES MUST NEVER MODIFY THE CONTENT.**
+
+Do not add text simply to fill a card, banner, image, or section.
+
+If an image or visual requires a caption and no caption is provided in the source, do not invent one.
+
+---
+
+# EXISTING WEBSITE
+
+Before making changes, inspect the existing project structure.
+
+Maintain the existing:
+
+* Header
+* Navigation
+* Footer
+* Fonts
+* Branding
+* Design system
+* Components
+* Responsive behavior
+* Existing functionality
+* Light/dark mode
+* Existing pages
+
+Do NOT rebuild the entire website.
+
+Do NOT unnecessarily modify existing pages.
+
+Do NOT break existing functionality.
+
+Only add the required **Centre of Excellence** and **Placements & Internships** content.
+
+---
+
+# DO NOT INVENT TECHNOLOGY OR PARTNER INFORMATION
+
+The Centre of Excellence source specifically mentions:
+
+* NVIDIA
+* Cisco
+* TCS
+
+Use only the descriptions and information provided in the document.
+
+Do not add additional partner information.
+
+Do not add partner logos unless the appropriate assets already exist or are explicitly provided.
+
+Do not create claims about partnerships, certifications, technologies, or capabilities that are not present in the source.
+
+---
+
+# PLACEMENTS & INTERNSHIPS — DO NOT INVENT OUTCOMES
+
+Do not add:
+
+* Placement percentages
+* Salary packages
+* Number of companies
+* Number of students placed
+* Internship statistics
+* Company names
+* Recruitment statistics
+* Guaranteed placement claims
+* Job guarantees
+
+unless they are explicitly present in the source document.
+
+The wording in the source must remain unchanged.
+
+---
+
+# IMPORTANT FLOW STRUCTURES
+
+Preserve the following exactly as they appear in the document:
+
+**Academic Learning → Skill Development → Industry Exposure → Projects → Certifications → Internships → Career Preparation → Placement**
+
+**Orientation → Skill Preparation → Industry Matching → Project / Internship → Mentoring → Evaluation → Certification / Experience → Career Readiness**
+
+**Learn → Practise → Intern → Perform → Get Evaluated → Build Experience → Get Hired**
+
+Do not change these flows.
+
+---
+
+# FINAL VERIFICATION
+
+Before completing the implementation, compare the website content against the attached document.
+
+Verify that:
+
+1. Every Centre of Excellence section is included.
+2. Every Placements & Internships section is included.
+3. Every heading is present.
+4. Every paragraph is present.
+5. Every numbered item is present.
+6. Every bullet point is present.
+7. All flow diagrams/text sequences are preserved.
+8. The original sequence is preserved.
+9. No text has been rewritten.
+10. No text has been removed.
+11. No new content has been added.
+12. No unsupported claims have been introduced.
+13. No partner information has been invented.
+14. No statistics have been invented.
+15. Existing website functionality still works.
+16. The pages are responsive on desktop, tablet, and mobile.
+17. The design is consistent with the existing CITIS website.
+
+## FINAL RULE
+
+**CONTENT = DO NOT TOUCH.**
+
+**DESIGN / LAYOUT = YOU MAY IMPROVE.**
+
+Your only creative freedom is how you visually present the exact content from the attached document.
+
+**Do not add even a single sentence, heading, feature, statistic, claim, description, or section that is not present in the source document.**
