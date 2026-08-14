@@ -1,0 +1,320 @@
+I now want you to add the **Partner With Us** page/section to my existing website using the content provided in the attached/reference document.
+
+## 🚨 EXTREMELY IMPORTANT — DO NOT CHANGE THE CONTENT
+
+The content provided in the attached document is **FINAL and APPROVED**.
+
+Treat the attached document as the **ONLY source of truth**.
+
+**DO NOT change the content in any way.**
+
+You must NOT:
+
+* Rewrite any sentence.
+* Paraphrase anything.
+* Summarize anything.
+* Shorten anything.
+* Expand anything.
+* Correct grammar or spelling.
+* Change punctuation.
+* Change capitalization.
+* Replace words with synonyms.
+* Rename headings.
+* Rename sections.
+* Remove any content.
+* Add any content.
+* Add your own marketing copy.
+* Add your own descriptions.
+* Add statistics or claims that are not provided.
+* Add testimonials.
+* Add features that are not provided.
+* Invent information about CITIS.
+* Change the order of the content.
+* Fill missing information using your own knowledge.
+
+**If something is not present in the document, DO NOT create it yourself.**
+
+## CONTENT TO IMPLEMENT
+
+Use the **complete original content** from the attached document, including all sections:
+
+* Partner With Us
+* Build the Future of Education Together
+* Franchise & Centre Partnership
+* Build a CITIS Learning Ecosystem in Your Region
+* Potential Franchise / Centre Models
+* CITIS Skill Development Centre
+* CITIS AI Future Academy
+* CITIS STEM & Innovation Centre
+* CITIS Technology Centre
+* Institutional Collaboration
+* Transform Your Institution with CITIS
+* Industry & Corporate Collaboration
+* Strategic Partnerships
+* Become a CITIS Partner
+* Partnership Interest Form
+* About You
+* Tell Us About Your Interest
+* Consent
+* Submit Partnership Interest
+* Let's Create Something Meaningful Together
+
+This list is only to identify the sections.
+
+**Do not replace the actual content with this list.**
+
+Copy the complete text exactly from the attached document.
+
+## EXACT CONTENT REQUIREMENT
+
+The attached document is the source of truth.
+
+Copy the actual content exactly as it appears.
+
+Do not recreate it from memory.
+
+Do not rewrite it.
+
+Do not make it sound more professional.
+
+Do not shorten it.
+
+Do not expand it.
+
+Do not add explanations.
+
+Do not remove information.
+
+Preserve the exact:
+
+* Wording
+* Headings
+* Paragraphs
+* Terminology
+* Bullet points
+* Form fields
+* Options
+* Order
+* Statements
+* CTA text
+
+## PARTNERSHIP MODELS
+
+Keep all partnership models exactly as provided, including:
+
+* CITIS Skill Development Centre
+* CITIS AI Future Academy
+* CITIS STEM & Innovation Centre
+* CITIS Technology Centre
+
+Do not rename or add partnership models.
+
+## INSTITUTIONAL COLLABORATION
+
+Keep the complete list exactly as provided:
+
+* AI Future Academy
+* AI & Emerging Technology Programs
+* CODMOS Coding & Digital Learning
+* STEM Education
+* Virtual Science Labs
+* Honours & Minor Programs
+* Certification Programs
+* Vocational Education
+* Industry Integrated Learning
+* Faculty Development Programs
+* Centres of Excellence
+* Placement & Internship Programs
+* Digital Learning Ecosystems
+
+Do not add or remove items.
+
+## PARTNERSHIP INTEREST FORM
+
+Implement the form using the exact fields and options provided in the source.
+
+Preserve:
+
+**I am interested in:**
+
+* CITIS Franchise / Centre Partnership
+* AI Future Academy Partnership
+* School Partnership
+* College / University Partnership
+* STEM & Science Lab Partnership
+* Skill Development Partnership
+* Vocational Education Partnership
+* Industry Integrated Learning
+* Centre of Excellence
+* Placement & Internship Partnership
+* Corporate / Workforce Development
+* Technology Partnership
+* Strategic Business Collaboration
+* Other
+
+Keep the following fields exactly as provided:
+
+* Name:
+* Organisation / Institution:
+* Designation:
+* City / Location:
+* State:
+* Email:
+* Mobile Number:
+* Tell Us About Your Interest
+* What would you like to explore with CITIS?
+* Do you currently have infrastructure / facilities available?
+* Preferred geography / area of operation:
+* Expected timeline to start:
+* Consent
+
+Keep the options exactly as provided:
+
+**Do you currently have infrastructure / facilities available?**
+
+* Yes
+* No
+* To be developed
+
+**Expected timeline to start:**
+
+* Immediately
+* Within 3 months
+* 3–6 months
+* 6–12 months
+* Exploring / Yet to decide
+
+Keep the consent statement exactly as provided:
+
+**I agree to be contacted by the CITIS Infotech team regarding the partnership opportunity.**
+
+Keep the button text exactly:
+
+**[ Submit Partnership Interest ]**
+
+Do not rename the button.
+
+## FINAL CTA
+
+Keep the final section exactly as provided:
+
+**Let's Create Something Meaningful Together**
+
+And preserve the final text:
+
+**Partner with CITIS. Build capabilities. Create opportunities. Transform education.**
+
+Do not modify this content.
+
+## WEBSITE DESIGN
+
+You may improve the **visual presentation and layout only**.
+
+You may use:
+
+* Modern section layouts
+* Cards
+* Grids
+* Typography hierarchy
+* Icons
+* Visual separators
+* Spacing
+* Responsive layouts
+* Subtle animations
+* Hover effects
+* Professional form layout
+* Professional CTA layout
+
+However:
+
+**DESIGN CHANGES MUST NEVER MODIFY THE CONTENT.**
+
+Do not add text simply to fill a card, banner, form, or section.
+
+## EXISTING WEBSITE
+
+Before making changes, inspect my existing project structure.
+
+Maintain the existing:
+
+* Header
+* Navigation
+* Footer
+* Fonts
+* Branding
+* Design system
+* Components
+* Responsive behavior
+* Existing functionality
+* Light/dark mode
+
+Do NOT rebuild the entire website.
+
+Do NOT unnecessarily modify existing pages.
+
+Do NOT break existing functionality.
+
+Only add the required **Partner With Us** page/section.
+
+## FORM FUNCTIONALITY
+
+You may make the provided partnership form functional using the existing project setup.
+
+However, **do not add any additional form fields or change the wording of existing fields/options**.
+
+Do not connect any paid service.
+
+Do not introduce any third-party paid service.
+
+If backend submission functionality already exists in the project, use the existing implementation where appropriate.
+
+If submission functionality does not exist, implement only what is possible within the existing project without inventing additional content or requiring a paid service.
+
+## NO INVENTED CONTENT
+
+Do not add:
+
+* New partnership benefits
+* New partner categories
+* New services
+* New statistics
+* New claims
+* New testimonials
+* New company names
+* New certifications
+* New pricing
+* New guarantees
+* New form fields
+
+unless they are explicitly present in the attached document.
+
+## FINAL VERIFICATION
+
+Before completing the implementation, compare the website content against the attached document and verify:
+
+1. Every Partner With Us section is included.
+2. Every heading is present.
+3. Every paragraph is present.
+4. Every bullet point is present.
+5. Every partnership model is present.
+6. Every form field is present.
+7. Every form option is present.
+8. The original sequence is preserved.
+9. No text has been rewritten.
+10. No text has been removed.
+11. No new content has been added.
+12. No unsupported claims have been introduced.
+13. CTA text is unchanged.
+14. Existing website functionality still works.
+15. The page is responsive on desktop, tablet, and mobile.
+16. The design matches the existing CITIS website.
+
+## FINAL RULE
+
+**CONTENT = DO NOT TOUCH.**
+
+**DESIGN / LAYOUT = YOU MAY IMPROVE.**
+
+Your only creative freedom is how you visually present the exact content provided in the attached document.
+
+**Do not add even a single sentence, heading, feature, claim, description, partnership model, or form field that is not present in the source document.**
