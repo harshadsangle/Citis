@@ -289,12 +289,15 @@ export const HOME_TESTIMONIALS = [
 ] as const;
 
 export const HOME_CLIENTS = [
-  { name: "University Partners", logo: "/images/clients/university-partners.svg" },
-  { name: "School Networks", logo: "/images/clients/school-networks.svg" },
-  { name: "Industry Partners", logo: "/images/clients/industry-partners.svg" },
-  { name: "Skill Missions", logo: "/images/clients/skill-missions.svg" },
-  { name: "Centres of Excellence", logo: "/images/clients/centres-of-excellence.svg" },
-  { name: "Vocational Institutes", logo: "/images/clients/vocational-institutes.svg" },
+  { name: "Client logo 1", logo: "/images/clients/provided-client-logo-01.png" },
+  { name: "Client logo 2", logo: "/images/clients/provided-client-logo-02.png" },
+  { name: "Client logo 3", logo: "/images/clients/provided-client-logo-03.png" },
+  { name: "Client logo 4", logo: "/images/clients/provided-client-logo-04.png" },
+  { name: "Client logo 5", logo: "/images/clients/provided-client-logo-05.png" },
+  { name: "Client logo 6", logo: "/images/clients/provided-client-logo-06.png" },
+  { name: "Client logo 7", logo: "/images/clients/provided-client-logo-07.png" },
+  { name: "Client logo 8", logo: "/images/clients/provided-client-logo-08.png" },
+  { name: "Client logo 9", logo: "/images/clients/provided-client-logo-09.png" },
 ] as const;
 
 /** Exact Why Choose Us points from the CITIS wireframe. */
