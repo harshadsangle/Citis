@@ -52,8 +52,8 @@ export default function Home() {
             <div className="absolute -right-6 -bottom-10 size-48 rounded-full bg-primary/20 blur-3xl" />
             <div className="relative overflow-hidden rounded-[2rem] shadow-[0_30px_80px_rgba(15,76,129,0.25)] ring-1 ring-[#0F4C81]/10">
               <NextImage
-                src="/images/excellence-innovation.jpg"
-                alt="CITIS InfoTech — technology-enabled learning and innovation"
+                src="/images/excellence-innovation.png"
+                alt="Woman using a laptop"
                 width={1100}
                 height={780}
                 className="aspect-[5/4] w-full object-cover"
