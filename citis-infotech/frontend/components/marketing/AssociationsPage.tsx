@@ -169,7 +169,7 @@ export function AssociationsPage() {
               {associationLogos.map((association) => (
                 <div
                   key={association.name}
-                  className="flex h-32 items-center justify-center rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:border-secondary/40"
+                  className="flex h-32 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-sm transition hover:-translate-y-1 hover:border-secondary/40 sm:p-3"
                 >
                   <Image
                     src={association.logo}
@@ -177,7 +177,7 @@ export function AssociationsPage() {
                     width={240}
                     height={120}
                     sizes="(min-width: 1280px) 14vw, (min-width: 768px) 25vw, 50vw"
-                    className="h-full w-full object-contain"
+                    className="block h-full w-full object-contain object-center"
                   />
                 </div>
               ))}
