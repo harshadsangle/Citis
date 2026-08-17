@@ -7,6 +7,7 @@ import {
   Globe,
   GraduationCap,
 } from "lucide-react";
+import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -70,6 +71,22 @@ const whyMatterItems = [
   "Enhanced institutional reputation",
   "Improved graduate employability",
 ];
+
+const associationLogos = [
+  { name: "CompTIA Authorized Partner", logo: "/images/comptia-authorized-partner.jpg" },
+  { name: "Adobe", logo: "/images/adobe.png" },
+  {
+    name: "Certiport Authorized Testing Center",
+    logo: "/images/certiport-authorized-testing-center.jpeg",
+  },
+  { name: "Microsoft", logo: "/images/microsoft.png" },
+  { name: "Skills India", logo: "/images/skills-india.jpeg" },
+  {
+    name: "EduWealth Consulting Services",
+    logo: "/images/eduwealth-consulting-services.png",
+  },
+  { name: "AyeLabz", logo: "/images/ayelabz.jpeg" },
+] as const;
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -147,35 +164,21 @@ export function AssociationsPage() {
             <SectionHeading title="Association Logos" />
           </AnimatedSection>
 
-          {/* Skill Development and Vocation Education */}
           <AnimatedSection delay={0.08} className="mt-10">
-            <p className="mb-6 text-xs font-bold tracking-[0.2em] text-secondary uppercase">
-              Skill Development and Vocation Education
-            </p>
-            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
-              {Array.from({ length: 6 }).map((_, i) => (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+              {associationLogos.map((association) => (
                 <div
-                  key={i}
-                  className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border bg-card text-xs text-muted-foreground"
+                  key={association.name}
+                  className="flex h-32 items-center justify-center rounded-2xl border border-border bg-card p-4 shadow-sm transition hover:-translate-y-1 hover:border-secondary/40"
                 >
-                  Partner Logo
-                </div>
-              ))}
-            </div>
-          </AnimatedSection>
-
-          {/* Education Consultants and Advisors */}
-          <AnimatedSection delay={0.12} className="mt-10">
-            <p className="mb-6 text-xs font-bold tracking-[0.2em] text-secondary uppercase">
-              Education Consultants and Advisors
-            </p>
-            <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex h-20 items-center justify-center rounded-lg border border-dashed border-border bg-card text-xs text-muted-foreground"
-                >
-                  Partner Logo
+                  <Image
+                    src={association.logo}
+                    alt={association.name}
+                    width={240}
+                    height={120}
+                    sizes="(min-width: 1280px) 14vw, (min-width: 768px) 25vw, 50vw"
+                    className="h-full w-full object-contain"
+                  />
                 </div>
               ))}
             </div>
