@@ -1,31 +1,26 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import { ScienceLabPage } from "@/components/marketing/ScienceLabPage";
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
-  title: "AppWizz Academy",
+  title: "Science Lab",
   path: "/products/appwizz-academy",
-  description: "AppWizz Academy",
+  description: "The Virtual Lab of Tomorrow",
 });
 
-export default function AppWizzAcademyPage() {
+export default function ScienceLabRoute() {
   return (
     <>
       <PageHeader
         eyebrow="Products"
-        title="AppWizz Academy"
-        description="AppWizz Academy"
+        title="Science Lab"
+        description="The Virtual Lab of Tomorrow"
         breadcrumbs={[
           { label: "Products", href: "/products" },
-          { label: "AppWizz Academy" },
+          { label: "Science Lab" },
         ]}
       />
-      <section className="container-site max-w-4xl py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionHeading title="AppWizz Academy" />
-        </AnimatedSection>
-      </section>
+      <ScienceLabPage />
     </>
   );
 }
