@@ -116,7 +116,7 @@ export default function Home() {
                 <div className="absolute -inset-3 rotate-2 rounded-[2.2rem] bg-gradient-to-br from-accent/30 to-primary/20" />
                 <div className="relative overflow-hidden rounded-[2rem] shadow-[0_24px_60px_rgba(15,76,129,0.18)] ring-1 ring-[#0F4C81]/10">
                   <NextImage
-                    src="/images/move-beyond-curriculum.jpg"
+                    src="/images/move-beyond-curriculum.png"
                     alt="Hands-on STEM learning beyond the curriculum"
                     width={1000}
                     height={800}
