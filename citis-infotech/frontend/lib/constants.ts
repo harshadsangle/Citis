@@ -286,28 +286,73 @@ export const FOOTER_LINKS = [
 
 export const HOME_TESTIMONIALS = [
   {
-    name: "Partner Institution",
-    role: "Academic Leader",
-    company: "Higher Education",
+    category: "Higher Education Programs – Testimonial",
+    name: "Dr. S. Vidyashankar",
+    role: "Vice Chancellor",
+    company: "VTU, Belagavi",
+    attribution: "Vice Chancellor\nVTU, Belagavi",
     content:
-      "CITIS InfoTech programs help our students gain industry-aligned skills and career readiness.",
-    rating: 5,
+      "CITIS Infotech has demonstrated a clear understanding of the changing requirements of higher education and the growing need to connect academic learning with industry and emerging technologies. Their approach to Honours, Minor, certification and industry-integrated programs provides institutions with an opportunity to offer students learning pathways that complement their core degree programs. We appreciate CITIS's collaborative approach and their focus on building meaningful academic and industry partnerships.",
   },
   {
-    name: "Industry Partner",
-    role: "Talent Lead",
-    company: "Technology Sector",
+    category: "Computational Thinking, AI & Coding – School Leader",
+    name: "Dr. C T Kunjir",
+    role: "Founder",
+    company: "Cambridge Group of Schools",
+    attribution: "Founder – Cambridge Group of Schools",
     content:
-      "Students from CITIS programs demonstrate practical competencies and zero-day deployment readiness.",
-    rating: 5,
+      "Technology education must begin by developing the ability to think, create and solve problems—not simply by teaching students how to use technology. The CITIS approach to computational thinking, coding and Artificial Intelligence gives our students an opportunity to explore technology in a structured and engaging manner. The combination of coding, AI and project-based learning is helping our students develop curiosity, creativity and confidence in working with technology.",
   },
   {
-    name: "School Partner",
-    role: "Principal",
-    company: "K–12 Institution",
+    category: "Science Lab – Parent",
+    name: "Subhash Kumbhar",
+    role: "Parent of Shubham Kumbhar",
+    company: "Potdar International School, Pune",
+    attribution: "Parent of Shubham Kumbhar, Potdar International School, Pune",
     content:
-      "CITIS school solutions support ICT integration and STEM education for future-ready learners.",
-    rating: 5,
+      "My child has always enjoyed science, but the Science Lab experience has made the subject much more interactive and interesting. Being able to explore experiments and scientific concepts through a digital and visual environment has encouraged my child to ask more questions and understand concepts beyond what is taught in the textbook. I feel that technology-enabled practical learning can make a significant difference to how children experience science.",
+  },
+  {
+    category: "Science Lab – Science Teacher",
+    name: "Ms. Meera Mirchandani",
+    role: "Science Teacher",
+    company: "",
+    attribution: "Science Teacher",
+    content:
+      "The Science Lab solution has been a valuable complement to our classroom teaching. It gives students an opportunity to visualise concepts, explore experiments and learn through interaction rather than depending entirely on theoretical explanations. From a teacher's perspective, it also provides an additional resource to explain complex concepts and engage students more effectively. The combination of classroom teaching and virtual practical learning creates a much richer science-learning experience.",
+  },
+  {
+    category: "Vocational Education & Skill Development",
+    name: "Dr. Manoj Chavan",
+    role: "Udyog Vikas Skills Councile.",
+    company: "",
+    attribution: "Udyog Vikas Skills Councile.",
+    content:
+      "The biggest challenge facing higher education today is ensuring that students graduate with skills that are relevant to the workplace. CITIS Infotech's approach to vocational education and skill development brings academic learning closer to industry requirements through practical learning, technology exposure, certifications and industry-oriented programs. Their focus on Industry Integrated Learning and employability provides institutions with a valuable framework for preparing students for the transition from campus to career.",
+  },
+  {
+    name: "Dr. Prashant Kulkarni",
+    role: "Academic Expert",
+    company: "University Advisor – YCMOU",
+    attribution: "Academic Expert\nUniversity Advisor – YCMOU",
+    content:
+      "CITIS Infotech has developed a compelling approach to education that brings together academic learning, technology, skills and industry exposure. Their focus on emerging areas such as Artificial Intelligence, digital learning and future skills is aligned with the changing needs of education. CITIS has the potential to become a meaningful partner for institutions seeking to prepare their students for the future.",
+  },
+  {
+    name: "Franxan Stanley",
+    role: "Co Founder",
+    company: "Aye Labs, India",
+    attribution: "Co Founder – Aye Labs, India",
+    content:
+      "What stands out about CITIS Infotech is its focus on connecting education with practical application. Whether it is technology-enabled learning, skill development, vocational education or industry-integrated programs, the emphasis is on creating meaningful learning experiences for students. This integrated approach can help institutions move beyond traditional models and create more relevant and future-ready education ecosystems.",
+  },
+  {
+    name: "Gaurav Sharma",
+    role: "Recruitment Specialist and HR Leader",
+    company: "Education Technology & Institutional Development",
+    attribution: "Recruitment Specialist and HR Leader\nEducation Technology & Institutional Development",
+    content:
+      "The education landscape is undergoing a significant transformation, driven by Artificial Intelligence, emerging technologies and changing industry requirements. CITIS Infotech is responding to this transformation by bringing together technology, academic programs, faculty development and industry collaboration. Its ecosystem-oriented approach is particularly relevant for institutions looking to build sustainable capabilities rather than adopt isolated technology solutions.",
   },
 ] as const;
 

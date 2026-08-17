@@ -11,9 +11,11 @@ import type { Testimonial } from "@/types";
 
 type SliderItem = {
   id?: string | number;
+  category?: string;
   name: string;
   role: string;
   company: string;
+  attribution?: string;
   quote: string;
   rating?: number;
   avatarUrl?: string;
@@ -23,9 +25,11 @@ interface TestimonialsSliderProps {
   testimonials?: Testimonial[];
   /** Static marketing fallbacks when CMS data is unavailable. */
   items?: ReadonlyArray<{
+    category?: string;
     name: string;
     role: string;
     company: string;
+    attribution?: string;
     content?: string;
     quote?: string;
     rating?: number;
@@ -45,9 +49,11 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
     })) ??
     items?.map((item, index) => ({
       id: index,
+      category: item.category,
       name: item.name,
       role: item.role,
       company: item.company,
+      attribution: item.attribution,
       quote: item.quote ?? item.content ?? "",
       rating: item.rating,
     })) ??
@@ -76,6 +82,11 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
                 ))}
               </div>
             </div>
+            {item.category && (
+              <p className="mt-5 text-xs font-bold tracking-[0.14em] text-[#0F4C81]/75 uppercase">
+                {item.category}
+              </p>
+            )}
             <blockquote className="mt-6 flex-1 font-heading text-xl leading-9 font-semibold text-[#0b1524]">
               &ldquo;{item.quote}&rdquo;
             </blockquote>
@@ -92,8 +103,8 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
               </Avatar>
               <span>
                 <span className="block text-sm font-bold text-[#0b1524]">{item.name}</span>
-                <span className="block text-xs font-medium text-[#0F4C81]/80">
-                  {item.role}, {item.company}
+                <span className="block whitespace-pre-line text-xs font-medium text-[#0F4C81]/80">
+                  {item.attribution ?? `${item.role}, ${item.company}`}
                 </span>
               </span>
             </figcaption>
