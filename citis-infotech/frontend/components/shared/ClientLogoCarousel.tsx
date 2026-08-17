@@ -85,7 +85,8 @@ export function ClientLogoCarousel({ clients, logos }: ClientLogoCarouselProps) 
                   alt={item.name}
                   width={220}
                   height={72}
-                  className="h-16 w-auto max-w-full object-contain"
+                  sizes="(min-width: 1024px) 20vw, (min-width: 768px) 25vw, 33vw"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <span className="text-center font-heading text-sm font-bold tracking-wide text-[#0F4C81] sm:text-base">
