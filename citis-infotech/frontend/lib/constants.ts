@@ -232,7 +232,7 @@ export const FOOTER_LINKS = [
     title: "Products",
     links: [
       { label: "AI Future Academy", href: "/products/ai-future-academy" },
-      { label: "AppWizz Academy", href: "/products/appwizz-academy" },
+      { label: "Science Lab", href: "/products/appwizz-academy" },
       { label: "MoxieMind Entrepreneurship Academy", href: "/products/moxiemind" },
       { label: "CITIS Future Academy", href: "/future-academy" },
       { label: "Case Studies", href: "/highlights/case-studies" },
