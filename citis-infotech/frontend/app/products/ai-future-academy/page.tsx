@@ -1,31 +1,26 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import { AIFutureAcademyPage } from "@/components/marketing/AIFutureAcademyPage";
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
   title: "AI Future Academy",
   path: "/products/ai-future-academy",
-  description: "AI Future Academy",
+  description: "Computational Thinking, Coding & Artificial Intelligence for K–12",
 });
 
-export default function AIFutureAcademyPage() {
+export default function AIFutureAcademyRoute() {
   return (
     <>
       <PageHeader
         eyebrow="Products"
-        title="AI Future Academy"
-        description="AI Future Academy"
+        title="CITIS AI Future Academy"
+        description="Computational Thinking, Coding & Artificial Intelligence for K–12"
         breadcrumbs={[
           { label: "Products", href: "/products" },
-          { label: "AI Future Academy" },
+          { label: "CITIS AI Future Academy" },
         ]}
       />
-      <section className="container-site max-w-4xl py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionHeading title="AI Future Academy" />
-        </AnimatedSection>
-      </section>
+      <AIFutureAcademyPage />
     </>
   );
 }
