@@ -35,7 +35,7 @@ export const NAV_LINKS = [
   { label: "Products", href: "/products", megaMenu: "products" },
   { label: "Highlights", href: "/highlights", megaMenu: "highlights" },
   { label: "About", href: "/about", megaMenu: "about" },
-  { label: "Contact", href: "/contact" },
+  { label: "Contact", href: "/contact", megaMenu: "contact" },
 ] as const;
 
 export const MEGA_MENUS = {
@@ -182,6 +182,29 @@ export const MEGA_MENUS = {
         href: "/about/media",
         description: "Media",
         icon: Video,
+      },
+    ],
+  },
+  contact: {
+    eyebrow: "Contact Us",
+    title: "Connect with CITIS InfoTech",
+    featured: {
+      label: "Contact Us",
+      href: "/contact",
+      description: "Get in touch with CITIS InfoTech.",
+    },
+    items: [
+      {
+        title: "Contact Us",
+        href: "/contact",
+        description: "Get in touch with CITIS InfoTech.",
+        icon: Handshake,
+      },
+      {
+        title: "Career",
+        href: "/careers",
+        description: "Explore career opportunities at CITIS InfoTech.",
+        icon: BriefcaseBusiness,
       },
     ],
   },
