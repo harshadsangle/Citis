@@ -94,7 +94,7 @@ export const MEGA_MENUS = {
         icon: Sparkles,
       },
       {
-        title: "AppWizz Academy",
+        title: "Science Lab",
         href: "/products/appwizz-academy",
         description: "AppWizz Academy",
         icon: Rocket,
