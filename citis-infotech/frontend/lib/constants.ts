@@ -357,15 +357,38 @@ export const HOME_TESTIMONIALS = [
 ] as const;
 
 export const HOME_CLIENTS = [
-  { name: "Client logo 1", logo: "/images/clients/provided-client-logo-01.png" },
-  { name: "Client logo 2", logo: "/images/clients/provided-client-logo-02.png" },
-  { name: "Client logo 3", logo: "/images/clients/provided-client-logo-03.png" },
-  { name: "Client logo 4", logo: "/images/clients/provided-client-logo-04.png" },
-  { name: "Client logo 5", logo: "/images/clients/provided-client-logo-05.png" },
-  { name: "Client logo 6", logo: "/images/clients/provided-client-logo-06.png" },
-  { name: "Client logo 7", logo: "/images/clients/provided-client-logo-07.png" },
-  { name: "Client logo 8", logo: "/images/clients/provided-client-logo-08.png" },
-  { name: "Client logo 9", logo: "/images/clients/provided-client-logo-09.png" },
+  {
+    name: "Bharati Vidyapeeth Deemed to be University",
+    logo: "/images/clients/bharati-vidyapeeth.jpeg",
+  },
+  {
+    name: "Lovely Professional University",
+    logo: "/images/clients/lovely-professional-university.jpeg",
+  },
+  {
+    name: "Visvesvaraya Research and Innovation Foundation",
+    logo: "/images/clients/visvesvaraya-research-innovation-foundation.jpeg",
+  },
+  {
+    name: "Tilak Maharashtra Vidyapeeth",
+    logo: "/images/clients/tilak-maharashtra-vidyapeeth.png",
+  },
+  {
+    name: "MIT-ADT University",
+    logo: "/images/clients/mit-adt-university.jpeg",
+  },
+  {
+    name: "D. Y. Patil University",
+    logo: "/images/clients/dy-patil-university.jpeg",
+  },
+  {
+    name: "Amity University",
+    logo: "/images/clients/amity-university.png",
+  },
+  {
+    name: "Sandip University",
+    logo: "/images/clients/sandip-university.png",
+  },
 ] as const;
 
 /** Exact Why Choose Us points from the CITIS wireframe. */
