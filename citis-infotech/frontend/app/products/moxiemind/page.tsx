@@ -1,31 +1,26 @@
 import { PageHeader } from "@/components/layout/PageHeader";
-import { AnimatedSection } from "@/components/shared/AnimatedSection";
-import { SectionHeading } from "@/components/shared/SectionHeading";
+import { MoxieMindsPage } from "@/components/marketing/MoxieMindsPage";
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
-  title: "MoxieMind Entrepreneurship Academy",
+  title: "MoxieMinds Entrepreneurship Academy",
   path: "/products/moxiemind",
-  description: "MoxieMind Entrepreneurship Academy",
+  description: "Transforming Vision into Venture. Where Ideas Ignite Business Success.",
 });
 
-export default function MoxieMindPage() {
+export default function MoxieMindsRoute() {
   return (
     <>
       <PageHeader
         eyebrow="Products"
-        title="MoxieMind Entrepreneurship Academy"
-        description="MoxieMind Entrepreneurship Academy"
+        title="MoxieMinds Entrepreneurship Academy"
+        description="Transforming Vision into Venture. Where Ideas Ignite Business Success."
         breadcrumbs={[
           { label: "Products", href: "/products" },
-          { label: "MoxieMind Entrepreneurship Academy" },
+          { label: "MoxieMinds Entrepreneurship Academy" },
         ]}
       />
-      <section className="container-site max-w-4xl py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionHeading title="MoxieMind Entrepreneurship Academy" />
-        </AnimatedSection>
-      </section>
+      <MoxieMindsPage />
     </>
   );
 }
