@@ -19,8 +19,8 @@ function BreadcrumbLink({ asChild, className, ...props }: React.ComponentProps<"
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
   return <span role="link" aria-disabled="true" aria-current="page" className={cn("font-medium text-foreground", className)} {...props} />;
 }
-function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<"li">) {
-  return <li role="presentation" aria-hidden="true" className={cn("[&>svg]:size-3.5", className)} {...props}>{children ?? <ChevronRight />}</li>;
+function BreadcrumbSeparator({ children, className, ...props }: React.ComponentProps<"span">) {
+  return <span role="presentation" aria-hidden="true" className={cn("[&>svg]:size-3.5", className)} {...props}>{children ?? <ChevronRight />}</span>;
 }
 function BreadcrumbEllipsis({ className, ...props }: React.ComponentProps<"span">) {
   return <span role="presentation" aria-hidden="true" className={cn("flex size-8 items-center justify-center", className)} {...props}><MoreHorizontal className="size-4" /><span className="sr-only">More</span></span>;
