@@ -4,6 +4,7 @@ import {
   Compass,
   GraduationCap,
   Handshake,
+  Images,
   Lightbulb,
   Newspaper,
   Rocket,
@@ -11,6 +12,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  Video,
   Wrench,
 } from "lucide-react";
 
@@ -162,6 +164,18 @@ export const MEGA_MENUS = {
         href: "/about/associations",
         description: "Our Associations",
         icon: Handshake,
+      },
+      {
+        title: "Gallery",
+        href: "/about/gallery",
+        description: "Gallery",
+        icon: Images,
+      },
+      {
+        title: "Media",
+        href: "/about/media",
+        description: "Media",
+        icon: Video,
       },
     ],
   },
