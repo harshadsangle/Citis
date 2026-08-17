@@ -40,7 +40,7 @@ export default function Home() {
               {SITE_CONFIG.name}
             </p>
             <h2 className="mt-5 font-heading text-4xl leading-[1.05] font-bold tracking-[-0.03em] text-balance sm:text-5xl">
-              {HOME_COPY.excellence.title}
+              Innovation Today, Excellence Tomorrow
             </h2>
             <div className="mt-4 h-1.5 w-24 rounded-full bg-gradient-to-r from-accent to-primary" />
             <p className="mt-8 text-base leading-8 text-muted-foreground sm:text-lg sm:leading-9">
