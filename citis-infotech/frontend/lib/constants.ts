@@ -78,6 +78,12 @@ export const MEGA_MENUS = {
         description: "Placements and internships.",
         icon: BriefcaseBusiness,
       },
+      {
+        title: "Global Certifications",
+        href: "/engagements/global-certifications",
+        description: "Global Certifications",
+        icon: Award,
+      },
     ],
   },
   products: {
