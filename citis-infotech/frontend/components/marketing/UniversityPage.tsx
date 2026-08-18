@@ -609,7 +609,7 @@ export function UniversityPage() {
               title={
                 <>
                   The CITIS University Progression Model
-                  <sup className="ml-1 inline-flex size-4 -translate-y-0.5 items-center justify-center rounded-full border border-current text-[0.5rem] font-semibold leading-none align-super sm:size-5 sm:text-[0.6rem]">
+                  <sup className="ml-1 inline-flex size-4 -translate-y-0.5 items-center justify-center rounded-full border border-black text-[0.5rem] font-semibold leading-none align-super sm:size-5 sm:text-[0.6rem]">
                     ™
                   </sup>
                 </>
