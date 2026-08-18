@@ -5,14 +5,40 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
+import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { MegaMenu, type MegaMenuKey } from "@/components/layout/MegaMenu";
 import { MEGA_MENUS, NAV_LINKS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
+const headerSocialLinks = [
+  { label: "Facebook", href: "https://www.facebook.com/citisinfotech", icon: FaFacebookF },
+  { label: "Instagram", href: "https://www.instagram.com/citisinfotech", icon: FaInstagram },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/citis-infotech", icon: FaLinkedinIn },
+] as const;
+
 function Brand() {
   return <CitisLogo className="text-[0.95rem] sm:text-[1.05rem]" />;
+}
+
+function HeaderSocialLinks({ className }: { className?: string }) {
+  return (
+    <div className={cn("flex items-center gap-1", className)} aria-label="CITIS InfoTech social media">
+      {headerSocialLinks.map(({ label, href, icon: Icon }) => (
+        <a
+          key={label}
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`CITIS InfoTech on ${label}`}
+          className="grid size-8 place-items-center rounded-full border border-primary/15 text-muted-foreground transition-colors hover:border-primary/35 hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Icon className="size-3.5" aria-hidden="true" />
+        </a>
+      ))}
+    </div>
+  );
 }
 
 export function Navbar() {
@@ -93,6 +119,8 @@ export function Navbar() {
           })}
         </nav>
         <div className="flex items-center gap-2">
+          <HeaderSocialLinks className="hidden sm:flex lg:hidden" />
+          <HeaderSocialLinks className="hidden lg:flex" />
           <Button asChild className="hidden rounded-full xl:inline-flex" variant="accent">
             <Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link>
           </Button>
@@ -148,6 +176,7 @@ export function Navbar() {
                   </div>
                 );
               })}
+              <HeaderSocialLinks className="mt-3 justify-center border-t border-border pt-4" />
               <Button asChild variant="accent" className="mt-4 rounded-full"><Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link></Button>
             </nav>
           </motion.div>
