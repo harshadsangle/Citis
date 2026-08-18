@@ -540,19 +540,19 @@ export function ScienceLabPage() {
               href="/contact"
               className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              [Request a Demo]
+              Request a Demo
             </a>
             <a
               href="/contact"
-              className="inline-flex items-center justify-center rounded-full border border-primary/30 bg-white px-5 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              [Talk to Our Education Team]
+              Talk to Our Education Team
             </a>
             <a
               href="/contact"
-              className="inline-flex items-center justify-center rounded-full border border-secondary/40 bg-secondary/5 px-5 py-2.5 text-sm font-semibold text-secondary shadow-sm transition hover:-translate-y-0.5 hover:border-secondary/70 hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              [Bring Science Lab to Your School]
+              Bring Science Lab to Your School
             </a>
           </div>
         </AnimatedSection>
