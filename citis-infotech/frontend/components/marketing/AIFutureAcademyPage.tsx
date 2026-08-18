@@ -564,7 +564,7 @@ export function AIFutureAcademyPage() {
         </div>
       </section>
 
-      <section className="container-site py-16 sm:py-24">
+      <section id="curriculum" className="container-site py-16 sm:py-24">
         <AnimatedSection className="max-w-4xl">
           <SectionTitle>Responsible AI Education</SectionTitle>
           <h3 className="mt-7 font-heading text-2xl font-semibold text-primary">
@@ -766,15 +766,24 @@ export function AIFutureAcademyPage() {
         <AnimatedSection className="max-w-4xl">
           <SectionTitle>Bring CITIS AI Academy to Your School</SectionTitle>
           <div className="mt-8 flex flex-wrap gap-3">
-            <span className="rounded-full border border-primary/20 px-5 py-2.5 text-sm font-semibold text-primary">
+            <a
+              href="/contact"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               [Request a School Demo]
-            </span>
-            <span className="rounded-full border border-primary/20 px-5 py-2.5 text-sm font-semibold text-primary">
+            </a>
+            <a
+              href="#curriculum"
+              className="inline-flex items-center justify-center rounded-full border border-primary/30 bg-white px-5 py-2.5 text-sm font-semibold text-primary shadow-sm transition hover:-translate-y-0.5 hover:border-primary/60 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               [Explore the Curriculum]
-            </span>
-            <span className="rounded-full border border-primary/20 px-5 py-2.5 text-sm font-semibold text-primary">
+            </a>
+            <a
+              href="/contact"
+              className="inline-flex items-center justify-center rounded-full border border-secondary/40 bg-secondary/5 px-5 py-2.5 text-sm font-semibold text-secondary shadow-sm transition hover:-translate-y-0.5 hover:border-secondary/70 hover:bg-secondary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
               [Start a Pilot Program]
-            </span>
+            </a>
           </div>
         </AnimatedSection>
       </section>
