@@ -9,13 +9,35 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CASE_STUDIES, BLOG_POSTS } from "@/lib/site-content";
 
+const BLOG_IMAGE_BY_CATEGORY: Record<string, string> = {
+  "App Development": "/images/blogs/app-development.jpg",
+  "Cloud Computing": "/images/blogs/cloud-computing.jpg",
+  "Education Technology": "/images/blogs/education-technology.jpg",
+  eLearning: "/images/blogs/elearning.jpg",
+  Careers: "/images/case-studies/career-readiness-placement-cell.jpg",
+  "Artificial Intelligence": "/images/case-studies/ai-readiness-university.jpg",
+  "School Education": "/images/case-studies/district-stem-transformation.jpg",
+  "Higher Education": "/images/case-studies/ai-readiness-university.jpg",
+  "NEP 2020": "/images/blogs/education-policy.jpg",
+  "Workforce Development": "/images/blogs/cloud-computing.jpg",
+  "Faculty Enablement": "/images/blogs/education-policy.jpg",
+  Employability: "/images/case-studies/career-readiness-placement-cell.jpg",
+};
+
+const BLOG_FALLBACK_IMAGE = "/images/blogs/elearning.jpg";
+
 export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [page, setPage] = useState(1);
   const isBlogs = kind === "blogs";
   const data = isBlogs
-    ? BLOG_POSTS.map((post) => ({ ...post, category: post.category, meta: `${post.readTime} · ${post.author}`, image: "" }))
+    ? BLOG_POSTS.map((post) => ({
+        ...post,
+        category: post.category,
+        meta: `${post.readTime} · ${post.author}`,
+        image: BLOG_IMAGE_BY_CATEGORY[post.category] ?? BLOG_FALLBACK_IMAGE,
+      }))
     : CASE_STUDIES.map((study) => ({ ...study, category: study.sector, date: "", meta: study.client }));
   const categories = ["All", ...Array.from(new Set(data.map((item) => item.category)))];
   const pageSize = 6;
@@ -42,10 +64,19 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
         {visible.map((item) => (
           <Card key={item.slug} className="group flex h-full flex-col overflow-hidden text-slate-900 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg dark:text-card-foreground">
             {isBlogs ? (
-              <div className="brand-gradient relative h-40 overflow-hidden p-6 text-white">
-                <div className="absolute -top-12 -right-12 size-40 rounded-full border border-white/15" />
-                <BookOpen className="size-8 text-orange-300" />
-                <p className="absolute right-6 bottom-5 left-6 text-xs font-semibold text-blue-100">{item.category}</p>
+              <div className="relative h-40 overflow-hidden bg-primary">
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#071827]/90 via-[#0f4c81]/30 to-transparent" />
+                <div className="relative z-10 flex h-full flex-col justify-between p-6 text-white">
+                  <BookOpen className="size-8 text-orange-300" />
+                  <p className="text-xs font-semibold text-blue-100">{item.category}</p>
+                </div>
               </div>
             ) : (
               <div className="relative h-40 overflow-hidden bg-primary">
