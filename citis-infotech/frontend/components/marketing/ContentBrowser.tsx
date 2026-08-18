@@ -9,22 +9,41 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CASE_STUDIES, BLOG_POSTS } from "@/lib/site-content";
 
-const BLOG_IMAGE_BY_CATEGORY: Record<string, string> = {
-  "App Development": "/images/blogs/app-development.jpg",
-  "Cloud Computing": "/images/blogs/cloud-computing.jpg",
-  "Education Technology": "/images/blogs/education-technology.jpg",
-  eLearning: "/images/blogs/elearning.jpg",
-  Careers: "/images/case-studies/career-readiness-placement-cell.jpg",
-  "Artificial Intelligence": "/images/case-studies/ai-readiness-university.jpg",
-  "School Education": "/images/case-studies/district-stem-transformation.jpg",
-  "Higher Education": "/images/case-studies/ai-readiness-university.jpg",
-  "NEP 2020": "/images/blogs/education-policy.jpg",
-  "Workforce Development": "/images/blogs/cloud-computing.jpg",
-  "Faculty Enablement": "/images/blogs/education-policy.jpg",
-  Employability: "/images/case-studies/career-readiness-placement-cell.jpg",
+const BLOG_IMAGE_BY_SLUG: Record<string, string> = {
+  "app-development-opportunity-for-high-school-students": "/images/blogs/app-development.jpg",
+  "cloud-computing-careers": "/images/blogs/cloud-computing.jpg",
+  "crm-for-the-education-sector": "/images/blogs/crm-for-the-education-sector.jpg",
+  "elearning-content-development": "/images/blogs/elearning.jpg",
+  "enterprise-resource-planning-education": "/images/blogs/education-technology.jpg",
+  "learning-management-system": "/images/blogs/learning-management-system.jpg",
+  "career-opportunities-cs-graduates-after-covid-19": "/images/blogs/career-opportunities-cs-graduates-after-covid-19.jpg",
+  "top-careers-in-artificial-intelligence": "/images/blogs/top-careers-in-artificial-intelligence.jpg",
+  "new-normal-blended-virtual-classrooms": "/images/blogs/new-normal-blended-virtual-classrooms.jpg",
+  "why-include-ai-ml-data-science-in-k12": "/images/blogs/why-include-ai-ml-data-science-in-k12.jpg",
+  "benefits-of-learning-ai-for-career": "/images/blogs/benefits-of-learning-ai-for-career.jpg",
+  "ai-trends-for-2021": "/images/blogs/ai-trends-for-2021.jpg",
+  "education-system-post-covid-19": "/images/blogs/education-system-post-covid-19.jpg",
+  "how-nep-2020-empowers-teachers": "/images/blogs/how-nep-2020-empowers-teachers.jpg",
+  "overview-of-the-national-education-policy": "/images/blogs/education-policy.jpg",
+  "significance-of-integrated-learning": "/images/blogs/significance-of-integrated-learning.jpg",
+  "significance-of-olympiads-and-competitive-exams": "/images/blogs/significance-of-olympiads-and-competitive-exams.jpg",
+  "top-5-ai-jobs-in-2021": "/images/blogs/top-5-ai-jobs-in-2021.jpg",
+  "why-learn-coding-at-an-early-age": "/images/blogs/why-learn-coding-at-an-early-age.jpg",
+  "responsible-ai-campus-learning": "/images/blogs/responsible-ai-campus-learning.jpg",
+  "industry-integrated-learning-playbook": "/images/blogs/industry-integrated-learning-playbook.jpg",
+  "stem-labs-beyond-equipment": "/images/blogs/stem-labs-beyond-equipment.jpg",
+  "microcredentials-workforce-mobility": "/images/blogs/microcredentials-workforce-mobility.jpg",
+  "faculty-development-digital-pedagogy": "/images/blogs/faculty-development-digital-pedagogy.jpg",
+  "skills-first-campus-placements": "/images/blogs/skills-first-campus-placements.jpg",
 };
 
-const BLOG_FALLBACK_IMAGE = "/images/blogs/elearning.jpg";
+function getBlogImage(slug: string) {
+  const image = BLOG_IMAGE_BY_SLUG[slug];
+  if (!image) {
+    throw new Error(`Missing blog image for "${slug}"`);
+  }
+  return image;
+}
 
 export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
   const [query, setQuery] = useState("");
@@ -36,7 +55,7 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
         ...post,
         category: post.category,
         meta: `${post.readTime} · ${post.author}`,
-        image: BLOG_IMAGE_BY_CATEGORY[post.category] ?? BLOG_FALLBACK_IMAGE,
+        image: getBlogImage(post.slug),
       }))
     : CASE_STUDIES.map((study) => ({ ...study, category: study.sector, date: "", meta: study.client }));
   const categories = ["All", ...Array.from(new Set(data.map((item) => item.category)))];
