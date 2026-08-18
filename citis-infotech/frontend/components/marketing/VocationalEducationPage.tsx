@@ -68,20 +68,6 @@ const programs = [
   },
 ];
 
-/* ─── Ecosystem flow steps ──────────────────────────────────────────────── */
-
-const ecosystemSteps = [
-  "VOCATIONAL EDUCATION",
-  "PRACTICAL LEARNING",
-  "PROJECTS / INTERNSHIP",
-  "CERTIFICATION",
-  "QUALIFICATION",
-  "EMPLOYABILITY",
-  "CAREER PROGRESSION",
-];
-
-const ecosystemPillars = ["SKILLS", "ACADEMICS", "INDUSTRY"];
-
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
 export function VocationalEducationPage() {
@@ -349,58 +335,6 @@ export function VocationalEducationPage() {
           </div>
         </AnimatedSection>
       </section>
-
-      {/* ── The CITIS Vocational Education Ecosystem ──────────────────── */}
-      <AnimatedSection className="container-site py-16 sm:py-24">
-        <SectionHeading title="The CITIS Vocational Education Ecosystem" className="mb-12" />
-
-        <div className="mx-auto max-w-2xl">
-          {/* Root node */}
-          <div className="flex flex-col items-center gap-0">
-            <div className="rounded-2xl bg-primary px-8 py-3 font-heading text-base font-bold tracking-wider text-white uppercase shadow-lg">
-              CITIS
-            </div>
-            <div className="h-6 w-px bg-border" />
-
-            {/* Vocational Education */}
-            <div className="rounded-xl border-2 border-primary bg-primary/5 px-8 py-3 font-heading text-base font-bold tracking-wider text-primary uppercase">
-              VOCATIONAL EDUCATION
-            </div>
-            <div className="h-6 w-px bg-border" />
-
-            {/* Three pillars */}
-            <div className="w-full">
-              <div className="grid grid-cols-3 gap-3">
-                {ecosystemPillars.map((pillar) => (
-                  <div
-                    key={pillar}
-                    className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-center font-heading text-xs font-bold tracking-widest text-primary uppercase sm:text-sm"
-                  >
-                    {pillar}
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-center">
-                <div className="h-6 w-px bg-border" />
-              </div>
-            </div>
-
-            {/* Remaining flow steps */}
-            {ecosystemSteps.slice(1).map((step, i) => (
-              <div key={step} className="flex flex-col items-center gap-0">
-                <div
-                  className="rounded-lg border border-border bg-card px-8 py-2.5 text-center font-heading text-xs font-semibold tracking-wider text-foreground uppercase sm:text-sm"
-                >
-                  {step}
-                </div>
-                {i < ecosystemSteps.slice(1).length - 1 && (
-                  <div className="h-6 w-px bg-border" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </AnimatedSection>
 
       {/* ── From Learning to Livelihood ───────────────────────────────── */}
       <section className="brand-gradient relative overflow-hidden px-6 py-16 text-white shadow-[0_24px_80px_rgba(15,76,129,.25)] sm:px-12 sm:py-20">
