@@ -160,6 +160,18 @@ export const MEGA_MENUS = {
         icon: Compass,
       },
       {
+        title: "Management Team",
+        href: "/about/management-team",
+        description: "Management Team",
+        icon: BriefcaseBusiness,
+      },
+      {
+        title: "Advisory Board",
+        href: "/about/advisory-board",
+        description: "Advisory Board",
+        icon: Users,
+      },
+      {
         title: "Quality Policy",
         href: "/about/quality-policy",
         description: "Quality Policy",
