@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, BookOpen, CalendarDays, Search, SlidersHorizontal } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,7 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
   const [page, setPage] = useState(1);
   const isBlogs = kind === "blogs";
   const data = isBlogs
-    ? BLOG_POSTS.map((post) => ({ ...post, category: post.category, meta: `${post.readTime} · ${post.author}` }))
+    ? BLOG_POSTS.map((post) => ({ ...post, category: post.category, meta: `${post.readTime} · ${post.author}`, image: "" }))
     : CASE_STUDIES.map((study) => ({ ...study, category: study.sector, date: "", meta: study.client }));
   const categories = ["All", ...Array.from(new Set(data.map((item) => item.category)))];
   const pageSize = 6;
@@ -46,11 +47,28 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
       <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {visible.map((item) => (
           <Card key={item.slug} className="group flex h-full flex-col overflow-hidden text-slate-900 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg dark:text-card-foreground">
-            <div className="brand-gradient relative h-40 overflow-hidden p-6 text-white">
-              <div className="absolute -top-12 -right-12 size-40 rounded-full border border-white/15" />
-              {isBlogs ? <BookOpen className="size-8 text-orange-300" /> : <span className="text-xs font-bold tracking-[0.16em] text-orange-300 uppercase">Impact story</span>}
-              <p className="absolute right-6 bottom-5 left-6 text-xs font-semibold text-blue-100">{item.category}</p>
-            </div>
+            {isBlogs ? (
+              <div className="brand-gradient relative h-40 overflow-hidden p-6 text-white">
+                <div className="absolute -top-12 -right-12 size-40 rounded-full border border-white/15" />
+                <BookOpen className="size-8 text-orange-300" />
+                <p className="absolute right-6 bottom-5 left-6 text-xs font-semibold text-blue-100">{item.category}</p>
+              </div>
+            ) : (
+              <div className="relative h-40 overflow-hidden bg-primary">
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#071827]/90 via-[#0f4c81]/30 to-transparent" />
+                <div className="relative z-10 flex h-full flex-col justify-between p-6 text-white">
+                  <span className="text-xs font-bold tracking-[0.16em] text-orange-300 uppercase">Impact story</span>
+                  <p className="text-xs font-semibold text-blue-100">{item.category}</p>
+                </div>
+              </div>
+            )}
             <CardHeader className="flex-1">
               <div className="flex items-center justify-between gap-3">
                 <Badge variant="outline">{item.category}</Badge>
