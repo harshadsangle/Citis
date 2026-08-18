@@ -38,7 +38,7 @@ const franchiseModels = [
   },
   {
     icon: Brain,
-    title: "CITIS AI Future Academy",
+    title: "CITIS AI Academy",
     description:
       "Focused on AI literacy, AI skills, emerging technologies and future-ready learning.",
   },
@@ -57,7 +57,7 @@ const franchiseModels = [
 ];
 
 const institutionalAreas = [
-  "AI Future Academy",
+  "AI Academy",
   "AI & Emerging Technology Programs",
   "CODMOS Coding & Digital Learning",
   "STEM Education",
@@ -74,7 +74,7 @@ const institutionalAreas = [
 
 const interestOptions = [
   "CITIS Franchise / Centre Partnership",
-  "AI Future Academy Partnership",
+  "AI Academy Partnership",
   "School Partnership",
   "College / University Partnership",
   "STEM & Science Lab Partnership",

@@ -92,13 +92,13 @@ export const MEGA_MENUS = {
     featured: {
       label: "View all products",
       href: "/products",
-      description: "AI Future Academy, AppWizz Academy, MoxieMind Entrepreneurship Academy.",
+      description: "AI Academy, AppWizz Academy, MoxieMind Entrepreneurship Academy.",
     },
     items: [
       {
-        title: "AI Future Academy",
+        title: "AI Academy",
         href: "/products/ai-future-academy",
-        description: "AI Future Academy",
+        description: "AI Academy",
         icon: Sparkles,
       },
       {
@@ -274,7 +274,7 @@ export const FOOTER_LINKS = [
   {
     title: "Products",
     links: [
-      { label: "AI Future Academy", href: "/products/ai-future-academy" },
+      { label: "AI Academy", href: "/products/ai-future-academy" },
       { label: "Science Lab", href: "/products/appwizz-academy" },
       { label: "MoxieMind Entrepreneurship Academy", href: "/products/moxiemind" },
       { label: "CITIS Future Academy", href: "/future-academy" },

@@ -130,7 +130,7 @@ const advantages = [
 
 const ecosystemSolutions = [
   {
-    title: "CITIS AI Future Academy",
+    title: "CITIS AI Academy",
     description: "AI literacy, Artificial Intelligence and future skills.",
   },
   {

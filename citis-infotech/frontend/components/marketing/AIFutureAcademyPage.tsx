@@ -148,7 +148,7 @@ const implementationModels = [
     description: "Use the Academy as part of the school's STEM and innovation ecosystem.",
   },
   {
-    title: "AI Future Academy",
+    title: "AI Academy",
     description: "Create a dedicated AI and future-skills program within the school.",
   },
   {
@@ -219,7 +219,7 @@ const schoolBenefits = [
 
 const futureReadyEcosystem = [
   {
-    title: "CITIS AI Future Academy",
+    title: "CITIS AI Academy",
     description: "Computational Thinking + Coding + AI",
   },
   {
@@ -240,7 +240,7 @@ const academyAdvantages = [
   {
     title: "Internationally Developed",
     description:
-      "CODMOS is developed in South Korea and brought to Indian institutions through the CITIS AI Future Academy framework.",
+      "CODMOS is developed in South Korea and brought to Indian institutions through the CITIS AI Academy framework.",
   },
   {
     title: "K–12",
@@ -363,7 +363,7 @@ export function AIFutureAcademyPage() {
             </p>
             <div className="mt-8 space-y-6">
               <Copy>
-                The CITIS AI Future Academy is a comprehensive K–12 program designed to develop the
+                The CITIS AI Academy is a comprehensive K–12 program designed to develop the
                 skills children need to thrive in an increasingly digital and AI-driven world.
               </Copy>
               <Copy>
@@ -386,7 +386,7 @@ export function AIFutureAcademyPage() {
 
       <section className="container-site py-16 sm:py-24">
         <AnimatedSection>
-          <SectionTitle>Why CITIS AI Future Academy?</SectionTitle>
+          <SectionTitle>Why CITIS AI Academy?</SectionTitle>
           <h3 className="mt-7 font-heading text-2xl font-semibold text-primary">
             From Digital Users to Digital Creators
           </h3>
@@ -401,7 +401,7 @@ export function AIFutureAcademyPage() {
               solutions can be designed and how AI can be used intelligently and responsibly.
             </Copy>
             <Copy>
-              The CITIS AI Future Academy addresses this need through a structured, age-appropriate
+              The CITIS AI Academy addresses this need through a structured, age-appropriate
               and progressive learning journey that develops logical reasoning, problem-solving,
               pattern recognition, algorithmic thinking, coding and AI capabilities.
             </Copy>
@@ -418,7 +418,7 @@ export function AIFutureAcademyPage() {
             </h3>
             <div className="mt-6 space-y-6">
               <Copy>
-                CITIS AI Future Academy is offered in technical collaboration with CODMOS, South
+                CITIS AI Academy is offered in technical collaboration with CODMOS, South
                 Korea, bringing a structured international approach to K–12 Computational Thinking,
                 Coding and AI education to institutions in India.
               </Copy>
@@ -451,7 +451,7 @@ export function AIFutureAcademyPage() {
 
       <section className="container-site py-16 sm:py-24">
         <AnimatedSection>
-          <SectionTitle>The CITIS AI Future Academy Learning Framework</SectionTitle>
+          <SectionTitle>The CITIS AI Academy Learning Framework</SectionTitle>
           <p className="mt-6 font-heading text-2xl font-semibold text-primary sm:text-3xl">
             THINK → BUILD → COMMAND
           </p>
@@ -531,7 +531,7 @@ export function AIFutureAcademyPage() {
               Make Learning an Experience
             </h3>
             <div className="mt-6 space-y-6">
-              <Copy>CITIS AI Future Academy moves beyond traditional lectures and worksheets.</Copy>
+              <Copy>CITIS AI Academy moves beyond traditional lectures and worksheets.</Copy>
               <Copy>
                 Students learn through interactive missions, puzzles, coding challenges, games,
                 projects and problem-solving activities. This approach allows students to experiment,
@@ -600,7 +600,7 @@ export function AIFutureAcademyPage() {
             </h3>
             <div className="mt-6 space-y-6">
               <Copy>
-                CITIS AI Future Academy is designed to support the requirements of Indian schools
+              CITIS AI Academy is designed to support the requirements of Indian schools
                 and the changing direction of school education.
               </Copy>
               <Copy>
@@ -627,7 +627,7 @@ export function AIFutureAcademyPage() {
           </h3>
           <div className="mt-6 space-y-6">
             <Copy>
-              CITIS AI Future Academy is designed to make implementation practical for schools.
+              CITIS AI Academy is designed to make implementation practical for schools.
             </Copy>
             <Copy>The ecosystem includes:</Copy>
           </div>
@@ -698,7 +698,7 @@ export function AIFutureAcademyPage() {
         <AnimatedSection className="max-w-4xl">
           <SectionTitle>Benefits to Schools</SectionTitle>
           <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-            CITIS AI Future Academy enables schools to develop a structured technology-learning
+            CITIS AI Academy enables schools to develop a structured technology-learning
             ecosystem without treating AI and coding as isolated add-ons.
           </p>
           <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
@@ -717,7 +717,7 @@ export function AIFutureAcademyPage() {
           <AnimatedSection className="max-w-4xl">
             <SectionTitle>A Stronger Future-Ready School Ecosystem</SectionTitle>
             <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-              CITIS AI Future Academy can become the technology and innovation layer of a school&apos;s
+              CITIS AI Academy can become the technology and innovation layer of a school&apos;s
               broader STEM ecosystem.
             </p>
           </AnimatedSection>
@@ -733,7 +733,7 @@ export function AIFutureAcademyPage() {
 
       <section className="container-site py-16 sm:py-24">
         <AnimatedSection>
-          <SectionTitle>Why CITIS AI Future Academy?</SectionTitle>
+          <SectionTitle>Why CITIS AI Academy?</SectionTitle>
         </AnimatedSection>
         <div className="mt-10">
           <FeatureGrid items={academyAdvantages} columns="sm:grid-cols-2 lg:grid-cols-4" />
@@ -752,7 +752,7 @@ export function AIFutureAcademyPage() {
               <Copy>And they will use Artificial Intelligence responsibly.</Copy>
             </div>
             <Copy>
-              CITIS AI Future Academy, in technical collaboration with CODMOS, South Korea, gives
+            CITIS AI Academy, in technical collaboration with CODMOS, South Korea, gives
               schools a structured pathway to make that transformation possible.
             </Copy>
             <p className="mt-8 font-heading text-xl font-semibold text-primary sm:text-2xl">
@@ -764,7 +764,7 @@ export function AIFutureAcademyPage() {
 
       <section className="container-site py-16 sm:py-24">
         <AnimatedSection className="max-w-4xl">
-          <SectionTitle>Bring CITIS AI Future Academy to Your School</SectionTitle>
+          <SectionTitle>Bring CITIS AI Academy to Your School</SectionTitle>
           <div className="mt-8 flex flex-wrap gap-3">
             <span className="rounded-full border border-primary/20 px-5 py-2.5 text-sm font-semibold text-primary">
               [Request a School Demo]

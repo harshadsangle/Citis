@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     "university solutions",
     "school STEM",
     "vocational education",
-    "AI Future Academy",
+    "AI Academy",
     "industry academia collaboration",
     "CITIS InfoTech",
   ],

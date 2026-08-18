@@ -33,9 +33,9 @@ type Solution = {
 const tomorrowsSolutions: Solution[] = [
   {
     icon: Brain,
-    title: "CITIS AI Future Academy",
+    title: "CITIS AI Academy",
     paragraphs: [
-      "Artificial Intelligence will increasingly influence how students learn, work and create. The CITIS AI Future Academy introduces students to AI concepts and applications through age-appropriate, structured and practical learning experiences.",
+      "Artificial Intelligence will increasingly influence how students learn, work and create. The CITIS AI Academy introduces students to AI concepts and applications through age-appropriate, structured and practical learning experiences.",
       "The Academy can be implemented across school grades and can include AI literacy, Generative AI awareness, responsible AI, problem-solving, projects and innovation. The objective is to help students become not merely users of AI, but confident, creative and responsible participants in the AI-enabled world.",
     ],
   },
@@ -126,7 +126,7 @@ const benefits: {
     number: 5,
     title: "Integrated Technology Ecosystem",
     description:
-      "Instead of implementing multiple disconnected technology initiatives, schools can create an integrated ecosystem combining CITIS AI Future Academy, CODMOS, ICT integration and Science Labs under a common future-skills framework.",
+      "Instead of implementing multiple disconnected technology initiatives, schools can create an integrated ecosystem combining CITIS AI Academy, CODMOS, ICT integration and Science Labs under a common future-skills framework.",
   },
   {
     icon: Zap,
@@ -205,7 +205,7 @@ export function SchoolPage() {
               prepare students for the future.
             </p>
             <p className="mt-5 text-base leading-8 text-muted-foreground sm:text-lg">
-              Through solutions such as CITIS AI Future Academy, CODMOS and Virtual Science Labs,
+              Through solutions such as CITIS AI Academy, CODMOS and Virtual Science Labs,
               we enable schools to move beyond conventional technology-enabled teaching towards
               experiential learning, creativity, problem-solving and innovation. Our approach is
               designed to support students, teachers and school leadership through a structured and

@@ -3,7 +3,7 @@ import { AIFutureAcademyPage } from "@/components/marketing/AIFutureAcademyPage"
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
-  title: "AI Future Academy",
+  title: "AI Academy",
   path: "/products/ai-future-academy",
   description: "Computational Thinking, Coding & Artificial Intelligence for K–12",
 });
@@ -13,11 +13,11 @@ export default function AIFutureAcademyRoute() {
     <>
       <PageHeader
         eyebrow="Products"
-        title="CITIS AI Future Academy"
+        title="CITIS AI Academy"
         description="Computational Thinking, Coding & Artificial Intelligence for K–12"
         breadcrumbs={[
           { label: "Products", href: "/products" },
-          { label: "CITIS AI Future Academy" },
+          { label: "CITIS AI Academy" },
         ]}
       />
       <AIFutureAcademyPage />

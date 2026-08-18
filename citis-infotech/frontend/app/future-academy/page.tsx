@@ -8,11 +8,11 @@ import { generatePageMetadata } from "@/lib/seo";
 export const metadata = generatePageMetadata({
   title: "CITIS Future Academy",
   path: "/future-academy",
-  description: "AI Future Academy · AppWizz Academy · MoxieMind Entrepreneurship Academy",
+  description: "AI Academy · AppWizz Academy · MoxieMind Entrepreneurship Academy",
 });
 
 const academies = [
-  { title: "AI Future Academy", href: "/products/ai-future-academy", icon: Sparkles },
+  { title: "AI Academy", href: "/products/ai-future-academy", icon: Sparkles },
   { title: "AppWizz Academy", href: "/products/appwizz-academy", icon: Rocket },
   { title: "MoxieMind Entrepreneurship Academy", href: "/products/moxiemind", icon: Lightbulb },
 ];
