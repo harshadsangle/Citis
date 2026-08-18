@@ -13,6 +13,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,6 +68,11 @@ const programs = [
     ],
   },
 ];
+
+const recruitmentPartners = Array.from({ length: 9 }, (_, index) => ({
+  name: `Recruitment and internship partner ${index + 1}`,
+  logo: `/images/clients/provided-client-logo-${String(index + 1).padStart(2, "0")}.png`,
+}));
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -332,6 +338,36 @@ export function VocationalEducationPage() {
                 </p>
               </div>
             </div>
+          </div>
+        </AnimatedSection>
+      </section>
+
+      {/* ── Preferred Recruitment and Internship Partners ─────────────── */}
+      <section className="border-y border-border bg-white">
+        <AnimatedSection className="container-site py-16 sm:py-20">
+          <SectionHeading
+            title="Preferred Recruitment and Internship Partners"
+            className="mb-10 text-center"
+          />
+          <div
+            aria-label="Preferred recruitment and internship partners"
+            className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+          >
+            {recruitmentPartners.map((partner) => (
+              <div
+                key={partner.logo}
+                className="flex min-h-32 items-center justify-center rounded-2xl border border-[#0F4C81]/15 bg-white px-5 py-6 shadow-[0_8px_28px_rgba(15,76,129,0.08)] transition hover:-translate-y-1 hover:border-[#FF7A00]/40 hover:shadow-[0_12px_32px_rgba(255,122,0,0.12)] sm:min-h-36"
+              >
+                <Image
+                  src={partner.logo}
+                  alt={partner.name}
+                  width={220}
+                  height={140}
+                  sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                  className="max-h-24 w-full object-contain sm:max-h-28"
+                />
+              </div>
+            ))}
           </div>
         </AnimatedSection>
       </section>
