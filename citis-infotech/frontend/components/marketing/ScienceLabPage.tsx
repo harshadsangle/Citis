@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 
 const subjects = [
@@ -143,6 +144,19 @@ const ecosystemSolutions = [
   },
 ];
 
+const scienceLabBanners = [
+  {
+    title: "Learning by Doing",
+    image: "/images/science-lab-learning-by-doing.png",
+    alt: "Learning by Doing science learning graphic",
+  },
+  {
+    title: "Concept Application",
+    image: "/images/science-lab-concept-application.png",
+    alt: "Concept Application science learning graphic",
+  },
+] as const;
+
 function SectionTitle({ children }: { children: string }) {
   return (
     <h2 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
@@ -225,6 +239,32 @@ export function ScienceLabPage() {
             </p>
           </div>
         </AnimatedSection>
+      </section>
+
+      <section id="science-lab-learning-banners" className="border-y border-border bg-[#e8f4f8] py-16 sm:py-24">
+        <div className="container-site">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {scienceLabBanners.map((banner, index) => (
+              <AnimatedSection key={banner.title} delay={index * 0.1}>
+                <div className="overflow-hidden rounded-3xl border border-[#0F4C81]/15 bg-white p-3 shadow-[0_12px_36px_rgba(15,76,129,0.1)]">
+                  <div className="flex aspect-[4/3] items-center justify-center overflow-hidden rounded-2xl bg-white">
+                    <Image
+                      src={banner.image}
+                      alt={banner.alt}
+                      width={493}
+                      height={370}
+                      sizes="(min-width: 1024px) 50vw, 100vw"
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <h3 className="px-3 pb-2 pt-5 text-center font-heading text-2xl font-semibold text-primary sm:text-3xl">
+                    {banner.title}
+                  </h3>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+        </div>
       </section>
 
       <section className="border-y border-border bg-slate-100/70 py-16 sm:py-24">
