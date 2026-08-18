@@ -7,7 +7,6 @@ import { ArrowRight, BookOpen, CalendarDays, Search, SlidersHorizontal } from "l
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { CASE_STUDIES, BLOG_POSTS } from "@/lib/site-content";
 
 export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
@@ -32,11 +31,6 @@ export function ContentBrowser({ kind }: { kind: "blogs" | "case-studies" }) {
     <section className="container-site py-16 sm:py-24">
       <div className="surface rounded-2xl p-5 sm:p-7">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <label className="relative block w-full max-w-xl">
-            <span className="sr-only">Search {isBlogs ? "articles" : "case studies"}</span>
-            <Search className="absolute top-1/2 left-4 size-4 -translate-y-1/2 text-muted-foreground" />
-             <Input value={query} onChange={(event) => { setQuery(event.target.value); setPage(1); }} className="h-12 pl-11 text-slate-900 dark:text-foreground" placeholder={isBlogs ? "Search articles, topics, or authors…" : "Search outcomes, sectors, or services…"} />
-          </label>
           <div className="flex items-center gap-2 overflow-x-auto pb-1">
             <SlidersHorizontal className="size-4 shrink-0 text-muted-foreground" />
              {categories.map((item) => <Button key={item} type="button" size="sm" variant={category === item ? "default" : "outline"} className={category === item ? undefined : "text-slate-700 dark:text-foreground"} onClick={() => updateCategory(item)}>{item}</Button>)}
