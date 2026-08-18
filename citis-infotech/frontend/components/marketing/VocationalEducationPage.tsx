@@ -13,7 +13,6 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,11 +67,6 @@ const programs = [
     ],
   },
 ];
-
-const recruitmentPartners = {
-  name: "Preferred recruitment and internship partners including Google, Amazon, Microsoft, MRF, Adani Gas, Royal Enfield, Cognizant, Indian Army, Indian Navy, Indian Air Force, Flipkart, Verizon, Cypress, Hyundai, Tata Consultancy Services, Hewlett Packard Enterprise, Deloitte, PayU, SAP, Philips, Danone, VMware, Capgemini, Samsung, ITC, LG, ICICI Bank, Hyatt Regency, The Oberoi, Taj, Vistara, Sun Pharma, Cipla, Saint-Gobain, Oracle, Reliance Industries, Panasonic, EY, IBM, Novartis, HSBC and Mahindra",
-  logo: "/images/clients/preferred-recruitment-internship-partners.jpeg",
-};
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -338,29 +332,6 @@ export function VocationalEducationPage() {
                 </p>
               </div>
             </div>
-          </div>
-        </AnimatedSection>
-      </section>
-
-      {/* ── Preferred Recruitment and Internship Partners ─────────────── */}
-      <section className="border-y border-border bg-white">
-        <AnimatedSection className="container-site py-16 sm:py-20">
-          <SectionHeading
-            title="Preferred Recruitment and Internship Partners"
-            className="mb-10 text-center"
-          />
-          <div
-            aria-label="Preferred recruitment and internship partners"
-            className="mx-auto max-w-6xl rounded-3xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_12px_36px_rgba(15,76,129,0.1)] sm:p-4"
-          >
-            <Image
-              src={recruitmentPartners.logo}
-              alt={recruitmentPartners.name}
-              width={1090}
-              height={518}
-              sizes="(min-width: 1280px) 1152px, calc(100vw - 2rem)"
-              className="h-auto w-full rounded-2xl object-contain"
-            />
           </div>
         </AnimatedSection>
       </section>
