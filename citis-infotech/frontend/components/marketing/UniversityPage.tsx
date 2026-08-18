@@ -601,7 +601,7 @@ export function UniversityPage() {
       </section>
 
       {/* ── CITIS University Progression Model™ ──────────────────────────── */}
-      <section className="border-y border-border bg-slate-100/70 py-16 dark:bg-slate-900/60 sm:py-24">
+      <section id="university-progression-model" className="border-y border-border bg-slate-100/70 py-16 dark:bg-slate-900/60 sm:py-24">
         <div className="container-site">
           <AnimatedSection>
             <SectionHeading
@@ -609,7 +609,7 @@ export function UniversityPage() {
               title={
                 <>
                   The CITIS University Progression Model
-                  <sup className="ml-1 inline-flex size-[0.7em] -translate-y-[0.08em] items-center justify-center rounded-full border-[0.12em] border-current text-[0.42em] font-semibold leading-none align-super">
+                  <sup className="ml-1 inline-flex size-4 -translate-y-0.5 items-center justify-center rounded-full border border-current text-[0.5rem] font-semibold leading-none align-super sm:size-5 sm:text-[0.6rem]">
                     ™
                   </sup>
                 </>
