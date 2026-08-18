@@ -35,10 +35,55 @@ const placementApproachSteps = [
   "Placement",
 ];
 
-const recruitmentPartners = {
-  name: "Preferred recruitment and internship partners including Google, Amazon, Microsoft, MRF, Adani Gas, Royal Enfield, Cognizant, Indian Army, Indian Navy, Indian Air Force, Flipkart, Verizon, Cypress, Hyundai, Tata Consultancy Services, Hewlett Packard Enterprise, Deloitte, PayU, SAP, Philips, Danone, VMware, Capgemini, Samsung, ITC, LG, ICICI Bank, Hyatt Regency, The Oberoi, Taj, Vistara, Sun Pharma, Cipla, Saint-Gobain, Oracle, Reliance Industries, Panasonic, EY, IBM, Novartis, HSBC and Mahindra",
-  logo: "/images/clients/preferred-recruitment-internship-partners.jpeg",
-};
+const recruitmentPartnerNames = [
+  "Google",
+  "Amazon",
+  "Microsoft",
+  "MRF",
+  "Adani Gas",
+  "Royal Enfield",
+  "Cognizant",
+  "Indian Army",
+  "Indian Navy",
+  "Indian Air Force",
+  "Flipkart",
+  "Verizon",
+  "Cypress",
+  "Hyundai",
+  "Tata Consultancy Services",
+  "Hewlett Packard Enterprise",
+  "Deloitte",
+  "PayU",
+  "SAP",
+  "Philips",
+  "Danone",
+  "VMware",
+  "Capgemini",
+  "Samsung",
+  "ITC",
+  "LG",
+  "ICICI Bank",
+  "Hyatt Regency",
+  "The Oberoi",
+  "Taj",
+  "Vistara",
+  "Sun Pharma",
+  "Cipla",
+  "Saint-Gobain",
+  "Oracle",
+  "Reliance Industries",
+  "Panasonic",
+  "EY",
+  "IBM",
+  "Novartis",
+  "HSBC",
+  "Mahindra",
+] as const;
+
+const recruitmentPartners = recruitmentPartnerNames.map((name, index) => ({
+  name,
+  logo: `/images/clients/preferred-partner-${String(index + 1).padStart(2, "0")}.png`,
+}));
 
 const internshipJourneySteps = [
   "Orientation",
@@ -505,7 +550,7 @@ export default function PlacementsPage() {
 
       {/* ── Preferred Recruitment and Internship Partners ─────────────── */}
       <AnimatedSection>
-        <section className="border-y border-border bg-white py-16 sm:py-20">
+        <section id="preferred-recruitment-partners" className="border-y border-border bg-white py-16 sm:py-20">
           <div className="container-site">
             <SectionHeading
               title="Preferred Recruitment and Internship Partners"
@@ -513,16 +558,34 @@ export default function PlacementsPage() {
             />
             <div
               aria-label="Preferred recruitment and internship partners"
-              className="mx-auto max-w-6xl rounded-3xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_12px_36px_rgba(15,76,129,0.1)] sm:p-4"
+              className="mx-auto max-w-6xl overflow-hidden rounded-3xl border border-[#0F4C81]/15 bg-white py-3 shadow-[0_12px_36px_rgba(15,76,129,0.1)] sm:py-4"
             >
-              <Image
-                src={recruitmentPartners.logo}
-                alt={recruitmentPartners.name}
-                width={1090}
-                height={518}
-                sizes="(min-width: 1280px) 1152px, calc(100vw - 2rem)"
-                className="h-auto w-full rounded-2xl object-contain"
-              />
+              <div className="overflow-hidden">
+                <div
+                  className="animate-marquee flex w-max motion-reduce:animate-none"
+                  style={{ animationDuration: "42s" }}
+                >
+                  {[0, 1].map((copy) => (
+                    <div
+                      key={copy}
+                      aria-hidden={copy === 1}
+                      className="flex shrink-0 gap-3 pr-3 sm:gap-4 sm:pr-4"
+                    >
+                      {recruitmentPartners.map((partner) => (
+                        <Image
+                          key={`${copy}-${partner.name}`}
+                          src={partner.logo}
+                          alt={copy === 0 ? partner.name : ""}
+                          width={156}
+                          height={86}
+                          sizes="156px"
+                          className="h-16 w-auto shrink-0 object-contain sm:h-20"
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </section>
