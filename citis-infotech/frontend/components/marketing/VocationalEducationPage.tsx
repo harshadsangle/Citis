@@ -69,10 +69,10 @@ const programs = [
   },
 ];
 
-const recruitmentPartners = Array.from({ length: 9 }, (_, index) => ({
-  name: `Recruitment and internship partner ${index + 1}`,
-  logo: `/images/clients/provided-client-logo-${String(index + 1).padStart(2, "0")}.png`,
-}));
+const recruitmentPartners = {
+  name: "Preferred recruitment and internship partners including Google, Amazon, Microsoft, MRF, Adani Gas, Royal Enfield, Cognizant, Indian Army, Indian Navy, Indian Air Force, Flipkart, Verizon, Cypress, Hyundai, Tata Consultancy Services, Hewlett Packard Enterprise, Deloitte, PayU, SAP, Philips, Danone, VMware, Capgemini, Samsung, ITC, LG, ICICI Bank, Hyatt Regency, The Oberoi, Taj, Vistara, Sun Pharma, Cipla, Saint-Gobain, Oracle, Reliance Industries, Panasonic, EY, IBM, Novartis, HSBC and Mahindra",
+  logo: "/images/clients/preferred-recruitment-internship-partners.jpeg",
+};
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 
@@ -351,23 +351,16 @@ export function VocationalEducationPage() {
           />
           <div
             aria-label="Preferred recruitment and internship partners"
-            className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+            className="mx-auto max-w-6xl rounded-3xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_12px_36px_rgba(15,76,129,0.1)] sm:p-4"
           >
-            {recruitmentPartners.map((partner) => (
-              <div
-                key={partner.logo}
-                className="flex min-h-32 items-center justify-center rounded-2xl border border-[#0F4C81]/15 bg-white px-5 py-6 shadow-[0_8px_28px_rgba(15,76,129,0.08)] transition hover:-translate-y-1 hover:border-[#FF7A00]/40 hover:shadow-[0_12px_32px_rgba(255,122,0,0.12)] sm:min-h-36"
-              >
-                <Image
-                  src={partner.logo}
-                  alt={partner.name}
-                  width={220}
-                  height={140}
-                  sizes="(min-width: 1280px) 20vw, (min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-                  className="max-h-24 w-full object-contain sm:max-h-28"
-                />
-              </div>
-            ))}
+            <Image
+              src={recruitmentPartners.logo}
+              alt={recruitmentPartners.name}
+              width={1090}
+              height={518}
+              sizes="(min-width: 1280px) 1152px, calc(100vw - 2rem)"
+              className="h-auto w-full rounded-2xl object-contain"
+            />
           </div>
         </AnimatedSection>
       </section>
