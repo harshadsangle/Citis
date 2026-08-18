@@ -606,7 +606,12 @@ export function UniversityPage() {
           <AnimatedSection>
             <SectionHeading
               eyebrow="One Partner. Complete Academic Transformation."
-              title="The CITIS University Progression Model™"
+              title={
+                <>
+                  The CITIS University Progression Model
+                  <sup className="ml-0.5 align-super text-[0.55em] leading-none">™</sup>
+                </>
+              }
             />
             <div className="mt-5 max-w-3xl space-y-3 text-base leading-8 text-muted-foreground">
               <p>
