@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Award,
   BarChart2,
@@ -706,6 +707,18 @@ export function UniversityPage() {
               Our Faculty Development Programs include:
             </p>
           </AnimatedSection>
+          <AnimatedSection className="mt-10 lg:col-span-2">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/faculty-development-ai-workshop.jpg"
+                alt="Faculty participating in an AI and technology development workshop"
+                width={1320}
+                height={846}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[16/10] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
           <div className="grid gap-4 sm:grid-cols-2">
             {fdpItems.map((item, index) => (
               <AnimatedSection key={item} delay={index * 0.05}>
@@ -718,6 +731,18 @@ export function UniversityPage() {
               </AnimatedSection>
             ))}
           </div>
+          <AnimatedSection className="mt-10 lg:col-span-2">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/faculty-development-training-session.jpg"
+                alt="Educators attending a faculty development training session"
+                width={800}
+                height={533}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[3/2] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
@@ -745,6 +770,18 @@ export function UniversityPage() {
               eyebrow="Benefits for Universities"
               title="Partnering with CITIS enables institutions to:"
             />
+          </AnimatedSection>
+          <AnimatedSection className="lg:col-span-2">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/faculty-development-lab-session.jpg"
+                alt="Faculty collaborating during a hands-on computer lab session"
+                width={600}
+                height={420}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[10/7] w-full object-cover"
+              />
+            </div>
           </AnimatedSection>
           <div className="grid gap-4 sm:grid-cols-2">
             {benefitItems.map((item, index) => (
