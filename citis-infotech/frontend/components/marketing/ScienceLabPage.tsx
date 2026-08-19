@@ -216,29 +216,43 @@ export function ScienceLabPage() {
       </section>
 
       <section className="container-site py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionTitle>Why Science Lab?</SectionTitle>
-          <h3 className="mt-4 font-heading text-2xl font-semibold text-primary sm:text-3xl">
-            From Concept to Application
-          </h3>
-          <div className="mt-7 space-y-6">
-            <Copy>
-              Traditional learning often relies heavily on textbooks, lectures and one-way
-              communication. While these methods are important, STEM learning becomes significantly
-              more engaging when students can interact, experiment, make mistakes, observe outcomes
-              and apply concepts.
-            </Copy>
-            <Copy>
-              Science Lab follows a Learning by Doing approach, helping students move from
-              understanding a concept to exploring its practical application. Interactive
-              simulations create an environment where learners can experiment repeatedly and develop
-              a deeper understanding of scientific principles.
-            </Copy>
-            <p className="font-heading text-xl font-semibold text-foreground sm:text-2xl">
-              Learn → Experiment → Observe → Understand → Apply
-            </p>
-          </div>
-        </AnimatedSection>
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)] lg:gap-16">
+          <AnimatedSection>
+            <SectionTitle>Why Science Lab?</SectionTitle>
+            <h3 className="mt-4 font-heading text-2xl font-semibold text-primary sm:text-3xl">
+              From Concept to Application
+            </h3>
+            <div className="mt-7 space-y-6">
+              <Copy>
+                Traditional learning often relies heavily on textbooks, lectures and one-way
+                communication. While these methods are important, STEM learning becomes significantly
+                more engaging when students can interact, experiment, make mistakes, observe outcomes
+                and apply concepts.
+              </Copy>
+              <Copy>
+                Science Lab follows a Learning by Doing approach, helping students move from
+                understanding a concept to exploring its practical application. Interactive
+                simulations create an environment where learners can experiment repeatedly and develop
+                a deeper understanding of scientific principles.
+              </Copy>
+              <p className="font-heading text-xl font-semibold text-foreground sm:text-2xl">
+                Learn → Experiment → Observe → Understand → Apply
+              </p>
+            </div>
+          </AnimatedSection>
+          <AnimatedSection delay={0.08}>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/science-lab-virtual-experiment.jpg"
+                alt="Student exploring an interactive virtual science experiment"
+                width={700}
+                height={392}
+                sizes="(max-width: 1024px) 100vw, 420px"
+                className="aspect-[16/9] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
+        </div>
       </section>
 
       <section id="science-lab-learning-banners" className="border-y border-border bg-[#e8f4f8] py-16 sm:py-24">
