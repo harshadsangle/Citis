@@ -122,7 +122,7 @@ export function Navbar() {
           <HeaderSocialLinks className="hidden sm:flex lg:hidden" />
           <HeaderSocialLinks className="hidden lg:flex" />
           <Button asChild className="hidden rounded-full xl:inline-flex" variant="accent">
-            <Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link>
+             <Link href="/future-academy">Skills Excellence Centre <ArrowRight /></Link>
           </Button>
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen((value) => !value)}>
             {mobileOpen ? <X /> : <Menu />}
@@ -177,7 +177,7 @@ export function Navbar() {
                 );
               })}
               <HeaderSocialLinks className="mt-3 justify-center border-t border-border pt-4" />
-              <Button asChild variant="accent" className="mt-4 rounded-full"><Link href="/future-academy">CITIS Future Academy <ArrowRight /></Link></Button>
+               <Button asChild variant="accent" className="mt-4 rounded-full"><Link href="/future-academy">Skills Excellence Centre <ArrowRight /></Link></Button>
             </nav>
           </motion.div>
         )}
