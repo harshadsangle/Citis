@@ -249,7 +249,7 @@ export function SchoolPage() {
               technology-driven world.
             </p>
           </AnimatedSection>
-          <AnimatedSection className="mt-10">
+          <div className="mt-10">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/school-solutions-classroom.jpg"
@@ -260,7 +260,7 @@ export function SchoolPage() {
                 className="aspect-[16/8] w-full object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {tomorrowsSolutions.map((s, i) => (
               <AnimatedSection key={s.title} delay={i * 0.08}>
@@ -291,7 +291,7 @@ export function SchoolPage() {
               standalone subject.
             </p>
           </AnimatedSection>
-          <AnimatedSection className="mt-10">
+          <div className="mt-10">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/school-solutions-robotics.jpg"
@@ -302,7 +302,7 @@ export function SchoolPage() {
                 className="aspect-[16/8] w-full object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {ictSolutions.map((s, i) => (
               <AnimatedSection key={s.title} delay={i * 0.08}>
@@ -356,7 +356,7 @@ export function SchoolPage() {
               </CardContent>
             </Card>
           </AnimatedSection>
-          <AnimatedSection className="mt-10">
+          <div className="mt-10">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/school-solutions-digital-classroom.jpg"
@@ -367,7 +367,7 @@ export function SchoolPage() {
                 className="aspect-[3/2] w-full object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 
@@ -384,7 +384,7 @@ export function SchoolPage() {
               technology and work.
             </p>
           </AnimatedSection>
-          <AnimatedSection className="mt-10">
+          <div className="mt-10">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/school-solutions-maker-lab.jpg"
@@ -395,7 +395,7 @@ export function SchoolPage() {
                 className="mx-auto aspect-square w-full max-w-3xl object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
           <div className="mt-10 grid gap-5 md:grid-cols-2">
             {benefits.map((b, i) => {
               const Icon = b.icon;
