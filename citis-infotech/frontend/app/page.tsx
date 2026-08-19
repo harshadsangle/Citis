@@ -112,7 +112,7 @@ export default function Home() {
         <div className="container-site">
           <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
             <AnimatedSection className="order-2 lg:order-1">
-              <div className="relative">
+              <div className="relative pb-12 sm:pb-16">
                 <div className="absolute -inset-3 rotate-2 rounded-[2.2rem] bg-gradient-to-br from-accent/30 to-primary/20" />
                 <div className="relative overflow-hidden rounded-[2rem] shadow-[0_24px_60px_rgba(15,76,129,0.18)] ring-1 ring-[#0F4C81]/10">
                   <NextImage
@@ -128,6 +128,16 @@ export default function Home() {
                     </p>
                     <p className="mt-1 text-sm text-orange-200">Projects · Skills · Real-world application</p>
                   </div>
+                </div>
+                <div className="absolute right-2 bottom-0 w-40 overflow-hidden rounded-2xl border-4 border-background bg-background shadow-[0_16px_40px_rgba(15,76,129,0.2)] sm:right-4 sm:w-56">
+                  <NextImage
+                    src="/images/home-hands-on-robotics.jpg"
+                    alt="Students building robotics projects in a hands-on classroom"
+                    width={1024}
+                    height={1024}
+                    sizes="(max-width: 640px) 40vw, 224px"
+                    className="aspect-square w-full object-cover"
+                  />
                 </div>
               </div>
             </AnimatedSection>
