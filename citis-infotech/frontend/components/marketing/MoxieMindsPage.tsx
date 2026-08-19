@@ -1,4 +1,5 @@
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
+import Image from "next/image";
 
 const capabilities = [
   {
@@ -222,30 +223,44 @@ export function MoxieMindsPage() {
   return (
     <>
       <section className="border-b border-border bg-[#e8f4f8] py-16 sm:py-24">
-        <div className="container-site max-w-4xl">
-          <AnimatedSection>
-            <p className="font-heading text-2xl font-medium text-primary sm:text-3xl">
-              Transforming Vision into Venture. Where Ideas Ignite Business Success.
-            </p>
-            <div className="mt-8 space-y-6">
-              <Copy>
-                The MoxieMinds Entrepreneurship Academy is designed to help students develop the
-                mindset, skills and practical capabilities required to navigate an increasingly
-                entrepreneurial and innovation-driven world.
-              </Copy>
-              <Copy>
-                Entrepreneurship is not only about starting a company. It is about recognising
-                opportunities, understanding problems, taking initiative, creating solutions and
-                making informed decisions. MoxieMinds helps learners develop this entrepreneurial
-                mindset while building practical capabilities across business, innovation,
-                technology and management.
-              </Copy>
-              <Copy>
-                The Academy&apos;s objective is to help today&apos;s learners become tomorrow&apos;s
-                entrepreneurs, innovators, intrapreneurs and business leaders.
-              </Copy>
-            </div>
-          </AnimatedSection>
+        <div className="container-site">
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)] lg:gap-16">
+            <AnimatedSection>
+              <p className="font-heading text-2xl font-medium text-primary sm:text-3xl">
+                Transforming Vision into Venture. Where Ideas Ignite Business Success.
+              </p>
+              <div className="mt-8 space-y-6">
+                <Copy>
+                  The MoxieMinds Entrepreneurship Academy is designed to help students develop the
+                  mindset, skills and practical capabilities required to navigate an increasingly
+                  entrepreneurial and innovation-driven world.
+                </Copy>
+                <Copy>
+                  Entrepreneurship is not only about starting a company. It is about recognising
+                  opportunities, understanding problems, taking initiative, creating solutions and
+                  making informed decisions. MoxieMinds helps learners develop this entrepreneurial
+                  mindset while building practical capabilities across business, innovation,
+                  technology and management.
+                </Copy>
+                <Copy>
+                  The Academy&apos;s objective is to help today&apos;s learners become tomorrow&apos;s
+                  entrepreneurs, innovators, intrapreneurs and business leaders.
+                </Copy>
+              </div>
+            </AnimatedSection>
+            <AnimatedSection delay={0.08}>
+              <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+                <Image
+                  src="/images/moxieminds-workshop.jpg"
+                  alt="Students participating in an entrepreneurship workshop"
+                  width={980}
+                  height={735}
+                  sizes="(max-width: 1024px) 100vw, 420px"
+                  className="aspect-[4/3] w-full object-cover"
+                />
+              </div>
+            </AnimatedSection>
+          </div>
         </div>
       </section>
 
@@ -330,28 +345,54 @@ export function MoxieMindsPage() {
               professional environments.
             </p>
           </AnimatedSection>
+          <AnimatedSection className="mt-12">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/moxieminds-presentation.jpg"
+                alt="Students presenting a business solution to an audience"
+                width={1280}
+                height={720}
+                sizes="(max-width: 1024px) 100vw, 896px"
+                className="aspect-[16/7] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
       <section className="container-site py-16 sm:py-24">
-        <AnimatedSection className="max-w-4xl">
-          <SectionTitle>Industry-Led Learning</SectionTitle>
-          <div className="mt-7 space-y-6">
-            <Copy>
-              A key differentiator of MoxieMinds is its emphasis on learning from practitioners.
-            </Copy>
-            <Copy>
-              Sessions are designed to include industry experts and subject-matter experts who can
-              provide practical perspectives on entrepreneurship, innovation, project management,
-              data and business functions.
-            </Copy>
-            <Copy>
-              Through case studies, industry interactions and practical projects, students gain
-              exposure to the challenges and decisions faced by entrepreneurs and professionals in
-              the real world.
-            </Copy>
-          </div>
-        </AnimatedSection>
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(280px,420px)_minmax(0,1fr)] lg:gap-16">
+          <AnimatedSection>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/moxieminds-industry-session.jpg"
+                alt="Entrepreneurship instructor speaking to a student audience"
+                width={1600}
+                height={900}
+                sizes="(max-width: 1024px) 100vw, 420px"
+                className="aspect-[16/9] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
+          <AnimatedSection className="max-w-4xl" delay={0.08}>
+            <SectionTitle>Industry-Led Learning</SectionTitle>
+            <div className="mt-7 space-y-6">
+              <Copy>
+                A key differentiator of MoxieMinds is its emphasis on learning from practitioners.
+              </Copy>
+              <Copy>
+                Sessions are designed to include industry experts and subject-matter experts who can
+                provide practical perspectives on entrepreneurship, innovation, project management,
+                data and business functions.
+              </Copy>
+              <Copy>
+                Through case studies, industry interactions and practical projects, students gain
+                exposure to the challenges and decisions faced by entrepreneurs and professionals in
+                the real world.
+              </Copy>
+            </div>
+          </AnimatedSection>
+        </div>
       </section>
 
       <section className="border-y border-border bg-slate-100/70 py-16 sm:py-24">
