@@ -262,7 +262,7 @@ export function CareersPage() {
             <p className="text-base leading-8 text-muted-foreground sm:text-lg">
               We value people who are:
             </p>
-            <ul className="mt-6 space-y-4">
+            <ul className="mt-6 list-disc space-y-4 pl-5">
               {values.map((value) => (
                 <li key={value} className="text-base leading-8 text-muted-foreground sm:text-lg">
                   {value}
