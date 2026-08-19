@@ -129,16 +129,6 @@ export default function Home() {
                     <p className="mt-1 text-sm text-orange-200">Projects · Skills · Real-world application</p>
                   </div>
                 </div>
-                <div className="absolute right-2 bottom-0 w-40 overflow-hidden rounded-2xl border-4 border-background bg-background shadow-[0_16px_40px_rgba(15,76,129,0.2)] sm:right-4 sm:w-56">
-                  <NextImage
-                    src="/images/home-hands-on-robotics.jpg"
-                    alt="Students building robotics projects in a hands-on classroom"
-                    width={1024}
-                    height={1024}
-                    sizes="(max-width: 640px) 40vw, 224px"
-                    className="aspect-square w-full object-cover"
-                  />
-                </div>
               </div>
             </AnimatedSection>
             <AnimatedSection delay={0.08} className="order-1 lg:order-2">
