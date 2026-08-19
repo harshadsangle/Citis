@@ -391,7 +391,6 @@ export function MoxieMindsPage() {
             />
           </div>
         </AnimatedSection>
-        </div>
       </section>
 
       <section className="border-y border-border bg-slate-100/70 py-16 sm:py-24">
@@ -418,7 +417,6 @@ export function MoxieMindsPage() {
               </Copy>
             </div>
           </AnimatedSection>
-        </div>
       </section>
 
       <section className="container-site py-16 sm:py-24">
