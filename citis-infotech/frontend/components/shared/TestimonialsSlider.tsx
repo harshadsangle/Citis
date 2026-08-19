@@ -68,7 +68,6 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
       pagination={{ clickable: true }}
       spaceBetween={24}
       slidesPerView={1}
-      breakpoints={{ 768: { slidesPerView: 2 } }}
       className="!pb-12"
     >
       {slides.map((item) => (
