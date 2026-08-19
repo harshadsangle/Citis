@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import NextImage from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -115,6 +116,24 @@ export function QualityPolicyPage() {
                 requirements while ensuring consistent quality across every stage of planning,
                 implementation, delivery, assessment, and continuous improvement.
               </p>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      {/* ── Quality certification ─────────────────────────────────────────── */}
+      <section className="py-16 sm:py-24">
+        <div className="container-site max-w-5xl">
+          <AnimatedSection>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card p-3 shadow-[0_18px_60px_rgba(15,76,129,0.12)] sm:p-5">
+              <NextImage
+                src="/images/quality-policy-certificate.png"
+                alt="CITIS Infotech ISO 9001:2015 quality management system certificate"
+                width={1837}
+                height={3028}
+                sizes="(max-width: 1024px) 100vw, 960px"
+                className="mx-auto h-auto w-full max-w-3xl rounded-2xl"
+              />
             </div>
           </AnimatedSection>
         </div>
