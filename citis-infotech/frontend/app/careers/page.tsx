@@ -12,6 +12,7 @@ export default function CareersPage() {
   return (
     <>
       <PageHeader
+        backgroundImage="/images/careers-background.jpg"
         title="Careers with CITIS"
         description="Build the Future of Learning with Us"
         breadcrumbs={[{ label: "Careers with CITIS" }]}
