@@ -730,6 +730,18 @@ export function AIFutureAcademyPage() {
           <div className="mt-10">
             <FeatureGrid items={studentBenefits} columns="sm:grid-cols-2 lg:grid-cols-4" />
           </div>
+          <AnimatedSection className="mt-12">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/ai-academy-hands-on-project.jpg"
+                alt="Students working together on a hands-on technology project"
+                width={600}
+                height={600}
+                sizes="(max-width: 1024px) 100vw, 896px"
+                className="mx-auto aspect-square w-full max-w-3xl object-cover"
+              />
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
