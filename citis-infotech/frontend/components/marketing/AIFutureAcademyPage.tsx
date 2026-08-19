@@ -385,70 +385,43 @@ export function AIFutureAcademyPage() {
         </div>
       </section>
 
-      <section className="container-site py-12 sm:py-16">
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <section className="container-site py-16 sm:py-24">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(280px,420px)] lg:gap-16">
           <AnimatedSection>
+            <SectionTitle>Why CITIS AI Academy?</SectionTitle>
+            <h3 className="mt-7 font-heading text-2xl font-semibold text-primary">
+              From Digital Users to Digital Creators
+            </h3>
+            <div className="mt-6 space-y-6">
+              <Copy>
+                Today&apos;s children are growing up surrounded by technology and Artificial
+                Intelligence. However, simply using digital devices does not necessarily develop
+                digital literacy, computational thinking or AI fluency.
+              </Copy>
+              <Copy>
+                Students need to understand how technology works, how problems can be broken down, how
+                solutions can be designed and how AI can be used intelligently and responsibly.
+              </Copy>
+              <Copy>
+                The CITIS AI Academy addresses this need through a structured, age-appropriate
+                and progressive learning journey that develops logical reasoning, problem-solving,
+                pattern recognition, algorithmic thinking, coding and AI capabilities.
+              </Copy>
+            </div>
+          </AnimatedSection>
+          <AnimatedSection delay={0.08}>
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/ai-academy-classroom-1.jpg"
                 alt="Students learning with laptops alongside their teacher"
                 width={1080}
                 height={1080}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                sizes="(max-width: 1024px) 100vw, 420px"
                 className="aspect-square w-full object-cover"
               />
             </div>
           </AnimatedSection>
-          <AnimatedSection delay={0.08}>
-            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-              <Image
-                src="/images/ai-academy-classroom-2.jpg"
-                alt="Students collaborating in a coding and robotics lab"
-                width={1024}
-                height={768}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="aspect-[4/3] w-full object-cover"
-              />
-            </div>
-          </AnimatedSection>
-          <AnimatedSection delay={0.16}>
-            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm sm:col-span-2 lg:col-span-1">
-              <Image
-                src="/images/ai-academy-classroom-3.jpg"
-                alt="Students exploring coding and AI projects with their teacher"
-                width={1536}
-                height={1024}
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="aspect-[3/2] h-full min-h-64 w-full object-cover"
-              />
-            </div>
-          </AnimatedSection>
         </div>
-      </section>
-
-      <section className="container-site py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionTitle>Why CITIS AI Academy?</SectionTitle>
-          <h3 className="mt-7 font-heading text-2xl font-semibold text-primary">
-            From Digital Users to Digital Creators
-          </h3>
-          <div className="mt-6 space-y-6">
-            <Copy>
-              Today&apos;s children are growing up surrounded by technology and Artificial
-              Intelligence. However, simply using digital devices does not necessarily develop
-              digital literacy, computational thinking or AI fluency.
-            </Copy>
-            <Copy>
-              Students need to understand how technology works, how problems can be broken down, how
-              solutions can be designed and how AI can be used intelligently and responsibly.
-            </Copy>
-            <Copy>
-              The CITIS AI Academy addresses this need through a structured, age-appropriate
-              and progressive learning journey that develops logical reasoning, problem-solving,
-              pattern recognition, algorithmic thinking, coding and AI capabilities.
-            </Copy>
-          </div>
-        </AnimatedSection>
       </section>
 
       <section className="border-y border-border bg-slate-100/70 py-16 sm:py-24">
@@ -487,6 +460,18 @@ export function AIFutureAcademyPage() {
                 </p>
               </div>
             </div>
+            <AnimatedSection className="mt-10">
+              <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+                <Image
+                  src="/images/ai-academy-classroom-2.jpg"
+                  alt="Students collaborating in a coding and robotics lab"
+                  width={1024}
+                  height={768}
+                  sizes="(max-width: 1024px) 100vw, 896px"
+                  className="aspect-[4/3] w-full object-cover sm:aspect-[16/7]"
+                />
+              </div>
+            </AnimatedSection>
           </AnimatedSection>
         </div>
       </section>
@@ -602,6 +587,18 @@ export function AIFutureAcademyPage() {
               The progression is designed to take students from understanding technology to creating
               with technology.
             </p>
+          </AnimatedSection>
+          <AnimatedSection className="mt-12">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/ai-academy-classroom-3.jpg"
+                alt="Students exploring coding and AI projects with their teacher"
+                width={1536}
+                height={1024}
+                sizes="(max-width: 1024px) 100vw, 896px"
+                className="aspect-[3/2] w-full object-cover"
+              />
+            </div>
           </AnimatedSection>
         </div>
       </section>
