@@ -15,6 +15,7 @@ export default function ScienceLabRoute() {
         eyebrow="Products"
         title="Science Lab"
         description="The Virtual Lab of Tomorrow"
+        backgroundImage="/images/science-lab-background.jpg"
         breadcrumbs={[
           { label: "Products", href: "/products" },
           { label: "Science Lab" },

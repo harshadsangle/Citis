@@ -60,7 +60,7 @@ export function PageHeader({
   backgroundImage,
   tone = "default",
 }: PageHeaderProps) {
-  const t = tones[tone];
+  const t = backgroundImage ? tones.default : tones[tone];
   return (
     <section className={cn("relative overflow-hidden border-b border-border py-16 sm:py-20", t.bg, t.text)}>
       {backgroundImage && (

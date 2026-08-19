@@ -15,6 +15,7 @@ export default function MoxieMindsRoute() {
         eyebrow="Products"
         title="MoxieMinds Entrepreneurship Academy"
         description="Transforming Vision into Venture. Where Ideas Ignite Business Success."
+        backgroundImage="/images/moxieminds-entrepreneurship-background.jpg"
         breadcrumbs={[
           { label: "Products", href: "/products" },
           { label: "MoxieMinds Entrepreneurship Academy" },
