@@ -31,6 +31,7 @@ export default function VisionMissionPage() {
       <PageHeader
         eyebrow="About"
         title="Vision and Mission"
+        backgroundImage="/images/vision-mission-background.jpg"
         description="Our vision, mission, and philosophy"
         breadcrumbs={[
           { label: "About Us", href: "/about" },

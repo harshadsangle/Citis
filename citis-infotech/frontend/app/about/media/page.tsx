@@ -14,6 +14,7 @@ export default function MediaRoute() {
       <PageHeader
         eyebrow="About"
         title="Media"
+        backgroundImage="/images/media-background.jpg"
         breadcrumbs={[
           { label: "About Us", href: "/about" },
           { label: "Media" },

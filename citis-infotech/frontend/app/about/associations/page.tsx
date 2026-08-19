@@ -15,6 +15,7 @@ export default function AssociationsRoute() {
       <PageHeader
         eyebrow="About"
         title="Our Associations"
+        backgroundImage="/images/our-associations-background.jpg"
         description="Collaborating with Global Leaders to Transform Education"
         breadcrumbs={[
           { label: "About Us", href: "/about" },
