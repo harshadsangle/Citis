@@ -493,28 +493,6 @@ export function ScienceLabPage() {
         </div>
       </section>
 
-      <section className="container-site py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionTitle>Science Lab as Part of the CITIS STEM Ecosystem</SectionTitle>
-          <p className="mt-7 text-base leading-8 text-muted-foreground sm:text-lg">
-            Science Lab forms an important component of the broader CITIS School Solutions
-            ecosystem.
-          </p>
-          <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-            It can work alongside:
-          </p>
-        </AnimatedSection>
-        <div className="mt-8">
-          <FeatureGrid items={ecosystemSolutions} columns="md:grid-cols-3" />
-        </div>
-        <AnimatedSection className="mt-8">
-          <Copy>
-            Together, these solutions can help schools create a comprehensive ecosystem around AI +
-            Coding + STEM + Experiential Learning.
-          </Copy>
-        </AnimatedSection>
-      </section>
-
       <section className="border-y border-border bg-[#e8f4f8] py-16 sm:py-24">
         <div className="container-site max-w-4xl">
           <AnimatedSection>
