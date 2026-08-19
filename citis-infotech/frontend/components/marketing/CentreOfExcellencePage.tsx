@@ -13,6 +13,7 @@ import {
   Layers,
   Zap,
 } from "lucide-react";
+import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -170,6 +171,16 @@ export default function CentreOfExcellencePage() {
             <p className="text-foreground/80 leading-relaxed">
               The CoE can serve students, faculty, researchers and industry professionals through training, projects, hackathons, research initiatives, industry interactions and innovation programs.
             </p>
+            <div className="overflow-hidden rounded-3xl border border-border bg-background shadow-sm">
+              <Image
+                src="/images/centre-of-excellence-ai-lab.jpg"
+                alt="Students learning in an AI Centre of Excellence computer lab"
+                width={1600}
+                height={1200}
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                className="aspect-[4/3] w-full object-cover"
+              />
+            </div>
 
             {/* AI CoE Ecosystem flow */}
             <div className="pt-4">
@@ -210,6 +221,16 @@ export default function CentreOfExcellencePage() {
             <p className="text-foreground/80 leading-relaxed">
               The CoE can provide hands-on learning environments, practical exercises, simulations, projects, certifications and industry engagement to help learners develop skills relevant to the rapidly evolving cybersecurity landscape.
             </p>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/centre-of-excellence-cyber-lab.jpg"
+                alt="Students collaborating in a cyber security laboratory"
+                width={1280}
+                height={720}
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                className="aspect-[16/9] w-full object-cover"
+              />
+            </div>
           </div>
         </section>
       </AnimatedSection>
