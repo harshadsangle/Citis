@@ -1,4 +1,5 @@
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
+import Image from "next/image";
 
 const thinkingSkills = [
   "Logical reasoning",
@@ -379,6 +380,47 @@ export function AIFutureAcademyPage() {
               <span>THINK with Computational Thinking</span>
               <span>BUILD with Coding</span>
               <span>COMMAND with AI</span>
+            </div>
+          </AnimatedSection>
+        </div>
+      </section>
+
+      <section className="container-site py-12 sm:py-16">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <AnimatedSection>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/ai-academy-classroom-1.jpg"
+                alt="Students learning with laptops alongside their teacher"
+                width={1080}
+                height={1080}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="aspect-square w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
+          <AnimatedSection delay={0.08}>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/ai-academy-classroom-2.jpg"
+                alt="Students collaborating in a coding and robotics lab"
+                width={1024}
+                height={768}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="aspect-[4/3] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
+          <AnimatedSection delay={0.16}>
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm sm:col-span-2 lg:col-span-1">
+              <Image
+                src="/images/ai-academy-classroom-3.jpg"
+                alt="Students exploring coding and AI projects with their teacher"
+                width={1536}
+                height={1024}
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                className="aspect-[3/2] h-full min-h-64 w-full object-cover"
+              />
             </div>
           </AnimatedSection>
         </div>
