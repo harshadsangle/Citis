@@ -17,6 +17,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -236,6 +237,18 @@ export function SchoolPage() {
               technology-driven world.
             </p>
           </AnimatedSection>
+          <AnimatedSection className="mt-10">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/school-solutions-classroom.jpg"
+                alt="Students learning with digital classroom technology"
+                width={1408}
+                height={736}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[16/8] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {tomorrowsSolutions.map((s, i) => (
               <AnimatedSection key={s.title} delay={i * 0.08}>
@@ -265,6 +278,18 @@ export function SchoolPage() {
               schools make technology an integral part of the learning environment rather than a
               standalone subject.
             </p>
+          </AnimatedSection>
+          <AnimatedSection className="mt-10">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/school-solutions-robotics.jpg"
+                alt="Students building and programming robotics projects in class"
+                width={1280}
+                height={720}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[16/8] w-full object-cover"
+              />
+            </div>
           </AnimatedSection>
           <div className="mt-10 grid gap-6 md:grid-cols-2">
             {ictSolutions.map((s, i) => (
@@ -319,6 +344,18 @@ export function SchoolPage() {
               </CardContent>
             </Card>
           </AnimatedSection>
+          <AnimatedSection className="mt-10">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/school-solutions-digital-classroom.jpg"
+                alt="Students collaborating around an interactive digital classroom display"
+                width={1017}
+                height={678}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[3/2] w-full object-cover"
+              />
+            </div>
+          </AnimatedSection>
         </div>
       </section>
 
@@ -334,6 +371,18 @@ export function SchoolPage() {
               their academic offering while preparing students for the rapidly changing world of
               technology and work.
             </p>
+          </AnimatedSection>
+          <AnimatedSection className="mt-10">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/school-solutions-maker-lab.jpg"
+                alt="Students working together on a hands-on robotics and maker project"
+                width={1024}
+                height={1024}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="mx-auto aspect-square w-full max-w-3xl object-cover"
+              />
+            </div>
           </AnimatedSection>
           <div className="mt-10 grid gap-5 md:grid-cols-2">
             {benefits.map((b, i) => {
