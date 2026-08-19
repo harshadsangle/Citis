@@ -13,6 +13,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import NextImage from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
