@@ -15,6 +15,7 @@ export default function VocationalPage() {
         eyebrow="Engagements"
         title="Vocational Education & Skill Development"
         description="Building Skills. Creating Opportunities. Connecting Education with Industry."
+        backgroundImage="/images/vocational-education-background.jpg"
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
           { label: "Vocational Education" },

@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import Image from "next/image";
 import { CheckCircle2 } from "lucide-react";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -9,6 +10,7 @@ export type MarketingItem = {
   description: string;
   icon?: LucideIcon;
   meta?: string;
+  backgroundImage?: string;
 };
 
 export function FeatureGrid({
@@ -33,12 +35,18 @@ export function FeatureGrid({
           const Icon = item.icon;
           return (
             <AnimatedSection key={item.title} delay={index * 0.06}>
-              <Card className="h-full transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
-                <CardHeader>
-                  {Icon && <span className="mb-3 grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="size-5" /></span>}
+              <Card className={`relative h-full overflow-hidden transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg${item.backgroundImage ? " bg-[#0F4C81] text-white" : ""}`}>
+                {item.backgroundImage && (
+                  <>
+                    <Image src={item.backgroundImage} alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#071221]/88 via-[#0F4C81]/78 to-[#0F4C81]/52" />
+                  </>
+                )}
+                <CardHeader className={item.backgroundImage ? "relative z-10" : undefined}>
+                  {Icon && <span className={`mb-3 grid size-11 place-items-center rounded-xl${item.backgroundImage ? " bg-white/15 text-white" : " bg-primary/10 text-primary"}`}><Icon className="size-5" /></span>}
                   {item.meta && <p className="text-xs font-bold tracking-[0.14em] text-accent uppercase">{item.meta}</p>}
-                  <CardTitle>{item.title}</CardTitle>
-                  <CardDescription className="leading-7">{item.description}</CardDescription>
+                  <CardTitle className={item.backgroundImage ? "text-white" : undefined}>{item.title}</CardTitle>
+                  <CardDescription className={`leading-7${item.backgroundImage ? " text-blue-50" : ""}`}>{item.description}</CardDescription>
                 </CardHeader>
               </Card>
             </AnimatedSection>
