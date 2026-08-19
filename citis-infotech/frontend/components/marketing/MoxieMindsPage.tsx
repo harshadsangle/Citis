@@ -417,6 +417,7 @@ export function MoxieMindsPage() {
               </Copy>
             </div>
           </AnimatedSection>
+        </div>
       </section>
 
       <section className="container-site py-16 sm:py-24">
