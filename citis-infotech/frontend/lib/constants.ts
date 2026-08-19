@@ -401,6 +401,34 @@ export const HOME_CLIENTS = [
     name: "Sandip University",
     logo: "/images/clients/sandip-university.png",
   },
+  {
+    name: "Sir Sri Ravishankar Vidya Mandir",
+    logo: "/images/clients/sir-sriravishankar-vidya-mandir.png",
+  },
+  {
+    name: "Challenger Public School",
+    logo: "/images/clients/challenger-public-school.png",
+  },
+  {
+    name: "My Rich Dad's Academy",
+    logo: "/images/clients/my-rich-dads-academy.png",
+  },
+  {
+    name: "Aditya Horizon School & Junior College",
+    logo: "/images/clients/aditya-horizon-school-junior-college.png",
+  },
+  {
+    name: "Vidya Valley",
+    logo: "/images/clients/vidya-valley.png",
+  },
+  {
+    name: "Jnana Prabodhini",
+    logo: "/images/clients/jnana-prabodhini.png",
+  },
+  {
+    name: "Podar International School",
+    logo: "/images/clients/podar-international-school.png",
+  },
 ] as const;
 
 /** Exact Why Choose Us points from the CITIS wireframe. */
