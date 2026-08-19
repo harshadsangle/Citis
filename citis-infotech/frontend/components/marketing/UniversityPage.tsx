@@ -707,7 +707,7 @@ export function UniversityPage() {
               Our Faculty Development Programs include:
             </p>
           </AnimatedSection>
-          <AnimatedSection className="mt-10 lg:col-span-2">
+          <div className="mt-10 lg:col-span-2">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/faculty-development-ai-workshop.jpg"
@@ -718,7 +718,7 @@ export function UniversityPage() {
                 className="aspect-[16/10] w-full object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {fdpItems.map((item, index) => (
               <AnimatedSection key={item} delay={index * 0.05}>
@@ -731,7 +731,7 @@ export function UniversityPage() {
               </AnimatedSection>
             ))}
           </div>
-          <AnimatedSection className="mt-10 lg:col-span-2">
+          <div className="mt-10 lg:col-span-2">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/faculty-development-training-session.jpg"
@@ -742,7 +742,7 @@ export function UniversityPage() {
                 className="aspect-[3/2] w-full object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 
@@ -771,7 +771,7 @@ export function UniversityPage() {
               title="Partnering with CITIS enables institutions to:"
             />
           </AnimatedSection>
-          <AnimatedSection className="lg:col-span-2">
+          <div className="lg:col-span-2">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/faculty-development-lab-session.jpg"
@@ -782,7 +782,7 @@ export function UniversityPage() {
                 className="aspect-[10/7] w-full object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {benefitItems.map((item, index) => (
               <AnimatedSection key={item} delay={index * 0.05}>

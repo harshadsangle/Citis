@@ -213,7 +213,7 @@ export function SchoolPage() {
               scalable technology-enabled education ecosystem.
             </p>
           </AnimatedSection>
-          <AnimatedSection className="mt-10">
+          <div className="mt-10">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
               <Image
                 src="/images/school-solutions-stem-robotics.jpg"
@@ -224,7 +224,7 @@ export function SchoolPage() {
                 className="aspect-[16/9] w-full object-cover"
               />
             </div>
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 

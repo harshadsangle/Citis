@@ -515,7 +515,7 @@ export function AIFutureAcademyPage() {
             skills={aiSkills}
           />
         </div>
-        <AnimatedSection className="mt-12">
+        <div className="mt-12">
           <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
             <Image
               src="/images/computational-thinking-classroom.jpg"
@@ -526,7 +526,7 @@ export function AIFutureAcademyPage() {
               className="aspect-[3/2] w-full object-cover"
             />
           </div>
-        </AnimatedSection>
+        </div>
       </section>
 
       <section className="border-y border-border bg-[#e8f4f8] py-16 sm:py-24">
