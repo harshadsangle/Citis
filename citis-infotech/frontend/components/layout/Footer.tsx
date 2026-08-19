@@ -60,8 +60,9 @@ export function Footer() {
         <div className="flex flex-col gap-5 border-t border-slate-700/80 pt-7 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} {SITE_CONFIG.legalName}. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-5">
-            <Link href="/privacy" className="hover:text-white">Privacy</Link>
-            <Link href="/terms" className="hover:text-white">Terms</Link>
+            <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white">Terms of Use</Link>
+            <Link href="/refund-policy" className="hover:text-white">Refund Policy</Link>
             <Link href="/sitemap.xml" className="hover:text-white">Sitemap</Link>
             <div className="flex gap-2">
               {SOCIAL_LINKS.map((social, index) => {
