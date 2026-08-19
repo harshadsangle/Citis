@@ -361,37 +361,36 @@ export function MoxieMindsPage() {
       </section>
 
       <section className="container-site py-16 sm:py-24">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(280px,420px)_minmax(0,1fr)] lg:gap-16">
-          <AnimatedSection>
-            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-              <Image
-                src="/images/moxieminds-industry-session.jpg"
-                alt="Entrepreneurship instructor speaking to a student audience"
-                width={1600}
-                height={900}
-                sizes="(max-width: 1024px) 100vw, 420px"
-                className="aspect-[16/9] w-full object-cover"
-              />
-            </div>
-          </AnimatedSection>
-          <AnimatedSection className="max-w-4xl" delay={0.08}>
-            <SectionTitle>Industry-Led Learning</SectionTitle>
-            <div className="mt-7 space-y-6">
-              <Copy>
-                A key differentiator of MoxieMinds is its emphasis on learning from practitioners.
-              </Copy>
-              <Copy>
-                Sessions are designed to include industry experts and subject-matter experts who can
-                provide practical perspectives on entrepreneurship, innovation, project management,
-                data and business functions.
-              </Copy>
-              <Copy>
-                Through case studies, industry interactions and practical projects, students gain
-                exposure to the challenges and decisions faced by entrepreneurs and professionals in
-                the real world.
-              </Copy>
-            </div>
-          </AnimatedSection>
+        <AnimatedSection className="max-w-4xl">
+          <SectionTitle>Industry-Led Learning</SectionTitle>
+          <div className="mt-7 space-y-6">
+            <Copy>
+              A key differentiator of MoxieMinds is its emphasis on learning from practitioners.
+            </Copy>
+            <Copy>
+              Sessions are designed to include industry experts and subject-matter experts who can
+              provide practical perspectives on entrepreneurship, innovation, project management,
+              data and business functions.
+            </Copy>
+            <Copy>
+              Through case studies, industry interactions and practical projects, students gain
+              exposure to the challenges and decisions faced by entrepreneurs and professionals in
+              the real world.
+            </Copy>
+          </div>
+        </AnimatedSection>
+        <AnimatedSection className="mt-12">
+          <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+            <Image
+              src="/images/moxieminds-industry-session.jpg"
+              alt="Entrepreneurship instructor speaking to a student audience"
+              width={1600}
+              height={900}
+              sizes="(max-width: 1024px) 100vw, 1200px"
+              className="aspect-[16/7] w-full object-cover"
+            />
+          </div>
+        </AnimatedSection>
         </div>
       </section>
 
