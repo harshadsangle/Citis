@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +8,7 @@ interface PageHeaderProps {
   description?: string;
   breadcrumbs?: Array<{ label: string; href?: string }>;
   eyebrow?: string;
+  backgroundImage?: string;
   /** Page-specific hero fields. `about` = teal, `blogs` = light editorial field. */
   tone?: "default" | "about" | "blogs";
 }
@@ -50,11 +52,35 @@ const tones = {
   },
 } as const;
 
-export function PageHeader({ title, description, breadcrumbs = [], eyebrow, tone = "default" }: PageHeaderProps) {
+export function PageHeader({
+  title,
+  description,
+  breadcrumbs = [],
+  eyebrow,
+  backgroundImage,
+  tone = "default",
+}: PageHeaderProps) {
   const t = tones[tone];
   return (
     <section className={cn("relative overflow-hidden border-b border-border py-16 sm:py-20", t.bg, t.text)}>
-      <div className={cn("absolute inset-0 opacity-70", t.glow)} />
+      {backgroundImage && (
+        <Image
+          src={backgroundImage}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[center_55%]"
+        />
+      )}
+      <div
+        className={cn(
+          "absolute inset-0",
+          backgroundImage
+            ? "bg-gradient-to-r from-[#071221]/92 via-[#0F4C81]/78 to-[#071221]/36"
+            : cn("opacity-70", t.glow),
+        )}
+      />
       <div className={cn("absolute inset-0", t.grid)} />
       <div className="container-site relative">
         <Breadcrumb className="mb-7">
