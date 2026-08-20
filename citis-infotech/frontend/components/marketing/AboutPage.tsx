@@ -13,7 +13,7 @@ import {
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FeatureGrid } from "@/components/marketing/MarketingBlocks";
 import type { MarketingItem } from "@/components/marketing/MarketingBlocks";
 

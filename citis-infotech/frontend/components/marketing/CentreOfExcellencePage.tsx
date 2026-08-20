@@ -10,13 +10,11 @@ import {
   ArrowRight,
   Building2,
   BookOpen,
-  Layers,
-  Zap,
 } from "lucide-react";
 import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CTASection } from "@/components/shared/CTASection";
 
 /* ─── Services Data ─────────────────────────────────────────────────────── */

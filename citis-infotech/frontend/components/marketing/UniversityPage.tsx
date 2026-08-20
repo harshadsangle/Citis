@@ -28,11 +28,9 @@ import {
 } from "lucide-react";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { FeatureGrid, OutcomesList, ProcessTimeline } from "@/components/marketing/MarketingBlocks";
-import { CTASection } from "@/components/shared/CTASection";
+import { FeatureGrid, OutcomesList } from "@/components/marketing/MarketingBlocks";
 import type { MarketingItem } from "@/components/marketing/MarketingBlocks";
 
 /* ─── Data ──────────────────────────────────────────────────────────────── */

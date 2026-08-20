@@ -1,7 +1,6 @@
 import {
   Award,
   Briefcase,
-  CheckCircle2,
   Globe,
   GraduationCap,
   Heart,
@@ -14,7 +13,7 @@ import {
 import NextImage from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 /* ─── Data ──────────────────────────────────────────────────────────────── */
 

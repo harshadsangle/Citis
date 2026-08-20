@@ -2,7 +2,6 @@ import {
   Award,
   Briefcase,
   Building2,
-  CheckCircle2,
   FlaskConical,
   Globe,
   GraduationCap,
@@ -10,7 +9,6 @@ import {
 import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FeatureGrid, OutcomesList } from "@/components/marketing/MarketingBlocks";
 import type { MarketingItem } from "@/components/marketing/MarketingBlocks";
 

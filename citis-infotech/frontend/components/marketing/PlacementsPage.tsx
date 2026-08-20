@@ -1,20 +1,11 @@
 import {
   ArrowRight,
   Briefcase,
-  GraduationCap,
-  Users,
-  Handshake,
-  Target,
-  TrendingUp,
   Brain,
   BarChart2,
   Shield,
   Code2,
-  BookOpen,
-  Rocket,
   CheckCircle2,
-  Layers,
-  Building2,
 } from "lucide-react";
 import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";

@@ -1,9 +1,7 @@
 import {
   BookOpen,
   Brain,
-  CheckCircle2,
   Code2,
-  Cpu,
   FlaskConical,
   GraduationCap,
   HandshakeIcon,
@@ -11,7 +9,6 @@ import {
   LayoutDashboard,
   Layers,
   Lightbulb,
-  Monitor,
   Star,
   TrendingUp,
   Users,
@@ -20,8 +17,7 @@ import {
 import Image from "next/image";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { OutcomesList } from "@/components/marketing/MarketingBlocks";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 /* ─── Data ──────────────────────────────────────────────────────────────── */
 

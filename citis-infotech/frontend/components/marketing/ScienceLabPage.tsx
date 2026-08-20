@@ -129,21 +129,6 @@ const advantages = [
   },
 ];
 
-const ecosystemSolutions = [
-  {
-    title: "CITIS AI Academy",
-    description: "AI literacy, Artificial Intelligence and future skills.",
-  },
-  {
-    title: "CODMOS",
-    description: "Coding, computational thinking and digital creation.",
-  },
-  {
-    title: "Science Lab",
-    description: "Interactive science, experimentation and practical learning.",
-  },
-];
-
 const scienceLabBanners = [
   {
     title: "Learning by Doing",
