@@ -8,7 +8,7 @@ const routes = [
   "/engagements/vocational", "/engagements/centre-of-excellence", "/engagements/placements",
   "/products", "/products/ai-future-academy", "/products/science-lab", "/products/moxiemind",
   "/partner", "/highlights", "/highlights/blogs", "/highlights/case-studies",
-  "/careers", "/future-academy", "/contact",
+  "/careers", "/future-academy", "/contact", "/privacy", "/terms", "/refund-policy",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
