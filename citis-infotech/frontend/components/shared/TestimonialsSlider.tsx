@@ -64,8 +64,10 @@ export function TestimonialsSlider({ testimonials, items }: TestimonialsSliderPr
   return (
     <Swiper
       modules={[A11y, Autoplay, Pagination]}
-      autoplay={{ delay: 5500, disableOnInteraction: false, pauseOnMouseEnter: true }}
+      autoplay={{ delay: 2000, disableOnInteraction: false, pauseOnMouseEnter: false }}
       pagination={{ clickable: true }}
+      loop
+      speed={450}
       spaceBetween={24}
       slidesPerView={1}
       className="!pb-12"
