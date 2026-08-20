@@ -6,7 +6,7 @@ const routes = [
   "", "/about", "/about/vision-mission", "/about/quality-policy", "/about/associations",
   "/engagements", "/engagements/university", "/engagements/school",
   "/engagements/vocational", "/engagements/centre-of-excellence", "/engagements/placements",
-  "/products", "/products/ai-future-academy", "/products/appwizz-academy", "/products/moxiemind",
+  "/products", "/products/ai-future-academy", "/products/science-lab", "/products/moxiemind",
   "/partner", "/highlights", "/highlights/blogs", "/highlights/case-studies",
   "/careers", "/future-academy", "/contact",
 ];

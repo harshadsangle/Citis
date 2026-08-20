@@ -15,27 +15,27 @@ interface PageHeaderProps {
 
 const tones = {
   default: {
-    bg: "bg-[#071221]",
+    bg: "bg-[#254b67]",
     text: "text-white",
-    glow: "[background-image:radial-gradient(circle_at_85%_15%,rgba(255,122,0,0.28),transparent_28%),radial-gradient(circle_at_10%_80%,rgba(37,99,235,0.35),transparent_32%)]",
+    glow: "[background-image:radial-gradient(circle_at_85%_15%,rgba(249,232,162,0.28),transparent_28%),radial-gradient(circle_at_10%_80%,rgba(120,164,203,0.40),transparent_32%)]",
     grid: "opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:42px_42px]",
     crumb: "text-blue-100/80",
     sep: "text-blue-200/50",
     crumbHover: "hover:text-white",
     page: "text-white",
-    eyebrow: "text-orange-300",
+    eyebrow: "text-[#f9e8a2]",
     description: "text-blue-100/90",
   },
   about: {
-    bg: "bg-[#0c4a6e]",
+    bg: "bg-[#3b6d8c]",
     text: "text-white",
-    glow: "[background-image:radial-gradient(circle_at_85%_15%,rgba(56,189,248,0.28),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(14,116,144,0.45),transparent_34%)]",
+    glow: "[background-image:radial-gradient(circle_at_85%_15%,rgba(180,225,235,0.34),transparent_30%),radial-gradient(circle_at_10%_80%,rgba(120,164,203,0.46),transparent_34%)]",
     grid: "opacity-30 [background-image:linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:42px_42px]",
     crumb: "text-sky-100/85",
     sep: "text-sky-200/50",
     crumbHover: "hover:text-white",
     page: "text-white",
-    eyebrow: "text-sky-200",
+    eyebrow: "text-[#f9e8a2]",
     description: "text-sky-100/90",
   },
   blogs: {
@@ -70,21 +70,21 @@ export function PageHeader({
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[center_55%]"
+          className="z-0 object-cover object-[center_55%]"
         />
       )}
       <div
         className={cn(
-          "absolute inset-0",
+          "pointer-events-none absolute inset-0 z-[1]",
           backgroundImage
             ? tone === "blogs"
               ? "bg-gradient-to-r from-[#eef3f8]/95 via-[#eef3f8]/78 to-[#eef3f8]/38"
-              : "bg-gradient-to-r from-[#071221]/92 via-[#0F4C81]/78 to-[#071221]/36"
+              : "bg-gradient-to-r from-[#1e3d54]/92 via-[#4c7898]/78 to-[#1e3d54]/36"
             : cn("opacity-70", t.glow),
         )}
       />
-      <div className={cn("absolute inset-0", t.grid)} />
-      <div className="container-site relative">
+      <div className={cn("pointer-events-none absolute inset-0 z-[2]", t.grid)} />
+      <div className="container-site relative z-10">
         <Breadcrumb className="mb-7">
           <BreadcrumbList className={t.crumb}>
             <BreadcrumbItem>
@@ -111,9 +111,9 @@ export function PageHeader({
             {eyebrow}
           </p>
         )}
-        <h1 className="max-w-4xl font-heading text-4xl leading-tight font-bold tracking-[-0.03em] text-balance sm:text-5xl lg:text-6xl">{title}</h1>
+        <h1 className="max-w-4xl font-heading text-3xl leading-tight font-bold tracking-[-0.03em] text-balance sm:text-4xl lg:text-5xl">{title}</h1>
         {description && (
-          <p className={cn("mt-5 max-w-2xl text-base leading-8 sm:text-lg", t.description)}>
+          <p className={cn("mt-4 max-w-2xl text-sm leading-7 sm:text-base", t.description)}>
             {description}
           </p>
         )}

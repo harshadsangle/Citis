@@ -166,7 +166,7 @@ export default function CentreOfExcellencePage() {
               Artificial Intelligence is becoming a foundational technology across industries. An AI Centre of Excellence provides an institution with the infrastructure, expertise and ecosystem required to build meaningful capabilities in AI and emerging technologies.
             </p>
             <p className="text-foreground/80 leading-relaxed">
-              CITIS's AI CoE can support areas including Artificial Intelligence, Generative AI, Machine Learning, Deep Learning, Computer Vision, Natural Language Processing, Data Science, Agentic AI and AI applications.
+               CITIS&apos;s AI CoE can support areas including Artificial Intelligence, Generative AI, Machine Learning, Deep Learning, Computer Vision, Natural Language Processing, Data Science, Agentic AI and AI applications.
             </p>
             <p className="text-foreground/80 leading-relaxed">
               The CoE can serve students, faculty, researchers and industry professionals through training, projects, hackathons, research initiatives, industry interactions and innovation programs.
@@ -216,7 +216,7 @@ export default function CentreOfExcellencePage() {
               Cybersecurity has become a strategic requirement for organisations across every sector. A Cyber Security Centre of Excellence enables institutions to build capabilities in cybersecurity education, practical training, awareness, research and industry-oriented skill development.
             </p>
             <p className="text-foreground/80 leading-relaxed">
-              CITIS's Cyber Security CoE can cover areas such as Cybersecurity Fundamentals, Ethical Hacking, Network Security, Cloud Security, Application Security, Digital Forensics, Security Operations and Cyber Risk.
+               CITIS&apos;s Cyber Security CoE can cover areas such as Cybersecurity Fundamentals, Ethical Hacking, Network Security, Cloud Security, Application Security, Digital Forensics, Security Operations and Cyber Risk.
             </p>
             <p className="text-foreground/80 leading-relaxed">
               The CoE can provide hands-on learning environments, practical exercises, simulations, projects, certifications and industry engagement to help learners develop skills relevant to the rapidly evolving cybersecurity landscape.

@@ -16,7 +16,7 @@ export function generatePageMetadata({
   title,
   description = SITE_CONFIG.description,
   path = "",
-  image = "/images/og-default.jpg",
+  image = "/images/hero-campus.jpg",
   type = "website",
   noIndex = false,
   keywords,

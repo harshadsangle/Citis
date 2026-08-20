@@ -92,7 +92,7 @@ export const MEGA_MENUS = {
     featured: {
       label: "View all products",
       href: "/products",
-      description: "AI Academy, AppWizz Academy, MoxieMind Entrepreneurship Academy.",
+      description: "AI Academy, Science Lab, MoxieMind Entrepreneurship Academy.",
     },
     items: [
       {
@@ -103,8 +103,8 @@ export const MEGA_MENUS = {
       },
       {
         title: "Science Lab",
-        href: "/products/appwizz-academy",
-        description: "AppWizz Academy",
+        href: "/products/science-lab",
+        description: "Science Lab",
         icon: Rocket,
       },
       {
@@ -287,7 +287,7 @@ export const FOOTER_LINKS = [
     title: "Products",
     links: [
       { label: "AI Academy", href: "/products/ai-future-academy" },
-      { label: "Science Lab", href: "/products/appwizz-academy" },
+      { label: "Science Lab", href: "/products/science-lab" },
       { label: "MoxieMind Entrepreneurship Academy", href: "/products/moxiemind" },
       { label: "CITIS Future Academy", href: "/future-academy" },
       { label: "Case Studies", href: "/highlights/case-studies" },

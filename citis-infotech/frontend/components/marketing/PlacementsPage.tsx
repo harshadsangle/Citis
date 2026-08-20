@@ -244,7 +244,7 @@ export default function PlacementsPage() {
             At CITIS Infotech, we believe that the true measure of education is not only what a learner knows, but also how effectively that knowledge can be applied in the workplace. Our Placements and Internships ecosystem is designed to bridge the gap between academic learning and industry requirements by providing learners with opportunities for practical exposure, workplace experience, career preparation and interaction with industry.
           </p>
           <p className="text-lg text-foreground/80 leading-relaxed">
-            Through our relationships with universities, colleges, industry organisations, technology companies and professional networks, CITIS works towards creating pathways that connect learning, skills, experience and employment. Our approach begins well before the final placement season, with employability development integrated into the learner's academic and skill-development journey.
+             Through our relationships with universities, colleges, industry organisations, technology companies and professional networks, CITIS works towards creating pathways that connect learning, skills, experience and employment. Our approach begins well before the final placement season, with employability development integrated into the learner&apos;s academic and skill-development journey.
           </p>
         </section>
       </AnimatedSection>
@@ -278,13 +278,13 @@ export default function PlacementsPage() {
               <p className="text-orange-500 font-semibold">Learn Through Real-World Experience</p>
             </div>
             <p className="text-foreground/80 leading-relaxed">
-              Internships provide students with an opportunity to experience the professional environment and apply classroom learning to practical situations. CITIS works with institutions and industry partners to facilitate internship opportunities aligned with learners' academic disciplines and career interests.
+               Internships provide students with an opportunity to experience the professional environment and apply classroom learning to practical situations. CITIS works with institutions and industry partners to facilitate internship opportunities aligned with learners&apos; academic disciplines and career interests.
             </p>
             <p className="text-foreground/80 leading-relaxed">
               Depending on the program and partner ecosystem, internships may include industry projects, technology projects, research assignments, virtual internships, on-the-job exposure and structured experiential learning.
             </p>
             <p className="text-foreground/80 leading-relaxed">
-              Our objective is to ensure that internships are not treated merely as a mandatory academic requirement, but as an important stage in the learner's transition from education to employment.
+               Our objective is to ensure that internships are not treated merely as a mandatory academic requirement, but as an important stage in the learner&apos;s transition from education to employment.
             </p>
 
             <div className="pt-2">
@@ -358,7 +358,7 @@ export default function PlacementsPage() {
               Career-oriented interventions can include understanding career opportunities, identifying relevant technology and professional domains, mapping skills to careers and creating individual learning pathways.
             </p>
             <p className="text-foreground/80 leading-relaxed">
-              The focus is on helping learners understand not just "What job can I get?", but also "What skills and experiences do I need to build the career I want?"
+               The focus is on helping learners understand not just &quot;What job can I get?&quot;, but also &quot;What skills and experiences do I need to build the career I want?&quot;
             </p>
           </div>
         </section>
@@ -534,7 +534,7 @@ export default function PlacementsPage() {
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold">Benefits to Universities &amp; Colleges</h2>
                 <p className="text-foreground/80 leading-relaxed text-sm">
-                  An effective placement and internship ecosystem strengthens an institution's overall value proposition to students and parents.
+                   An effective placement and internship ecosystem strengthens an institution&apos;s overall value proposition to students and parents.
                 </p>
                 <p className="text-foreground/80 leading-relaxed text-sm">
                   CITIS can support institutions in building stronger connections between academics, industry, skills and employment, while helping establish a structured and measurable employability framework.

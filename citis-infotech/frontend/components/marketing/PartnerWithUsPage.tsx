@@ -435,7 +435,7 @@ export default function PartnerWithUsPage() {
             Whether you are looking to establish a CITIS-enabled education centre, introduce
             future-ready programs in your institution, offer technology and skill development
             programs, or explore a strategic business collaboration, we provide multiple
-            partnership models that can be customised to suit the partner's objectives,
+             partnership models that can be customised to suit the partner&apos;s objectives,
             capabilities and market.
           </p>
         </section>
@@ -463,7 +463,7 @@ export default function PartnerWithUsPage() {
               coding, STEM, professional education and career-oriented programs.
             </p>
             <p className="text-foreground/80 leading-relaxed">
-              Partners benefit from access to CITIS's academic framework, curriculum, technology
+               Partners benefit from access to CITIS&apos;s academic framework, curriculum, technology
               ecosystem, branding, training, operational guidance and program support, subject to
               the applicable partnership terms and eligibility requirements.
             </p>
@@ -494,7 +494,7 @@ export default function PartnerWithUsPage() {
               </div>
               <p className="text-foreground/70 text-sm leading-relaxed mt-5">
                 Partnership models can be structured based on geography, infrastructure, target
-                learners, programs and the partner's capabilities.
+                 learners, programs and the partner&apos;s capabilities.
               </p>
             </div>
           </div>
@@ -613,7 +613,7 @@ export default function PartnerWithUsPage() {
         <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-16 sm:py-20 text-white text-center">
           <div className="container-site max-w-3xl space-y-5">
             <h2 className="text-2xl sm:text-3xl font-bold">
-              Let's Create Something Meaningful Together
+               Let&apos;s Create Something Meaningful Together
             </h2>
             <p className="text-white/75 leading-relaxed">
               Whether you are an entrepreneur looking for an education business opportunity, a

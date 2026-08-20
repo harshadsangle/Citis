@@ -35,11 +35,11 @@ export function FeatureGrid({
           const Icon = item.icon;
           return (
             <AnimatedSection key={item.title} delay={index * 0.06}>
-              <Card className={`relative h-full overflow-hidden transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg${item.backgroundImage ? " bg-[#0F4C81] text-white" : ""}`}>
+              <Card className={`relative h-full overflow-hidden transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg${item.backgroundImage ? " bg-primary text-white" : ""}`}>
                 {item.backgroundImage && (
                   <>
-                    <Image src={item.backgroundImage} alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#071221]/88 via-[#0F4C81]/78 to-[#0F4C81]/52" />
+                    <Image src={item.backgroundImage} alt="" fill sizes="(max-width: 768px) 100vw, 33vw" className="z-0 object-cover" />
+                    <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-br from-[#1e3d54]/88 via-[#4c7898]/78 to-[#4c7898]/52" />
                   </>
                 )}
                 <CardHeader className={item.backgroundImage ? "relative z-10" : undefined}>
@@ -73,7 +73,7 @@ export function SplitFeature({
   reverse?: boolean;
 }) {
   return (
-    <section className="border-y border-border bg-slate-100/70 py-16 dark:bg-slate-900/60 sm:py-24">
+      <section className="border-y border-border bg-muted/80 py-16 sm:py-24">
       <div className={`container-site grid items-center gap-10 lg:grid-cols-2 lg:gap-20 ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}>
         <AnimatedSection>
           <SectionHeading eyebrow={eyebrow} title={title} description={description} />
@@ -84,7 +84,7 @@ export function SplitFeature({
         <AnimatedSection delay={0.12}>
           <div className="brand-gradient relative min-h-80 overflow-hidden rounded-3xl p-8 text-white shadow-2xl">
             <div className="absolute -top-20 -right-12 size-64 rounded-full border border-white/15" />
-            <div className="absolute right-12 -bottom-32 size-64 rounded-full bg-orange-400/30 blur-3xl" />
+            <div className="absolute right-12 -bottom-32 size-64 rounded-full bg-[#f9e8a2]/35 blur-3xl" />
             <div className="relative flex h-full min-h-64 flex-col justify-between">
               <p className="font-heading text-xl font-semibold">CITIS InfoTech</p>
               <div>
@@ -145,7 +145,7 @@ export function OutcomesList({
   outcomes: string[];
 }) {
   return (
-    <section className="border-y border-border bg-slate-100/70 py-16 dark:bg-slate-900/60 sm:py-24">
+      <section className="border-y border-border bg-muted/80 py-16 sm:py-24">
       <div className="container-site grid gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
         <AnimatedSection><SectionHeading eyebrow={eyebrow} title={title} description={description} /></AnimatedSection>
         <div className="grid gap-4 sm:grid-cols-2">

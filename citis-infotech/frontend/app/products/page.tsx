@@ -9,12 +9,12 @@ import { generatePageMetadata } from "@/lib/seo";
 export const metadata = generatePageMetadata({
   title: "Products",
   path: "/products",
-  description: "AI Academy, AppWizz Academy, MoxieMind Entrepreneurship Academy.",
+  description: "AI Academy, Science Lab, MoxieMind Entrepreneurship Academy.",
 });
 
 const academies = [
   { icon: Sparkles, name: "AI Academy", href: "/products/ai-future-academy" },
-  { icon: Rocket, name: "AppWizz Academy", href: "/products/appwizz-academy" },
+  { icon: Rocket, name: "Science Lab", href: "/products/science-lab" },
   { icon: Lightbulb, name: "MoxieMind Entrepreneurship Academy", href: "/products/moxiemind" },
 ];
 
@@ -24,7 +24,7 @@ export default function ProductsPage() {
       <PageHeader
         eyebrow="Products"
         title="Products"
-        description="AI Academy · AppWizz Academy · MoxieMind Entrepreneurship Academy"
+        description="AI Academy · Science Lab · MoxieMind Entrepreneurship Academy"
         breadcrumbs={[{ label: "Products" }]}
       />
       <section className="container-site py-16 sm:py-24">

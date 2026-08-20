@@ -132,7 +132,7 @@ export function VocationalEducationPage() {
             </p>
             <div className="mt-5 space-y-5 text-base leading-8 text-muted-foreground sm:text-lg">
               <p>
-                Industry Integrated Learning bridges the gap between academic education and workplace requirements. CITIS works with educational institutions and industry partners to integrate industry inputs into the learner's academic journey.
+                 Industry Integrated Learning bridges the gap between academic education and workplace requirements. CITIS works with educational institutions and industry partners to integrate industry inputs into the learner&apos;s academic journey.
               </p>
               <p>
                 Programs may include industry-relevant curriculum, technology platforms, guest sessions, practical projects, internships, certifications, industry assessments and career-oriented learning. This creates a more holistic learning experience in which students understand not only what they are learning, but also how and where those skills are applied.
@@ -269,7 +269,7 @@ export function VocationalEducationPage() {
               </h2>
             </div>
             <p className="mb-6 text-base leading-8 text-muted-foreground">
-              CITIS's vocational and skill development ecosystem aims to provide learners with:
+               CITIS&apos;s vocational and skill development ecosystem aims to provide learners with:
             </p>
             <ul className="space-y-3">
               {learnerBenefits.map((benefit) => (
@@ -296,7 +296,7 @@ export function VocationalEducationPage() {
             </div>
             <div className="space-y-5 text-base leading-8 text-muted-foreground">
               <p>
-                Educational institutions can leverage CITIS's vocational and industry-integrated ecosystem to expand their academic and skill offerings without limiting themselves to traditional programs.
+                 Educational institutions can leverage CITIS&apos;s vocational and industry-integrated ecosystem to expand their academic and skill offerings without limiting themselves to traditional programs.
               </p>
               <p>
                 CITIS can support institutions with curriculum, technology, industry integration, faculty enablement, digital learning, assessments, certifications and implementation support.
@@ -347,7 +347,7 @@ export function VocationalEducationPage() {
             From Learning to Livelihood
           </h2>
           <p className="mt-6 text-base leading-8 text-blue-100/90">
-            CITIS's vocational education philosophy is built around a simple principle:
+             CITIS&apos;s vocational education philosophy is built around a simple principle:
           </p>
           <p className="mt-4 text-lg font-semibold italic text-white/95">
             Education should create capability, capability should create opportunity, and opportunity should create meaningful careers.

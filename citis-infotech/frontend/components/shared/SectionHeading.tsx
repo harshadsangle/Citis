@@ -13,8 +13,8 @@ export function SectionHeading({ eyebrow, title, description, align = "left", cl
   return (
     <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center", className)}>
       {eyebrow && <p className="mb-3 text-xs font-bold tracking-[0.2em] text-secondary uppercase">{eyebrow}</p>}
-      <h2 className="font-heading text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl">{title}</h2>
-      {description && <p className="mt-5 text-base leading-8 text-muted-foreground sm:text-lg">{description}</p>}
+      <h2 className="font-heading text-2xl leading-tight font-semibold tracking-tight text-balance sm:text-3xl lg:text-4xl">{title}</h2>
+      {description && <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">{description}</p>}
     </div>
   );
 }
