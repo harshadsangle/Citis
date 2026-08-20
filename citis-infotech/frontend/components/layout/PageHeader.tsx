@@ -60,7 +60,7 @@ export function PageHeader({
   backgroundImage,
   tone = "default",
 }: PageHeaderProps) {
-  const t = backgroundImage ? tones.default : tones[tone];
+  const t = tones[tone];
   return (
     <section className={cn("relative overflow-hidden border-b border-border py-16 sm:py-20", t.bg, t.text)}>
       {backgroundImage && (
@@ -77,7 +77,9 @@ export function PageHeader({
         className={cn(
           "absolute inset-0",
           backgroundImage
-            ? "bg-gradient-to-r from-[#071221]/92 via-[#0F4C81]/78 to-[#071221]/36"
+            ? tone === "blogs"
+              ? "bg-gradient-to-r from-[#eef3f8]/95 via-[#eef3f8]/78 to-[#eef3f8]/38"
+              : "bg-gradient-to-r from-[#071221]/92 via-[#0F4C81]/78 to-[#071221]/36"
             : cn("opacity-70", t.glow),
         )}
       />
