@@ -157,6 +157,21 @@ const scienceLabBanners = [
   },
 ] as const;
 
+const scienceLabPhotos = [
+  {
+    image: "/images/science-lab-indian-physics.jpg",
+    alt: "Indian school students conducting a hands-on physics experiment with their teacher",
+  },
+  {
+    image: "/images/science-lab-indian-chemistry.jpg",
+    alt: "Indian school students exploring a chemistry experiment with their teacher",
+  },
+  {
+    image: "/images/science-lab-indian-biology.jpg",
+    alt: "Indian school students examining a biology specimen with their teacher",
+  },
+] as const;
+
 function SectionTitle({ children }: { children: string }) {
   return (
     <h2 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
@@ -260,6 +275,22 @@ export function ScienceLabPage() {
                   <h3 className="px-3 pb-2 pt-5 text-center font-heading text-2xl font-semibold text-primary sm:text-3xl">
                     {banner.title}
                   </h3>
+                </div>
+              </AnimatedSection>
+            ))}
+          </div>
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            {scienceLabPhotos.map((photo, index) => (
+              <AnimatedSection key={photo.image} delay={index * 0.08}>
+                <div className="overflow-hidden rounded-3xl border border-[#0F4C81]/15 bg-white p-3 shadow-[0_12px_36px_rgba(15,76,129,0.1)]">
+                  <Image
+                    src={photo.image}
+                    alt={photo.alt}
+                    width={640}
+                    height={480}
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    className="aspect-[4/3] w-full rounded-2xl object-cover"
+                  />
                 </div>
               </AnimatedSection>
             ))}
