@@ -200,6 +200,66 @@ button, a, input, textarea, select {
   color: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
+.association-carousel {
+  width: 100%;
+  overflow: hidden;
+}
+
+.association-carousel-track {
+  display: flex;
+  width: max-content;
+  gap: 1rem;
+  animation: association-carousel-scroll 34s linear infinite;
+  will-change: transform;
+}
+
+.association-carousel-group {
+  display: flex;
+  flex: 0 0 100%;
+  min-width: 0;
+  gap: 1rem;
+}
+
+.association-carousel-card {
+  min-width: 0;
+  flex: 0 0 calc((100% - 1rem) / 2);
+}
+
+@media (min-width: 640px) {
+  .association-carousel-card {
+    flex-basis: calc((100% - 2rem) / 3);
+  }
+}
+
+@media (min-width: 768px) {
+  .association-carousel-card {
+    flex-basis: calc((100% - 3rem) / 4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .association-carousel-card {
+    flex-basis: calc((100% - 6rem) / 7);
+  }
+}
+
+@keyframes association-carousel-scroll {
+  to {
+    transform: translateX(calc(-50% - 0.5rem));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .association-carousel-track {
+    animation: none;
+    transform: none;
+  }
+
+  .association-carousel-group[aria-hidden="true"] {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
