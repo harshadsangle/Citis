@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Manrope, Syne } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { ConditionalShell } from "@/components/layout/ConditionalShell";
 import { QueryProvider } from "@/components/layout/QueryProvider";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
@@ -14,13 +14,6 @@ import "./globals.css";
 const manrope = Manrope({
   variable: "--font-manrope",
   subsets: ["latin"],
-  display: "swap",
-});
-
-const syne = Syne({
-  variable: "--font-syne",
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
   display: "swap",
 });
 
@@ -84,7 +77,7 @@ export default function RootLayout({
   const jsonLd = organizationJsonLd();
   return (
     <html lang="en-IN" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${syne.variable} antialiased`}>
+      <body className={`${manrope.variable} antialiased`}>
         <ThemeProvider>
           <QueryProvider>
             <ScrollProgress />
