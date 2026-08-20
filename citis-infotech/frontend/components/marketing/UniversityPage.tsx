@@ -266,26 +266,31 @@ const implementationSteps: MarketingItem[] = [
     title: "Discover",
     description:
       "Understand institutional goals, academic structure, and strategic priorities.",
+    backgroundImage: "/images/implementation-discover.jpg",
   },
   {
     title: "Design",
     description:
       "Develop customized academic solutions aligned with institutional objectives.",
+    backgroundImage: "/images/implementation-design.jpg",
   },
   {
     title: "Deploy",
     description:
       "Implement programs through structured project planning, faculty enablement, and technology integration.",
+    backgroundImage: "/images/implementation-deploy.jpg",
   },
   {
     title: "Measure",
     description:
       "Track learner engagement, certifications, academic performance, internships, placements, and institutional outcomes.",
+    backgroundImage: "/images/implementation-measure.jpg",
   },
   {
     title: "Improve",
     description:
       "Continuously review and enhance academic delivery based on stakeholder feedback and emerging trends.",
+    backgroundImage: "/images/implementation-improve.jpg",
   },
 ];
 
@@ -816,12 +821,24 @@ export function UniversityPage() {
           <div className="relative grid gap-6 md:grid-cols-3 lg:grid-cols-5">
             {implementationSteps.map((step, index) => (
               <AnimatedSection key={step.title} delay={index * 0.08}>
-                <div className="relative rounded-xl border border-border bg-card p-6 shadow-sm h-full">
-                  <span className="mb-5 grid size-10 place-items-center rounded-full bg-primary font-heading text-sm font-bold text-primary-foreground ring-8 ring-background">
+                <div className="relative h-full overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm">
+                  {step.backgroundImage && (
+                    <>
+                      <Image
+                        src={step.backgroundImage}
+                        alt=""
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 33vw, 20vw"
+                        className="z-0 object-cover"
+                      />
+                      <div className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-br from-[#071221]/90 via-[#0F4C81]/78 to-[#0F4C81]/58" />
+                    </>
+                  )}
+                  <span className="relative z-10 mb-5 grid size-10 place-items-center rounded-full bg-primary font-heading text-sm font-bold text-primary-foreground ring-8 ring-background">
                     {String(index + 1).padStart(2, "0")}
                   </span>
-                  <h3 className="font-heading text-lg font-semibold">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p>
+                  <h3 className="relative z-10 font-heading text-lg font-semibold text-white">{step.title}</h3>
+                  <p className="relative z-10 mt-2 text-sm leading-6 text-blue-50">{step.description}</p>
                 </div>
               </AnimatedSection>
             ))}
