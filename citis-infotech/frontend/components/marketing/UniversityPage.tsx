@@ -706,18 +706,6 @@ export function UniversityPage() {
               Our Faculty Development Programs include:
             </p>
           </AnimatedSection>
-          <div className="mt-10 lg:col-span-2">
-            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-              <Image
-                src="/images/faculty-development-ai-workshop.jpg"
-                alt="Faculty participating in an AI and technology development workshop"
-                width={1320}
-                height={846}
-                sizes="(max-width: 1024px) 100vw, 1200px"
-                className="aspect-[16/10] w-full object-cover"
-              />
-            </div>
-          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {fdpItems.map((item, index) => (
               <AnimatedSection key={item} delay={index * 0.05}>
@@ -729,6 +717,18 @@ export function UniversityPage() {
                 </Card>
               </AnimatedSection>
             ))}
+          </div>
+          <div className="mt-10 lg:col-span-2">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/faculty-development-ai-workshop.jpg"
+                alt="Faculty participating in an AI and technology development workshop"
+                width={1320}
+                height={846}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[16/10] w-full object-cover"
+              />
+            </div>
           </div>
           <div className="mt-10 lg:col-span-2">
             <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
