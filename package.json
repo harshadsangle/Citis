@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --hostname 0.0.0.0 --port 5000",
-    "build": "next build --turbopack",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "npm run dev --prefix citis-infotech",
+    "build": "npm run build --prefix citis-infotech",
+    "start": "npm run start --prefix citis-infotech/frontend",
+    "lint": "npm run lint --prefix citis-infotech"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
