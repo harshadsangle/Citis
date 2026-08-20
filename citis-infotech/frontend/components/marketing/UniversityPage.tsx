@@ -210,17 +210,20 @@ const whyChooseItems: (MarketingItem & { icon: React.ComponentType<{ className?:
     icon: Zap,
     title: "Future-Ready Academic Programs",
     description: "Designed around current and emerging industry requirements.",
+    backgroundImage: "/images/future-ready-academic-programs.jpg",
   },
   {
     icon: BookOpen,
     title: "NEP 2020 Alignment",
     description:
       "Supports multidisciplinary education, flexibility, experiential learning, skill development, and holistic student growth.",
+    backgroundImage: "/images/nep-2020-alignment.jpg",
   },
   {
     icon: Handshake,
     title: "Industry Partnerships",
     description: "Curriculum co-created with technology leaders and industry experts.",
+    backgroundImage: "/images/industry-partnerships.jpg",
   },
   {
     icon: Globe,
@@ -234,12 +237,14 @@ const whyChooseItems: (MarketingItem & { icon: React.ComponentType<{ className?:
     title: "AI-Powered Learning",
     description:
       "Digital learning ecosystem with AI-enabled tools, analytics, adaptive learning, and virtual learning environments.",
+    backgroundImage: "/images/ai-powered-learning.jpg",
   },
   {
     icon: CheckCircle2,
     title: "End-to-End Academic Support",
     description:
       "From planning and implementation to assessments, faculty enablement, certifications, internships, and placement support.",
+    backgroundImage: "/images/end-to-end-academic-support.jpg",
   },
 ];
 
