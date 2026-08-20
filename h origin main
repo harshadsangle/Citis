@@ -1,0 +1,30 @@
+[33mcommit 0c149a9ebe79c837af164af239120b6de0564043[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m
+Author:     Replit Agent <agent@replit.com>
+AuthorDate: Thu Aug 20 06:13:03 2026 +0000
+Commit:     Replit Agent <agent@replit.com>
+CommitDate: Thu Aug 20 06:13:03 2026 +0000
+
+    Update frontend Next.js configuration
+    
+    Replit-Commit-Author: Agent
+
+[1mdiff --git a/citis-infotech/frontend/next.config.ts b/citis-infotech/frontend/next.config.ts[m
+[1mindex bd88464..3478436 100644[m
+[1m--- a/citis-infotech/frontend/next.config.ts[m
+[1m+++ b/citis-infotech/frontend/next.config.ts[m
+[36m@@ -1,4 +1,5 @@[m
+ import type { NextConfig } from "next";[m
+[32m+[m[32mimport { resolve } from "node:path";[m
+ [m
+ const apiHost = process.env.NEXT_PUBLIC_API_HOST ?? "localhost";[m
+ const strapiHost = process.env.NEXT_PUBLIC_STRAPI_HOST ?? "localhost";[m
+[36m@@ -16,6 +17,9 @@[m [mconst nextConfig: NextConfig = {[m
+       { protocol: "https", hostname: strapiHost, pathname: "/uploads/**" },[m
+     ],[m
+   },[m
+[32m+[m[32m  turbopack: {[m
+[32m+[m[32m    root: resolve(__dirname),[m
+[32m+[m[32m  },[m
+   async headers() {[m
+     const securityHeaders = [[m
+       { key: "X-Content-Type-Options", value: "nosniff" },[m

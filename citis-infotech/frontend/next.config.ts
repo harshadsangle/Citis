@@ -9,7 +9,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   compress: true,
   images: {
-    formats: ["image/avif", "image/webp"],
+    // Serve the existing local assets directly. This avoids browser-specific
+    // failures when the image optimizer negotiates AVIF on localhost.
+    unoptimized: true,
     remotePatterns: [
       { protocol: "http", hostname: apiHost, port: "5000", pathname: "/uploads/**" },
       { protocol: "http", hostname: strapiHost, port: "1337", pathname: "/uploads/**" },
