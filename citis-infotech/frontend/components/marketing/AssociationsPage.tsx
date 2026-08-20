@@ -160,7 +160,7 @@ export function AssociationsPage() {
       <section className="border-t border-border bg-[#e8f4f8] py-16 dark:bg-slate-900 sm:py-24">
         <div className="container-site">
           <AnimatedSection>
-            <SectionHeading title="Association Logos" />
+            <SectionHeading title="Our Associations" />
           </AnimatedSection>
 
           <AnimatedSection delay={0.08} className="mt-10">
