@@ -780,18 +780,6 @@ export function UniversityPage() {
               title="Partnering with CITIS enables institutions to:"
             />
           </AnimatedSection>
-          <div className="lg:col-span-2">
-            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-              <Image
-                src="/images/faculty-development-lab-session.jpg"
-                alt="Faculty collaborating during a hands-on computer lab session"
-                width={600}
-                height={420}
-                sizes="(max-width: 1024px) 100vw, 1200px"
-                className="aspect-[10/7] w-full object-cover"
-              />
-            </div>
-          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {benefitItems.map((item, index) => (
               <AnimatedSection key={item} delay={index * 0.05}>
@@ -803,6 +791,18 @@ export function UniversityPage() {
                 </Card>
               </AnimatedSection>
             ))}
+          </div>
+          <div className="lg:col-span-2">
+            <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+              <Image
+                src="/images/faculty-development-lab-session.jpg"
+                alt="Faculty collaborating during a hands-on computer lab session"
+                width={600}
+                height={420}
+                sizes="(max-width: 1024px) 100vw, 1200px"
+                className="aspect-[10/7] w-full object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>
