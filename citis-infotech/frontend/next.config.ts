@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { resolve } from "node:path";
 
 const apiHost = process.env.NEXT_PUBLIC_API_HOST ?? "localhost";
 const strapiHost = process.env.NEXT_PUBLIC_STRAPI_HOST ?? "localhost";
@@ -15,6 +16,9 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: apiHost, pathname: "/uploads/**" },
       { protocol: "https", hostname: strapiHost, pathname: "/uploads/**" },
     ],
+  },
+  turbopack: {
+    root: resolve(__dirname),
   },
   async headers() {
     const securityHeaders = [
