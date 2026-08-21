@@ -15,7 +15,7 @@ const capabilities = [
   {
     title: "Data Analytics",
     description:
-      "Developing the ability to work with data, analyse information and use numbers to support business and managerial decision-making.",
+      "Developing the ability to work with data, analyze information and use numbers to support business and managerial decision-making.",
   },
   {
     title: "Project Management",
@@ -28,7 +28,7 @@ const modules = [
   {
     title: "1. The Entrepreneur",
     paragraphs: [
-      "The Entrepreneur module introduces learners to the fundamentals of entrepreneurship and the mindset required to recognise and pursue opportunities.",
+      "The Entrepreneur module introduces learners to the fundamentals of entrepreneurship and the mindset required to recognize and pursue opportunities.",
       "Students explore opportunity identification, business fundamentals and the key functions of a business, including finance, marketing, sales and operations. The module also helps learners understand the difference between being an entrepreneur and an intrapreneur and the capabilities required to succeed in both environments.",
     ],
   },
@@ -42,7 +42,7 @@ const modules = [
   {
     title: "3. Data Analysis Using Advanced MS Excel",
     paragraphs: [
-      "Data is an increasingly important part of business decision-making. This module develops learners' ability to work with data, analyse information and derive meaningful insights using advanced MS Excel.",
+      "Data is an increasingly important part of business decision-making. This module develops learners' ability to work with data, analyze information and derive meaningful insights using advanced MS Excel.",
       "Students learn to work with different types of data and use analytical techniques to support business decisions. The objective is to develop confidence in using numbers and information as a basis for effective decision-making.",
     ],
   },
@@ -236,7 +236,7 @@ export function MoxieMindsPage() {
                   entrepreneurial and innovation-driven world.
                 </Copy>
                 <Copy>
-                  Entrepreneurship is not only about starting a company. It is about recognising
+                Entrepreneurship is not only about starting a company. It is about recognizing
                   opportunities, understanding problems, taking initiative, creating solutions and
                   making informed decisions. MoxieMinds helps learners develop this entrepreneurial
                   mindset while building practical capabilities across business, innovation,
@@ -275,7 +275,7 @@ export function MoxieMindsPage() {
             </Copy>
             <Copy>
               Entrepreneurship education helps learners develop an ability to think differently,
-              recognise opportunities and turn ideas into practical solutions. It can also nurture
+              recognize opportunities and turn ideas into practical solutions. It can also nurture
               creativity, confidence, initiative and leadership while introducing students to the
               fundamentals of how businesses are created and managed.
             </Copy>
