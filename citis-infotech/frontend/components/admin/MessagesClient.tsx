@@ -244,7 +244,7 @@ export function MessagesClient() {
               </DialogHeader>
               <div className="space-y-3 text-sm">
                 {selected.phone && <p><span className="font-semibold">Phone:</span> {selected.phone}</p>}
-                {selected.company && <p><span className="font-semibold">Organisation:</span> {selected.company}</p>}
+                {selected.company && <p><span className="font-semibold">Organization:</span> {selected.company}</p>}
                 <p className="rounded-lg border border-border bg-muted/40 p-4 leading-7 whitespace-pre-wrap">
                   {selected.message}
                 </p>

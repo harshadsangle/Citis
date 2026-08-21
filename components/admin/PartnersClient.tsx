@@ -95,7 +95,7 @@ export function PartnersClient() {
     () => [
       {
         key: "sender",
-        header: "Organisation",
+        header: "Organization",
         render: (row) => (
           <div className="flex items-center gap-3">
             {row.status === "new" ? (

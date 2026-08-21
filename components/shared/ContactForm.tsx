@@ -31,7 +31,7 @@ export function ContactForm({ className }: { className?: string }) {
           `Name: ${values.name}`,
           `Email: ${values.email}`,
           `Phone: ${values.phone || "—"}`,
-          `Organisation: ${values.company || "—"}`,
+          `Organization: ${values.company || "—"}`,
           "",
           values.message,
           "",
@@ -67,7 +67,7 @@ export function ContactForm({ className }: { className?: string }) {
         <div><Label htmlFor="contact-name">Name *</Label><Input id="contact-name" autoComplete="name" className="mt-2" placeholder="Your full name" aria-invalid={!!errors.name} {...register("name")} />{fieldError(errors.name?.message)}</div>
         <div><Label htmlFor="contact-email">Email *</Label><Input id="contact-email" type="email" autoComplete="email" className="mt-2" placeholder="you@institution.edu" aria-invalid={!!errors.email} {...register("email")} />{fieldError(errors.email?.message)}</div>
         <div><Label htmlFor="contact-phone">Phone</Label><Input id="contact-phone" type="tel" autoComplete="tel" className="mt-2" placeholder="+91 98765 43210" aria-invalid={!!errors.phone} {...register("phone")} />{fieldError(errors.phone?.message)}</div>
-        <div><Label htmlFor="contact-company">Institution / organisation</Label><Input id="contact-company" autoComplete="organization" className="mt-2" placeholder="Your institution or organisation" {...register("company")} /></div>
+        <div><Label htmlFor="contact-company">Institution / organization</Label><Input id="contact-company" autoComplete="organization" className="mt-2" placeholder="Your institution or organization" {...register("company")} /></div>
       </div>
       <div><Label htmlFor="contact-subject">How can we help?</Label><Input id="contact-subject" className="mt-2" placeholder="University programme, school STEM, academy enrollment…" {...register("subject")} /></div>
       <div><Label htmlFor="contact-message">Message *</Label><Textarea id="contact-message" className="mt-2" placeholder="Tell us about your learners, goals, and current challenge." aria-invalid={!!errors.message} {...register("message")} />{fieldError(errors.message?.message)}</div>
