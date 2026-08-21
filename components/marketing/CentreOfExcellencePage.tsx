@@ -36,7 +36,7 @@ const services = [
     title: "Infrastructure & Technology Enablement",
     body: [
       "A successful CoE requires appropriate technology infrastructure. CITIS can support institutions in defining and implementing the technology environment required for AI, cybersecurity and other advanced technology domains.",
-      "This may include computing infrastructure, software platforms, cloud environments, specialised labs, cybersecurity environments and learning technologies.",
+      "This may include computing infrastructure, software platforms, cloud environments, specialized labs, cybersecurity environments and learning technologies.",
     ],
   },
   {
@@ -80,7 +80,7 @@ const services = [
     icon: Lightbulb,
     title: "Research & Innovation",
     body: [
-      "Centres of Excellence can provide an environment for faculty and students to explore research and innovation opportunities in emerging technologies.",
+      "Centre of Excellence can provide an environment for faculty and students to explore research and innovation opportunities in emerging technologies.",
       "CITIS can support institutions in identifying research themes, developing projects, conducting innovation challenges and exploring collaborations with industry and technology ecosystems.",
     ],
   },
@@ -146,10 +146,10 @@ export default function CentreOfExcellencePage() {
             CITIS Infotech helps universities, colleges and other institutions establish Centres of Excellence (CoEs) that create a sustained ecosystem for learning, research, innovation, industry engagement and advanced technology adoption.
           </p>
           <p className="text-lg text-foreground/80 leading-relaxed">
-            Our Centres of Excellence are designed to go beyond a physical laboratory or training centre. They bring together technology infrastructure, industry partnerships, curriculum, faculty development, student projects, research, certifications and innovation to create an institutional capability that can evolve with technology.
+            Our Centre of Excellence are designed to go beyond a physical laboratory or training centre. They bring together technology infrastructure, industry partnerships, curriculum, faculty development, student projects, research, certifications and innovation to create an institutional capability that can evolve with technology.
           </p>
           <p className="text-lg text-foreground/80 leading-relaxed">
-            CITIS currently offers Centres of Excellence focused on Artificial Intelligence and Cyber Security, with access to industry expertise and technology ecosystems through partnerships and associations with organizations such as NVIDIA, Cisco and TCS.
+            CITIS currently offers Centre of Excellence focused on Artificial Intelligence and Cyber Security, with access to industry expertise and technology ecosystems through partnerships and associations with organizations such as NVIDIA, Cisco and TCS.
           </p>
         </section>
       </AnimatedSection>
@@ -286,7 +286,7 @@ export default function CentreOfExcellencePage() {
               ))}
             </div>
             <p className="text-foreground/80 leading-relaxed pt-2">
-              Our objective is to bring technology, academia and industry together to create Centres of Excellence that produce skills, research, innovation and measurable institutional impact.
+              Our objective is to bring technology, academia and industry together to create Centre of Excellence that produce skills, research, innovation and measurable institutional impact.
             </p>
           </div>
         </section>

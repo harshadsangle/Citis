@@ -146,7 +146,7 @@ const techDomains = [
   {
     icon: BarChart2,
     title: "Data & Analytics",
-    description: "Data Science, Business Analytics, Data Visualisation and related skills.",
+    description: "Data Science, Business Analytics, Data Visualization and related skills.",
   },
   {
     icon: Shield,
@@ -184,7 +184,7 @@ const institutionalSupport = [
   },
   {
     title: "Pre-Placement Training",
-    description: "Technical, aptitude, communication and behavioural preparation.",
+    description: "Technical, aptitude, communication and behavioral preparation.",
   },
   {
     title: "Recruitment Support",
@@ -263,7 +263,7 @@ export default function PlacementsPage() {
             <p className="text-foreground/80 leading-relaxed">Our placement ecosystem can integrate:</p>
             <FlowDiagram steps={placementApproachSteps} label="" />
             <p className="text-foreground/80 leading-relaxed">
-              This approach enables students to understand industry expectations early and gives them opportunities to progressively build the technical, professional and behavioural competencies required for the workplace.
+              This approach enables students to understand industry expectations early and gives them opportunities to progressively build the technical, professional and behavioral competencies required for the workplace.
             </p>
           </div>
         </section>
@@ -603,7 +603,7 @@ export default function PlacementsPage() {
               Our Placements and Internships ecosystem therefore forms an integral part of the larger CITIS Education Transformation framework—connecting education with skills, skills with experience, experience with opportunity and opportunity with long-term career growth.
             </p>
             <p className="text-xl font-semibold text-orange-600 dark:text-orange-400 pt-2">
-              Learn. Experience. Connect. Launch Your Career.
+              Learn. Experience. Connect. Launch Your Car
             </p>
           </div>
         </section>
