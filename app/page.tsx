@@ -72,7 +72,7 @@ export default function Home() {
 
       <section className="relative overflow-hidden bg-[#071221] py-20 text-white sm:py-28">
         <div className="absolute inset-0 opacity-40">
-          <NextImage src="/images/industry-academia.jpg" alt="" fill className="object-cover" sizes="100vw" />
+          <NextImage src="/images/indian-industry-academia.jpg" alt="" fill className="object-cover" sizes="100vw" />
         </div>
         <div className="absolute inset-0 bg-[linear-gradient(160deg,#071221_10%,rgba(15,76,129,0.82)_55%,rgba(7,18,33,0.95)_100%)]" />
         <div className="container-site relative">
@@ -150,7 +150,7 @@ export default function Home() {
 
       <section className="relative isolate overflow-hidden py-20 sm:py-28">
         <NextImage
-          src="/images/campus-dusk.jpg"
+          src="/images/indian-campus-dusk.jpg"
           alt=""
           fill
           className="object-cover object-center"

@@ -24,7 +24,7 @@ export function HomeHero({
     <section className="relative isolate min-h-[100svh] overflow-hidden bg-[#071221]">
       <motion.div style={mounted ? { y: imageY, scale: imageScale } : undefined} className="absolute inset-0">
         <Image
-          src="/images/hero-campus.jpg"
+          src="/images/indian-hero-campus.jpg"
           alt="CITIS InfoTech learning environments"
           fill
           priority
