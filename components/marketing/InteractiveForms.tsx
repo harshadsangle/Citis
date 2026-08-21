@@ -34,7 +34,7 @@ export function PartnerInquiryForm() {
     setServerError("");
     try {
       openMailto({
-         to: CAREERS_EMAIL,
+        to: SUPPORT_EMAIL,
         subject: `Partnership inquiry — ${values.partnershipType || "general"}`,
         body: [
           `Name: ${values.name}`,
@@ -82,7 +82,7 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
     setServerError("");
     try {
       openMailto({
-        to: SUPPORT_EMAIL,
+        to: CAREERS_EMAIL,
         subject: `Job application — ${jobTitle}`,
         body: [
           `Role: ${jobTitle}`,
