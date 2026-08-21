@@ -40,7 +40,7 @@ export function PartnerInquiryForm() {
           `Name: ${values.name}`,
           `Email: ${values.email}`,
           `Phone: ${values.phone || "—"}`,
-          `Organisation: ${values.company}`,
+          `Organization: ${values.company}`,
           `Website: ${values.website || "—"}`,
           `Partnership model: ${values.partnershipType}`,
           "",
@@ -60,7 +60,7 @@ export function PartnerInquiryForm() {
         <div><Label htmlFor="partner-name">Full name *</Label><Input id="partner-name" className="mt-2" autoComplete="name" {...register("name")} />{message(errors.name?.message)}</div>
         <div><Label htmlFor="partner-email">Work email *</Label><Input id="partner-email" className="mt-2" type="email" autoComplete="email" {...register("email")} />{message(errors.email?.message)}</div>
         <div><Label htmlFor="partner-phone">Phone</Label><Input id="partner-phone" className="mt-2" type="tel" {...register("phone")} />{message(errors.phone?.message)}</div>
-        <div><Label htmlFor="partner-company">Organisation *</Label><Input id="partner-company" className="mt-2" autoComplete="organization" {...register("company")} />{message(errors.company?.message)}</div>
+        <div><Label htmlFor="partner-company">Organization *</Label><Input id="partner-company" className="mt-2" autoComplete="organization" {...register("company")} />{message(errors.company?.message)}</div>
         <div><Label htmlFor="partner-website">Website</Label><Input id="partner-website" className="mt-2" type="url" placeholder="https://" {...register("website")} />{message(errors.website?.message)}</div>
         <div><Label>Partnership model *</Label><Controller name="partnershipType" control={control} render={({ field }) => <Select value={field.value} onValueChange={field.onChange}><SelectTrigger className="mt-2"><SelectValue placeholder="Select a model" /></SelectTrigger><SelectContent><SelectItem value="academic">Academic collaboration</SelectItem><SelectItem value="industry">Industry alliance</SelectItem><SelectItem value="delivery">Delivery partner</SelectItem><SelectItem value="technology">Technology partner</SelectItem></SelectContent></Select>} />{message(errors.partnershipType?.message)}</div>
       </div>

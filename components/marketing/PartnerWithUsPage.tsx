@@ -152,7 +152,7 @@ function PartnerInterestForm() {
           "",
           "--- About You ---",
           `Name: ${fields.name}`,
-          `Organisation / Institution: ${fields.organisation || "—"}`,
+          `Organization / Institution: ${fields.organisation || "—"}`,
           `Designation: ${fields.designation || "—"}`,
           `City / Location: ${fields.city || "—"}`,
           `State: ${fields.state || "—"}`,
@@ -245,7 +245,7 @@ function PartnerInterestForm() {
             {fieldErr("name")}
           </div>
           <div>
-            <Label htmlFor="pw-org">Organisation / Institution:</Label>
+            <Label htmlFor="pw-org">Organization / Institution:</Label>
             <Input
               id="pw-org"
               className="mt-2"
@@ -427,7 +427,7 @@ export default function PartnerWithUsPage() {
           <p className="text-lg text-foreground/80 leading-relaxed">
             CITIS Infotech believes that meaningful education transformation is best achieved
             through collaboration. We invite educational institutions, universities, schools,
-            corporates, training organisations, entrepreneurs, technology companies, industry
+            corporates, training organizations, entrepreneurs, technology companies, industry
             bodies and professionals to partner with us and create new opportunities in
             education, skills and emerging technologies.
           </p>
@@ -455,7 +455,7 @@ export default function PartnerWithUsPage() {
             </div>
             <p className="text-foreground/80 leading-relaxed">
               CITIS offers opportunities for eligible entrepreneurs, education professionals and
-              organisations to establish CITIS-enabled learning and skill development centres.
+              organizations to establish CITIS-enabled learning and skill development centres.
             </p>
             <p className="text-foreground/80 leading-relaxed">
               Depending on the partnership model, centres can offer programs across AI and
@@ -547,7 +547,7 @@ export default function PartnerWithUsPage() {
               Industry &amp; Corporate Collaboration
             </h2>
             <p className="text-foreground/80 leading-relaxed">
-              Organisations can partner with CITIS to develop technology, skills and workforce
+              Organizations can partner with CITIS to develop technology, skills and workforce
               initiatives aligned with industry requirements.
             </p>
             <p className="text-foreground/80 leading-relaxed">
@@ -556,7 +556,7 @@ export default function PartnerWithUsPage() {
               internships, technology initiatives, research and Centres of Excellence.
             </p>
             <p className="text-foreground/80 leading-relaxed">
-              We are also open to working with industry organisations to bring real-world
+              We are also open to working with industry organizations to bring real-world
               projects, mentoring and workplace exposure into academic programs.
             </p>
           </div>
@@ -569,7 +569,7 @@ export default function PartnerWithUsPage() {
           <div className="container-site max-w-5xl space-y-6">
             <h2 className="text-2xl sm:text-3xl font-bold">Strategic Partnerships</h2>
             <p className="text-foreground/80 leading-relaxed">
-              We welcome strategic partnerships with organisations that can contribute
+              We welcome strategic partnerships with organizations that can contribute
               technology, expertise, infrastructure, content, market access, industry networks
               or other capabilities to the CITIS ecosystem.
             </p>
@@ -580,7 +580,7 @@ export default function PartnerWithUsPage() {
               Education × Technology × AI × Skills × Industry × Innovation
             </p>
             <p className="text-foreground/80 leading-relaxed">
-              Our objective is to create partnerships where both organisations bring
+              Our objective is to create partnerships where both organizations bring
               complementary strengths and jointly create scalable solutions.
             </p>
           </div>
@@ -618,7 +618,7 @@ export default function PartnerWithUsPage() {
             <p className="text-white/75 leading-relaxed">
               Whether you are an entrepreneur looking for an education business opportunity, a
               school seeking to introduce AI and STEM education, a university looking to build
-              industry-integrated programs, or an organisation looking for a strategic education
+              industry-integrated programs, or an organization looking for a strategic education
               and technology partner, CITIS would be pleased to explore the opportunity with you.
             </p>
             <p className="text-lg font-semibold text-orange-400 pt-2">
