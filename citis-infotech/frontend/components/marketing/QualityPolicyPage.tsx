@@ -91,7 +91,7 @@ export function QualityPolicyPage() {
     <>
       {/* ── Quality Policy intro ─────────────────────────────────────────── */}
       <section className="bg-[#e8f4f8] py-16 dark:bg-slate-900 sm:py-24">
-        <div className="container-site max-w-4xl">
+        <div className="container-site grid max-w-6xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16">
           <AnimatedSection>
             <SectionHeading
               eyebrow="Quality Policy"
@@ -117,13 +117,7 @@ export function QualityPolicyPage() {
               </p>
             </div>
           </AnimatedSection>
-        </div>
-      </section>
-
-      {/* ── Quality certification ─────────────────────────────────────────── */}
-      <section className="py-16 sm:py-24">
-        <div className="container-site max-w-5xl">
-          <AnimatedSection>
+          <AnimatedSection delay={0.1}>
             <div className="overflow-hidden rounded-3xl border border-border bg-card p-3 shadow-[0_18px_60px_rgba(15,76,129,0.12)] sm:p-5">
               <NextImage
                 src="/images/quality-policy-certificate.png"
