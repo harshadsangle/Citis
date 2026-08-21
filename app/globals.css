@@ -270,6 +270,69 @@ button, a, input, textarea, select {
   }
 }
 
+/* Keep repeated page sections compact without changing their content or visual system. */
+.py-14 {
+  padding-block: 2.75rem;
+}
+
+.py-16 {
+  padding-block: 3.25rem;
+}
+
+.py-20 {
+  padding-block: 4rem;
+}
+
+.py-24 {
+  padding-block: 4.5rem;
+}
+
+.py-28 {
+  padding-block: 5rem;
+}
+
+.gap-10 {
+  gap: 2rem;
+}
+
+.gap-12 {
+  gap: 2.5rem;
+}
+
+.gap-16 {
+  gap: 3.25rem;
+}
+
+.mt-10 {
+  margin-top: 2rem;
+}
+
+.mt-12 {
+  margin-top: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .sm\:py-16 {
+    padding-block: 3.5rem;
+  }
+
+  .sm\:py-18 {
+    padding-block: 4rem;
+  }
+
+  .sm\:py-20 {
+    padding-block: 4rem;
+  }
+
+  .sm\:py-24 {
+    padding-block: 5rem;
+  }
+
+  .sm\:py-28 {
+    padding-block: 5.5rem;
+  }
+}
+
 /* High-contrast accessibility mode (local toggle, no external a11y service) */
 html.high-contrast {
   --background: #ffffff;
