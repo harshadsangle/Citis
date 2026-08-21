@@ -109,7 +109,7 @@ function PartnerInterestForm() {
 
   const [fields, setFields] = useState({
     name: "",
-    organisation: "",
+    organization: "",
     designation: "",
     city: "",
     state: "",
@@ -145,13 +145,13 @@ function PartnerInterestForm() {
     try {
       openMailto({
         to: SUPPORT_EMAIL,
-        subject: `Partnership Interest — ${fields.name}${fields.organisation ? ` (${fields.organisation})` : ""}`,
+        subject: `Partnership Interest — ${fields.name}${fields.organization ? ` (${fields.organization})` : ""}`,
         body: [
           `I am interested in: ${interests.length ? interests.join(", ") : "—"}`,
           "",
           "--- About You ---",
           `Name: ${fields.name}`,
-          `Organization / Institution: ${fields.organisation || "—"}`,
+          `Organization / Institution: ${fields.organization || "—"}`,
           `Designation: ${fields.designation || "—"}`,
           `City / Location: ${fields.city || "—"}`,
           `State: ${fields.state || "—"}`,
@@ -249,8 +249,8 @@ function PartnerInterestForm() {
               id="pw-org"
               className="mt-2"
               autoComplete="organization"
-              value={fields.organisation}
-              onChange={(e) => setFields((f) => ({ ...f, organisation: e.target.value }))}
+              value={fields.organization}
+              onChange={(e) => setFields((f) => ({ ...f, organization: e.target.value }))}
             />
           </div>
           <div>

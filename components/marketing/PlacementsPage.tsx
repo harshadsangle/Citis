@@ -98,7 +98,7 @@ const internshipJourneySteps = [
 
 const internshipToPlacementSteps = [
   "Learn",
-  "Practise",
+  "Practice",
   "Intern",
   "Perform",
   "Get Evaluated",
@@ -244,7 +244,7 @@ export default function PlacementsPage() {
             At CITIS Infotech, we believe that the true measure of education is not only what a learner knows, but also how effectively that knowledge can be applied in the workplace. Our Placements and Internships ecosystem is designed to bridge the gap between academic learning and industry requirements by providing learners with opportunities for practical exposure, workplace experience, career preparation and interaction with industry.
           </p>
           <p className="text-lg text-foreground/80 leading-relaxed">
-            Through our relationships with universities, colleges, industry organisations, technology companies and professional networks, CITIS works towards creating pathways that connect learning, skills, experience and employment. Our approach begins well before the final placement season, with employability development integrated into the learner's academic and skill-development journey.
+            Through our relationships with universities, colleges, industry organizations, technology companies and professional networks, CITIS works towards creating pathways that connect learning, skills, experience and employment. Our approach begins well before the final placement season, with employability development integrated into the learner's academic and skill-development journey.
           </p>
         </section>
       </AnimatedSection>
@@ -397,7 +397,7 @@ export default function PlacementsPage() {
           <div className="container-site max-w-5xl space-y-6">
             <h2 className="text-2xl sm:text-3xl font-bold">Placement Partnerships</h2>
             <p className="text-foreground/80 leading-relaxed">
-              CITIS seeks to develop relationships with organisations across technology, IT services, consulting, BFSI, manufacturing, healthcare, education, retail, digital services and other emerging sectors.
+              CITIS seeks to develop relationships with organizations across technology, IT services, consulting, BFSI, manufacturing, healthcare, education, retail, digital services and other emerging sectors.
             </p>
             <p className="text-foreground/80 leading-relaxed">
               Our industry network can support institutions and learners through internships, projects, mentorship, skill development and employment opportunities.
@@ -456,7 +456,7 @@ export default function PlacementsPage() {
             <div>
               <h2 className="text-2xl sm:text-3xl font-bold mb-2">Internship-to-Placement Pathway</h2>
               <p className="text-white/70 leading-relaxed">
-                Where opportunities permit, internships can become an important pathway towards employment. Students who demonstrate strong technical capabilities, professional behaviour and performance during an internship may be considered for future opportunities by participating organisations.
+                Where opportunities permit, internships can become an important pathway towards employment. Students who demonstrate strong technical capabilities, professional behavior and performance during an internship may be considered for future opportunities by participating organizations.
               </p>
               <p className="text-white/70 leading-relaxed mt-3">CITIS encourages a structured progression:</p>
             </div>
