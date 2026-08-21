@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" role="img" aria-labelledby="title">
+  <title id="title">NVIDIA</title>
+  <rect width="320" height="120" rx="18" fill="#f7fafc"/>
+  <path d="M34 60c24-30 61-35 96-10-31-4-51 7-63 22 17 13 35 17 53 10-10 18-34 25-59 10-12-7-21-17-27-32Z" fill="#76b900"/>
+  <circle cx="76" cy="60" r="12" fill="#f7fafc"/>
+  <text x="132" y="72" fill="#76b900" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="700" letter-spacing="1">NVIDIA</text>
+</svg>

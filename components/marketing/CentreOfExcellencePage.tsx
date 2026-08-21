@@ -98,14 +98,17 @@ const services = [
 const ecosystemPartners = [
   {
     name: "NVIDIA",
+    logo: "/images/nvidia-logo.svg",
     body: "Through the NVIDIA ecosystem, institutions can explore advanced capabilities in AI, accelerated computing, Generative AI and GPU-accelerated technologies. This can support advanced learning, faculty development, research and AI innovation initiatives.",
   },
   {
     name: "Cisco",
+    logo: "/images/cisco-logo.svg",
     body: "Cisco's technology ecosystem provides opportunities to build capabilities in networking, cybersecurity and digital infrastructure. This can strengthen practical learning and industry-oriented skill development, particularly within cybersecurity-focused initiatives.",
   },
   {
     name: "TCS",
+    logo: "/images/tcs-logo.svg",
     body: "Through engagement with TCS and the wider industry ecosystem, institutions can explore opportunities around industry exposure, technology skills, projects, employability and real-world applications.",
   },
 ];
@@ -266,7 +269,16 @@ export default function CentreOfExcellencePage() {
               {ecosystemPartners.map((partner) => (
                 <Card key={partner.name} className="border border-border bg-slate-50 dark:bg-slate-900/50 h-full">
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-lg text-orange-600 dark:text-orange-400">{partner.name}</CardTitle>
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={partner.logo}
+                          alt={`${partner.name} logo`}
+                          width={112}
+                          height={40}
+                          className="h-10 w-28 object-contain object-left"
+                        />
+                        <CardTitle className="text-lg text-orange-600 dark:text-orange-400">{partner.name}</CardTitle>
+                      </div>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-foreground/75 leading-relaxed">{partner.body}</p>
