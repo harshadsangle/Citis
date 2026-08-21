@@ -1,6 +1,7 @@
 /** Public support inbox — forms open a mail draft to this address (no API backend). */
 export const SUPPORT_EMAIL =
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim() || "support@citis.in";
+export const CAREERS_EMAIL = "careers@citis.in";
 
 export function buildMailto(options: {
   to?: string;

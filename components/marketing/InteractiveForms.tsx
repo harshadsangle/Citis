@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { apiFetch } from "@/lib/api";
 import { applyJobSchema, loginSchema, partnerSchema, type ApplyJobInput, type LoginInput, type PartnerInput } from "@/lib/validations";
 import { authService } from "@/services/api";
-import { SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
+import { CAREERS_EMAIL, SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 
 const message = (text?: string) => text && <p className="mt-1.5 text-xs text-destructive">{text}</p>;
 
@@ -34,7 +34,7 @@ export function PartnerInquiryForm() {
     setServerError("");
     try {
       openMailto({
-        to: SUPPORT_EMAIL,
+         to: CAREERS_EMAIL,
         subject: `Partnership inquiry — ${values.partnershipType || "general"}`,
         body: [
           `Name: ${values.name}`,
@@ -97,7 +97,9 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
           "",
           "Please attach your résumé to this email before sending.",
           "",
-          `— Sent from the CITIS InfoTech careers form`,
+           `Résumé file: ${values.resume?.name || "—"}`,
+           "",
+           `— Sent from the CITIS InfoTech careers form`,
         ].join("\n"),
       });
       setDone(true);
@@ -105,20 +107,20 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
       setServerError(error instanceof Error ? error.message : "We could not submit your application. Please try again.");
     }
   };
-  if (done) return <FormSuccess title="Application draft ready" copy={`Your email app should open a message to support@citis.in for ${jobTitle}. Attach your résumé, then send the email.`} />;
+   if (done) return <FormSuccess title="Application ready to send" copy={`Your email app should open a message to careers@citis.in for ${jobTitle}. Attach your résumé, then send the email to complete your application.`} />;
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="surface space-y-5 rounded-xl p-6 sm:p-8" noValidate>
       <input type="hidden" {...register("jobId")} />
       <div className="grid gap-5 sm:grid-cols-2">
-        <div><Label htmlFor="apply-name">Full name *</Label><Input id="apply-name" className="mt-2" {...register("name")} />{message(errors.name?.message)}</div>
-        <div><Label htmlFor="apply-email">Email *</Label><Input id="apply-email" className="mt-2" type="email" {...register("email")} />{message(errors.email?.message)}</div>
-        <div><Label htmlFor="apply-phone">Phone *</Label><Input id="apply-phone" className="mt-2" type="tel" {...register("phone")} />{message(errors.phone?.message)}</div>
+       <div><Label htmlFor="apply-name">Full name *</Label><Input id="apply-name" className="mt-2" required {...register("name")} />{message(errors.name?.message)}</div>
+       <div><Label htmlFor="apply-email">Email *</Label><Input id="apply-email" className="mt-2" type="email" required {...register("email")} />{message(errors.email?.message)}</div>
+       <div><Label htmlFor="apply-phone">Phone *</Label><Input id="apply-phone" className="mt-2" type="tel" required {...register("phone")} />{message(errors.phone?.message)}</div>
         <div><Label htmlFor="apply-linkedin">LinkedIn</Label><Input id="apply-linkedin" className="mt-2" type="url" placeholder="https://linkedin.com/in/…" {...register("linkedIn")} />{message(errors.linkedIn?.message)}</div>
       </div>
       <div><Label htmlFor="apply-portfolio">Portfolio</Label><Input id="apply-portfolio" className="mt-2" type="url" placeholder="https://" {...register("portfolio")} />{message(errors.portfolio?.message)}</div>
-      <div><Label htmlFor="apply-cover">Why CITIS InfoTech?</Label><Textarea id="apply-cover" className="mt-2 min-h-28" {...register("coverLetter")} />{message(errors.coverLetter?.message)}</div>
-      <div><Label htmlFor="apply-skills">Skills</Label><Input id="apply-skills" className="mt-2" placeholder="React, Node.js, Instructional design…" {...register("skills")} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message)}</div>
-      <div><Label htmlFor="apply-resume">Résumé <span className="font-normal text-muted-foreground">(optional here — attach the file in your email app)</span></Label><label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label><Input id="apply-resume" className="sr-only" type="file" accept=".pdf,.doc,.docx" onChange={(event) => setValue("resume", event.target.files?.[0] as File, { shouldValidate: true })} />{message(errors.resume?.message)}</div>
+       <div><Label htmlFor="apply-cover">Why CITIS InfoTech? *</Label><Textarea id="apply-cover" className="mt-2 min-h-28" required {...register("coverLetter")} />{message(errors.coverLetter?.message)}</div>
+       <div><Label htmlFor="apply-skills">Skills *</Label><Input id="apply-skills" className="mt-2" required placeholder="React, Node.js, Instructional design…" {...register("skills")} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message)}</div>
+       <div><Label htmlFor="apply-resume">Résumé *</Label><label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label><Input id="apply-resume" className="sr-only" required type="file" accept=".pdf,.doc,.docx" onChange={(event) => setValue("resume", event.target.files?.[0], { shouldValidate: true })} />{message(errors.resume?.message)}</div>
       {serverError && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button type="submit" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <><LoaderCircle className="animate-spin" />Submitting…</> : <>Submit application<Send /></>}</Button>
     </form>

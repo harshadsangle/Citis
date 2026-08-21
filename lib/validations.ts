@@ -40,11 +40,11 @@ export const applyJobSchema = z.object({
   jobId: z.string().min(1),
   linkedIn: z.string().url().optional().or(z.literal("")),
   portfolio: z.string().url().optional().or(z.literal("")),
-  coverLetter: z.string().max(3000).optional(),
-  skills: z.string().max(500).optional(),
+  coverLetter: z.string().trim().min(20, "Tell us why you are a strong fit").max(3000),
+  skills: z.string().trim().min(2, "List at least one relevant skill").max(500),
   resume: z
     .custom<File>((value) => value === undefined || (typeof File !== "undefined" && value instanceof File))
-    .optional()
+    .refine((file) => !!file, "Upload your résumé")
     .refine((file) => !file || file.size <= 5 * 1024 * 1024, "Resume must be 5MB or smaller")
     .refine(
       (file) =>

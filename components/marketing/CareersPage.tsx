@@ -1,5 +1,6 @@
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const opportunities = [
   {
@@ -177,11 +178,11 @@ function OpportunityCard({
           </p>
         )}
         <Button asChild variant="accent" className="mt-8">
-          <a
-            href={`mailto:careers@citis.in?subject=${encodeURIComponent(`Application - ${opportunity.title}`)}`}
+          <Link
+            href={`/careers/apply?role=${encodeURIComponent(opportunity.title.replace(/^\d+\.\s*/, ""))}`}
           >
             Apply Now
-          </a>
+          </Link>
         </Button>
       </article>
     </AnimatedSection>
