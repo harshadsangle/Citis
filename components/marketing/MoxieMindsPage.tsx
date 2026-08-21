@@ -394,6 +394,30 @@ export function MoxieMindsPage() {
                 Certification eligibility, examination requirements and applicable credentials may
                 vary by program and learner.
               </Copy>
+              <div className="space-y-4 border-t border-border/70 pt-6">
+                <Copy>
+                  <strong className="font-semibold text-foreground">Sample Certificate:</strong>{" "}
+                  Learners can earn a verifiable certificate through EtrainIndia after completing
+                  the applicable learning and assessment requirements.
+                </Copy>
+                <Copy>
+                  <strong className="font-semibold text-foreground">Certification Tracks:</strong>{" "}
+                  Adobe, Autodesk, Cisco, Entrepreneurship, IC3, IT Specialist, Intuit, Meta,
+                  Microsoft, PMI and Unity.
+                </Copy>
+                <Copy>
+                  <strong className="font-semibold text-foreground">
+                    Industry-Recognized Certifications:
+                  </strong>{" "}
+                  EtrainIndia connects learners with certification pathways aligned to leading
+                  technology, business and professional skills.
+                </Copy>
+                <Copy>
+                  <strong className="font-semibold text-foreground">Digital Badge:</strong>{" "}
+                  Eligible learners can receive a digital badge to showcase verified skills and
+                  achievements across professional platforms.
+                </Copy>
+              </div>
             </div>
           </AnimatedSection>
         </div>
