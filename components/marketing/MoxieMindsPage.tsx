@@ -130,7 +130,7 @@ const studentBenefits = [
   {
     title: "Career Readiness",
     description:
-      "Develop skills relevant not only to entrepreneurs but also to professionals working in organisations as intrapreneurs and future business leaders.",
+      "Develop skills relevant not only to entrepreneurs but also to professionals working in organizations as intrapreneurs and future business leaders.",
   },
 ];
 
@@ -448,9 +448,9 @@ export function MoxieMindsPage() {
             <div className="mt-7 space-y-6">
               <Copy>Entrepreneurship is not limited to creating a startup.</Copy>
               <Copy>
-                Modern organisations increasingly need employees who think like entrepreneurs—people
+                Modern organizations increasingly need employees who think like entrepreneurs—people
                 who identify opportunities, challenge existing approaches, solve problems and create
-                new value within an organisation.
+                new value within an organization.
               </Copy>
               <Copy>MoxieMinds therefore develops capabilities relevant to both:</Copy>
             </div>
@@ -460,12 +460,12 @@ export function MoxieMindsPage() {
               </p>
               <p className="text-base leading-8 text-muted-foreground sm:text-lg">
                 Intrapreneurs – Individuals who want to innovate, create and drive new opportunities
-                within existing organisations.
+                within existing organizations.
               </p>
             </div>
             <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
               This makes the program relevant to students who aspire to become founders as well as
-              those who want to build careers in established organisations.
+              those who want to build careers in established organizations.
             </p>
           </AnimatedSection>
         </div>

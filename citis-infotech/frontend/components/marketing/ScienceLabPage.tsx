@@ -412,7 +412,7 @@ export function ScienceLabPage() {
             </Copy>
             <Copy>
               It can help schools provide students with additional opportunities to experiment,
-              practise and revise concepts without the limitations associated with physical
+              practice and revise concepts without the limitations associated with physical
               laboratory infrastructure.
             </Copy>
             <Copy>
@@ -482,7 +482,7 @@ export function ScienceLabPage() {
             <div className="mt-7 space-y-6">
               <Copy>
                 Science Lab is not intended to replace physical laboratories. Instead, it provides
-                a complementary learning environment that enables students to prepare, practise,
+                a complementary learning environment that enables students to prepare, practice,
                 explore and reinforce concepts before, during or after physical laboratory
                 experiences.
               </Copy>

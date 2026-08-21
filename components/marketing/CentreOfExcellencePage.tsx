@@ -89,7 +89,7 @@ const services = [
     icon: Award,
     title: "Certifications & Career Pathways",
     body: [
-      "The CoE can integrate industry-recognised certifications and skill assessments into the learning ecosystem, enabling students and professionals to demonstrate their competencies.",
+      "The CoE can integrate industry-recognized certifications and skill assessments into the learning ecosystem, enabling students and professionals to demonstrate their competencies.",
       "This can strengthen the connection between institutional learning, industry skills and career opportunities.",
     ],
   },
@@ -125,7 +125,7 @@ const aiEcosystemSteps = [
 
 const innovationSteps = [
   "Learn",
-  "Practise",
+  "Practice",
   "Build",
   "Innovate",
   "Research",
@@ -149,7 +149,7 @@ export default function CentreOfExcellencePage() {
             Our Centres of Excellence are designed to go beyond a physical laboratory or training centre. They bring together technology infrastructure, industry partnerships, curriculum, faculty development, student projects, research, certifications and innovation to create an institutional capability that can evolve with technology.
           </p>
           <p className="text-lg text-foreground/80 leading-relaxed">
-            CITIS currently offers Centres of Excellence focused on Artificial Intelligence and Cyber Security, with access to industry expertise and technology ecosystems through partnerships and associations with organisations such as NVIDIA, Cisco and TCS.
+            CITIS currently offers Centres of Excellence focused on Artificial Intelligence and Cyber Security, with access to industry expertise and technology ecosystems through partnerships and associations with organizations such as NVIDIA, Cisco and TCS.
           </p>
         </section>
       </AnimatedSection>
@@ -205,7 +205,7 @@ export default function CentreOfExcellencePage() {
               <h2 className="text-2xl sm:text-3xl font-bold">Centre of Excellence for Cyber Security</h2>
             </div>
             <p className="text-foreground/80 leading-relaxed">
-              Cybersecurity has become a strategic requirement for organisations across every sector. A Cyber Security Centre of Excellence enables institutions to build capabilities in cybersecurity education, practical training, awareness, research and industry-oriented skill development.
+              Cybersecurity has become a strategic requirement for organizations across every sector. A Cyber Security Centre of Excellence enables institutions to build capabilities in cybersecurity education, practical training, awareness, research and industry-oriented skill development.
             </p>
             <p className="text-foreground/80 leading-relaxed">
               CITIS's Cyber Security CoE can cover areas such as Cybersecurity Fundamentals, Ethical Hacking, Network Security, Cloud Security, Application Security, Digital Forensics, Security Operations and Cyber Risk.
@@ -263,7 +263,7 @@ export default function CentreOfExcellencePage() {
               align="left"
             />
             <p className="text-foreground/80 leading-relaxed -mt-4">
-              CITIS believes that a strong Centre of Excellence requires access to the right technology and industry ecosystem. We work with leading technology and industry organisations to bring relevant expertise, platforms, learning resources and industry exposure into institutional environments.
+              CITIS believes that a strong Centre of Excellence requires access to the right technology and industry ecosystem. We work with leading technology and industry organizations to bring relevant expertise, platforms, learning resources and industry exposure into institutional environments.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               {ecosystemPartners.map((partner) => (

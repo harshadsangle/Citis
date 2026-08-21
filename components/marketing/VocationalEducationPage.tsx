@@ -64,7 +64,7 @@ const programs = [
     title: "Certification Courses",
     paragraphs: [
       "Certification courses provide focused learning opportunities in specific technologies, skills and professional domains.",
-      "These programs are suitable for students, professionals, educators and organisations looking for targeted skill development or additional credentials. They can range from foundational digital skills to advanced areas such as Artificial Intelligence, Data Science, Cybersecurity, Cloud Computing, Automation, Digital Technologies and other emerging domains.",
+      "These programs are suitable for students, professionals, educators and organizations looking for targeted skill development or additional credentials. They can range from foundational digital skills to advanced areas such as Artificial Intelligence, Data Science, Cybersecurity, Cloud Computing, Automation, Digital Technologies and other emerging domains.",
     ],
   },
 ];
@@ -85,7 +85,7 @@ export function VocationalEducationPage() {
             CITIS Infotech believes that education becomes more meaningful when learners can connect knowledge with skills, skills with industry and learning with employment opportunities. Our vocational education and skill development ecosystem is designed to provide learners with practical, industry-relevant and career-oriented learning pathways.
           </p>
           <p>
-            Our programs combine academic learning with hands-on training, projects, technology exposure, industry interaction and workplace-oriented experiences. Through our network of academic and industry associations, CITIS works towards creating pathways that enable students and professionals to build relevant skills, earn recognised qualifications and prepare for evolving career opportunities.
+            Our programs combine academic learning with hands-on training, projects, technology exposure, industry interaction and workplace-oriented experiences. Through our network of academic and industry associations, CITIS works towards creating pathways that enable students and professionals to build relevant skills, earn recognized qualifications and prepare for evolving career opportunities.
           </p>
         </div>
       </AnimatedSection>
@@ -103,7 +103,7 @@ export function VocationalEducationPage() {
               </h2>
               <div className="mt-5 space-y-5 text-base leading-8 text-muted-foreground sm:text-lg">
                 <p>
-                  The nature of work is changing rapidly with the emergence of Artificial Intelligence, automation, digital technologies and new business models. This makes continuous skill development essential for students, working professionals and organisations.
+            The nature of work is changing rapidly with the emergence of Artificial Intelligence, automation, digital technologies and new business models. This makes continuous skill development essential for students, working professionals and organizations.
                 </p>
                 <p>
                   CITIS offers skill development programs across technology, digital, business and emerging technology domains. Programs can be designed for different learner segments and can range from foundational skills to advanced and specialised competencies.
@@ -280,7 +280,7 @@ export function VocationalEducationPage() {
               ))}
             </ul>
             <p className="mt-6 text-sm leading-7 text-muted-foreground">
-              The objective is to create a learning journey where a student can learn, practise, certify, experience and progress.
+              The objective is to create a learning journey where a student can learn, practice, certify, experience and progress.
             </p>
           </div>
 
@@ -323,7 +323,7 @@ export function VocationalEducationPage() {
               </h2>
               <div className="mt-5 space-y-5 text-base leading-8 text-muted-foreground sm:text-lg">
                 <p>
-                  Industry and academic collaboration is central to the CITIS model. We work with universities, educational institutions, technology organisations, certification bodies and industry partners to create relevant and scalable learning pathways.
+                  Industry and academic collaboration is central to the CITIS model. We work with universities, educational institutions, technology organizations, certification bodies and industry partners to create relevant and scalable learning pathways.
                 </p>
                 <p>
                   Our association ecosystem can support areas such as curriculum development, technology enablement, certifications, faculty development, internships, industry projects, skill assessments and career-oriented learning.
