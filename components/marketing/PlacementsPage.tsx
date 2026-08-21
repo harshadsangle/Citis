@@ -603,7 +603,7 @@ export default function PlacementsPage() {
               Our Placements and Internships ecosystem therefore forms an integral part of the larger CITIS Education Transformation framework—connecting education with skills, skills with experience, experience with opportunity and opportunity with long-term career growth.
             </p>
             <p className="text-xl font-semibold text-orange-600 dark:text-orange-400 pt-2">
-              Learn. Experience. Connect. Launch Your Car
+              Learn. Experience. Connect. Launch Your Career
             </p>
           </div>
         </section>
