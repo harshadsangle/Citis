@@ -20,7 +20,7 @@ export default function ContactPage() {
       <PageHeader
         eyebrow="Contact Us"
         title="Contact Us"
-        backgroundImage="/images/indian-contact-campus.jpg"
+        backgroundImage="/images/premium-indian-contact-campus.jpg"
         description={`Write to us: ${SITE_CONFIG.email} · Helpline: ${SITE_CONFIG.phone}`}
         breadcrumbs={[{ label: "Contact Us" }]}
       />

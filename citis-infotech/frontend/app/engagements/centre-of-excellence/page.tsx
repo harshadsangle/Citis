@@ -16,7 +16,7 @@ export default function CentreOfExcellencePageRoute() {
         eyebrow="Engagements"
         title="Centre of Excellence"
         description="Building Institutional Capability in Emerging Technologies"
-        backgroundImage="/images/indian-coe-lab.jpg"
+        backgroundImage="/images/premium-indian-coe-lab.jpg"
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
           { label: "Centre of Excellence" },

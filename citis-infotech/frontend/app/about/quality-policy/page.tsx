@@ -15,7 +15,7 @@ export default function QualityPolicyRoute() {
       <PageHeader
         eyebrow="About"
         title="Quality Policy"
-        backgroundImage="/images/indian-quality-teacher.jpg"
+        backgroundImage="/images/premium-indian-quality-teacher.jpg"
         description="Delivering Excellence Through Quality, Innovation and Continuous Improvement"
         breadcrumbs={[
           { label: "About Us", href: "/about" },

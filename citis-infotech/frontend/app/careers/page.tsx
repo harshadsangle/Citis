@@ -12,7 +12,7 @@ export default function CareersPage() {
   return (
     <>
       <PageHeader
-        backgroundImage="/images/indian-career-campus.jpg"
+        backgroundImage="/images/premium-indian-career-campus.jpg"
         title="Careers with CITIS"
         description="Build the Future of Learning with Us"
         breadcrumbs={[{ label: "Careers with CITIS" }]}

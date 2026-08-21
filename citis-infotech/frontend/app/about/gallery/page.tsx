@@ -14,7 +14,7 @@ export default function GalleryRoute() {
       <PageHeader
         eyebrow="About"
         title="Gallery"
-        backgroundImage="/images/indian-gallery-school.jpg"
+        backgroundImage="/images/premium-indian-gallery-school.jpg"
         breadcrumbs={[
           { label: "About Us", href: "/about" },
           { label: "Gallery" },

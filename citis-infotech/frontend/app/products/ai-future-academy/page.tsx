@@ -15,7 +15,7 @@ export default function AIFutureAcademyRoute() {
         eyebrow="Products"
         title="CITIS AI Academy"
         description="Computational Thinking, Coding & Artificial Intelligence for K–12"
-        backgroundImage="/images/indian-ai-classroom.jpg"
+        backgroundImage="/images/premium-indian-ai-classroom.jpg"
         breadcrumbs={[
           { label: "Products", href: "/products" },
           { label: "CITIS AI Academy" },

@@ -16,7 +16,7 @@ export default function UniversityPageRoute() {
         eyebrow="Engagements"
         title="University Solutions"
         description="Transforming Universities into Future-Ready Institutions"
-        backgroundImage="/images/indian-university-campus.jpg"
+        backgroundImage="/images/premium-indian-university-campus.jpg"
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
           { label: "University Solutions" },
