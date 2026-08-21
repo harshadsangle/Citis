@@ -83,7 +83,7 @@ const associationLogos = [
     name: "EduWealth Consulting Services",
     logo: "/images/eduwealth-consulting-services.png",
   },
-  { name: "AyeLabz", logo: "/images/ayelabz.jpeg" },
+  { name: "AyeLabz", logo: "/images/ayelabz.png" },
   { name: "CODMOS", logo: "/images/codmos.png" },
 ] as const;
 
