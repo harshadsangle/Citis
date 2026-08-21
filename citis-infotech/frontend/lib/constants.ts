@@ -18,7 +18,7 @@ import {
 
 export const SITE_CONFIG = {
   name: "CITIS InfoTech",
-  legalName: "CITIS Infotech Pvt. Ltd.",
+  legalName: "CITIS Infotech LLP",
   description:
     "A leading technology-enabled education company empowering K–12 and Higher Education institutions with future-ready solutions that integrate academic learning with industry relevance.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.citisinfotech.com",
