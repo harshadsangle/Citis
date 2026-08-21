@@ -228,7 +228,7 @@ export default function Home() {
           <AnimatedSection className="text-center">
             <p className="section-eyebrow mx-auto justify-center">
               <span className="h-px w-8 bg-accent" />
-              Trusted partners
+              Our Clients
               <span className="h-px w-8 bg-accent" />
             </p>
             <h2 className="mt-5 font-heading text-4xl font-bold tracking-[-0.03em] text-[#0b1524] sm:text-5xl">
