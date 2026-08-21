@@ -177,7 +177,7 @@ export function AssociationsPage() {
                     {logos.map((association) => (
                       <div
                         key={`${groupIndex}-${association.name}`}
-                        className="association-carousel-card flex h-32 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-sm transition hover:-translate-y-1 hover:border-secondary/40 sm:p-3"
+                        className="association-carousel-card flex h-24 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-sm transition hover:-translate-y-1 hover:border-secondary/40"
                       >
                         <Image
                           src={association.logo}
@@ -185,7 +185,7 @@ export function AssociationsPage() {
                           width={240}
                           height={120}
                           sizes="(min-width: 1280px) 14vw, (min-width: 768px) 25vw, 50vw"
-                          className="block h-full w-full object-contain object-center"
+                          className="block h-auto max-h-full w-auto max-w-full object-contain object-center"
                         />
                       </div>
                     ))}

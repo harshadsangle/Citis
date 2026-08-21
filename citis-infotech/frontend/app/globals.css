@@ -209,7 +209,7 @@ button, a, input, textarea, select {
   display: flex;
   width: max-content;
   gap: 1rem;
-  animation: association-carousel-scroll 34s linear infinite;
+  animation: association-carousel-scroll 18s linear infinite;
   will-change: transform;
 }
 
