@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
-import { FaLinkedinIn, FaYoutube } from "react-icons/fa";
+import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { NewsletterForm } from "@/components/shared/NewsletterForm";
 import { FOOTER_LINKS, OFFICES, SITE_CONFIG, SOCIAL_LINKS, googleMapsUrl } from "@/lib/constants";
 
-const socialIcons = [FaLinkedinIn, null, FaYoutube, null];
+const socialIcons = [FaFacebookF, FaInstagram, FaLinkedinIn];
 
 export function Footer() {
   return (

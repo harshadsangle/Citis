@@ -248,10 +248,9 @@ export function googleMapsUrl(address: string) {
 }
 
 export const SOCIAL_LINKS = [
-  { label: "LinkedIn", href: "https://www.linkedin.com/company/citis-infotech" },
-  { label: "X", href: "https://x.com/citisinfotech" },
-  { label: "YouTube", href: "https://www.youtube.com/@citisinfotech" },
+  { label: "Facebook", href: "https://www.facebook.com/citisinfotech" },
   { label: "Instagram", href: "https://www.instagram.com/citisinfotech" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/company/citis-infotech" },
 ] as const;
 
 export const STATISTICS = [
