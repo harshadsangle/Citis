@@ -46,8 +46,8 @@ const programs = [
     icon: Layers,
     title: "Advanced Diploma Programs",
     paragraphs: [
-      "Advanced Diploma programs provide deeper and more specialised learning for learners seeking to develop advanced competencies in a particular domain.",
-      "These programs can build upon foundational knowledge and introduce advanced technologies, specialised skills, practical projects and industry-oriented applications.",
+      "Advanced Diploma programs provide deeper and more specialized learning for learners seeking to develop advanced competencies in a particular domain.",
+      "These programs can build upon foundational knowledge and introduce advanced technologies, specialized skills, practical projects and industry-oriented applications.",
     ],
   },
   {
@@ -105,7 +105,7 @@ export function VocationalEducationPage() {
             The nature of work is changing rapidly with the emergence of Artificial Intelligence, automation, digital technologies and new business models. This makes continuous skill development essential for students, working professionals and organizations.
                 </p>
                 <p>
-                  CITIS offers skill development programs across technology, digital, business and emerging technology domains. Programs can be designed for different learner segments and can range from foundational skills to advanced and specialised competencies.
+                  CITIS offers skill development programs across technology, digital, business and emerging technology domains. Programs can be designed for different learner segments and can range from foundational skills to advanced and specialized competencies.
                 </p>
                 <p>
                   Our approach focuses on learning by doing, combining structured curriculum with practical assignments, projects, simulations, assessments and industry-oriented learning experiences.

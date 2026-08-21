@@ -3,7 +3,7 @@ import { VocationalEducationPage } from "@/components/marketing/VocationalEducat
 import { generatePageMetadata } from "@/lib/seo";
 
 export const metadata = generatePageMetadata({
-  title: "Vocational Education",
+  title: "Vocational Education & Skill Development",
   path: "/engagements/vocational",
   description: "Vocational Education & Skill Development — Building Skills. Creating Opportunities. Connecting Education with Industry.",
 });
