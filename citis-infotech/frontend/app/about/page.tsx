@@ -15,7 +15,7 @@ export default function AboutUsPage() {
       <PageHeader
         eyebrow="About"
         title="About Us"
-        backgroundImage="/images/about-us-background.jpg"
+        backgroundImage="/images/indian-about-campus.jpg"
         description="India's leading Education Transformation Company"
         breadcrumbs={[{ label: "About Us" }]}
         tone="about"

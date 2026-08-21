@@ -230,7 +230,7 @@ const whyChooseItems: (MarketingItem & { icon: React.ComponentType<{ className?:
     title: "Global Certifications",
     description:
       "International certification pathways that enhance employability and global career opportunities.",
-    backgroundImage: "/images/global-certifications-background.jpg",
+    backgroundImage: "/images/indian-certifications-classroom.jpg",
   },
   {
     icon: Brain,

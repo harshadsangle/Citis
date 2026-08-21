@@ -17,7 +17,7 @@ export default function BlogsPage() {
         eyebrow="Blogs & perspectives"
         title="Useful thinking for people building the future of learning"
         description="Frameworks, field notes, and informed perspectives from CITIS educators, technologists, programme leaders, and partners."
-        backgroundImage="/images/education-blogs-background.jpg"
+        backgroundImage="/images/indian-blogs-teacher.jpg"
         breadcrumbs={[
           { label: "Highlights", href: "/highlights" },
           { label: "Blogs" },

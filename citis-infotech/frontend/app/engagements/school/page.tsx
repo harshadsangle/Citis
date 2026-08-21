@@ -16,7 +16,7 @@ export default function SchoolPageRoute() {
         eyebrow="Engagements"
         title="School Solutions"
         description="Building future-ready, technology-enabled and innovation-driven learning ecosystems"
-        backgroundImage="/images/school-solutions-background.jpg"
+        backgroundImage="/images/indian-school-classroom.jpg"
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
           { label: "School Solutions" },

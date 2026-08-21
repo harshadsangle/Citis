@@ -16,7 +16,7 @@ export default function PlacementsPageRoute() {
         eyebrow="Engagements"
         title="Placements & Internships"
         description="Connecting Education with Careers"
-        backgroundImage="/images/placements-internships-background.jpg"
+        backgroundImage="/images/indian-placement-career.jpg"
         breadcrumbs={[
           { label: "Engagements", href: "/engagements" },
           { label: "Placements & Internships" },
