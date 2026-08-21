@@ -81,7 +81,7 @@ export const MEGA_MENUS = {
       {
         title: "Global Certifications",
         href: "/engagements/global-certifications",
-        description: "Global Certifications",
+        description: "Industry-recognized certification pathways through EtrainIndia.",
         icon: Award,
       },
     ],
@@ -281,6 +281,7 @@ export const FOOTER_LINKS = [
       { label: "Vocational Education", href: "/engagements/vocational" },
       { label: "Centre of Excellence", href: "/engagements/centre-of-excellence" },
       { label: "Placements and Internships", href: "/engagements/placements" },
+      { label: "Global Certifications", href: "/engagements/global-certifications" },
     ],
   },
   {

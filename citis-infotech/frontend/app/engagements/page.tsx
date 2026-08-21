@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Award, BriefcaseBusiness, GraduationCap, School, Wrench } from "lucide-react";
+import { ArrowRight, Award, BadgeCheck, BriefcaseBusiness, GraduationCap, School, Wrench } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
@@ -18,6 +18,7 @@ const engagements = [
   { icon: Wrench, title: "Vocational Education", href: "/engagements/vocational" },
   { icon: Award, title: "Centre of Excellence", href: "/engagements/centre-of-excellence" },
   { icon: BriefcaseBusiness, title: "Placements and Internships", href: "/engagements/placements" },
+  { icon: BadgeCheck, title: "Global Certifications", href: "/engagements/global-certifications" },
 ];
 
 export default function EngagementsPage() {
