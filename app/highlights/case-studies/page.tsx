@@ -3,7 +3,7 @@ import { ContentBrowser } from "@/components/marketing/ContentBrowser";
 import { CTASection } from "@/components/shared/CTASection";
 import { generatePageMetadata } from "@/lib/seo";
 
-export const metadata = generatePageMetadata({ title: "Education Case Studies", path: "/highlights/case-studies", description: "See how CITIS InfoTech partners with universities, schools, skills organisations, and employers to create measurable learning outcomes." });
+export const metadata = generatePageMetadata({ title: "Education Case Studies", path: "/highlights/case-studies", description: "See how CITIS InfoTech partners with universities, schools, skills organizations, and employers to create measurable learning outcomes." });
 
 export default function CaseStudiesPage() {
   return (

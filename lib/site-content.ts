@@ -37,7 +37,7 @@ export const BLOG_POSTS: Article[] = [
     author: "Anil Krishnan",
     content: [
       { heading: "Start with outcomes, not tools", paragraphs: ["Industry alignment works when academic leaders and employers agree on observable capabilities. Role maps, competency rubrics, and authentic tasks provide a stable foundation even as technology changes.", "This shared outcome map should connect course learning outcomes, practice opportunities, and evidence that a learner can present to an employer."] },
-      { heading: "Create a progression of practice", paragraphs: ["Students first explore a professional context, then practise in guided labs, contribute to a team brief, and finally own an end-to-end capstone. Industry mentors add context without replacing faculty leadership.", "Short feedback loops and portfolio reviews make progression visible to learners, institutions, and recruiting partners."] },
+      { heading: "Create a progression of practice", paragraphs: ["Students first explore a professional context, then practice in guided labs, contribute to a team brief, and finally own an end-to-end capstone. Industry mentors add context without replacing faculty leadership.", "Short feedback loops and portfolio reviews make progression visible to learners, institutions, and recruiting partners."] },
       { heading: "Build a sustainable partnership", paragraphs: ["A programme office, faculty enablement, mentor standards, and a semester review cadence turn one-off activity into an institutional model.", "The result is not placement training at the end of a degree; it is employability developed throughout the learning journey."] },
     ],
   },
