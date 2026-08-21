@@ -361,6 +361,24 @@ export function MoxieMindsPage() {
       </section>
 
       <section className="container-site py-16 sm:py-24">
+        <AnimatedSection>
+          <SectionTitle>Teaching Methodology</SectionTitle>
+        </AnimatedSection>
+        <AnimatedSection className="mt-10">
+          <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+            <Image
+              src="/images/moxieminds-teaching-methodology.png"
+              alt="MoxieMind Entrepreneurship Academy teaching methodology"
+              width={1318}
+              height={713}
+              sizes="(max-width: 1024px) 100vw, 1024px"
+              className="h-auto w-full object-contain"
+            />
+          </div>
+        </AnimatedSection>
+      </section>
+
+      <section className="container-site py-16 sm:py-24">
         <AnimatedSection className="max-w-4xl">
           <SectionTitle>Industry-Led Learning</SectionTitle>
           <div className="mt-7 space-y-6">
