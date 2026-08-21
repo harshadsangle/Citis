@@ -426,7 +426,7 @@ export function ScienceLabPage() {
       </section>
 
       <section className="border-y border-border bg-[#e8f4f8] py-16 sm:py-24">
-        <div className="container-site max-w-4xl">
+        <div className="container-site grid gap-10 lg:grid-cols-2 lg:gap-12">
           <AnimatedSection>
             <SectionTitle>Curriculum-Aligned Learning</SectionTitle>
             <p className="mt-7 text-base leading-8 text-muted-foreground sm:text-lg">
@@ -448,24 +448,21 @@ export function ScienceLabPage() {
               </Copy>
             </div>
           </AnimatedSection>
+          <AnimatedSection>
+            <SectionTitle>Science Lab & NEP 2020</SectionTitle>
+            <div className="mt-7">
+              <Copy>
+                Science Lab supports the adoption of technology-enabled and experiential approaches
+                to learning aligned with the direction of National Education Policy 2020.
+              </Copy>
+              <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
+                Its emphasis on practical learning, experimentation, technology-enabled education and
+                virtual laboratory experiences can complement schools&apos; efforts to create more
+                engaging and experiential STEM learning environments.
+              </p>
+            </div>
+          </AnimatedSection>
         </div>
-      </section>
-
-      <section className="container-site py-16 sm:py-24">
-        <AnimatedSection>
-          <SectionTitle>Science Lab & NEP 2020</SectionTitle>
-          <div className="mt-7">
-            <Copy>
-              Science Lab supports the adoption of technology-enabled and experiential approaches
-              to learning aligned with the direction of National Education Policy 2020.
-            </Copy>
-            <p className="mt-6 text-base leading-8 text-muted-foreground sm:text-lg">
-              Its emphasis on practical learning, experimentation, technology-enabled education and
-              virtual laboratory experiences can complement schools&apos; efforts to create more
-              engaging and experiential STEM learning environments.
-            </p>
-          </div>
-        </AnimatedSection>
       </section>
 
       <section className="border-y border-border bg-slate-100/70 py-16 sm:py-24">
