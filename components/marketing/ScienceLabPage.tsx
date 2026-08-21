@@ -169,21 +169,6 @@ function Copy({ children }: { children: string }) {
   return <p className="text-base leading-8 text-muted-foreground sm:text-lg">{children}</p>;
 }
 
-function ScienceLabPhoto({ image, alt }: { image: string; alt: string }) {
-  return (
-    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
-      <Image
-        src={image}
-        alt={alt}
-        width={900}
-        height={675}
-        sizes="(max-width: 1024px) 100vw, 900px"
-        className="aspect-[4/3] w-full object-cover"
-      />
-    </div>
-  );
-}
-
 function FeatureGrid({
   items,
   columns = "md:grid-cols-2",
@@ -254,12 +239,6 @@ export function ScienceLabPage() {
             </p>
           </div>
         </AnimatedSection>
-        <AnimatedSection className="mt-10" delay={0.08}>
-          <ScienceLabPhoto
-            image="/images/science-lab-indian-physics.jpg"
-            alt="Indian school students conducting a hands-on physics experiment with their teacher"
-          />
-        </AnimatedSection>
       </section>
 
       <section id="science-lab-learning-banners" className="border-y border-border bg-[#e8f4f8] py-16 sm:py-24">
@@ -311,12 +290,6 @@ export function ScienceLabPage() {
               The content library is designed to support CBSE, ICSE, IGCSE, IB and State Board
               curricula, with scope for adaptation to other curricula.
             </Copy>
-          </AnimatedSection>
-          <AnimatedSection className="mt-10" delay={0.08}>
-            <ScienceLabPhoto
-              image="/images/science-lab-indian-chemistry.jpg"
-              alt="Indian school students exploring a chemistry experiment with their teacher"
-            />
           </AnimatedSection>
         </div>
       </section>
@@ -391,12 +364,6 @@ export function ScienceLabPage() {
               The platform is designed to provide students with an opportunity to experiment
               without worrying about laboratory equipment, materials or limited laboratory time.
             </p>
-          </AnimatedSection>
-          <AnimatedSection className="mt-10" delay={0.16}>
-            <ScienceLabPhoto
-              image="/images/science-lab-indian-biology.jpg"
-              alt="Indian school students examining a biology specimen with their teacher"
-            />
           </AnimatedSection>
         </div>
       </section>
