@@ -296,7 +296,6 @@ export default function CentreOfExcellencePage() {
                           height={40}
                           className="h-10 w-28 object-contain object-left"
                         />
-                        <CardTitle className="text-lg text-orange-600 dark:text-orange-400">{partner.name}</CardTitle>
                       </div>
                   </CardHeader>
                   <CardContent>
