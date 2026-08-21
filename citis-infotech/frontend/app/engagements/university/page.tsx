@@ -6,7 +6,7 @@ export const metadata = generatePageMetadata({
   title: "University Solutions",
   path: "/engagements/university",
   description:
-    "Empowering Universities and Higher Education Institutions through Industry Integrated Learning Programs, Academic Innovation, Centres of Excellence, Artificial Intelligence, Global Certifications, Faculty Development, and Outcome-Based Education aligned with NEP 2020.",
+    "Empowering Universities and Higher Education Institutions through Industry Integrated Learning Programs, Academic Innovation, Centre of Excellence, Artificial Intelligence, Global Certifications, Faculty Development, and Outcome-Based Education aligned with NEP 2020.",
 });
 
 export default function UniversityPageRoute() {

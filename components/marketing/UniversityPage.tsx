@@ -51,9 +51,9 @@ const progressionModel: (MarketingItem & { icon: React.ComponentType<{ className
   },
   {
     icon: Award,
-    title: "Centres of Excellence",
+    title: "Centre of Excellence",
     description:
-      "State-of-the-art Centres of Excellence in Artificial Intelligence, Cyber Security, Data Science, Cloud Computing, Robotics, IoT, Blockchain, and other emerging technologies.",
+      "State-of-the-art Centre of Excellence in Artificial Intelligence, Cyber Security, Data Science, Cloud Computing, Robotics, IoT, Blockchain, and other emerging technologies.",
   },
   {
     icon: Users,
@@ -137,7 +137,7 @@ const techDomains: (MarketingItem & { icon: React.ComponentType<{ className?: st
     icon: Shield,
     title: "Cyber Security",
     description:
-      "Build expertise in ethical hacking, digital forensics, penetration testing, cloud security, cyber defence, governance, and information security.",
+      "Build expertise in ethical hacking, digital forensics, penetration testing, cloud security, cyber defense, governance, and information security.",
   },
   {
     icon: BarChart2,
@@ -558,7 +558,7 @@ export function UniversityPage() {
           <AnimatedSection>
             <p className="text-base leading-8 text-muted-foreground sm:text-lg">
               Empowering Universities and Higher Education Institutions through Industry Integrated
-              Learning Programs, Academic Innovation, Centres of Excellence, Artificial Intelligence,
+              Learning Programs, Academic Innovation, Centre of Excellence, Artificial Intelligence,
               Global Certifications, Faculty Development, and Outcome-Based Education aligned with
               NEP 2020.
             </p>
@@ -601,7 +601,7 @@ export function UniversityPage() {
               complementing the intent of NEP 2020 and institutional academic frameworks.
             </p>
             <p>
-              From curriculum design and Industry Integrated Learning Programs to Centres of
+              From curriculum design and Industry Integrated Learning Programs to Centre of
               Excellence, AI-powered learning platforms, internships, faculty development, and
               placement support, CITIS serves as a long-term strategic partner in transforming higher
               education.
@@ -699,7 +699,7 @@ export function UniversityPage() {
       {/* ── Centre of Excellence (overview) ──────────────────────────────── */}
       <OutcomesList
         eyebrow="Centre of Excellence"
-        title="Transform your campus into an innovation hub through dedicated Centres of Excellence."
+        title="Transform your campus into an innovation hub through dedicated Centre of Excellence."
         description="Each CoE provides:"
         outcomes={coeItems}
       />
