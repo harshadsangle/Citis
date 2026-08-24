@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
+import Script from "next/script";
 import { ConditionalShell } from "@/components/layout/ConditionalShell";
 import { QueryProvider } from "@/components/layout/QueryProvider";
 import { ScrollProgress } from "@/components/layout/ScrollProgress";
@@ -75,6 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const jsonLd = organizationJsonLd();
+  const zendeskKey = process.env.NEXT_PUBLIC_ZENDESK_KEY?.trim();
   return (
     <html lang="en-IN" suppressHydrationWarning>
       <body className={`${manrope.variable} antialiased`}>
@@ -85,6 +87,13 @@ export default function RootLayout({
             <AnalyticsTracker />
             <ConditionalShell>{children}</ConditionalShell>
             <ServiceWorkerRegister />
+            {zendeskKey ? (
+              <Script
+                id="zendesk-web-widget"
+                src={`https://static.zdassets.com/ekr/snippet.js?key=${encodeURIComponent(zendeskKey)}`}
+                strategy="afterInteractive"
+              />
+            ) : null}
           </QueryProvider>
         </ThemeProvider>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
