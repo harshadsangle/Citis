@@ -927,7 +927,7 @@ export function UniversityPage() {
                         </span>
                         <div>
                           {model.subtitle && (
-                            <p className="mb-1 text-xs font-bold tracking-[0.14em] text-accent uppercase">
+                            <p className="mb-1 text-xs font-bold tracking-[0.14em] text-primary uppercase">
                               {model.subtitle}
                             </p>
                           )}
