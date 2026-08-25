@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  Award,
   BookOpen,
   BookOpenCheck,
   ClipboardCheck,
@@ -18,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generatePageMetadata } from "@/lib/seo";
 import { LmsDashboardGate } from "@/components/lms/LmsDashboardGate";
 import { MyEnrolledCourses } from "@/components/lms/MyEnrolledCourses";
+import { CertificatesSection } from "@/components/lms/CertificatesSection";
 
 export const metadata = generatePageMetadata({
   title: "LMS Dashboard",
@@ -83,7 +83,7 @@ export default function LmsDashboardPage() {
           <Card><CardHeader><div className="flex items-center justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Show your work</p><CardTitle className="mt-2">Assignments</CardTitle></div><FileText className="size-6 text-primary" /></div></CardHeader><CardContent><div className="space-y-3">{assignments.map((assignment) => <div key={assignment.title} className="flex items-start justify-between gap-4 rounded-xl border border-border p-4"><div><p className="font-semibold text-[#123d5c]">{assignment.title}</p><p className="mt-1 text-xs text-muted-foreground">{assignment.course} · {assignment.deadline}</p></div><Badge variant={assignment.status === "Submitted" ? "secondary" : "outline"}>{assignment.status}</Badge></div>)}</div><Button variant="outline" className="mt-5 w-full">View assignments <ArrowRight /></Button></CardContent></Card>
         </div>
 
-        <Card className="mt-6 overflow-hidden border-[#b9d8e6] bg-[linear-gradient(110deg,#123d5c,#0f4c81)] text-white"><CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"><div className="flex items-start gap-4"><span className="grid size-12 shrink-0 place-items-center rounded-xl bg-white/15 text-[#f9e8a2]"><Award className="size-6" /></span><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f9e8a2]">Achievements</p><h2 className="mt-2 font-heading text-xl font-bold">Certificates</h2><p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">Your verified credentials and completed learning milestones will appear here.</p></div></div><Button variant="accent">View certificates <ArrowRight /></Button></CardContent></Card>
+        <CertificatesSection />
         </LmsDashboardGate>
       </div>
     </section>
