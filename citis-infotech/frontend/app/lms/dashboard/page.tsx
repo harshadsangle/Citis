@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generatePageMetadata } from "@/lib/seo";
+import { LmsDashboardGate } from "@/components/lms/LmsDashboardGate";
 
 export const metadata = generatePageMetadata({
   title: "LMS Dashboard",
@@ -59,6 +60,7 @@ export default function LmsDashboardPage() {
   return (
     <section className="bg-[#f5f9fc] py-12 sm:py-16">
       <div className="container-site">
+        <LmsDashboardGate>
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-primary">Learner dashboard</p>
@@ -94,6 +96,7 @@ export default function LmsDashboardPage() {
         </div>
 
         <Card className="mt-6 overflow-hidden border-[#b9d8e6] bg-[linear-gradient(110deg,#123d5c,#0f4c81)] text-white"><CardContent className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8"><div className="flex items-start gap-4"><span className="grid size-12 shrink-0 place-items-center rounded-xl bg-white/15 text-[#f9e8a2]"><Award className="size-6" /></span><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f9e8a2]">Achievements</p><h2 className="mt-2 font-heading text-xl font-bold">Certificates</h2><p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">Your verified credentials and completed learning milestones will appear here.</p></div></div><Button variant="accent">View certificates <ArrowRight /></Button></CardContent></Card>
+        </LmsDashboardGate>
       </div>
     </section>
   );
