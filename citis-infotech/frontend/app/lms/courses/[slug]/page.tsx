@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EnrollmentButton } from "@/components/lms/EnrollmentButton";
 import { LessonViewer } from "@/components/lms/LessonViewer";
+import { CourseQuiz } from "@/components/lms/CourseQuiz";
 import { getCourseBySlug, LMS_COURSES } from "@/lib/lms-courses";
 import { generatePageMetadata } from "@/lib/seo";
 
@@ -33,6 +34,7 @@ export default async function LmsCourseDetailsPage({ params }: { params: Promise
           <div className="space-y-8">
             <Card><CardHeader><CardTitle>What you will learn</CardTitle></CardHeader><CardContent><ul className="grid gap-4 sm:grid-cols-2">{course.outcomes.map((outcome) => <li key={outcome} className="flex items-start gap-3 text-sm leading-6 text-muted-foreground"><CheckCircle2 className="mt-1 size-4 shrink-0 text-primary" />{outcome}</li>)}</ul></CardContent></Card>
             <LessonViewer courseSlug={course.slug} modules={course.modules} initialProgress={course.progress} />
+            <CourseQuiz courseSlug={course.slug} questions={course.quiz} />
           </div>
           <aside className="space-y-5 lg:sticky lg:top-24 lg:h-fit">
             <Card><CardContent className="p-6"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Award className="size-5" /></span><div><p className="text-xs text-muted-foreground">Course instructor</p><p className="font-semibold text-[#123d5c]">{course.instructor}</p></div></div><div className="mt-6"><EnrollmentButton courseSlug={course.slug} /></div></CardContent></Card>
