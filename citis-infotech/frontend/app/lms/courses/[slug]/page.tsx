@@ -40,7 +40,7 @@ export default async function LmsCourseDetailsPage({ params }: { params: Promise
           </div>
           <aside className="space-y-5 lg:sticky lg:top-24 lg:h-fit">
             <Card><CardHeader><CardTitle>Course progress</CardTitle></CardHeader><CardContent><CourseProgress value={course.progress} completedLessons={completedLessons} totalLessons={totalLessons} /></CardContent></Card>
-            <Card><CardContent className="p-6"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Award className="size-5" /></span><div><p className="text-xs text-muted-foreground">Course instructor</p><p className="font-semibold text-[#123d5c]">{course.instructor}</p></div></div><div className="mt-6"><EnrollmentButton /></div></CardContent></Card>
+            <Card><CardContent className="p-6"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Award className="size-5" /></span><div><p className="text-xs text-muted-foreground">Course instructor</p><p className="font-semibold text-[#123d5c]">{course.instructor}</p></div></div><div className="mt-6"><EnrollmentButton courseSlug={course.slug} /></div></CardContent></Card>
             <Link href="/lms/dashboard" className="flex items-center justify-between rounded-2xl border border-border bg-white p-5 text-sm font-semibold text-primary">View your dashboard <ArrowRight className="size-4" /></Link>
           </aside>
         </div>

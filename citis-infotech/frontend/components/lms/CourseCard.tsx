@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { LmsCourse } from "@/lib/lms-courses";
 import { CourseProgress } from "@/components/lms/CourseProgress";
+import { EnrollmentButton } from "@/components/lms/EnrollmentButton";
 
 export function CourseCard({ course }: { course: LmsCourse }) {
   const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
@@ -20,7 +21,7 @@ export function CourseCard({ course }: { course: LmsCourse }) {
       <CardContent className="mt-auto space-y-5">
         <div className="flex flex-wrap gap-4 text-xs text-muted-foreground"><span className="flex items-center gap-1.5"><Clock3 className="size-3.5" />{course.duration}</span><span className="flex items-center gap-1.5"><BookOpenCheck className="size-3.5" />{course.modules.length} modules · {lessonCount} lessons</span><span className="flex items-center gap-1.5"><Users className="size-3.5" />{course.learners}</span></div>
         <CourseProgress value={course.progress} compact />
-        <Link href={`/lms/courses/${course.slug}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary">View course details <ArrowRight className="size-4" /></Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href={`/lms/courses/${course.slug}`} className="inline-flex items-center gap-2 text-sm font-semibold text-primary">View course details <ArrowRight className="size-4" /></Link><EnrollmentButton courseSlug={course.slug} /></div>
       </CardContent>
     </Card>
   );
