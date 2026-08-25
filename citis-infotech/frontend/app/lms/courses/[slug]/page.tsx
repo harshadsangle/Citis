@@ -3,9 +3,8 @@ import { ArrowLeft, ArrowRight, Award, BookOpenCheck, CheckCircle2, Clock3, User
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CourseModule } from "@/components/lms/CourseModule";
-import { CourseProgress } from "@/components/lms/CourseProgress";
 import { EnrollmentButton } from "@/components/lms/EnrollmentButton";
+import { LessonViewer } from "@/components/lms/LessonViewer";
 import { getCourseBySlug, LMS_COURSES } from "@/lib/lms-courses";
 import { generatePageMetadata } from "@/lib/seo";
 
@@ -22,9 +21,6 @@ export default async function LmsCourseDetailsPage({ params }: { params: Promise
   const course = getCourseBySlug((await params).slug);
   if (!course) notFound();
 
-  const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
-  const completedLessons = course.modules.reduce((total, module) => total + module.lessons.filter((lesson) => lesson.completed).length, 0);
-
   return (
     <section className="bg-[#f5f9fc] py-12 sm:py-16">
       <div className="container-site">
@@ -36,10 +32,9 @@ export default async function LmsCourseDetailsPage({ params }: { params: Promise
         <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_20rem]">
           <div className="space-y-8">
             <Card><CardHeader><CardTitle>What you will learn</CardTitle></CardHeader><CardContent><ul className="grid gap-4 sm:grid-cols-2">{course.outcomes.map((outcome) => <li key={outcome} className="flex items-start gap-3 text-sm leading-6 text-muted-foreground"><CheckCircle2 className="mt-1 size-4 shrink-0 text-primary" />{outcome}</li>)}</ul></CardContent></Card>
-            <div><div className="mb-5 flex items-end justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Course curriculum</p><h2 className="mt-2 font-heading text-2xl font-bold text-[#123d5c]">Modules &amp; lessons</h2></div><span className="text-sm text-muted-foreground">{course.modules.length} modules</span></div><div className="space-y-4">{course.modules.map((module, index) => <CourseModule key={module.id} module={module} index={index} />)}</div></div>
+            <LessonViewer courseSlug={course.slug} modules={course.modules} initialProgress={course.progress} />
           </div>
           <aside className="space-y-5 lg:sticky lg:top-24 lg:h-fit">
-            <Card><CardHeader><CardTitle>Course progress</CardTitle></CardHeader><CardContent><CourseProgress value={course.progress} completedLessons={completedLessons} totalLessons={totalLessons} /></CardContent></Card>
             <Card><CardContent className="p-6"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Award className="size-5" /></span><div><p className="text-xs text-muted-foreground">Course instructor</p><p className="font-semibold text-[#123d5c]">{course.instructor}</p></div></div><div className="mt-6"><EnrollmentButton courseSlug={course.slug} /></div></CardContent></Card>
             <Link href="/lms/dashboard" className="flex items-center justify-between rounded-2xl border border-border bg-white p-5 text-sm font-semibold text-primary">View your dashboard <ArrowRight className="size-4" /></Link>
           </aside>
