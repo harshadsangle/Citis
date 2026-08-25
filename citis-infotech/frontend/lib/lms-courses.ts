@@ -39,6 +39,7 @@ export type LmsCourse = {
   modules: CourseModule[];
   quiz: QuizQuestion[];
   assignments: CourseAssignment[];
+  status?: "Draft" | "Published";
 };
 
 export const LMS_COURSES: LmsCourse[] = [
@@ -58,6 +59,7 @@ export const LMS_COURSES: LmsCourse[] = [
       { id: "ai-q2", question: "A responsible classroom AI policy should protect a learner’s...", options: ["Ability to skip all assessment", "Access to unlimited automation", "Privacy, agency, and academic integrity", "Choice of any final grade"], correctAnswer: 2 },
     ],
     assignments: [{ id: "ai-a1", title: "Design a classroom AI policy", instructions: "Create a one-page policy for responsible AI use in a classroom or learning programme. Include guidance for privacy, verification, and academic integrity." }],
+    status: "Published",
     modules: [
       { id: "ai-1", title: "AI in the learning ecosystem", description: "Understand the technologies changing how learners discover, create, and collaborate.", lessons: [{ id: "ai-1-1", title: "Welcome and course orientation", duration: "08 min", completed: true }, { id: "ai-1-2", title: "A practical map of AI concepts", duration: "22 min", completed: true }, { id: "ai-1-3", title: "Where AI fits in education", duration: "18 min", completed: true }] },
       { id: "ai-2", title: "Prompting for meaningful learning", description: "Create prompts that encourage reasoning, reflection, and original student work.", lessons: [{ id: "ai-2-1", title: "From instructions to useful prompts", duration: "24 min", completed: true }, { id: "ai-2-2", title: "Designing classroom workflows", duration: "28 min", completed: true }] },
@@ -81,6 +83,7 @@ export const LMS_COURSES: LmsCourse[] = [
       { id: "data-q2", question: "A visualisation is most effective when it...", options: ["Uses as many colours as possible", "Makes the intended pattern easy to understand", "Removes all context from the data", "Includes every available data point"], correctAnswer: 1 },
     ],
     assignments: [{ id: "data-a1", title: "Build a learner insights dashboard", instructions: "Use a small dataset to identify three useful learner insights. Describe your approach and explain which visualisation would communicate each insight best." }],
+    status: "Published",
     modules: [
       { id: "data-1", title: "Thinking with data", description: "Learn how to ask useful questions and identify the evidence needed to answer them.", lessons: [{ id: "data-1-1", title: "Data in everyday decisions", duration: "16 min", completed: true }, { id: "data-1-2", title: "Questions, measures, and evidence", duration: "24 min", completed: true }] },
       { id: "data-2", title: "Finding patterns in data", description: "Move from raw information to patterns that can support better decisions.", lessons: [{ id: "data-2-1", title: "Clean and structure a dataset", duration: "28 min", completed: true }, { id: "data-2-2", title: "Spotting trends and outliers", duration: "26 min" }] },
@@ -103,6 +106,7 @@ export const LMS_COURSES: LmsCourse[] = [
       { id: "entre-q2", question: "Why should innovators test assumptions early?", options: ["To avoid listening to users", "To learn what works before investing heavily", "To guarantee every idea succeeds", "To replace all creative thinking"], correctAnswer: 1 },
     ],
     assignments: [{ id: "entre-a1", title: "Test an opportunity", instructions: "Choose a problem you care about, describe the user need behind it, and propose one small experiment that could validate your most important assumption." }],
+    status: "Published",
     modules: [
       { id: "entre-1", title: "From idea to opportunity", description: "Explore curiosity, observation, and the signals that reveal meaningful opportunities.", lessons: [{ id: "entre-1-1", title: "The innovator's mindset", duration: "18 min", completed: true }, { id: "entre-1-2", title: "Map a real user need", duration: "24 min" }] },
       { id: "entre-2", title: "Designing a valuable solution", description: "Shape an idea into a solution that creates measurable value for its users.", lessons: [{ id: "entre-2-1", title: "Value propositions", duration: "22 min" }, { id: "entre-2-2", title: "Prototype before you build", duration: "30 min" }] },

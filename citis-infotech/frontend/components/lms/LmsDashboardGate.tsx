@@ -7,8 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRoleLabel, LMS_SESSION_KEY, type LmsUser } from "@/lib/lms-auth";
+import { InstructorCourseManager } from "@/components/lms/InstructorCourseManager";
 
-function OperationsDashboard({ role }: { role: "instructor" | "admin" }) {
+function OperationsDashboard({ role, instructorName }: { role: "instructor" | "admin"; instructorName?: string }) {
+  if (role === "instructor") return <InstructorCourseManager instructorName={instructorName ?? "LMS Instructor"} />;
   const isAdmin = role === "admin";
   const metrics = isAdmin
     ? [{ label: "Total learners", value: "1,248", icon: UsersRound }, { label: "Active courses", value: "42", icon: BookOpen }, { label: "Completion rate", value: "76%", icon: FileCheck2 }]
@@ -52,7 +54,7 @@ export function LmsDashboardGate({ children }: { children: React.ReactNode }) {
   return (
     <div>
       <div className="mb-8 flex flex-col justify-between gap-4 rounded-2xl border border-[#b9d8e6] bg-white p-5 shadow-sm sm:flex-row sm:items-center"><div><div className="flex items-center gap-3"><h1 className="font-heading text-xl font-bold text-[#123d5c]">{user.name}&apos;s workspace</h1><Badge variant="outline">{getRoleLabel(user.role)}</Badge></div><p className="mt-1 text-sm text-muted-foreground">{isStudent ? "Continue your learning journey." : user.role === "instructor" ? "Create impact through teaching and mentorship." : "Monitor and manage the learning platform."}</p></div><Button variant="ghost" size="sm" onClick={signOut}><LogOut />Sign out</Button></div>
-      {isStudent ? children : <OperationsDashboard role={user.role as "instructor" | "admin"} />}
+       {isStudent ? children : <OperationsDashboard role={user.role as "instructor" | "admin"} instructorName={user.name} />}
     </div>
   );
 }
