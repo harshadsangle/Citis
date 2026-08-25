@@ -28,7 +28,7 @@ function toForm(course: LmsCourse): CourseForm {
 }
 
 function parseModules(value: string): CourseModule[] {
-  return value.split("\n").map((line, moduleIndex) => line.trim()).filter(Boolean).map((line, moduleIndex) => {
+  return value.split("\n").map((line) => line.trim()).filter(Boolean).map((line, moduleIndex) => {
     const [title, description, lessonList] = line.split("|").map((part) => part.trim());
     const lessons = (lessonList || "Lesson 1").split(",").map((lesson, lessonIndex) => ({ id: `custom-${moduleIndex}-${lessonIndex}`, title: lesson.trim(), duration: "20 min" })).filter((lesson) => lesson.title);
     return { id: `custom-module-${moduleIndex}`, title: title || `Module ${moduleIndex + 1}`, description: description || "Course learning module.", lessons };
