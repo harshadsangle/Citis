@@ -6,7 +6,7 @@ import { ArrowRight, BookOpen, ClipboardList, FileCheck2, GraduationCap, LogOut,
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getRoleLabel, LMS_SESSION_KEY, type LmsRole, type LmsUser } from "@/lib/lms-auth";
+import { getRoleLabel, LMS_SESSION_KEY, type LmsUser } from "@/lib/lms-auth";
 
 function OperationsDashboard({ role }: { role: "instructor" | "admin" }) {
   const isAdmin = role === "admin";
