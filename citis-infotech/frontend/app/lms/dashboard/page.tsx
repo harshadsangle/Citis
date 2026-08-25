@@ -9,7 +9,6 @@ import {
   FileText,
   Flame,
   GraduationCap,
-  PlayCircle,
   Sparkles,
   TrendingUp,
 } from "lucide-react";
@@ -18,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generatePageMetadata } from "@/lib/seo";
 import { LmsDashboardGate } from "@/components/lms/LmsDashboardGate";
+import { MyEnrolledCourses } from "@/components/lms/MyEnrolledCourses";
 
 export const metadata = generatePageMetadata({
   title: "LMS Dashboard",
@@ -31,12 +31,6 @@ const stats = [
   { label: "Hours learned", value: "24.5", icon: Clock3, note: "This month" },
   { label: "Overall progress", value: "68%", icon: TrendingUp, note: "+12% this week" },
   { label: "Learning streak", value: "07", icon: Flame, note: "Days in a row" },
-];
-
-const myCourses = [
-  { title: "AI Foundations for Educators", category: "Artificial Intelligence", progress: 68, lesson: "Module 4 · Responsible AI in practice", color: "bg-primary" },
-  { title: "Applied Data & Digital Skills", category: "Digital Technology", progress: 42, lesson: "Module 3 · Finding patterns in data", color: "bg-[#d19a14]" },
-  { title: "Entrepreneurship & Innovation", category: "Future Skills", progress: 18, lesson: "Module 1 · From idea to opportunity", color: "bg-[#568aa7]" },
 ];
 
 const availableCourses = [
@@ -77,13 +71,7 @@ export default function LmsDashboardPage() {
           })}
         </div>
 
-        <div className="mt-10 flex items-center justify-between gap-4">
-          <div><p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Your learning</p><h2 className="mt-2 font-heading text-2xl font-bold text-[#123d5c]">My Courses</h2></div>
-          <Link href="/lms/courses" className="inline-flex items-center gap-2 text-sm font-semibold text-primary">View all <ArrowRight className="size-4" /></Link>
-        </div>
-        <div className="mt-5 grid gap-5 lg:grid-cols-3">
-          {myCourses.map((course) => <Card key={course.title} className="flex h-full flex-col"><CardHeader><div className="flex items-start justify-between gap-3"><Badge variant="outline">{course.category}</Badge><PlayCircle className="size-5 text-primary" /></div><CardTitle className="mt-3 text-lg">{course.title}</CardTitle><p className="text-xs text-muted-foreground">{course.lesson}</p></CardHeader><CardContent className="mt-auto"><div className="flex items-center justify-between text-xs font-semibold"><span className="text-muted-foreground">Progress</span><span className="text-primary">{course.progress}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary"><div className={`h-full rounded-full ${course.color}`} style={{ width: `${course.progress}%` }} /></div><Button variant="outline" size="sm" className="mt-5 w-full">Continue course <ArrowRight /></Button></CardContent></Card>)}
-        </div>
+        <div className="mt-10"><MyEnrolledCourses /></div>
 
         <div className="mt-10 grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
           <Card><CardHeader><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Discover</p><CardTitle className="mt-2">Available Courses</CardTitle></div><BookOpenCheck className="size-6 text-primary" /></div></CardHeader><CardContent><div className="divide-y divide-border">{availableCourses.map((course) => { const Icon = course.icon; return <div key={course.title} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="size-5" /></span><div><p className="font-semibold text-[#123d5c]">{course.title}</p><p className="mt-1 text-xs text-muted-foreground">{course.level} · {course.duration}</p></div></div><Button asChild variant="ghost" size="sm"><Link href="/lms/courses">View course <ArrowRight /></Link></Button></div>; })}</div></CardContent></Card>
