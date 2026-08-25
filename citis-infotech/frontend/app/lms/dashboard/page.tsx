@@ -4,7 +4,6 @@ import {
   Award,
   BookOpen,
   BookOpenCheck,
-  CheckCircle2,
   ClipboardCheck,
   Clock3,
   FileText,
