@@ -14,7 +14,7 @@ export function CourseAssignments({ courseSlug, assignments }: { courseSlug: str
 
   useEffect(() => {
     try {
-      const stored = JSON.parse(window.localStorage.getItem(assignmentStorageKey(courseSlug)) ?? "{}") as SubmissionMap;
+      const stored = JSON.parse(window.localStorage.getItem(assignmentStorageKey(courseSlug)) ?? "{}") as AssignmentSubmissions;
       setAnswers(stored);
       setSubmitted(stored);
     } catch {

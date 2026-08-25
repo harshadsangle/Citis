@@ -41,7 +41,7 @@ export function InstructorLearners() {
       const totalLessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
       const progress = totalLessons ? Math.round((completed.size / totalLessons) * 100) : 0;
       const score = readQuizScore(course.slug);
-      const assignmentStatus = Object.values(readAssignmentSubmissions(course.slug)).some(Boolean) ? "Submitted" : "Not submitted";
+      const assignmentStatus: LearnerRow["assignmentStatus"] = Object.values(readAssignmentSubmissions(course.slug)).some(Boolean) ? "Submitted" : "Not submitted";
       return { studentName, courseName: course.title, progress, quizScore: score === null ? "Not attempted" : `${Math.round((score / course.quiz.length) * 100)}%`, assignmentStatus };
     });
     setLearners(rows);
