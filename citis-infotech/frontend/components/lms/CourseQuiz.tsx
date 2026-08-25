@@ -5,10 +5,7 @@ import { CheckCircle2, CircleHelp, RotateCcw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { QuizQuestion } from "@/lib/lms-courses";
-
-function quizStorageKey(courseSlug: string) {
-  return `citis-lms-quiz-score:${courseSlug}`;
-}
+import { quizScoreStorageKey, readQuizScore } from "@/lib/lms-quiz";
 
 export function CourseQuiz({ courseSlug, questions }: { courseSlug: string; questions: QuizQuestion[] }) {
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -16,8 +13,8 @@ export function CourseQuiz({ courseSlug, questions }: { courseSlug: string; ques
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const storedScore = window.localStorage.getItem(quizStorageKey(courseSlug));
-    if (storedScore !== null) setScore(Number(storedScore));
+    const storedScore = readQuizScore(courseSlug);
+    if (storedScore !== null) setScore(storedScore);
   }, [courseSlug]);
 
   function submitQuiz(event: React.FormEvent<HTMLFormElement>) {
@@ -29,14 +26,14 @@ export function CourseQuiz({ courseSlug, questions }: { courseSlug: string; ques
     const totalCorrect = questions.filter((question) => answers[question.id] === question.correctAnswer).length;
     setScore(totalCorrect);
     setError("");
-    window.localStorage.setItem(quizStorageKey(courseSlug), String(totalCorrect));
+    window.localStorage.setItem(quizScoreStorageKey(courseSlug), String(totalCorrect));
   }
 
   function retakeQuiz() {
     setAnswers({});
     setScore(null);
     setError("");
-    window.localStorage.removeItem(quizStorageKey(courseSlug));
+    window.localStorage.removeItem(quizScoreStorageKey(courseSlug));
   }
 
   return (

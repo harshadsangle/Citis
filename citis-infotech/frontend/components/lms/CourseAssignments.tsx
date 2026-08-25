@@ -6,16 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CourseAssignment } from "@/lib/lms-courses";
-
-type SubmissionMap = Record<string, string>;
-
-function assignmentStorageKey(courseSlug: string) {
-  return `citis-lms-assignments:${courseSlug}`;
-}
+import { assignmentStorageKey, type AssignmentSubmissions } from "@/lib/lms-assignments";
 
 export function CourseAssignments({ courseSlug, assignments }: { courseSlug: string; assignments: CourseAssignment[] }) {
-  const [answers, setAnswers] = useState<SubmissionMap>({});
-  const [submitted, setSubmitted] = useState<SubmissionMap>({});
+  const [answers, setAnswers] = useState<AssignmentSubmissions>({});
+  const [submitted, setSubmitted] = useState<AssignmentSubmissions>({});
 
   useEffect(() => {
     try {
