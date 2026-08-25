@@ -2,29 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, ClipboardList, FileCheck2, GraduationCap, LogOut, Settings2, UsersRound } from "lucide-react";
+import { ArrowRight, GraduationCap, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getRoleLabel, LMS_SESSION_KEY, type LmsUser } from "@/lib/lms-auth";
 import { InstructorCourseManager } from "@/components/lms/InstructorCourseManager";
+import { AdminDashboard } from "@/components/lms/AdminDashboard";
 
 function OperationsDashboard({ role, instructorName }: { role: "instructor" | "admin"; instructorName?: string }) {
   if (role === "instructor") return <InstructorCourseManager instructorName={instructorName ?? "LMS Instructor"} />;
-  const isAdmin = role === "admin";
-  const metrics = isAdmin
-    ? [{ label: "Total learners", value: "1,248", icon: UsersRound }, { label: "Active courses", value: "42", icon: BookOpen }, { label: "Completion rate", value: "76%", icon: FileCheck2 }]
-    : [{ label: "My learners", value: "186", icon: UsersRound }, { label: "Published courses", value: "08", icon: BookOpen }, { label: "Pending reviews", value: "14", icon: ClipboardList }];
-
-  return (
-    <div className="space-y-8">
-      <div className="grid gap-4 md:grid-cols-3">{metrics.map((metric) => { const Icon = metric.icon; return <Card key={metric.label}><CardContent className="flex items-center justify-between p-5"><div><p className="text-sm text-muted-foreground">{metric.label}</p><p className="mt-2 font-heading text-3xl font-bold text-[#123d5c]">{metric.value}</p></div><span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary"><Icon className="size-5" /></span></CardContent></Card>; })}</div>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card><CardHeader><CardTitle>{isAdmin ? "Platform activity" : "Teaching activity"}</CardTitle></CardHeader><CardContent><div className="space-y-4 text-sm"><div className="flex items-center justify-between border-b border-border pb-3"><span className="text-muted-foreground">{isAdmin ? "Learners enrolled this week" : "Assignments awaiting review"}</span><span className="font-semibold text-[#123d5c]">{isAdmin ? "84" : "14"}</span></div><div className="flex items-center justify-between border-b border-border pb-3"><span className="text-muted-foreground">{isAdmin ? "New course requests" : "Active discussion threads"}</span><span className="font-semibold text-[#123d5c]">{isAdmin ? "06" : "23"}</span></div><div className="flex items-center justify-between"><span className="text-muted-foreground">{isAdmin ? "Certificates issued" : "Learner completion this month"}</span><span className="font-semibold text-[#123d5c]">{isAdmin ? "129" : "72%"}</span></div></div></CardContent></Card>
-        <Card><CardHeader><CardTitle>Quick actions</CardTitle></CardHeader><CardContent className="grid gap-3 sm:grid-cols-2"><Button asChild variant="outline"><Link href="/lms/courses">{isAdmin ? "Manage courses" : "View my courses"} <ArrowRight /></Link></Button><Button variant="outline"><Settings2 />Account settings</Button></CardContent></Card>
-      </div>
-    </div>
-  );
+  return <AdminDashboard />;
 }
 
 export function LmsDashboardGate({ children }: { children: React.ReactNode }) {
