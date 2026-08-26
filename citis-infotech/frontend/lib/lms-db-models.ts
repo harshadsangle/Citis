@@ -23,6 +23,7 @@ export type LmsDbCourse = {
   instructorId: number | null;
   status: LmsCourseStatus;
   outcomes: string[];
+  modules: unknown[];
   createdAt: Date;
   updatedAt: Date;
 };

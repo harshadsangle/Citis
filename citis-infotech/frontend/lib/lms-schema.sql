@@ -24,9 +24,13 @@ CREATE TABLE IF NOT EXISTS lms_courses (
   status VARCHAR(20) NOT NULL DEFAULT 'draft'
     CHECK (status IN ('draft', 'published')),
   outcomes JSONB NOT NULL DEFAULT '[]'::jsonb,
+  modules JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE lms_courses
+  ADD COLUMN IF NOT EXISTS modules JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 CREATE TABLE IF NOT EXISTS lms_enrollments (
   id BIGSERIAL PRIMARY KEY,
