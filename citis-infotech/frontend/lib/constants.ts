@@ -38,6 +38,81 @@ export const NAV_LINKS = [
   { label: "Contact", href: "/contact", megaMenu: "contact" },
 ] as const;
 
+const globalCertificationItems = [
+  {
+    title: "Adobe",
+    href: "/engagements/global-certifications/adobe",
+    description: "Creative and digital media skills.",
+    icon: Sparkles,
+  },
+  {
+    title: "Apple",
+    href: "/engagements/global-certifications/apple",
+    description: "App development with Swift.",
+    icon: Rocket,
+  },
+  {
+    title: "Autodesk",
+    href: "/engagements/global-certifications/autodesk",
+    description: "Design, CAD and 3D workflows.",
+    icon: Wrench,
+  },
+  {
+    title: "Cisco",
+    href: "/engagements/global-certifications/cisco",
+    description: "Networking and cyber foundations.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Entrepreneurship",
+    href: "/engagements/global-certifications/entrepreneurship",
+    description: "Innovation and venture-building skills.",
+    icon: Lightbulb,
+  },
+  {
+    title: "IC3 Digital Literacy",
+    href: "/engagements/global-certifications/ic3-digital-literacy",
+    description: "Essential digital fluency.",
+    icon: GraduationCap,
+  },
+  {
+    title: "IT Specialist",
+    href: "/engagements/global-certifications/information-technology-specialist",
+    description: "Job-ready technology foundations.",
+    icon: BriefcaseBusiness,
+  },
+  {
+    title: "Intuit",
+    href: "/engagements/global-certifications/intuit",
+    description: "Accounting and financial technology.",
+    icon: BriefcaseBusiness,
+  },
+  {
+    title: "Meta",
+    href: "/engagements/global-certifications/meta",
+    description: "Social media and digital marketing.",
+    icon: Users,
+  },
+  {
+    title: "Microsoft",
+    href: "/engagements/global-certifications/microsoft",
+    description: "Productivity, data and cloud skills.",
+    icon: Award,
+  },
+  {
+    title: "PMI",
+    href: "/engagements/global-certifications/project-management-institute",
+    description: "Project delivery and leadership.",
+    icon: Compass,
+  },
+  {
+    title: "Unity",
+    href: "/engagements/global-certifications/unity",
+    description: "Real-time 3D and interactive experiences.",
+    icon: Sparkles,
+  },
+] as const;
+
 export const MEGA_MENUS = {
   engagements: {
     eyebrow: "Engagements",
@@ -79,76 +154,11 @@ export const MEGA_MENUS = {
         icon: BriefcaseBusiness,
       },
       {
-        title: "Adobe",
-        href: "/engagements/global-certifications/adobe",
-        description: "Creative and digital media skills.",
-        icon: Sparkles,
-      },
-      {
-        title: "Apple",
-        href: "/engagements/global-certifications/apple",
-        description: "App development with Swift.",
-        icon: Rocket,
-      },
-      {
-        title: "Autodesk",
-        href: "/engagements/global-certifications/autodesk",
-        description: "Design, CAD and 3D workflows.",
-        icon: Wrench,
-      },
-      {
-        title: "Cisco",
-        href: "/engagements/global-certifications/cisco",
-        description: "Networking and cyber foundations.",
-        icon: ShieldCheck,
-      },
-      {
-        title: "Entrepreneurship",
-        href: "/engagements/global-certifications/entrepreneurship",
-        description: "Innovation and venture-building skills.",
-        icon: Lightbulb,
-      },
-      {
-        title: "IC3 Digital Literacy",
-        href: "/engagements/global-certifications/ic3-digital-literacy",
-        description: "Essential digital fluency.",
-        icon: GraduationCap,
-      },
-      {
-        title: "IT Specialist",
-        href: "/engagements/global-certifications/information-technology-specialist",
-        description: "Job-ready technology foundations.",
-        icon: BriefcaseBusiness,
-      },
-      {
-        title: "Intuit",
-        href: "/engagements/global-certifications/intuit",
-        description: "Accounting and financial technology.",
-        icon: BriefcaseBusiness,
-      },
-      {
-        title: "Meta",
-        href: "/engagements/global-certifications/meta",
-        description: "Social media and digital marketing.",
-        icon: Users,
-      },
-      {
-        title: "Microsoft",
-        href: "/engagements/global-certifications/microsoft",
-        description: "Productivity, data and cloud skills.",
+        title: "Global Certifications",
+        href: "/engagements/global-certifications",
+        description: "Industry-recognized certification pathways through EtrainIndia.",
         icon: Award,
-      },
-      {
-        title: "PMI",
-        href: "/engagements/global-certifications/project-management-institute",
-        description: "Project delivery and leadership.",
-        icon: Compass,
-      },
-      {
-        title: "Unity",
-        href: "/engagements/global-certifications/unity",
-        description: "Real-time 3D and interactive experiences.",
-        icon: Sparkles,
+        children: globalCertificationItems,
       },
     ],
   },

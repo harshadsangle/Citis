@@ -45,6 +45,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<MegaMenuKey | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSubmenu, setMobileSubmenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -53,7 +54,10 @@ export function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-  useEffect(() => setMobileOpen(false), [pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+    setMobileSubmenu(null);
+  }, [pathname]);
 
   return (
     <header className={cn(
@@ -145,18 +149,57 @@ export function Navbar() {
                         </p>
                         <div className="ml-2 grid border-l border-border pl-2">
                           {MEGA_MENUS[menu].items.map((child) => {
-                            const childActive = pathname === child.href;
+                            const hasChildren = "children" in child;
+                            const childActive = pathname === child.href || (hasChildren && pathname.startsWith(`${child.href}/`));
+                            if (!hasChildren) {
+                              return (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  className={cn(
+                                    "rounded-md px-3 py-2 text-sm hover:bg-muted hover:text-primary",
+                                    childActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {child.title}
+                                </Link>
+                              );
+                            }
                             return (
-                              <Link
-                                key={child.href}
-                                href={child.href}
-                                className={cn(
-                                  "rounded-md px-3 py-2 text-sm hover:bg-muted hover:text-primary",
-                                  childActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
+                              <div key={child.href}>
+                                <button
+                                  type="button"
+                                  aria-expanded={mobileSubmenu === child.title}
+                                  aria-controls="mobile-global-certifications"
+                                  onClick={() => setMobileSubmenu((current) => (current === child.title ? null : child.title))}
+                                  className={cn(
+                                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted hover:text-primary",
+                                    childActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
+                                  )}
+                                >
+                                  {child.title}
+                                  <ChevronDown className={cn("size-4 transition-transform", mobileSubmenu === child.title && "rotate-180")} />
+                                </button>
+                                {mobileSubmenu === child.title && (
+                                  <div id="mobile-global-certifications" className="ml-3 grid border-l border-border pl-2">
+                                    {child.children.map((certification) => {
+                                      const certificationActive = pathname === certification.href;
+                                      return (
+                                        <Link
+                                          key={certification.href}
+                                          href={certification.href}
+                                          className={cn(
+                                            "rounded-md px-3 py-2 text-sm hover:bg-muted hover:text-primary",
+                                            certificationActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
+                                          )}
+                                        >
+                                          {certification.title}
+                                        </Link>
+                                      );
+                                    })}
+                                  </div>
                                 )}
-                              >
-                                {child.title}
-                              </Link>
+                              </div>
                             );
                           })}
                         </div>
