@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { SITE_CONFIG } from "@/lib/constants";
+import { GLOBAL_CERTIFICATIONS } from "@/lib/global-certifications";
 import { BLOG_POSTS, CASE_STUDIES, JOBS } from "@/lib/site-content";
 
 const routes = [
@@ -20,6 +21,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: route === "" ? "weekly" as const : "monthly" as const,
       priority: route === "" ? 1 : route.split("/").length <= 2 ? 0.8 : 0.7,
+    })),
+    ...GLOBAL_CERTIFICATIONS.map((certification) => ({
+      url: `${SITE_CONFIG.url}/engagements/global-certifications/${certification.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
     })),
     ...BLOG_POSTS.map((post) => ({
       url: `${SITE_CONFIG.url}/highlights/blogs/${post.slug}`,
