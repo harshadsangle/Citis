@@ -192,7 +192,11 @@ function MenuItems({
               )}
             </div>
             {hasChildren && openSubmenu === item.href && (
-              <div className="absolute top-0 left-full z-[60]">
+              <div
+                className="absolute top-0 left-full z-[60]"
+                onMouseEnter={() => setOpenSubmenu(item.href)}
+                onMouseLeave={() => setOpenSubmenu(null)}
+              >
                 {item.title === "Global Certifications" ? (
                   <CertificationMegaPanel categories={item.children ?? []} pathname={pathname} onNavigate={onNavigate} />
                 ) : (
@@ -242,7 +246,7 @@ export function MegaMenu({
     <div
       role="menu"
       className={cn(
-        "max-h-[calc(100vh-6rem)] min-w-[280px] overflow-y-auto rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
+        "max-h-[calc(100vh-6rem)] min-w-[280px] overflow-visible rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
         className,
       )}
     >
