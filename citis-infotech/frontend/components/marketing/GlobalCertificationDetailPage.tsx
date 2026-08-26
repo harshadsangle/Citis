@@ -37,9 +37,6 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                 <ArrowRight />
               </Link>
             </Button>
-            <Button asChild variant="outline" className="rounded-full">
-              <Link href="/engagements/global-certifications">Explore all pathways</Link>
-            </Button>
           </div>
         </AnimatedSection>
 
