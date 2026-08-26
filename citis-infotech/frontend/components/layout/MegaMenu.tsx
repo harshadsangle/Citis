@@ -19,22 +19,22 @@ function CertificationMegaPanel({
   onNavigate?: () => void;
 }) {
   return (
-    <div className="max-h-[calc(100vh-6rem)] w-[min(380px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[#0F4C81]/15 bg-white p-3 shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
+    <div className="w-[min(640px,calc(100vw-2rem))] rounded-xl border border-[#0F4C81]/15 bg-white p-3 shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
       <p className="px-3 pt-2 pb-2 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
         Certification Courses
       </p>
-      <ul className="flex flex-col gap-1.5" role="menu">
+      <ul className="grid grid-cols-2 gap-1.5" role="menu">
         {courses.map((course) => {
           const CourseIcon = course.icon;
           const courseActive = pathname === course.href;
           return (
             <li key={course.href} role="none">
-              <Link
+                  <Link
                 role="menuitem"
                 href={course.href}
                 onClick={onNavigate}
                 className={cn(
-                  "group flex items-start gap-3 rounded-lg px-3 py-3 transition-colors",
+                      "group flex min-h-12 items-center gap-2.5 rounded-lg px-3 py-2 transition-colors",
                   courseActive
                     ? "bg-[#0F4C81] text-white"
                     : "text-[#0b1524] hover:bg-[#0F4C81]/08 hover:text-[#0F4C81]",
@@ -48,12 +48,7 @@ function CertificationMegaPanel({
                 >
                   <CourseIcon className="size-4" />
                 </span>
-                <span className="min-w-0">
-                  <span className="block font-heading text-sm font-semibold">{course.title}</span>
-                  <span className={cn("mt-1 block text-xs leading-5", courseActive ? "text-white/75" : "text-muted-foreground")}>
-                    {course.description}
-                  </span>
-                </span>
+                    <span className="min-w-0 font-heading text-sm leading-5 font-semibold">{course.title}</span>
                 <ArrowRight className="mt-1 ml-auto size-3.5 shrink-0 opacity-60 transition group-hover:translate-x-0.5" />
               </Link>
             </li>
@@ -74,6 +69,7 @@ function MenuItems({
   onNavigate?: () => void;
 }) {
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const [certificationPanelLeft, setCertificationPanelLeft] = useState<number | null>(null);
 
   return (
     <ul className="flex flex-col gap-1">
@@ -86,8 +82,18 @@ function MenuItems({
             key={item.href}
             role="none"
             className="relative"
-            onMouseEnter={() => hasChildren && setOpenSubmenu(item.href)}
-            onMouseLeave={() => hasChildren && setOpenSubmenu(null)}
+            onMouseEnter={(event) => {
+              if (!hasChildren) return;
+              setOpenSubmenu(item.href);
+              if (item.title === "Global Certifications") {
+                const anchor = event.currentTarget.getBoundingClientRect();
+                const panelWidth = Math.min(640, window.innerWidth - 32);
+                setCertificationPanelLeft(Math.max(16, Math.min(anchor.right + 8, window.innerWidth - panelWidth - 16)));
+              }
+            }}
+            onMouseLeave={() => {
+              if (item.title !== "Global Certifications") setOpenSubmenu(null);
+            }}
           >
             <div
               className={cn(
@@ -134,9 +140,18 @@ function MenuItems({
             </div>
             {hasChildren && openSubmenu === item.href && (
               <div
-                className="absolute top-0 left-full z-[60]"
+                className={cn(
+                  "z-[60]",
+                  item.title === "Global Certifications"
+                    ? "fixed top-[calc(var(--header-height)+0.5rem)]"
+                    : "absolute top-0 left-full",
+                )}
+                style={item.title === "Global Certifications" ? { left: certificationPanelLeft ?? 16 } : undefined}
                 onMouseEnter={() => setOpenSubmenu(item.href)}
-                onMouseLeave={() => setOpenSubmenu(null)}
+                onMouseLeave={() => {
+                  setOpenSubmenu(null);
+                  setCertificationPanelLeft(null);
+                }}
               >
                 {item.title === "Global Certifications" ? (
                   <CertificationMegaPanel courses={item.children ?? []} pathname={pathname} onNavigate={onNavigate} />
