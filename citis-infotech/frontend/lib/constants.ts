@@ -1,6 +1,5 @@
 import {
   Award,
-  BookOpenCheck,
   BriefcaseBusiness,
   Compass,
   GraduationCap,
@@ -78,14 +77,6 @@ const globalCertificationItems = [
     href: "/engagements/global-certifications/entrepreneurship",
     description: "Innovation and venture-building skills.",
     icon: Lightbulb,
-    children: [
-      {
-        title: "Entrepreneurship & Innovation",
-        href: "/engagements/global-certifications/courses/entrepreneurship-and-innovation",
-        description: "Opportunity discovery and tested ideas.",
-        icon: BookOpenCheck,
-      },
-    ],
   },
   {
     title: "IC3 Digital Literacy",
@@ -98,20 +89,6 @@ const globalCertificationItems = [
     href: "/engagements/global-certifications/information-technology-specialist",
     description: "Job-ready technology foundations.",
     icon: BriefcaseBusiness,
-    children: [
-      {
-        title: "AI Foundations for Educators",
-        href: "/engagements/global-certifications/courses/ai-foundations-for-educators",
-        description: "Responsible AI and digital pedagogy.",
-        icon: BookOpenCheck,
-      },
-      {
-        title: "Applied Data & Digital Skills",
-        href: "/engagements/global-certifications/courses/applied-data-and-digital-skills",
-        description: "Data fluency and digital problem-solving.",
-        icon: BookOpenCheck,
-      },
-    ],
   },
   {
     title: "Intuit",
@@ -130,20 +107,6 @@ const globalCertificationItems = [
     href: "/engagements/global-certifications/microsoft",
     description: "Productivity, data and cloud skills.",
     icon: Award,
-    children: [
-      {
-        title: "AI Foundations for Educators",
-        href: "/engagements/global-certifications/courses/ai-foundations-for-educators",
-        description: "Responsible AI and digital pedagogy.",
-        icon: BookOpenCheck,
-      },
-      {
-        title: "Applied Data & Digital Skills",
-        href: "/engagements/global-certifications/courses/applied-data-and-digital-skills",
-        description: "Data fluency and digital problem-solving.",
-        icon: BookOpenCheck,
-      },
-    ],
   },
   {
     title: "Project Management Institute",
