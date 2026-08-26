@@ -1,0 +1,1 @@
+- [Certificate asset rendering](certificate-assets.md) — layer raster logos and dynamic text in React rather than nesting external images inside the certificate SVG.
