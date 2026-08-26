@@ -21,7 +21,13 @@ function CertificationMegaPanel({
   const firstCategoryWithCourses = categories.find((category) => category.children?.length) ?? categories[0];
   const [activeCategoryHref, setActiveCategoryHref] = useState(firstCategoryWithCourses?.href ?? "");
   const activeCategory = categories.find((category) => category.href === activeCategoryHref) ?? firstCategoryWithCourses;
-  const courses = activeCategory?.children ?? [];
+  const courses = Array.from(
+    new Map(
+      categories
+        .flatMap((category) => category.children ?? [])
+        .map((course) => [course.href, course] as const),
+    ).values(),
+  );
 
   if (!activeCategory) return null;
 
