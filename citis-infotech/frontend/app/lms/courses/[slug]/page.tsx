@@ -8,6 +8,7 @@ import { LessonViewer } from "@/components/lms/LessonViewer";
 import { CourseQuiz } from "@/components/lms/CourseQuiz";
 import { CourseAssignments } from "@/components/lms/CourseAssignments";
 import { getCourseBySlug, LMS_COURSES } from "@/lib/lms-courses";
+import { getLmsCourseBySlug } from "@/lib/lms-course-db";
 import { generatePageMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
@@ -15,12 +16,14 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const course = getCourseBySlug((await params).slug);
+  const slug = (await params).slug;
+  const course = await getLmsCourseBySlug(slug).catch(() => null) ?? getCourseBySlug(slug);
   return generatePageMetadata({ title: course ? course.title : "Course Details", path: `/lms/courses/${course?.slug ?? ""}`, description: course?.description ?? "Explore this CITIS learning course.", noIndex: true });
 }
 
 export default async function LmsCourseDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
-  const course = getCourseBySlug((await params).slug);
+  const slug = (await params).slug;
+  const course = await getLmsCourseBySlug(slug).catch(() => null) ?? getCourseBySlug(slug);
   if (!course) notFound();
 
   return (

@@ -46,11 +46,12 @@ export async function POST(request: Request) {
 
     const input = courseInputSchema.parse(await request.json());
     const result = await queryLms<LmsCourseDbRow>(
-      `${courseSelect} WHERE c.id = (
+      `WITH inserted AS (
         INSERT INTO lms_courses (slug, title, description, category, level, duration, instructor_id, status, outcomes, modules)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb)
         RETURNING id
-      )`,
+      )
+      ${courseSelect} WHERE c.id = (SELECT id FROM inserted)`,
       [input.slug, input.title, input.description, input.category, input.level, input.duration, user.id, input.status, JSON.stringify(input.outcomes), JSON.stringify(input.modules)],
     );
     return NextResponse.json({ course: mapDbCourse(result.rows[0]) }, { status: 201 });
