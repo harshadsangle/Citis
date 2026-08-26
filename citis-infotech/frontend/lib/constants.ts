@@ -133,7 +133,7 @@ export const MEGA_MENUS = {
         icon: GraduationCap,
       },
       {
-        title: "Information Technology Specialist",
+        title: "IT Specialist",
         href: "/engagements/global-certifications/information-technology-specialist",
         description: "Job-ready technology foundations.",
         icon: BriefcaseBusiness,
@@ -157,7 +157,7 @@ export const MEGA_MENUS = {
         icon: Award,
       },
       {
-        title: "Project Management Institute",
+        title: "PMI",
         href: "/engagements/global-certifications/project-management-institute",
         description: "Project delivery and leadership.",
         icon: Compass,
