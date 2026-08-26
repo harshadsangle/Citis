@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_CONFIG } from "@/lib/constants";
 import { GLOBAL_CERTIFICATIONS } from "@/lib/global-certifications";
+import { LMS_COURSES } from "@/lib/lms-courses";
 import { BLOG_POSTS, CASE_STUDIES, JOBS } from "@/lib/site-content";
 
 const routes = [
@@ -24,6 +25,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
     ...GLOBAL_CERTIFICATIONS.map((certification) => ({
       url: `${SITE_CONFIG.url}/engagements/global-certifications/${certification.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
+    ...LMS_COURSES.map((course) => ({
+      url: `${SITE_CONFIG.url}/engagements/global-certifications/courses/${course.slug}`,
       lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.7,
