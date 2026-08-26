@@ -15,9 +15,18 @@ export function MyEnrolledCourses() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const enrolledSlugs = new Set(readEnrolledCourses());
-    setCourses(LMS_COURSES.filter((course) => enrolledSlugs.has(course.slug)));
-    setLoading(false);
+    const localCourses = LMS_COURSES.filter((course) => new Set(readEnrolledCourses()).has(course.slug));
+    setCourses(localCourses);
+    void fetch("/api/lms/enrollments")
+      .then(async (response) => {
+        if (!response.ok) return;
+        const result = await response.json() as { enrollments?: Array<{ course?: LmsCourse }> };
+        const databaseCourses = (result.enrollments ?? []).flatMap((enrollment) => enrollment.course ? [enrollment.course] : []);
+        const merged = [...databaseCourses, ...localCourses.filter((localCourse) => !databaseCourses.some((course) => course.slug === localCourse.slug))];
+        setCourses(merged);
+      })
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
   }, []);
 
   return (

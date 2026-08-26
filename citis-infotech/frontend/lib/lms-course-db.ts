@@ -67,3 +67,35 @@ export async function getLmsCourseBySlug(slug: string) {
   const result = await queryLms<LmsCourseDbRow>(`${courseSelect} WHERE c.slug = $1`, [slug]);
   return result.rows[0] ? mapDbCourse(result.rows[0]) : null;
 }
+
+export async function getPublishedLmsCourseRecord(slug: string) {
+  const result = await queryLms<LmsCourseDbRow>(`${courseSelect} WHERE c.slug = $1 AND c.status = 'published'`, [slug]);
+  return result.rows[0] ? { id: result.rows[0].id, course: mapDbCourse(result.rows[0]) } : null;
+}
+
+export type LmsEnrollmentDbRow = LmsCourseDbRow & {
+  enrollment_id: number;
+  enrollment_status: "active" | "completed" | "withdrawn";
+  enrolled_at: Date;
+};
+
+export async function getLmsUserEnrollments(userId: number) {
+  const result = await queryLms<LmsEnrollmentDbRow>(
+    `SELECT e.id AS enrollment_id, e.status AS enrollment_status, e.enrolled_at,
+            c.id, c.slug, c.title, c.description, c.category, c.level, c.duration,
+            c.status, c.outcomes, c.modules, c.instructor_id,
+            u.name AS instructor_name
+     FROM lms_enrollments e
+     JOIN lms_courses c ON c.id = e.course_id
+     LEFT JOIN lms_users u ON u.id = c.instructor_id
+     WHERE e.user_id = $1 AND e.status <> 'withdrawn'
+     ORDER BY e.enrolled_at DESC, e.id DESC`,
+    [userId],
+  );
+  return result.rows.map((row) => ({
+    id: row.enrollment_id,
+    status: row.enrollment_status,
+    enrolledAt: row.enrolled_at,
+    course: mapDbCourse(row),
+  }));
+}
