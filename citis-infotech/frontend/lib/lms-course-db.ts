@@ -30,7 +30,8 @@ function arrayValue<T>(value: unknown, fallback: T[]): T[] {
 
 export function mapDbCourse(row: LmsCourseDbRow): LmsCourse {
   const legacyCourse = getCourseBySlug(row.slug);
-  const modules = arrayValue<CourseModule>(row.modules, legacyCourse?.modules ?? []);
+  const storedModules = arrayValue<CourseModule>(row.modules, []);
+  const modules = storedModules.length > 0 ? storedModules : legacyCourse?.modules ?? [];
   return {
     slug: row.slug,
     title: row.title,

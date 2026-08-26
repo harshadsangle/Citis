@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getLmsCourseBySlug, mapDbCourse, type LmsCourseDbRow } from "@/lib/lms-course-db";
+import { getLmsCourseBySlug } from "@/lib/lms-course-db";
 import { queryLms } from "@/lib/lms-db";
 import { getLmsSessionUser } from "@/lib/lms-session";
 
@@ -14,14 +14,6 @@ const courseUpdateSchema = z.object({
   modules: z.array(z.unknown()).max(100).default([]),
   status: z.enum(["Draft", "Published", "draft", "published"]).transform((value) => value.toLowerCase() as "draft" | "published").default("draft"),
 });
-
-const courseSelect = `
-  SELECT c.id, c.slug, c.title, c.description, c.category, c.level, c.duration,
-         c.status, c.outcomes, c.modules, c.instructor_id,
-         u.name AS instructor_name
-  FROM lms_courses c
-  LEFT JOIN lms_users u ON u.id = c.instructor_id
-`;
 
 async function canManageCourse(slug: string) {
   const user = await getLmsSessionUser();
@@ -52,19 +44,17 @@ export async function PUT(request: Request, context: { params: Promise<{ slug: s
       return NextResponse.json({ error: "Legacy catalogue courses cannot be deleted by instructors." }, { status: 403 });
     }
     const input = courseUpdateSchema.parse(await request.json());
-    const result = await queryLms<LmsCourseDbRow>(
-      `WITH updated AS (
-        UPDATE lms_courses
-        SET title = $1, description = $2, category = $3, level = $4, duration = $5,
-            instructor_id = COALESCE(instructor_id, $6), status = $7, outcomes = $8::jsonb,
-            modules = $9::jsonb, updated_at = NOW()
-        WHERE slug = $10
-        RETURNING id
-      )
-      ${courseSelect} WHERE c.id = (SELECT id FROM updated)`,
+    await queryLms(
+      `UPDATE lms_courses
+       SET title = $1, description = $2, category = $3, level = $4, duration = $5,
+           instructor_id = COALESCE(instructor_id, $6), status = $7, outcomes = $8::jsonb,
+           modules = $9::jsonb, updated_at = NOW()
+       WHERE slug = $10`,
       [input.title, input.description, input.category, input.level, input.duration, access.user?.id, input.status, JSON.stringify(input.outcomes), JSON.stringify(input.modules), slug],
     );
-    return NextResponse.json({ course: mapDbCourse(result.rows[0]) });
+    const course = await getLmsCourseBySlug(slug);
+    if (!course) return NextResponse.json({ error: "Course not found." }, { status: 404 });
+    return NextResponse.json({ course });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: "Enter valid course details before saving." }, { status: 400 });
     console.error("LMS course update failed", error);

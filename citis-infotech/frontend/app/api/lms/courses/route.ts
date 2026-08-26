@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getManageableLmsCourses, getPublishedLmsCourses, mapDbCourse, type LmsCourseDbRow } from "@/lib/lms-course-db";
+import { getLmsCourseBySlug, getManageableLmsCourses, getPublishedLmsCourses } from "@/lib/lms-course-db";
 import { queryLms } from "@/lib/lms-db";
 import { getLmsSessionUser } from "@/lib/lms-session";
 
@@ -15,14 +15,6 @@ const courseInputSchema = z.object({
   modules: z.array(z.unknown()).max(100).default([]),
   status: z.enum(["Draft", "Published", "draft", "published"]).transform((value) => value.toLowerCase() as "draft" | "published").default("draft"),
 });
-
-const courseSelect = `
-  SELECT c.id, c.slug, c.title, c.description, c.category, c.level, c.duration,
-         c.status, c.outcomes, c.modules, c.instructor_id,
-         u.name AS instructor_name
-  FROM lms_courses c
-  LEFT JOIN lms_users u ON u.id = c.instructor_id
-`;
 
 export async function GET(request: Request) {
   try {
@@ -45,16 +37,14 @@ export async function POST(request: Request) {
     if (user.role !== "instructor" && user.role !== "admin") return NextResponse.json({ error: "Only instructors and admins can manage courses." }, { status: 403 });
 
     const input = courseInputSchema.parse(await request.json());
-    const result = await queryLms<LmsCourseDbRow>(
-      `WITH inserted AS (
-        INSERT INTO lms_courses (slug, title, description, category, level, duration, instructor_id, status, outcomes, modules)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb)
-        RETURNING id
-      )
-      ${courseSelect} WHERE c.id = (SELECT id FROM inserted)`,
+    await queryLms(
+      `INSERT INTO lms_courses (slug, title, description, category, level, duration, instructor_id, status, outcomes, modules)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb)`,
       [input.slug, input.title, input.description, input.category, input.level, input.duration, user.id, input.status, JSON.stringify(input.outcomes), JSON.stringify(input.modules)],
     );
-    return NextResponse.json({ course: mapDbCourse(result.rows[0]) }, { status: 201 });
+    const course = await getLmsCourseBySlug(input.slug);
+    if (!course) throw new Error("Created course could not be loaded.");
+    return NextResponse.json({ course }, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) return NextResponse.json({ error: "Enter valid course details before saving." }, { status: 400 });
     if (error && typeof error === "object" && "code" in error && error.code === "23505") return NextResponse.json({ error: "A course with this slug already exists." }, { status: 409 });

@@ -7,7 +7,8 @@
     "build": "npm run build --prefix citis-infotech",
     "start": "npm run start --prefix citis-infotech/frontend",
     "lint": "npm run lint --prefix citis-infotech",
-    "db:init": "node scripts/init-lms-db.mjs"
+    "db:init": "node scripts/init-lms-db.mjs",
+    "db:seed-courses": "node scripts/seed-lms-courses.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
