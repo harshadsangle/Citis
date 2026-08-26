@@ -174,7 +174,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
   );
 }
 
-function Copy({ children }: { children: string }) {
+function Copy({ children }: { children: ReactNode }) {
   return <p className="text-base leading-8 text-muted-foreground sm:text-lg">{children}</p>;
 }
 
