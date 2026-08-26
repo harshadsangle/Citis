@@ -19,22 +19,25 @@ export function LmsDashboardGate({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(LMS_SESSION_KEY);
-      if (stored) setUser(JSON.parse(stored) as LmsUser);
-      const response = await fetch("/api/lms/auth/me");
-      if (response.ok) {
-        const result = await response.json() as { user?: LmsUser };
-        if (result.user) {
-          setUser(result.user);
-          window.localStorage.setItem(LMS_SESSION_KEY, JSON.stringify(result.user));
+    async function restoreSession() {
+      try {
+        const stored = window.localStorage.getItem(LMS_SESSION_KEY);
+        if (stored) setUser(JSON.parse(stored) as LmsUser);
+        const response = await fetch("/api/lms/auth/me");
+        if (response.ok) {
+          const result = await response.json() as { user?: LmsUser };
+          if (result.user) {
+            setUser(result.user);
+            window.localStorage.setItem(LMS_SESSION_KEY, JSON.stringify(result.user));
+          }
         }
+      } catch {
+        window.localStorage.removeItem(LMS_SESSION_KEY);
+      } finally {
+        setReady(true);
       }
-    } catch {
-      window.localStorage.removeItem(LMS_SESSION_KEY);
-    } finally {
-      setReady(true);
     }
+    void restoreSession();
   }, []);
 
   async function signOut() {
