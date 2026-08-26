@@ -32,7 +32,6 @@ export const SITE_CONFIG = {
 /** Header: no Home / Careers / Partner / Future Academy tabs. About before Contact. */
 export const NAV_LINKS = [
   { label: "Engagements", href: "/engagements", megaMenu: "engagements" },
-  { label: "Global Certification", href: "/engagements/global-certifications", megaMenu: "globalCertification" },
   { label: "Products", href: "/products", megaMenu: "products" },
   { label: "Highlights", href: "/highlights", megaMenu: "highlights" },
   { label: "About", href: "/about", megaMenu: "about" },
@@ -79,23 +78,6 @@ export const MEGA_MENUS = {
         description: "Placements and internships.",
         icon: BriefcaseBusiness,
       },
-      {
-        title: "Global Certifications",
-        href: "/engagements/global-certifications",
-        description: "Industry-recognized certification pathways through EtrainIndia.",
-        icon: Award,
-      },
-    ],
-  },
-  globalCertification: {
-    eyebrow: "Global Certification",
-    title: "Build skills that travel",
-    featured: {
-      label: "Explore global certifications",
-      href: "/engagements/global-certifications",
-      description: "Industry-aligned pathways for technology, business and professional skills.",
-    },
-    items: [
       {
         title: "Adobe",
         href: "/engagements/global-certifications/adobe",
