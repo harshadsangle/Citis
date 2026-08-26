@@ -1,5 +1,6 @@
 import {
   Award,
+  BookOpenCheck,
   BriefcaseBusiness,
   Compass,
   GraduationCap,
@@ -14,6 +15,7 @@ import {
   Users,
   Video,
   Wrench,
+  type LucideIcon,
 } from "lucide-react";
 
 export const SITE_CONFIG = {
@@ -28,6 +30,14 @@ export const SITE_CONFIG = {
   whatsappUrl: "https://wa.me/917204992221",
   tagline: "Inspired by Excellence and Innovation",
 } as const;
+
+export type MegaMenuItem = {
+  title: string;
+  href: string;
+  description: string;
+  icon: LucideIcon;
+  children?: readonly MegaMenuItem[];
+};
 
 /** Header: no Home / Careers / Partner / Future Academy tabs. About before Contact. */
 export const NAV_LINKS = [
@@ -110,6 +120,32 @@ const globalCertificationItems = [
     href: "/engagements/global-certifications/unity",
     description: "Real-time 3D and interactive experiences.",
     icon: Sparkles,
+  },
+  {
+    title: "Courses",
+    href: "/lms/courses",
+    description: "Explore available CITIS learning pathways.",
+    icon: BookOpenCheck,
+    children: [
+      {
+        title: "AI Foundations for Educators",
+        href: "/engagements/global-certifications/courses/ai-foundations-for-educators",
+        description: "Responsible AI and digital pedagogy.",
+        icon: BookOpenCheck,
+      },
+      {
+        title: "Applied Data & Digital Skills",
+        href: "/engagements/global-certifications/courses/applied-data-and-digital-skills",
+        description: "Data fluency and digital problem-solving.",
+        icon: BookOpenCheck,
+      },
+      {
+        title: "Entrepreneurship & Innovation",
+        href: "/engagements/global-certifications/courses/entrepreneurship-and-innovation",
+        description: "Opportunity discovery and tested ideas.",
+        icon: BookOpenCheck,
+      },
+    ],
   },
 ] as const;
 

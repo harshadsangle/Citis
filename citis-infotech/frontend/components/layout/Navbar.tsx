@@ -9,7 +9,7 @@ import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { MegaMenu, type MegaMenuKey } from "@/components/layout/MegaMenu";
-import { MEGA_MENUS, NAV_LINKS } from "@/lib/constants";
+import { MEGA_MENUS, NAV_LINKS, type MegaMenuItem } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 const headerSocialLinks = [
@@ -41,11 +41,69 @@ function HeaderSocialLinks({ className }: { className?: string }) {
   );
 }
 
+function MobileMenuItems({
+  items,
+  pathname,
+  level = 0,
+}: {
+  items: readonly MegaMenuItem[];
+  pathname: string;
+  level?: number;
+}) {
+  const [openItem, setOpenItem] = useState<string | null>(null);
+
+  return (
+    <div className={cn(level > 0 ? "ml-3 grid border-l border-border pl-2" : "ml-2 grid border-l border-border pl-2")}>
+      {items.map((item) => {
+        const hasChildren = Boolean(item.children?.length);
+        const active = pathname === item.href || (hasChildren && pathname.startsWith(`${item.href}/`));
+        if (!hasChildren) {
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "rounded-md px-3 py-2 text-sm hover:bg-muted hover:text-primary",
+                active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
+              )}
+            >
+              {item.title}
+            </Link>
+          );
+        }
+
+        const submenuId = `mobile-menu-${item.href.replace(/[^a-z0-9]+/gi, "-")}`;
+        return (
+          <div key={item.href}>
+            <button
+              type="button"
+              aria-expanded={openItem === item.href}
+              aria-controls={submenuId}
+              onClick={() => setOpenItem((current) => (current === item.href ? null : item.href))}
+              className={cn(
+                "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted hover:text-primary",
+                active ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
+              )}
+            >
+              {item.title}
+              <ChevronDown className={cn("size-4 transition-transform", openItem === item.href && "rotate-180")} />
+            </button>
+            {openItem === item.href && (
+              <div id={submenuId}>
+                <MobileMenuItems items={item.children ?? []} pathname={pathname} level={level + 1} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<MegaMenuKey | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileSubmenu, setMobileSubmenu] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -56,7 +114,6 @@ export function Navbar() {
   }, []);
   useEffect(() => {
     setMobileOpen(false);
-    setMobileSubmenu(null);
   }, [pathname]);
 
   return (
@@ -147,62 +204,7 @@ export function Navbar() {
                         <p className={cn("px-3 py-2 font-heading text-base font-medium text-muted-foreground", sectionActive && "text-primary")}>
                           {item.label}
                         </p>
-                        <div className="ml-2 grid border-l border-border pl-2">
-                          {MEGA_MENUS[menu].items.map((child) => {
-                            const hasChildren = "children" in child;
-                            const childActive = pathname === child.href || (hasChildren && pathname.startsWith(`${child.href}/`));
-                            if (!hasChildren) {
-                              return (
-                                <Link
-                                  key={child.href}
-                                  href={child.href}
-                                  className={cn(
-                                    "rounded-md px-3 py-2 text-sm hover:bg-muted hover:text-primary",
-                                    childActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
-                                  )}
-                                >
-                                  {child.title}
-                                </Link>
-                              );
-                            }
-                            return (
-                              <div key={child.href}>
-                                <button
-                                  type="button"
-                                  aria-expanded={mobileSubmenu === child.title}
-                                  aria-controls="mobile-global-certifications"
-                                  onClick={() => setMobileSubmenu((current) => (current === child.title ? null : child.title))}
-                                  className={cn(
-                                    "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted hover:text-primary",
-                                    childActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
-                                  )}
-                                >
-                                  {child.title}
-                                  <ChevronDown className={cn("size-4 transition-transform", mobileSubmenu === child.title && "rotate-180")} />
-                                </button>
-                                {mobileSubmenu === child.title && (
-                                  <div id="mobile-global-certifications" className="ml-3 grid border-l border-border pl-2">
-                                    {child.children.map((certification) => {
-                                      const certificationActive = pathname === certification.href;
-                                      return (
-                                        <Link
-                                          key={certification.href}
-                                          href={certification.href}
-                                          className={cn(
-                                            "rounded-md px-3 py-2 text-sm hover:bg-muted hover:text-primary",
-                                            certificationActive ? "bg-primary/10 font-semibold text-primary" : "text-muted-foreground",
-                                          )}
-                                        >
-                                          {certification.title}
-                                        </Link>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <MobileMenuItems items={MEGA_MENUS[menu].items} pathname={pathname} />
                       </>
                     ) : (
                       <Link
