@@ -38,8 +38,9 @@ function readSession(value: string | undefined): SessionPayload | null {
 
   try {
     const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as SessionPayload;
-    if (!Number.isInteger(parsed.userId) || parsed.expiresAt <= Date.now()) return null;
-    return parsed;
+    const userId = Number(parsed.userId);
+    if (!Number.isSafeInteger(userId) || parsed.expiresAt <= Date.now()) return null;
+    return { userId, expiresAt: parsed.expiresAt };
   } catch {
     return null;
   }
