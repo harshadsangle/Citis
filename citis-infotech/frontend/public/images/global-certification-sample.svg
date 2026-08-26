@@ -9,7 +9,6 @@
   <text x="600" y="410" text-anchor="middle" fill="#78909C" font-family="Arial, sans-serif" font-size="20">This certificate is presented to</text>
   <text x="600" y="480" text-anchor="middle" fill="#0F4C81" font-family="Georgia, serif" font-size="42" font-weight="700">Learner Name</text>
   <path d="M330 515H870" stroke="#8FC1D5" stroke-width="2"/>
-  <text x="600" y="566" text-anchor="middle" fill="#78909C" font-family="Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="3">FOR COMPLETING A GLOBAL CERTIFICATION PATHWAY</text>
   <g transform="translate(102 668)">
     <text fill="#78909C" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2">ISSUED BY</text>
     <text y="28" fill="#123D5C" font-family="Arial, sans-serif" font-size="19" font-weight="700">CITIS InfoTech</text>

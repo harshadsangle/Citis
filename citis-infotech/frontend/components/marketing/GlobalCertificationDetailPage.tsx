@@ -63,6 +63,17 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                 className="absolute left-[7.8%] top-[8.8%] z-10 h-auto w-[25%] object-contain"
                 priority
               />
+              <p
+                className={`pointer-events-none absolute left-[27.5%] top-[65.8%] z-10 w-[45%] -translate-y-1/2 text-center font-sans font-bold leading-none text-[#78909c] uppercase ${
+                  certification.name.length > 28
+                    ? "text-[0.4rem] tracking-[0.1em]"
+                    : certification.name.length > 16
+                      ? "text-[0.48rem] tracking-[0.13em]"
+                      : "text-[0.55rem] tracking-[0.18em]"
+                }`}
+              >
+                FOR COMPLETING {certification.name} CERTIFICATION
+              </p>
             </div>
             <div className="relative flex items-center justify-between gap-4 px-2 pb-1 pt-4">
               <div>

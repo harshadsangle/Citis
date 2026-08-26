@@ -86,6 +86,9 @@ export function CertificationCoursePage({ course }: { course: LmsCourse }) {
                   className="absolute left-[7.8%] top-[8.8%] z-10 h-auto w-[25%] object-contain"
                   priority
                 />
+                <p className="pointer-events-none absolute left-[27.5%] top-[65.8%] z-10 w-[45%] -translate-y-1/2 text-center font-sans text-[0.4rem] font-bold leading-none tracking-[0.1em] text-[#78909c] uppercase">
+                  FOR COMPLETING {course.title} CERTIFICATION
+                </p>
               </div>
               <div className="px-2 pb-2 pt-5">
                 <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">Sample Certificate</p>
