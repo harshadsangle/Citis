@@ -43,8 +43,8 @@ export function GlobalCertificationDetailPage({ certification }: { certification
           </div>
         </AnimatedSection>
 
-        <AnimatedSection delay={0.1} className="lg:justify-self-end">
-          <div className="relative overflow-hidden rounded-[1.75rem] border border-[#b9d8e6] bg-[#edf7f9] p-3 shadow-[0_24px_70px_rgba(15,76,129,0.16)]">
+        <AnimatedSection delay={0.1} className="w-full lg:justify-self-stretch">
+          <div className="relative w-full overflow-hidden rounded-[1.75rem] border border-[#b9d8e6] bg-[#edf7f9] p-3 shadow-[0_24px_70px_rgba(15,76,129,0.16)]">
             <div className="absolute -right-16 -top-16 size-48 rounded-full bg-[#f9e8a2]/65 blur-3xl" />
             <div className="relative aspect-[1.38] w-full overflow-hidden rounded-[1.25rem] border border-[#8fc1d5] bg-white">
               <Image
