@@ -13,7 +13,7 @@ export function CertificationCoursePage({ course }: { course: LmsCourse }) {
           All courses
         </Link>
 
-        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(22rem,0.8fr)] lg:items-start lg:gap-16">
+        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(26rem,1.08fr)] lg:items-start lg:gap-16">
           <div>
             <div className="flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-bold tracking-[0.14em] text-primary uppercase">
