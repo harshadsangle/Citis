@@ -22,6 +22,14 @@ export function LmsDashboardGate({ children }: { children: React.ReactNode }) {
     try {
       const stored = window.localStorage.getItem(LMS_SESSION_KEY);
       if (stored) setUser(JSON.parse(stored) as LmsUser);
+      const response = await fetch("/api/lms/auth/me");
+      if (response.ok) {
+        const result = await response.json() as { user?: LmsUser };
+        if (result.user) {
+          setUser(result.user);
+          window.localStorage.setItem(LMS_SESSION_KEY, JSON.stringify(result.user));
+        }
+      }
     } catch {
       window.localStorage.removeItem(LMS_SESSION_KEY);
     } finally {
@@ -29,7 +37,8 @@ export function LmsDashboardGate({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  function signOut() {
+  async function signOut() {
+    await fetch("/api/lms/auth/logout", { method: "POST" }).catch(() => undefined);
     window.localStorage.removeItem(LMS_SESSION_KEY);
     setUser(null);
   }
