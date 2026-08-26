@@ -1,5 +1,6 @@
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import Image from "next/image";
+import type { ReactNode } from "react";
 
 const capabilities = [
   {
@@ -165,7 +166,7 @@ const advantages = [
   },
 ];
 
-function SectionTitle({ children }: { children: string }) {
+function SectionTitle({ children }: { children: ReactNode }) {
   return (
     <h2 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
       {children}
