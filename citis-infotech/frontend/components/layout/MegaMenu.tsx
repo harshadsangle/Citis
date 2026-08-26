@@ -26,7 +26,7 @@ function CertificationMegaPanel({
   if (!activeCategory) return null;
 
   return (
-    <div className="grid max-h-[calc(100vh-6rem)] w-[min(760px,calc(100vw-2rem))] grid-cols-[minmax(190px,0.72fr)_minmax(0,1.45fr)] overflow-hidden rounded-xl border border-[#0F4C81]/15 bg-white shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
+    <div className="grid max-h-[calc(100vh-6rem)] w-[min(700px,calc(100vw-2rem))] grid-cols-[minmax(205px,0.8fr)_minmax(0,1.5fr)] overflow-hidden rounded-xl border border-[#0F4C81]/15 bg-white shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
       <div className="max-h-[calc(100vh-6rem)] overflow-y-auto border-r border-[#0F4C81]/12 bg-[#f7fbfc] p-3">
         <p className="px-3 pt-2 pb-3 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
           Certification Categories
