@@ -13,6 +13,14 @@ export function EnrollmentButton({ courseSlug }: { courseSlug: string }) {
 
   useEffect(() => {
     setEnrolled(readEnrolledCourses().includes(courseSlug));
+    const storedUser = window.localStorage.getItem(LMS_SESSION_KEY);
+    let user: LmsUser | null = null;
+    try {
+      user = storedUser ? JSON.parse(storedUser) as LmsUser : null;
+    } catch {
+      user = null;
+    }
+    if (user?.role !== "student") return;
     void fetch("/api/lms/enrollments")
       .then(async (response) => {
         if (!response.ok) return;
