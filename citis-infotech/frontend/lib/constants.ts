@@ -76,7 +76,7 @@ const globalCertificationItems = [
     icon: GraduationCap,
   },
   {
-    title: "IT Specialist",
+    title: "Information Technology Specialist",
     href: "/engagements/global-certifications/information-technology-specialist",
     description: "Job-ready technology foundations.",
     icon: BriefcaseBusiness,
@@ -100,7 +100,7 @@ const globalCertificationItems = [
     icon: Award,
   },
   {
-    title: "PMI",
+    title: "Project Management Institute",
     href: "/engagements/global-certifications/project-management-institute",
     description: "Project delivery and leadership.",
     icon: Compass,

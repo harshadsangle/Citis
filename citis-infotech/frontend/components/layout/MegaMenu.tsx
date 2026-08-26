@@ -92,11 +92,11 @@ export function MegaMenu({
               </div>
               {hasChildren && openSubmenu === item.title && (
                 <div className="absolute top-0 left-full z-[60]">
-                  <div className="max-h-[calc(100vh-6rem)] w-[min(320px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
-                    <p className="px-3 pt-2 pb-1 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
+                  <div className="max-h-[calc(100vh-6rem)] w-[min(380px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[#0F4C81]/15 bg-white p-3 shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
+                    <p className="px-3 pt-2 pb-2 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
                       Global Certifications
                     </p>
-                    <ul className="flex flex-col gap-1">
+                    <ul className="flex flex-col gap-1.5">
                       {item.children.map((child) => {
                         const ChildIcon = child.icon;
                         const childActive = pathname === child.href;
@@ -107,7 +107,7 @@ export function MegaMenu({
                               href={child.href}
                               onClick={onNavigate}
                               className={cn(
-                                "group flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors",
+                                "group flex items-center gap-3 rounded-lg px-3 py-3 transition-colors",
                                 childActive
                                   ? "bg-[#0F4C81] text-white"
                                   : "text-[#0b1524] hover:bg-[#0F4C81]/08 hover:text-[#0F4C81]",
