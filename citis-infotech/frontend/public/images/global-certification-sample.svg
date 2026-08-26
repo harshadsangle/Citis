@@ -2,9 +2,7 @@
   <rect width="1200" height="860" fill="#FAFDFE"/>
   <rect x="38" y="38" width="1124" height="784" rx="18" fill="white" stroke="#8FC1D5" stroke-width="4"/>
   <path d="M38 190H1162" stroke="#D5E8EE" stroke-width="3"/>
-  <path d="M94 112H330" stroke="#0F4C81" stroke-width="8" stroke-linecap="round"/>
-  <path d="M94 134H260" stroke="#F9E8A2" stroke-width="8" stroke-linecap="round"/>
-  <text x="94" y="92" fill="#0F4C81" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="4">CITIS INFOTECH</text>
+  <image href="/images/citis-logo-certificate.png" x="94" y="76" width="300" height="52" preserveAspectRatio="xMinYMid meet"/>
   <circle cx="1060" cy="108" r="32" fill="#FFF5CF" stroke="#D19A14" stroke-width="4"/>
   <path d="M1045 108L1055 118L1076 94" stroke="#D19A14" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="600" y="286" text-anchor="middle" fill="#D19A14" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="6">SAMPLE CREDENTIAL</text>
