@@ -8,7 +8,7 @@ import type { GlobalCertification } from "@/lib/global-certifications";
 export function GlobalCertificationDetailPage({ certification }: { certification: GlobalCertification }) {
   return (
     <>
-      <section className="container-site grid gap-12 py-12 sm:py-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(22rem,0.95fr)] lg:items-center lg:gap-20 lg:py-20">
+      <section className="container-site grid gap-12 py-12 sm:py-16 lg:grid-cols-[minmax(0,0.72fr)_minmax(32rem,1.28fr)] lg:items-center lg:gap-20 lg:py-20">
         <AnimatedSection>
           <Link
             href="/engagements/global-certifications"
@@ -46,7 +46,7 @@ export function GlobalCertificationDetailPage({ certification }: { certification
         <AnimatedSection delay={0.1} className="lg:justify-self-end">
           <div className="relative overflow-hidden rounded-[1.75rem] border border-[#b9d8e6] bg-[#edf7f9] p-3 shadow-[0_24px_70px_rgba(15,76,129,0.16)]">
             <div className="absolute -right-16 -top-16 size-48 rounded-full bg-[#f9e8a2]/65 blur-3xl" />
-            <div className="relative aspect-[1.38] w-full max-w-[34rem] overflow-hidden rounded-[1.25rem] border border-[#8fc1d5] bg-white">
+            <div className="relative aspect-[1.38] w-full overflow-hidden rounded-[1.25rem] border border-[#8fc1d5] bg-white">
               <Image
                 src="/images/global-certification-sample.svg"
                 alt={`Sample ${certification.name} certification certificate`}
