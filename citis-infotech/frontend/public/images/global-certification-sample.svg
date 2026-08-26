@@ -1,0 +1,29 @@
+<svg width="1200" height="860" viewBox="0 0 1200 860" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="860" fill="#FAFDFE"/>
+  <rect x="38" y="38" width="1124" height="784" rx="18" fill="white" stroke="#8FC1D5" stroke-width="4"/>
+  <path d="M38 190H1162" stroke="#D5E8EE" stroke-width="3"/>
+  <path d="M94 112H330" stroke="#0F4C81" stroke-width="8" stroke-linecap="round"/>
+  <path d="M94 134H260" stroke="#F9E8A2" stroke-width="8" stroke-linecap="round"/>
+  <text x="94" y="92" fill="#0F4C81" font-family="Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="4">CITIS INFOTECH</text>
+  <text x="1106" y="116" text-anchor="end" fill="#6A8797" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="3">ETRAININDIA</text>
+  <circle cx="1060" cy="108" r="32" fill="#FFF5CF" stroke="#D19A14" stroke-width="4"/>
+  <path d="M1045 108L1055 118L1076 94" stroke="#D19A14" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="600" y="286" text-anchor="middle" fill="#D19A14" font-family="Arial, sans-serif" font-size="18" font-weight="700" letter-spacing="6">SAMPLE CREDENTIAL</text>
+  <text x="600" y="356" text-anchor="middle" fill="#123D5C" font-family="Arial, sans-serif" font-size="48" font-weight="700">Certificate of Achievement</text>
+  <text x="600" y="410" text-anchor="middle" fill="#78909C" font-family="Arial, sans-serif" font-size="20">This certificate is presented to</text>
+  <text x="600" y="480" text-anchor="middle" fill="#0F4C81" font-family="Georgia, serif" font-size="42" font-weight="700">Learner Name</text>
+  <path d="M330 515H870" stroke="#8FC1D5" stroke-width="2"/>
+  <text x="600" y="566" text-anchor="middle" fill="#78909C" font-family="Arial, sans-serif" font-size="16" font-weight="700" letter-spacing="3">FOR COMPLETING A GLOBAL CERTIFICATION PATHWAY</text>
+  <g transform="translate(102 668)">
+    <text fill="#78909C" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2">ISSUED BY</text>
+    <text y="28" fill="#123D5C" font-family="Arial, sans-serif" font-size="19" font-weight="700">CITIS InfoTech</text>
+  </g>
+  <g transform="translate(420 668)">
+    <text fill="#78909C" font-family="Arial, sans-serif" font-size="14" font-weight="700" letter-spacing="2">CERTIFICATE ID</text>
+    <text y="28" fill="#123D5C" font-family="Arial, sans-serif" font-size="19" font-weight="700">CITIS-GLOBAL-0001</text>
+  </g>
+  <g transform="translate(850 650)">
+    <rect width="106" height="106" fill="#F4FAFC" stroke="#D5E8EE" stroke-width="2"/>
+    <path d="M12 12H40V40H12V12ZM66 12H94V40H66V12ZM12 66H40V94H12V66ZM52 12H60V20H52V12ZM48 32H60V44H48V32ZM72 52H88V62H72V52ZM48 72H58V84H48V72ZM64 72H74V94H64V72ZM86 78H94V94H86V78ZM52 52H62V62H52V52Z" fill="#123D5C"/>
+  </g>
+</svg>

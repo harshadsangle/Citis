@@ -24,14 +24,15 @@ export function MegaMenu({
     <div
       role="menu"
       className={cn(
-        "min-w-[280px] overflow-hidden rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
+        "max-h-[calc(100vh-6rem)] min-w-[280px] overflow-y-auto rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
+        menu === "globalCertification" && "w-[min(540px,calc(100vw-2rem))]",
         className,
       )}
     >
       <p className="px-3 pt-2 pb-1 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
         {content.eyebrow}
       </p>
-      <ul className="flex flex-col gap-1">
+      <ul className={cn("flex flex-col gap-1", menu === "globalCertification" && "sm:grid sm:grid-cols-2")}>
         {content.items.map((item) => {
           const Icon = item.icon;
           // Exact match only — parent "/about" must not stay active on "/about/vision-mission"

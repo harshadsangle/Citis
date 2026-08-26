@@ -1,6 +1,8 @@
-import { Award, BadgeCheck, BookOpenCheck, FileCheck2 } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Award, BadgeCheck, BookOpenCheck, FileCheck2 } from "lucide-react";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { SectionHeading } from "@/components/shared/SectionHeading";
+import { GLOBAL_CERTIFICATIONS } from "@/lib/global-certifications";
 
 const certificationHighlights = [
   {
@@ -138,6 +140,32 @@ export function GlobalCertificationPage() {
       </AnimatedSection>
 
       <CertificatePreview />
+
+      <AnimatedSection className="mt-16 sm:mt-20">
+        <SectionHeading
+          eyebrow="Choose your pathway"
+          title="Global certifications for different kinds of ambition"
+          description="Explore a focused pathway and see how its skills connect to further study, portfolios and career opportunities."
+        />
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {GLOBAL_CERTIFICATIONS.map((certification, index) => (
+            <AnimatedSection key={certification.slug} delay={index * 0.03}>
+              <Link
+                href={`/engagements/global-certifications/${certification.slug}`}
+                className="group flex h-full flex-col rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-[0_16px_40px_rgba(15,76,129,0.12)]"
+              >
+                <span className="text-[11px] font-bold tracking-[0.16em] text-secondary uppercase">{certification.category}</span>
+                <h2 className="mt-3 font-heading text-lg font-semibold">{certification.name}</h2>
+                <p className="mt-2 flex-1 text-sm leading-6 text-muted-foreground">{certification.tagline}</p>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                  View pathway
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                </span>
+              </Link>
+            </AnimatedSection>
+          ))}
+        </div>
+      </AnimatedSection>
 
       <div className="mt-10 grid gap-5 md:grid-cols-2">
         {certificationHighlights.map((item, index) => {
