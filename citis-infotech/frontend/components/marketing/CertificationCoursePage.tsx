@@ -78,6 +78,14 @@ export function CertificationCoursePage({ course }: { course: LmsCourse }) {
                   className="object-contain"
                   priority
                 />
+                <Image
+                  src="/images/citis-logo-certificate.png"
+                  alt=""
+                  width={707}
+                  height={121}
+                  className="absolute left-[7.8%] top-[8.8%] z-10 h-auto w-[25%] object-contain"
+                  priority
+                />
               </div>
               <div className="px-2 pb-2 pt-5">
                 <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">Sample Certificate</p>

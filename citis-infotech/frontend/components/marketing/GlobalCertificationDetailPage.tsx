@@ -55,6 +55,14 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                 className="object-contain"
                 priority
               />
+              <Image
+                src="/images/citis-logo-certificate.png"
+                alt=""
+                width={707}
+                height={121}
+                className="absolute left-[7.8%] top-[8.8%] z-10 h-auto w-[25%] object-contain"
+                priority
+              />
             </div>
             <div className="relative flex items-center justify-between gap-4 px-2 pb-1 pt-4">
               <div>
