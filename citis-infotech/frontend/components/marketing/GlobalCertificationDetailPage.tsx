@@ -200,7 +200,7 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                     {isAdobe
                       ? `Adobe Certified Professional · ${certification.name}`
                       : isApple
-                        ? "App Development with Swift Associate · App Development with Swift Certified User"
+                         ? certification.appleBadges?.map((badge) => badge.name).join(" · ")
                         : isAutodesk && certification.autodeskCredential
                           ? certification.autodeskCredential.credentialName
                           : isCisco && certification.ciscoCredential
