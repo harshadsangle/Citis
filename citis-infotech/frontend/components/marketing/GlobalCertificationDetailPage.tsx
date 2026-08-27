@@ -11,6 +11,7 @@ export function GlobalCertificationDetailPage({ certification }: { certification
   const isApple = certification.slug === "apple";
   const isAutodesk = certification.slug.startsWith("autodesk-");
   const isCisco = certification.slug === "cisco";
+  const isIc3 = Boolean(certification.ic3Credential);
   const adobeCertificateTitleSize =
     certification.name.length > 48 ? "text-[0.4rem] tracking-[0.08em]" : "text-[0.5rem] tracking-[0.1em]";
 
@@ -101,6 +102,31 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                     className="h-auto w-full object-contain"
                   />
                 </a>
+              ) : isIc3 && certification.ic3Credential ? (
+                <a
+                  href={certification.ic3Credential.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white p-5 transition-transform hover:scale-[1.02] sm:gap-5 sm:p-8"
+                  aria-label={`View ${certification.name} digital badging information on Certiport`}
+                >
+                  {/* Official IC3 badge artwork from Certiport's current digital-badging listing. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={certification.ic3Credential.imageUrl}
+                    alt={certification.ic3Credential.imageAlt}
+                    className="max-h-[68%] w-auto max-w-[68%] object-contain"
+                  />
+                  <div className="max-w-[90%] text-center">
+                    <p className="text-[0.6rem] font-bold tracking-[0.16em] text-[#c49319] uppercase">Credential outcome</p>
+                    <p className="mt-1 font-heading text-xs font-bold leading-tight text-[#123d5c] sm:text-sm">
+                      {certification.name}
+                    </p>
+                    <p className="mt-1 text-[0.65rem] leading-tight text-[#6d8794] sm:text-xs">
+                      {certification.ic3Credential.completionWording}
+                    </p>
+                  </div>
+                </a>
               ) : (
                 <>
                   <Image
@@ -166,7 +192,9 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                           ? "Official Autodesk credential"
                           : isCisco
                             ? "Official Cisco CCST credential"
-                          : "Sample credential"}
+                           : isIc3
+                             ? "Official IC3 digital badge"
+                             : "Sample credential"}
                  </p>
                  <p className="mt-1 text-sm text-muted-foreground">
                     {isAdobe
@@ -177,7 +205,9 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                           ? certification.autodeskCredential.credentialName
                           : isCisco && certification.ciscoCredential
                             ? certification.ciscoCredential.credentialName
-                        : `${certification.name} pathway preview`}
+                             : isIc3 && certification.ic3Credential
+                               ? certification.ic3Credential.badgeName
+                               : `${certification.name} pathway preview`}
                  </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-[#d19a14] shadow-sm">
@@ -210,6 +240,32 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                     </li>
                   ))}
                 </ul>
+                {certification.examDetails && (
+                  <div className="mt-7 border-t border-border pt-6">
+                    <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">Exam and objective domains</p>
+                    <ul className="mt-4 space-y-3">
+                      {certification.examDetails.map((detail) => (
+                        <li key={detail} className="flex gap-3 text-sm leading-7 text-muted-foreground">
+                          <CheckCircle2 className="mt-1 size-4 shrink-0 text-primary" />
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {certification.credentialDetails && (
+                  <div className="mt-7 border-t border-border pt-6">
+                    <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">Credential information</p>
+                    <ul className="mt-4 space-y-3">
+                      {certification.credentialDetails.map((detail) => (
+                        <li key={detail} className="flex gap-3 text-sm leading-7 text-muted-foreground">
+                          <CheckCircle2 className="mt-1 size-4 shrink-0 text-primary" />
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </article>
             </AnimatedSection>
             <AnimatedSection delay={0.08}>
