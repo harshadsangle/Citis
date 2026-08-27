@@ -17,9 +17,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     redirect("/engagements/global-certifications/ic3-digital-literacy-global-standard-6");
   }
   const certification = getGlobalCertification(slug);
+  const isAssessment = certification?.slug === "ic3-fast-track";
   return certification
     ? generatePageMetadata({
-        title: `${certification.name} Certification`,
+        title: `${certification.name}${isAssessment ? " Assessment" : " Certification"}`,
         description: certification.tagline,
         path: `/engagements/global-certifications/${certification.slug}`,
         image: "/images/global-certifications-background.jpg",

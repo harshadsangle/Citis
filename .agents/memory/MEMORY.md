@@ -1,1 +1,2 @@
 - [Certificate asset rendering](certificate-assets.md) — layer raster logos and dynamic text in React rather than nesting external images inside the certificate SVG.
+- [IC3 certification sources](ic3-certification-sources.md) — Certiport’s current IC3 badge and course pages distinguish certification outcomes from Fast Track assessment.
