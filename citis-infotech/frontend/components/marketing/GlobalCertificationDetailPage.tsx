@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import type { GlobalCertification } from "@/lib/global-certifications";
 
 export function GlobalCertificationDetailPage({ certification }: { certification: GlobalCertification }) {
-  const isAdobe = certification.slug === "adobe";
+  const isAdobe = certification.slug.startsWith("adobe-");
+  const adobeCertificateTitleSize =
+    certification.name.length > 48 ? "text-[0.4rem] tracking-[0.08em]" : "text-[0.5rem] tracking-[0.1em]";
 
   return (
     <>
@@ -88,6 +90,13 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                   </p>
                 </>
               )}
+              {isAdobe && (
+                <p
+                  className={`pointer-events-none absolute left-[17%] top-[60.2%] z-10 w-[66%] -translate-y-1/2 text-center font-sans font-bold leading-tight text-[#eb1000] uppercase ${adobeCertificateTitleSize}`}
+                >
+                  {certification.name}
+                </p>
+              )}
             </div>
             <div className="relative flex items-center justify-between gap-4 px-2 pb-1 pt-4">
               <div>
@@ -95,7 +104,7 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                    {isAdobe ? "Official Adobe sample" : "Sample credential"}
                  </p>
                  <p className="mt-1 text-sm text-muted-foreground">
-                   {isAdobe ? "Adobe Certified Professional · Photoshop exam" : `${certification.name} pathway preview`}
+                   {isAdobe ? `Adobe Certified Professional · ${certification.name}` : `${certification.name} pathway preview`}
                  </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-[#d19a14] shadow-sm">

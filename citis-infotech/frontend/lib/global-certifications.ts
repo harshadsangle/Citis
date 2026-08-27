@@ -11,35 +11,157 @@ export interface GlobalCertification {
   suitableFor: string;
 }
 
+const ADOBE_EXAM_DETAILS = [
+  "150 hours of hands-on Adobe app experience and instruction recommended before the exam.",
+  "Live-in-the-app exams available online through OnVUE or in person at a Certiport Authorized Testing Center.",
+  "Exams available in 12 languages, with objective domains and product releases published by Adobe and Certiport.",
+  "A corresponding digital badge is issued through Credly after earning the certification, with verifiable credential data.",
+];
+
 export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
-    slug: "adobe",
-    name: "Adobe Certified Professional",
+    slug: "adobe-firefly",
+    name: "Product and Experience Design with AI Using Adobe Firefly",
     provider: "Adobe · Certiport",
     category: "Professional certification",
-    tagline: "Validate job-ready skills in Adobe Creative Cloud software.",
+    tagline: "Validate ideation and design creation skills using Adobe Firefly.",
     overview:
-      "Adobe Certified Professional is the industry-recognized certification that demonstrates mastery of Adobe Creative Cloud software and the must-have knowledge for digital media careers. Each exam is integrated with an Adobe application and designed by experts for an authentic assessment of job-ready skills.",
+      "Validate your ideation and design creation skills using Adobe Firefly, the AI-powered creativity space. This Adobe Certified Professional exam assesses practical creative workflows in the application.",
     skills: [
-      "Product and Experience Design with AI Using Adobe Firefly",
-      "Content Creation and Marketing Using Adobe Express",
-      "Document Creation & Management Using Adobe Acrobat Pro",
-      "Visual Design Using Adobe Photoshop",
-      "Graphic Design & Illustration Using Adobe Illustrator",
-      "Print & Digital Media Publication Using Adobe InDesign",
-      "Visual Effects & Motion Graphics Using Adobe After Effects",
-      "Digital Video Using Adobe Premiere",
-      "Multiplatform Animation Using Adobe Animate",
-      "Web Authoring Using Adobe Dreamweaver",
+      "Ideation and design creation",
+      "Creative exploration with generative AI",
+      "Prompting and refining visual concepts",
+      "Responsible use of generative AI",
     ],
-    benefits: [
-      "150 hours of hands-on Adobe app experience and instruction recommended before the exam.",
-      "Live-in-the-app exams available online through OnVUE or in person at a Certiport Authorized Testing Center.",
-      "Exams available in 12 languages, with objective domains and product releases published by Adobe and Certiport.",
-      "A corresponding digital badge is issued through Credly after earning the certification, with verifiable credential data.",
-    ],
+    benefits: ADOBE_EXAM_DETAILS,
     careerRelevance:
-      "Professional Certifications are industry-recognized certifications demonstrating mastery of Adobe Creative Cloud software. They provide a clear, trusted signal for digital media careers across design, marketing, publishing, video, web and content production.",
+      "Adobe Firefly skills support careers in visual design, creative direction, content production, marketing and emerging AI-assisted creative workflows.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-acrobat-pro",
+    name: "Document Creation & Management Using Adobe Acrobat Pro",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate document creation and management skills using Adobe Acrobat Pro.",
+    overview:
+      "Validate your knowledge of Acrobat Pro, Adobe’s most advanced PDF solution for creating and editing documents. This Adobe Certified Professional exam assesses practical document workflows.",
+    skills: ["Document management", "Creating and editing PDFs", "Collaboration and review", "Forms, signatures and accessibility"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "Acrobat Pro capability supports document-heavy roles in administration, education, operations, legal services, publishing and client-facing business teams.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-express",
+    name: "Content Creation and Marketing Using Adobe Express",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate content creation and marketing skills using Adobe Express.",
+    overview:
+      "Validate your knowledge of digital marketing principles and demonstrate your skills using Adobe Express, the all-in-one app for fast and easy content creation.",
+    skills: ["Content creation", "Digital marketing principles", "Social media content", "Content optimization"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "Adobe Express skills support entry-level opportunities in digital marketing, social media, communications, content production and small-business brand building.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-after-effects",
+    name: "Visual Effects & Motion Graphics Using Adobe After Effects",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate visual effects and motion graphics skills using Adobe After Effects.",
+    overview:
+      "Validate your knowledge of Adobe After Effects, the industry-standard animation and creative compositing app that lets you take any idea and make it move.",
+    skills: ["Motion graphics", "Creative compositing", "Animation and visual effects", "Layer, keyframe and timeline workflows"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "After Effects skills support motion design, video production, post-production, advertising, broadcast, film and digital content careers.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-animate",
+    name: "Multiplatform Animation Using Adobe Animate",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate multiplatform animation skills using Adobe Animate.",
+    overview:
+      "Validate your knowledge of Adobe Animate, the leading tool for designing interactive vector and bitmap animations for games, apps and the web.",
+    skills: ["Vector and bitmap animation", "Interactive content for games and apps", "Symbols, scenes and timelines", "Publishing for web and digital experiences"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "Animate skills support careers in animation, interactive media, eLearning, games, advertising and web content production.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-dreamweaver",
+    name: "Web Authoring Using Adobe Dreamweaver",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate web authoring skills using Adobe Dreamweaver.",
+    overview:
+      "Validate your knowledge of Adobe Dreamweaver, the leading tool for designing, coding and publishing websites and web applications that look amazing on any size screen.",
+    skills: ["Web design", "HTML and CSS authoring", "Responsive layout", "Publishing websites and web applications"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "Dreamweaver skills support junior web design, content management, front-end production and digital communications roles.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-illustrator",
+    name: "Graphic Design & Illustration Using Adobe Illustrator",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate graphic design and illustration skills using Adobe Illustrator.",
+    overview:
+      "Validate your knowledge of Adobe Illustrator, the industry-standard vector graphics app that lets you create logos, icons, drawings, typography and illustrations for print, web, video and mobile.",
+    skills: ["Vector graphics", "Logos, icons and drawings", "Typography and illustration", "Design for print, web, video and mobile"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "Illustrator skills support graphic design, branding, illustration, marketing, packaging, publishing and visual communications careers.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-indesign",
+    name: "Print & Digital Media Publication Using Adobe InDesign",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate print and digital publication skills using Adobe InDesign.",
+    overview:
+      "Validate your knowledge of Adobe InDesign, the industry-leading page design and layout app that lets you create, preflight and publish beautiful documents for print and digital media.",
+    skills: ["Page design and layout", "Print and digital publication", "Document preflight", "Publication workflows"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "InDesign skills support editorial design, publishing, marketing, communications, production and print-to-digital content careers.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-photoshop",
+    name: "Visual Design Using Adobe Photoshop",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate visual design skills using Adobe Photoshop.",
+    overview:
+      "Validate your knowledge of Adobe Photoshop, the world’s most powerful imaging and design software. This Adobe Certified Professional exam assesses practical visual design workflows.",
+    skills: ["Image editing and design", "Compositing and retouching", "Typography and graphic elements", "Preparing visual assets for digital use"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "Photoshop skills support graphic design, image production, marketing, photography, social content, advertising and digital media careers.",
+    suitableFor: "Professionals, job seekers and students",
+  },
+  {
+    slug: "adobe-premiere",
+    name: "Digital Video Using Adobe Premiere",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate digital video skills using Adobe Premiere.",
+    overview:
+      "Validate your knowledge of Adobe Premiere, the leading video editing software for film, television and the web. This Adobe Certified Professional exam assesses practical video editing workflows.",
+    skills: ["Video editing", "Film, television and web workflows", "Timeline and sequence editing", "Audio, transitions and visual effects"],
+    benefits: ADOBE_EXAM_DETAILS,
+    careerRelevance:
+      "Premiere skills support video editing, post-production, social media, broadcast, film, television, marketing and digital content careers.",
     suitableFor: "Professionals, job seekers and students",
   },
   {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { GlobalCertificationDetailPage } from "@/components/marketing/GlobalCertificationDetailPage";
 import { getGlobalCertification, GLOBAL_CERTIFICATIONS } from "@/lib/global-certifications";
@@ -11,6 +11,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  if (slug === "adobe") redirect("/engagements/global-certifications");
   const certification = getGlobalCertification(slug);
   return certification
     ? generatePageMetadata({

@@ -3,7 +3,7 @@ import { BadgeCheck, ShieldCheck } from "lucide-react";
 import type { GlobalCertification } from "@/lib/global-certifications";
 
 export function DigitalBadge({ certification }: { certification: GlobalCertification }) {
-  const isAdobe = certification.slug === "adobe";
+  const isAdobe = certification.slug.startsWith("adobe-");
   const nameSize =
     isAdobe || certification.name.length > 28
       ? "text-[0.58rem] tracking-[0.1em]"
