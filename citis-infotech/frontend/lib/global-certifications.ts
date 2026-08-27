@@ -9,7 +9,30 @@ export interface GlobalCertification {
   benefits: string[];
   careerRelevance: string;
   suitableFor: string;
+  digitalBadging?: AdobeDigitalBadging;
 }
+
+export interface AdobeDigitalBadging {
+  title: string;
+  badgeName: string;
+  badgeDetails: string;
+  sharingDetails: string;
+  platformDetails: string;
+  credlyDetails: string;
+  credlyUrl: string;
+}
+
+const ADOBE_DIGITAL_BADGING_DETAILS = {
+  title: "Adobe Certified Professional digital certification badges",
+  badgeDetails:
+    "Digital certification badges are web-enabled versions of a credential outcome and gives you the ability to share your certified skills online in a way that is simple, trusted and can be easily verified in real time.",
+  sharingDetails:
+    "When you earn an Adobe Certified Professional certification, you will be notified of a corresponding digital badge. Use your digital badges to tell potential employers, academic institutions, colleagues and peers about your credentials.",
+  platformDetails:
+    "Your digital certification badge makes it easy for you to validate your abilities with potential employers on social media sites such as LinkedIn, Facebook and Twitter, as well as email and online portfolios.",
+  credlyDetails: "Find out more about Adobe Certified Professional digital badges on Credly.",
+  credlyUrl: "https://www.credly.com/organizations/adobe/badges",
+} satisfies Omit<AdobeDigitalBadging, "badgeName">;
 
 const ADOBE_EXAM_DETAILS = [
   "150 hours of hands-on Adobe app experience and instruction recommended before the exam.",
@@ -37,6 +60,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Adobe Firefly skills support careers in visual design, creative direction, content production, marketing and emerging AI-assisted creative workflows.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Firefly" },
   },
   {
     slug: "adobe-acrobat-pro",
@@ -51,6 +75,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Acrobat Pro capability supports document-heavy roles in administration, education, operations, legal services, publishing and client-facing business teams.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Adobe Acrobat Pro" },
   },
   {
     slug: "adobe-express",
@@ -65,6 +90,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Adobe Express skills support entry-level opportunities in digital marketing, social media, communications, content production and small-business brand building.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Adobe Express" },
   },
   {
     slug: "adobe-after-effects",
@@ -79,6 +105,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "After Effects skills support motion design, video production, post-production, advertising, broadcast, film and digital content careers.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Adobe After Effects" },
   },
   {
     slug: "adobe-animate",
@@ -93,6 +120,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Animate skills support careers in animation, interactive media, eLearning, games, advertising and web content production.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Animate" },
   },
   {
     slug: "adobe-dreamweaver",
@@ -107,6 +135,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Dreamweaver skills support junior web design, content management, front-end production and digital communications roles.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Dreamweaver" },
   },
   {
     slug: "adobe-illustrator",
@@ -121,6 +150,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Illustrator skills support graphic design, branding, illustration, marketing, packaging, publishing and visual communications careers.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Illustrator" },
   },
   {
     slug: "adobe-indesign",
@@ -135,6 +165,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "InDesign skills support editorial design, publishing, marketing, communications, production and print-to-digital content careers.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "InDesign" },
   },
   {
     slug: "adobe-photoshop",
@@ -149,6 +180,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Photoshop skills support graphic design, image production, marketing, photography, social content, advertising and digital media careers.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Photoshop" },
   },
   {
     slug: "adobe-premiere",
@@ -163,6 +195,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "Premiere skills support video editing, post-production, social media, broadcast, film, television, marketing and digital content careers.",
     suitableFor: "Professionals, job seekers and students",
+    digitalBadging: { ...ADOBE_DIGITAL_BADGING_DETAILS, badgeName: "Premiere Pro" },
   },
   {
     slug: "apple",

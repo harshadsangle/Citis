@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, BadgeCheck, BriefcaseBusiness, CheckCircle2, GraduationCap } from "lucide-react";
 import { AnimatedSection } from "@/components/shared/AnimatedSection";
 import { Button } from "@/components/ui/button";
+import { DigitalBadge } from "@/components/marketing/DigitalBadge";
 import type { GlobalCertification } from "@/lib/global-certifications";
 
 export function GlobalCertificationDetailPage({ certification }: { certification: GlobalCertification }) {
@@ -163,6 +164,118 @@ export function GlobalCertificationDetailPage({ certification }: { certification
           </div>
         </div>
       </section>
+
+      {certification.digitalBadging && (
+        <section className="border-y border-border bg-[#f0f7f9] py-16 sm:py-20">
+          <div className="container-site">
+            <AnimatedSection className="grid items-center gap-10 lg:grid-cols-[minmax(0,0.65fr)_minmax(0,1.35fr)] lg:gap-16">
+              <div className="mx-auto w-full max-w-[15rem]">
+                <DigitalBadge certification={certification} />
+              </div>
+              <div>
+                <p className="text-xs font-bold tracking-[0.18em] text-secondary uppercase">Digital Badging</p>
+                <h2 className="mt-3 font-heading text-3xl font-semibold sm:text-4xl">
+                  {certification.digitalBadging.title}
+                </h2>
+                <div className="mt-6 rounded-2xl border border-[#b9d8e6] bg-card p-6 shadow-sm sm:p-8">
+                  <p className="text-xs font-bold tracking-[0.16em] text-primary uppercase">Badge name</p>
+                  <h3 className="mt-2 font-heading text-2xl font-semibold text-[#123d5c]">
+                    {certification.digitalBadging.badgeName}
+                  </h3>
+                  <p className="mt-5 text-sm leading-7 text-muted-foreground">
+                    {certification.digitalBadging.badgeDetails}
+                  </p>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                    {certification.digitalBadging.sharingDetails}
+                  </p>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                    {certification.digitalBadging.platformDetails}{" "}
+                    <span>
+                      {certification.digitalBadging.credlyDetails.split("Credly")[0]}
+                      <a
+                        href={certification.digitalBadging.credlyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
+                      >
+                        Credly
+                      </a>
+                      .
+                    </span>
+                  </p>
+                  <div className="mt-6 border-t border-border pt-5">
+                    <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">Flash your badge</p>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                      Credly is our digital badging platform. It helps you move forward professionally by quickly
+                      establishing credibility for opportunities in education, the job market, and beyond. Each badge
+                      contains verifiable data that tells the world what you did, who says you did it, and why it
+                      matters.
+                    </p>
+                  </div>
+                  <div className="mt-6 border-t border-border pt-5">
+                    <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">More information</p>
+                    <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                      Visit{" "}
+                      <a
+                        href={certification.digitalBadging.credlyUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
+                      >
+                        Credly
+                      </a>{" "}
+                      to find out more information.
+                    </p>
+                    <ul className="mt-3 space-y-2 text-sm leading-7 text-muted-foreground">
+                      <li>
+                        <a
+                          href="https://support.credly.com/hc/en-us/sections/360003205072--Accepting-a-Badge"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
+                        >
+                          How do I accept a Badge?
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="https://support.credly.com/hc/en-us/articles/360038029111-How-do-I-get-started-"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
+                        >
+                          How do I embed a badge into my email signature?
+                        </a>
+                      </li>
+                      <li>
+                        <a
+                          href="https://support.credly.com/hc/en-us/articles/360021222231-How-do-I-manage-and-share-my-digital-badge-"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
+                        >
+                          Other questions
+                        </a>
+                      </li>
+                    </ul>
+                    <p className="mt-5 text-sm leading-7 text-muted-foreground">
+                      <span className="font-semibold text-[#123d5c]">Missing your badge?</span>{" "}
+                      <a
+                        href="/contact"
+                        className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
+                      >
+                        Contact the customer service team
+                      </a>
+                      <br />
+                      800-497-8923
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </AnimatedSection>
+          </div>
+        </section>
+      )}
 
       <section className="container-site py-16 sm:py-24">
         <AnimatedSection className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[0.7fr_1.3fr] lg:items-start lg:gap-20">
