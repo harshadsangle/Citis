@@ -10,6 +10,7 @@ export function GlobalCertificationDetailPage({ certification }: { certification
   const isAdobe = certification.slug.startsWith("adobe-");
   const isApple = certification.slug === "apple";
   const isAutodesk = certification.slug.startsWith("autodesk-");
+  const isCisco = certification.slug === "cisco";
   const adobeCertificateTitleSize =
     certification.name.length > 48 ? "text-[0.4rem] tracking-[0.08em]" : "text-[0.5rem] tracking-[0.1em]";
 
@@ -84,6 +85,22 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                     className="h-full w-full object-contain"
                   />
                 </a>
+              ) : isCisco && certification.ciscoCredential ? (
+                <a
+                  href={certification.ciscoCredential.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="absolute inset-0 flex items-center justify-center bg-white p-8 transition-transform hover:scale-[1.02] sm:p-12"
+                  aria-label={`View ${certification.ciscoCredential.credentialName} digital badging information on Certiport`}
+                >
+                  {/* Official digital-badging representation from Certiport's current Cisco CCST listing. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={certification.ciscoCredential.imageUrl}
+                    alt={certification.ciscoCredential.imageAlt}
+                    className="h-auto w-full object-contain"
+                  />
+                </a>
               ) : (
                 <>
                   <Image
@@ -147,6 +164,8 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                         ? "Official Apple digital badge"
                         : isAutodesk
                           ? "Official Autodesk credential"
+                          : isCisco
+                            ? "Official Cisco CCST credential"
                           : "Sample credential"}
                  </p>
                  <p className="mt-1 text-sm text-muted-foreground">
@@ -156,6 +175,8 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                         ? "App Development with Swift Associate · App Development with Swift Certified User"
                         : isAutodesk && certification.autodeskCredential
                           ? certification.autodeskCredential.credentialName
+                          : isCisco && certification.ciscoCredential
+                            ? certification.ciscoCredential.credentialName
                         : `${certification.name} pathway preview`}
                  </p>
               </div>

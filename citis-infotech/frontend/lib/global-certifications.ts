@@ -12,6 +12,7 @@ export interface GlobalCertification {
   digitalBadging?: AdobeDigitalBadging;
   appleBadges?: AppleDigitalBadge[];
   autodeskCredential?: AutodeskCredential;
+  ciscoCredential?: CiscoCredential;
 }
 
 export interface AdobeDigitalBadging {
@@ -35,6 +36,14 @@ export interface AutodeskCredential {
   badgeName: string;
   imageUrl: string;
   credlyUrl: string;
+}
+
+export interface CiscoCredential {
+  credentialName: "Cisco Certified Support Technician";
+  badgeDetails: string;
+  imageUrl: string;
+  imageAlt: string;
+  sourceUrl: string;
 }
 
 const ADOBE_DIGITAL_BADGING_DETAILS = {
@@ -410,17 +419,33 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   },
   {
     slug: "cisco",
-    name: "Cisco",
-    provider: "Cisco networking and cyber skills pathway",
-    category: "Networking and cybersecurity",
-    tagline: "Build the foundations for connected, secure digital systems.",
+    name: "Cisco Certified Support Technician",
+    provider: "Cisco · Certiport",
+    category: "Professional certification",
+    tagline: "Kick-start your career with a Cisco certification!",
     overview:
-      "The Cisco pathway introduces the way devices, networks and people connect. Learners develop a practical understanding of networking concepts and responsible security habits through scenarios and guided activities.",
-    skills: ["Networking concepts", "IP addressing and connectivity", "Network troubleshooting", "Cybersecurity awareness"],
-    benefits: ["Build a strong foundation for IT study", "Practise diagnosing common connectivity issues", "Understand how security protects systems and users", "Learn vocabulary used in technology teams"],
+      "Cisco, the worldwide leader in technology that powers the Internet, has partnered with Certiport to create the Cisco Certified Support Technician (CCST) certification program. This program includes three certification exams designed to validate work-ready skills and knowledge to help learners find a job in the field of end user support, networking, and cybersecurity. Earning a Cisco Certified Support Technician certification showcases the learner's skillset to employers, telling them they are ready to roll up their sleeves on day one.",
+    skills: [
+      "Cisco Certified Support Technician IT Support",
+      "Cisco Certified Support Technician Networking",
+      "Cisco Certified Support Technician Cybersecurity",
+    ],
+    benefits: [
+      "The 100-140 CCST IT Support, 100-150 CCST Networking, and 100-160 CCST Cybersecurity exams were created by a team of subject-matter experts from diverse careers and industries (including Cisco employees, networking and cybersecurity professionals, hiring managers, professors, teachers, and the experts at Certiport) to ensure these certifications effectively bridge the gap between education and the skills and knowledge needed to succeed in the workplace.",
+      "Learners that earn the Cisco Certified Support Technician certifications are expected to have the required knowledge and work-ready skills necessary to launch a career in IT support, networking, and cybersecurity, through at least 150 hours of instruction.",
+    ],
     careerRelevance:
-      "Cisco-aligned foundations are relevant to network support, IT helpdesk, systems administration and cybersecurity entry pathways. They give learners a practical base for advanced networking credentials.",
-    suitableFor: "Learners beginning a career in networking, IT support or cybersecurity",
+      "It helps prepare learners for high-demand roles in tech support, networking, and cybersecurity, including analysts, auditors, support specialists, and technicians.",
+    suitableFor: "Learners preparing for careers in IT support, networking, and cybersecurity",
+    ciscoCredential: {
+      credentialName: "Cisco Certified Support Technician",
+      badgeDetails:
+        "Digital badges are web-enabled versions of a credential, certification or learning outcome. Representing your credential as a badge gives you the ability to share your skills online in a way that is simple, trusted and can be easily verified in real time.",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Cisco/Certified-Support-Technician/Badging/Cisco-Header-Digital-Badging-1050x200.jpeg",
+      imageAlt: "Establish your career in IT with a work-ready, Cisco Certified Support Technical certification from Certiport.",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Cisco/Certified-Support-Technician/Badging",
+    },
   },
   {
     slug: "entrepreneurship",
