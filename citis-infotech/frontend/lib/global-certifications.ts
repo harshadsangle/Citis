@@ -28,7 +28,7 @@ export interface DigitalBadging {
   credlyUrl: string;
 }
 
-export interface AdobeDigitalBadging extends DigitalBadging {}
+export type AdobeDigitalBadging = DigitalBadging;
 
 export interface AppleDigitalBadge {
   name: "App Development with Swift Associate" | "App Development with Swift Certified User";
