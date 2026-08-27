@@ -13,6 +13,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   if (slug === "adobe") redirect("/engagements/global-certifications");
   if (slug === "autodesk") redirect("/engagements/global-certifications");
+  if (slug === "ic3-digital-literacy") {
+    redirect("/engagements/global-certifications/ic3-digital-literacy-global-standard-6");
+  }
   const certification = getGlobalCertification(slug);
   return certification
     ? generatePageMetadata({
@@ -29,6 +32,9 @@ export default async function GlobalCertificationDetailRoute({ params }: { param
   const { slug } = await params;
   if (slug === "adobe") redirect("/engagements/global-certifications");
   if (slug === "autodesk") redirect("/engagements/global-certifications");
+  if (slug === "ic3-digital-literacy") {
+    redirect("/engagements/global-certifications/ic3-digital-literacy-global-standard-6");
+  }
   const certification = getGlobalCertification(slug);
   if (!certification) notFound();
 

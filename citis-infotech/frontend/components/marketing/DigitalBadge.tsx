@@ -4,6 +4,7 @@ import type { GlobalCertification } from "@/lib/global-certifications";
 
 export function DigitalBadge({ certification }: { certification: GlobalCertification }) {
   const isAdobe = certification.slug.startsWith("adobe-");
+  const isIc3 = Boolean(certification.ic3Credential);
   const nameSize =
     isAdobe || certification.name.length > 28
       ? "text-[0.58rem] tracking-[0.1em]"
@@ -39,27 +40,39 @@ export function DigitalBadge({ certification }: { certification: GlobalCertifica
           </span>
         </div>
 
-        <div className="relative grid size-[5.25rem] place-items-center rounded-full border-[3px] border-[#d8b42b] bg-white shadow-[0_8px_20px_rgba(15,76,129,0.12)]">
-          <div className="absolute inset-1 rounded-full border border-[#f0d77c]" />
-          <BadgeCheck className="relative size-10 text-[#0f4c81]" strokeWidth={1.5} />
-        </div>
+        {isIc3 && certification.ic3Credential ? (
+          <div className="relative grid size-[5.75rem] place-items-center overflow-hidden rounded-full border-[3px] border-[#d8b42b] bg-white shadow-[0_8px_20px_rgba(15,76,129,0.12)]">
+            {/* Official IC3 badge artwork from Certiport's current badging page. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={certification.ic3Credential.imageUrl}
+              alt=""
+              className="size-full object-contain p-1"
+            />
+          </div>
+        ) : (
+          <div className="relative grid size-[5.25rem] place-items-center rounded-full border-[3px] border-[#d8b42b] bg-white shadow-[0_8px_20px_rgba(15,76,129,0.12)]">
+            <div className="absolute inset-1 rounded-full border border-[#f0d77c]" />
+            <BadgeCheck className="relative size-10 text-[#0f4c81]" strokeWidth={1.5} />
+          </div>
+        )}
 
         <div className="w-full">
            <p className={`text-[0.6rem] font-bold tracking-[0.26em] uppercase ${isAdobe ? "text-[#eb1000]" : "text-[#c49319]"}`}>
-             {isAdobe ? "Adobe Credential" : "Digital Badge"}
+             {isAdobe ? "Adobe Credential" : isIc3 ? "IC3 Credential" : "Digital Badge"}
            </p>
           <p className={`mt-2 font-heading font-bold leading-tight text-[#123d5c] uppercase ${nameSize}`}>
             {certification.name}
           </p>
           <div className="mx-auto mt-3 h-px w-2/3 bg-gradient-to-r from-transparent via-[#8fc1d5] to-transparent" />
           <p className="mt-2 text-[0.58rem] font-semibold tracking-[0.14em] text-[#6d8794] uppercase">
-             {isAdobe ? "Adobe · Certiport" : "Global Certification"}
+              {isAdobe ? "Adobe · Certiport" : isIc3 ? "IC3 · Certiport" : "Global Certification"}
           </p>
         </div>
 
         <div className="flex items-center gap-1.5 text-[0.58rem] font-semibold text-[#0f4c81]">
            <BadgeCheck className={`size-3.5 ${isAdobe ? "text-[#eb1000]" : "text-[#c9930f]"}`} />
-           {isAdobe ? "Badge by Credly" : "Verified credential"}
+            {isAdobe ? "Badge by Credly" : isIc3 ? "Badge by Credly" : "Verified credential"}
         </div>
       </div>
     </div>

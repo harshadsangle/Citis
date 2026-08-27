@@ -79,9 +79,27 @@ const globalCertificationItems = [
     icon: Lightbulb,
   },
   {
-    title: "IC3 Digital Literacy",
-    href: "/engagements/global-certifications/ic3-digital-literacy",
-    description: "Essential digital fluency.",
+    title: "IC3 Digital Literacy Global Standard 6",
+    href: "/engagements/global-certifications/ic3-digital-literacy-global-standard-6",
+    description: "Current stackable digital-literacy certification.",
+    icon: GraduationCap,
+  },
+  {
+    title: "IC3 Digital Literacy Global Standard 5",
+    href: "/engagements/global-certifications/ic3-digital-literacy-global-standard-5",
+    description: "Computing, applications and online living.",
+    icon: GraduationCap,
+  },
+  {
+    title: "IC3 Spark",
+    href: "/engagements/global-certifications/ic3-spark",
+    description: "Foundational digital literacy for younger learners.",
+    icon: GraduationCap,
+  },
+  {
+    title: "IC3 Fast Track",
+    href: "/engagements/global-certifications/ic3-fast-track",
+    description: "Digital readiness assessment for learners and candidates.",
     icon: GraduationCap,
   },
   {
