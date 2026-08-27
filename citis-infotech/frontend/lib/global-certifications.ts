@@ -14,17 +14,33 @@ export interface GlobalCertification {
 export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe",
-    name: "Adobe",
-    provider: "Adobe Certified Professional pathway",
-    category: "Creative technology",
-    tagline: "Turn creative thinking into portfolio-ready digital work.",
+    name: "Adobe Certified Professional",
+    provider: "Adobe · Certiport",
+    category: "Professional certification",
+    tagline: "Validate job-ready skills in Adobe Creative Cloud software.",
     overview:
-      "The Adobe pathway helps learners build confidence with the tools used to communicate ideas through graphics, layouts, images and digital media. Learning is grounded in guided practice, real briefs and a portfolio mindset.",
-    skills: ["Visual communication", "Image editing and composition", "Layout and typography", "Digital content production"],
-    benefits: ["Build a stronger creative portfolio", "Practise on industry-standard workflows", "Learn to present and explain design decisions", "Create evidence of practical digital media capability"],
+      "Adobe Certified Professional is the industry-recognized certification that demonstrates mastery of Adobe Creative Cloud software and the must-have knowledge for digital media careers. Each exam is integrated with an Adobe application and designed by experts for an authentic assessment of job-ready skills.",
+    skills: [
+      "Product and Experience Design with AI Using Adobe Firefly",
+      "Content Creation and Marketing Using Adobe Express",
+      "Document Creation & Management Using Adobe Acrobat Pro",
+      "Visual Design Using Adobe Photoshop",
+      "Graphic Design & Illustration Using Adobe Illustrator",
+      "Print & Digital Media Publication Using Adobe InDesign",
+      "Visual Effects & Motion Graphics Using Adobe After Effects",
+      "Digital Video Using Adobe Premiere",
+      "Multiplatform Animation Using Adobe Animate",
+      "Web Authoring Using Adobe Dreamweaver",
+    ],
+    benefits: [
+      "150 hours of hands-on Adobe app experience and instruction recommended before the exam.",
+      "Live-in-the-app exams available online through OnVUE or in person at a Certiport Authorized Testing Center.",
+      "Exams available in 12 languages, with objective domains and product releases published by Adobe and Certiport.",
+      "A corresponding digital badge is issued through Credly after earning the certification, with verifiable credential data.",
+    ],
     careerRelevance:
-      "Adobe skills are useful across graphic design, marketing, content production, publishing, social media and education. A recognised pathway gives learners a clearer starting point for internships and junior creative roles.",
-    suitableFor: "Students, aspiring designers, content creators and communications teams",
+      "Professional Certifications are industry-recognized certifications demonstrating mastery of Adobe Creative Cloud software. They provide a clear, trusted signal for digital media careers across design, marketing, publishing, video, web and content production.",
+    suitableFor: "Professionals, job seekers and students",
   },
   {
     slug: "apple",

@@ -49,9 +49,9 @@ export const NAV_LINKS = [
 
 const globalCertificationItems = [
   {
-    title: "Adobe",
+    title: "Adobe Certified Professional",
     href: "/engagements/global-certifications/adobe",
-    description: "Creative and digital media skills.",
+    description: "Adobe Creative Cloud certification.",
     icon: Sparkles,
   },
   {
