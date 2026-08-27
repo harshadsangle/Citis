@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import type { GlobalCertification } from "@/lib/global-certifications";
 
 export function GlobalCertificationDetailPage({ certification }: { certification: GlobalCertification }) {
+  const isAdobe = certification.slug === "adobe";
+
   return (
     <>
       <section className="container-site grid gap-12 py-12 sm:py-16 lg:grid-cols-[minmax(0,0.72fr)_minmax(32rem,1.28fr)] lg:items-center lg:gap-20 lg:py-20">
@@ -25,7 +27,7 @@ export function GlobalCertificationDetailPage({ certification }: { certification
             <span className="text-sm font-semibold text-muted-foreground">{certification.provider}</span>
           </div>
           <h2 className="mt-5 max-w-2xl font-heading text-3xl leading-tight font-semibold tracking-tight text-balance sm:text-4xl">
-            Build a credential around skills that matter.
+             {isAdobe ? "Adobe certification for digital media careers." : "Build a credential around skills that matter."}
           </h2>
           <p className="mt-6 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
             {certification.overview}
@@ -45,37 +47,56 @@ export function GlobalCertificationDetailPage({ certification }: { certification
             <div className="absolute -right-16 -top-16 size-48 rounded-full bg-[#f9e8a2]/65 blur-3xl" />
             <div className="relative aspect-[1.38] w-full overflow-hidden rounded-[1.25rem] border border-[#8fc1d5] bg-white">
               <Image
-                src="/images/global-certification-sample.svg"
+                src={isAdobe ? "/images/adobe-certification-sample.svg" : "/images/global-certification-sample.svg"}
                 alt={`Sample ${certification.name} certification certificate`}
                 fill
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 className="object-contain"
                 priority
               />
-              <Image
-                src="/images/citis-logo-certificate.png"
-                alt=""
-                width={707}
-                height={121}
-                className="absolute left-[7.8%] top-[8.8%] z-10 h-auto w-[25%] object-contain"
-                priority
-              />
-              <p
-                className={`pointer-events-none absolute left-[27.5%] top-[65.8%] z-10 w-[45%] -translate-y-1/2 text-center font-sans font-bold leading-none text-[#78909c] uppercase ${
-                  certification.name.length > 28
-                    ? "text-[0.4rem] tracking-[0.1em]"
-                    : certification.name.length > 16
-                      ? "text-[0.48rem] tracking-[0.13em]"
-                      : "text-[0.55rem] tracking-[0.18em]"
-                }`}
-              >
-                FOR COMPLETING {certification.name} CERTIFICATION
-              </p>
+              {isAdobe ? (
+                <div className="absolute left-[7.5%] top-[5.2%] z-10 rounded-sm bg-white px-2 py-1 shadow-sm">
+                  <Image
+                    src="/images/adobe.png"
+                    alt="Adobe"
+                    width={288}
+                    height={75}
+                    className="h-auto w-[8.5rem] object-contain"
+                    priority
+                  />
+                </div>
+              ) : (
+                <>
+                  <Image
+                    src="/images/citis-logo-certificate.png"
+                    alt=""
+                    width={707}
+                    height={121}
+                    className="absolute left-[7.8%] top-[8.8%] z-10 h-auto w-[25%] object-contain"
+                    priority
+                  />
+                  <p
+                    className={`pointer-events-none absolute left-[27.5%] top-[65.8%] z-10 w-[45%] -translate-y-1/2 text-center font-sans font-bold leading-none text-[#78909c] uppercase ${
+                      certification.name.length > 28
+                        ? "text-[0.4rem] tracking-[0.1em]"
+                        : certification.name.length > 16
+                          ? "text-[0.48rem] tracking-[0.13em]"
+                          : "text-[0.55rem] tracking-[0.18em]"
+                    }`}
+                  >
+                    FOR COMPLETING {certification.name} CERTIFICATION
+                  </p>
+                </>
+              )}
             </div>
             <div className="relative flex items-center justify-between gap-4 px-2 pb-1 pt-4">
               <div>
-                <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">Sample credential</p>
-                <p className="mt-1 text-sm text-muted-foreground">{certification.name} pathway preview</p>
+                 <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
+                   {isAdobe ? "Official Adobe sample" : "Sample credential"}
+                 </p>
+                 <p className="mt-1 text-sm text-muted-foreground">
+                   {isAdobe ? "Adobe Certified Professional · Photoshop exam" : `${certification.name} pathway preview`}
+                 </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-[#d19a14] shadow-sm">
                 <BadgeCheck className="size-5" />
