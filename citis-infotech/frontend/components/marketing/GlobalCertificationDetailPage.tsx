@@ -58,11 +58,11 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                   {certification.appleBadges?.map((badge) => (
                     <a
                       key={badge.name}
-                      href={badge.credlyUrl}
+                      href={badge.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
                       className="flex h-full items-center justify-center rounded-xl border border-[#d9ebf1] bg-[#fafdfe] p-2 transition-transform hover:-translate-y-1 sm:p-4"
-                      aria-label={`View ${badge.name} on Credly`}
+                      aria-label={`View the official ${badge.name} badge on Certiport`}
                     >
                       {/* Official badge artwork from Certiport's current Apple certification listing. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}

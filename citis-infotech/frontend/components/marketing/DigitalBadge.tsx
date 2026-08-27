@@ -4,6 +4,7 @@ import type { GlobalCertification } from "@/lib/global-certifications";
 
 export function DigitalBadge({ certification }: { certification: GlobalCertification }) {
   const isAdobe = certification.slug.startsWith("adobe-");
+  const isApple = certification.slug === "apple";
   const isIc3 = Boolean(certification.ic3Credential);
   const nameSize =
     isAdobe || certification.name.length > 28
@@ -18,7 +19,7 @@ export function DigitalBadge({ certification }: { certification: GlobalCertifica
       <div className="absolute -bottom-16 -left-12 size-40 rounded-full bg-[#4d9dbc]/30 blur-3xl" />
       <div className="relative flex size-full flex-col items-center justify-between rounded-[1.55rem] border border-white/25 bg-[linear-gradient(160deg,#fafdfe_0%,#e8f4f8_100%)] px-5 py-5 text-center">
         <div className="flex w-full items-center justify-between">
-          {isAdobe ? (
+           {isAdobe ? (
             <Image
               src="/images/adobe.png"
               alt="Adobe"
@@ -26,7 +27,14 @@ export function DigitalBadge({ certification }: { certification: GlobalCertifica
               height={75}
               className="h-auto w-[52%] object-contain"
             />
-          ) : (
+           ) : isApple && certification.appleBadges ? (
+             <span className="flex w-full items-center justify-center gap-1.5" aria-label="Official Apple digital badges">
+               {certification.appleBadges.map((badge) => (
+                 // eslint-disable-next-line @next/next/no-img-element
+                 <img key={badge.name} src={badge.imageUrl} alt="" className="size-[4.75rem] object-contain" />
+               ))}
+             </span>
+           ) : (
             <Image
               src="/images/citis-logo-certificate.png"
               alt="CITIS InfoTech"
@@ -59,20 +67,20 @@ export function DigitalBadge({ certification }: { certification: GlobalCertifica
 
         <div className="w-full">
            <p className={`text-[0.6rem] font-bold tracking-[0.26em] uppercase ${isAdobe ? "text-[#eb1000]" : "text-[#c49319]"}`}>
-             {isAdobe ? "Adobe Credential" : isIc3 ? "IC3 Credential" : "Digital Badge"}
+             {isAdobe ? "Adobe Credential" : isApple ? "Apple Badges" : isIc3 ? "IC3 Credential" : "Digital Badge"}
            </p>
           <p className={`mt-2 font-heading font-bold leading-tight text-[#123d5c] uppercase ${nameSize}`}>
             {certification.name}
           </p>
           <div className="mx-auto mt-3 h-px w-2/3 bg-gradient-to-r from-transparent via-[#8fc1d5] to-transparent" />
           <p className="mt-2 text-[0.58rem] font-semibold tracking-[0.14em] text-[#6d8794] uppercase">
-              {isAdobe ? "Adobe · Certiport" : isIc3 ? "IC3 · Certiport" : "Global Certification"}
+              {isAdobe ? "Adobe · Certiport" : isApple ? "Apple · Certiport" : isIc3 ? "IC3 · Certiport" : "Global Certification"}
           </p>
         </div>
 
         <div className="flex items-center gap-1.5 text-[0.58rem] font-semibold text-[#0f4c81]">
            <BadgeCheck className={`size-3.5 ${isAdobe ? "text-[#eb1000]" : "text-[#c9930f]"}`} />
-            {isAdobe ? "Badge by Credly" : isIc3 ? "Badge by Credly" : "Verified credential"}
+            {isAdobe || isApple || isIc3 ? "Official badge artwork" : "Verified credential"}
         </div>
       </div>
     </div>

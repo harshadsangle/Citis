@@ -31,8 +31,9 @@ export interface DigitalBadging {
 export type AdobeDigitalBadging = DigitalBadging;
 
 export interface AppleDigitalBadge {
-  name: "App Development with Swift Associate" | "App Development with Swift Certified User";
+  name: "App Development with Swift — Certified User" | "App Development with Swift — Associate";
   imageUrl: string;
+  sourceUrl: string;
   credlyUrl: string;
 }
 
@@ -267,15 +268,17 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     suitableFor: "Learners exploring coding, mobile apps and software product development",
     appleBadges: [
       {
-        name: "App Development with Swift Certified User",
+        name: "App Development with Swift — Certified User",
         imageUrl:
-          "https://certiport.pearsonvue.com/getattachment/b26ea31f-bb61-4ab8-82f7-0c44f9fc3b55/Swift_CU_600x600.png?lang=en-US&width=340&height=340&ext=.png",
+          "https://certiport.pearsonvue.com/getattachment/b26ea31f-bb61-4ab8-82f7-0c44f9fc3b55/Swift_CU_600x600.png",
+        sourceUrl: "https://certiport.pearsonvue.com/Certifications/Apple/App-Dev-With-Swift/Overview.aspx",
         credlyUrl: "https://www.credly.com/org/apple/badge/app-development-with-swift-certified-user",
       },
       {
-        name: "App Development with Swift Associate",
+        name: "App Development with Swift — Associate",
         imageUrl:
-          "https://certiport.pearsonvue.com/getattachment/8ef1956e-349b-4853-a649-1b7f31af1670/Swift_Associate_600x600.png?lang=en-US&width=340&height=340&ext=.png",
+          "https://certiport.pearsonvue.com/getattachment/8ef1956e-349b-4853-a649-1b7f31af1670/Swift_Associate_600x600.png",
+        sourceUrl: "https://certiport.pearsonvue.com/Certifications/Apple/App-Dev-With-Swift/Overview.aspx",
         credlyUrl: "https://www.credly.com/org/apple/badge/app-development-with-swift-associate",
       },
     ],
