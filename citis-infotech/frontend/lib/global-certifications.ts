@@ -9,13 +9,16 @@ export interface GlobalCertification {
   benefits: string[];
   careerRelevance: string;
   suitableFor: string;
-  digitalBadging?: AdobeDigitalBadging;
+  digitalBadging?: DigitalBadging;
   appleBadges?: AppleDigitalBadge[];
   autodeskCredential?: AutodeskCredential;
   ciscoCredential?: CiscoCredential;
+  ic3Credential?: IC3Credential;
+  examDetails?: string[];
+  credentialDetails?: string[];
 }
 
-export interface AdobeDigitalBadging {
+export interface DigitalBadging {
   title: string;
   badgeName: string;
   badgeDetails: string;
@@ -24,6 +27,8 @@ export interface AdobeDigitalBadging {
   credlyDetails: string;
   credlyUrl: string;
 }
+
+export interface AdobeDigitalBadging extends DigitalBadging {}
 
 export interface AppleDigitalBadge {
   name: "App Development with Swift Associate" | "App Development with Swift Certified User";
@@ -46,6 +51,15 @@ export interface CiscoCredential {
   sourceUrl: string;
 }
 
+export interface IC3Credential {
+  badgeName: string;
+  imageUrl: string;
+  imageAlt: string;
+  sourceUrl: string;
+  credlyUrl: string;
+  completionWording: string;
+}
+
 const ADOBE_DIGITAL_BADGING_DETAILS = {
   title: "Adobe Certified Professional digital certification badges",
   badgeDetails:
@@ -56,7 +70,24 @@ const ADOBE_DIGITAL_BADGING_DETAILS = {
     "Your digital certification badge makes it easy for you to validate your abilities with potential employers on social media sites such as LinkedIn, Facebook and Twitter, as well as email and online portfolios.",
   credlyDetails: "Find out more about Adobe Certified Professional digital badges on Credly.",
   credlyUrl: "https://www.credly.com/organizations/adobe/badges",
-} satisfies Omit<AdobeDigitalBadging, "badgeName">;
+} satisfies Omit<DigitalBadging, "badgeName">;
+
+const IC3_DIGITAL_BADGING_DETAILS = {
+  title: "IC3 Digital Literacy digital badges",
+  badgeDetails:
+    "Digital badges are web-enabled versions of a credential, certification or learning outcome. Representing the credential as a digital badge gives the owner the ability to share their skills online in a way that is simple, trusted and can be easily verified in real time.",
+  sharingDetails:
+    "IC3 Digital Literacy certifications validate digital skills for school, work and further study. The corresponding badge helps learners show those achievements to potential employers, academic institutions, colleagues and peers.",
+  platformDetails:
+    "Credly is the digital badging platform for IC3 Digital Literacy. Badges can be shared on LinkedIn, Facebook and X, as well as by email and through online portfolios.",
+  credlyDetails: "Find out more about IC3 Digital Literacy digital badges on Credly.",
+  credlyUrl: "https://info.credly.com/",
+} satisfies Omit<DigitalBadging, "badgeName">;
+
+const IC3_BADGE_IMAGE =
+  "https://certiport.pearsonvue.com/getattachment/Certifications/IC3/Digital-Literacy-Certification/Badging/IC3-Spark/IC3_Digital_Literacy_Badge.png?lang=en-US&width=416&height=416&ext=.png";
+const IC3_BADGE_SOURCE =
+  "https://certiport.pearsonvue.com/Certifications/IC3/Digital-Literacy-Certification/Badging";
 
 const ADOBE_EXAM_DETAILS = [
   "150 hours of hands-on Adobe app experience and instruction recommended before the exam.",
