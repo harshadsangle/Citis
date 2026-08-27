@@ -166,29 +166,23 @@ export function AssociationsPage() {
           <AnimatedSection delay={0.08} className="mt-10">
             <div className="association-carousel">
               <div className="association-carousel-track">
-                {[associationLogos, associationLogos].map((logos, groupIndex) => (
-                  <div
-                    key={groupIndex}
-                    className="association-carousel-group"
-                    aria-hidden={groupIndex === 1}
-                  >
-                    {logos.map((association) => (
-                      <div
-                        key={`${groupIndex}-${association.name}`}
-                        className="association-carousel-card flex h-24 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-sm transition hover:-translate-y-1 hover:border-secondary/40"
-                      >
-                        <Image
-                          src={association.logo}
-                          alt={association.name}
-                          width={240}
-                          height={120}
-                          sizes="(min-width: 1280px) 14vw, (min-width: 768px) 25vw, 50vw"
-                          className="block h-auto max-h-full w-auto max-w-full object-contain object-center"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ))}
+                <div className="association-carousel-group">
+                  {associationLogos.map((association) => (
+                    <div
+                      key={association.name}
+                      className="association-carousel-card flex h-24 items-center justify-center rounded-2xl border border-border bg-card p-2 shadow-sm transition hover:-translate-y-1 hover:border-secondary/40"
+                    >
+                      <Image
+                        src={association.logo}
+                        alt={association.name}
+                        width={240}
+                        height={120}
+                        sizes="(min-width: 1280px) 14vw, (min-width: 768px) 25vw, 50vw"
+                        className="block h-auto max-h-full w-auto max-w-full object-contain object-center"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </AnimatedSection>

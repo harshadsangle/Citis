@@ -206,16 +206,12 @@ button, a, input, textarea, select {
 }
 
 .association-carousel-track {
-  display: flex;
-  width: max-content;
-  gap: 1rem;
-  animation: association-carousel-scroll 16s linear infinite;
-  will-change: transform;
+  width: 100%;
 }
 
 .association-carousel-group {
-  display: flex;
-  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   min-width: 0;
   gap: 1rem;
 }
@@ -226,37 +222,32 @@ button, a, input, textarea, select {
 }
 
 @media (min-width: 640px) {
+  .association-carousel-group {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .association-carousel-card {
     flex-basis: calc((100% - 2rem) / 3);
   }
 }
 
 @media (min-width: 768px) {
+  .association-carousel-group {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .association-carousel-card {
     flex-basis: calc((100% - 3rem) / 4);
   }
 }
 
 @media (min-width: 1024px) {
+  .association-carousel-group {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
   .association-carousel-card {
     flex-basis: calc((100% - 6rem) / 7);
-  }
-}
-
-@keyframes association-carousel-scroll {
-  to {
-    transform: translateX(calc(-50% - 0.5rem));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .association-carousel-track {
-    animation: none;
-    transform: none;
-  }
-
-  .association-carousel-group[aria-hidden="true"] {
-    display: none;
   }
 }
 
