@@ -10,6 +10,7 @@ export interface GlobalCertification {
   careerRelevance: string;
   suitableFor: string;
   digitalBadging?: AdobeDigitalBadging;
+  appleBadges?: AppleDigitalBadge[];
 }
 
 export interface AdobeDigitalBadging {
@@ -19,6 +20,12 @@ export interface AdobeDigitalBadging {
   sharingDetails: string;
   platformDetails: string;
   credlyDetails: string;
+  credlyUrl: string;
+}
+
+export interface AppleDigitalBadge {
+  name: "App Development with Swift Associate" | "App Development with Swift Certified User";
+  imageUrl: string;
   credlyUrl: string;
 }
 
@@ -210,6 +217,20 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     careerRelevance:
       "These foundations support progression into iOS development, mobile product teams, software internships and further computer science study. The project-led approach also develops skills that transfer to other programming environments.",
     suitableFor: "Learners exploring coding, mobile apps and software product development",
+    appleBadges: [
+      {
+        name: "App Development with Swift Certified User",
+        imageUrl:
+          "https://certiport.pearsonvue.com/getattachment/b26ea31f-bb61-4ab8-82f7-0c44f9fc3b55/Swift_CU_600x600.png?lang=en-US&width=340&height=340&ext=.png",
+        credlyUrl: "https://www.credly.com/org/apple/badge/app-development-with-swift-certified-user",
+      },
+      {
+        name: "App Development with Swift Associate",
+        imageUrl:
+          "https://certiport.pearsonvue.com/getattachment/8ef1956e-349b-4853-a649-1b7f31af1670/Swift_Associate_600x600.png?lang=en-US&width=340&height=340&ext=.png",
+        credlyUrl: "https://www.credly.com/org/apple/badge/app-development-with-swift-associate",
+      },
+    ],
   },
   {
     slug: "autodesk",

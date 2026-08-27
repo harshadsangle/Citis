@@ -8,6 +8,7 @@ import type { GlobalCertification } from "@/lib/global-certifications";
 
 export function GlobalCertificationDetailPage({ certification }: { certification: GlobalCertification }) {
   const isAdobe = certification.slug.startsWith("adobe-");
+  const isApple = certification.slug === "apple";
   const adobeCertificateTitleSize =
     certification.name.length > 48 ? "text-[0.4rem] tracking-[0.08em]" : "text-[0.5rem] tracking-[0.1em]";
 
@@ -49,15 +50,34 @@ export function GlobalCertificationDetailPage({ certification }: { certification
           <div className="relative w-full overflow-hidden rounded-[1.75rem] border border-[#b9d8e6] bg-[#edf7f9] p-3 shadow-[0_24px_70px_rgba(15,76,129,0.16)]">
             <div className="absolute -right-16 -top-16 size-48 rounded-full bg-[#f9e8a2]/65 blur-3xl" />
             <div className="relative aspect-[1.38] w-full overflow-hidden rounded-[1.25rem] border border-[#8fc1d5] bg-white">
-              <Image
-                src={isAdobe ? "/images/adobe-certification-sample.svg" : "/images/global-certification-sample.svg"}
-                alt={`Sample ${certification.name} certification certificate`}
-                fill
-                sizes="(max-width: 1024px) 100vw, 45vw"
-                className="object-contain"
-                priority
-              />
-              {isAdobe ? (
+              {isApple ? (
+                <div className="absolute inset-0 grid grid-cols-2 items-center gap-3 bg-white p-4 sm:gap-6 sm:p-8">
+                  {certification.appleBadges?.map((badge) => (
+                    <a
+                      key={badge.name}
+                      href={badge.credlyUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex h-full items-center justify-center rounded-xl border border-[#d9ebf1] bg-[#fafdfe] p-2 transition-transform hover:-translate-y-1 sm:p-4"
+                      aria-label={`View ${badge.name} on Credly`}
+                    >
+                      {/* Official badge artwork from Certiport's current Apple certification listing. */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={badge.imageUrl} alt={badge.name} className="h-full w-full object-contain" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <Image
+                    src={isAdobe ? "/images/adobe-certification-sample.svg" : "/images/global-certification-sample.svg"}
+                    alt={`Sample ${certification.name} certification certificate`}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 45vw"
+                    className="object-contain"
+                    priority
+                  />
+                  {isAdobe ? (
                 <div className="absolute left-[7.5%] top-[5.2%] z-10 rounded-sm bg-white px-2 py-1 shadow-sm">
                   <Image
                     src="/images/adobe.png"
@@ -68,8 +88,8 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                     priority
                   />
                 </div>
-              ) : (
-                <>
+                  ) : (
+                    <>
                   <Image
                     src="/images/citis-logo-certificate.png"
                     alt=""
@@ -89,23 +109,29 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                   >
                     FOR COMPLETING {certification.name} CERTIFICATION
                   </p>
+                    </>
+                  )}
+                  {isAdobe && (
+                    <p
+                      className={`pointer-events-none absolute left-[17%] top-[60.2%] z-10 w-[66%] -translate-y-1/2 text-center font-sans font-bold leading-tight text-[#eb1000] uppercase ${adobeCertificateTitleSize}`}
+                    >
+                      {certification.name}
+                    </p>
+                  )}
                 </>
-              )}
-              {isAdobe && (
-                <p
-                  className={`pointer-events-none absolute left-[17%] top-[60.2%] z-10 w-[66%] -translate-y-1/2 text-center font-sans font-bold leading-tight text-[#eb1000] uppercase ${adobeCertificateTitleSize}`}
-                >
-                  {certification.name}
-                </p>
               )}
             </div>
             <div className="relative flex items-center justify-between gap-4 px-2 pb-1 pt-4">
               <div>
                  <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
-                   {isAdobe ? "Official Adobe sample" : "Sample credential"}
+                    {isAdobe ? "Official Adobe sample" : isApple ? "Official Apple digital badge" : "Sample credential"}
                  </p>
                  <p className="mt-1 text-sm text-muted-foreground">
-                   {isAdobe ? `Adobe Certified Professional · ${certification.name}` : `${certification.name} pathway preview`}
+                    {isAdobe
+                      ? `Adobe Certified Professional · ${certification.name}`
+                      : isApple
+                        ? "App Development with Swift Associate · App Development with Swift Certified User"
+                        : `${certification.name} pathway preview`}
                  </p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white text-[#d19a14] shadow-sm">
