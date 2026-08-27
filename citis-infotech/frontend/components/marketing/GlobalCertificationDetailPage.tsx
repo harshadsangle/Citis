@@ -9,6 +9,7 @@ import type { GlobalCertification } from "@/lib/global-certifications";
 export function GlobalCertificationDetailPage({ certification }: { certification: GlobalCertification }) {
   const isAdobe = certification.slug.startsWith("adobe-");
   const isApple = certification.slug === "apple";
+  const isAutodesk = certification.slug.startsWith("autodesk-");
   const adobeCertificateTitleSize =
     certification.name.length > 48 ? "text-[0.4rem] tracking-[0.08em]" : "text-[0.5rem] tracking-[0.1em]";
 
@@ -67,6 +68,22 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                     </a>
                   ))}
                 </div>
+              ) : isAutodesk && certification.autodeskCredential ? (
+                <a
+                  href={certification.autodeskCredential.credlyUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="absolute inset-0 flex items-center justify-center bg-white p-10 transition-transform hover:scale-[1.02]"
+                  aria-label={`View ${certification.autodeskCredential.credentialName} on Credly`}
+                >
+                  {/* Official credential artwork from Certiport's current Autodesk certification listing. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={certification.autodeskCredential.imageUrl}
+                    alt={`${certification.autodeskCredential.credentialName} digital badge`}
+                    className="h-full w-full object-contain"
+                  />
+                </a>
               ) : (
                 <>
                   <Image
@@ -124,13 +141,21 @@ export function GlobalCertificationDetailPage({ certification }: { certification
             <div className="relative flex items-center justify-between gap-4 px-2 pb-1 pt-4">
               <div>
                  <p className="text-xs font-bold tracking-[0.18em] text-primary uppercase">
-                    {isAdobe ? "Official Adobe sample" : isApple ? "Official Apple digital badge" : "Sample credential"}
+                    {isAdobe
+                      ? "Official Adobe sample"
+                      : isApple
+                        ? "Official Apple digital badge"
+                        : isAutodesk
+                          ? "Official Autodesk credential"
+                          : "Sample credential"}
                  </p>
                  <p className="mt-1 text-sm text-muted-foreground">
                     {isAdobe
                       ? `Adobe Certified Professional · ${certification.name}`
                       : isApple
                         ? "App Development with Swift Associate · App Development with Swift Certified User"
+                        : isAutodesk && certification.autodeskCredential
+                          ? certification.autodeskCredential.credentialName
                         : `${certification.name} pathway preview`}
                  </p>
               </div>

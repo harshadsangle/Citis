@@ -11,6 +11,7 @@ export interface GlobalCertification {
   suitableFor: string;
   digitalBadging?: AdobeDigitalBadging;
   appleBadges?: AppleDigitalBadge[];
+  autodeskCredential?: AutodeskCredential;
 }
 
 export interface AdobeDigitalBadging {
@@ -25,6 +26,13 @@ export interface AdobeDigitalBadging {
 
 export interface AppleDigitalBadge {
   name: "App Development with Swift Associate" | "App Development with Swift Certified User";
+  imageUrl: string;
+  credlyUrl: string;
+}
+
+export interface AutodeskCredential {
+  credentialName: string;
+  badgeName: string;
   imageUrl: string;
   credlyUrl: string;
 }
@@ -233,18 +241,172 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     ],
   },
   {
-    slug: "autodesk",
-    name: "Autodesk",
-    provider: "Autodesk Certified User pathway",
+    slug: "autodesk-tinkercad-3d-design",
+    name: "Autodesk Tinkercad 3D Design",
+    provider: "Autodesk · Certiport",
     category: "Design and engineering",
-    tagline: "Bring ideas from sketches to accurate digital models.",
+    tagline: "Design and make a better world. Start with certification.",
     overview:
-      "The Autodesk pathway develops practical confidence with computer-aided design and digital modelling. Learners work from design intent to a well-organised model while learning the precision expected in professional workflows.",
-    skills: ["CAD drawing and modelling", "Technical visualisation", "Design accuracy and documentation", "3D thinking and spatial reasoning"],
-    benefits: ["Create demonstrable technical design work", "Strengthen precision and design communication", "Gain exposure to professional CAD workflows", "Prepare for further design and engineering study"],
+      "Certiport delivers both the Autodesk Tinkercad 3D Design and the subsequent Autodesk Certified User (ACU) certifications. They are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers.",
+    skills: ["Tinkercad 3D Design"],
+    benefits: [
+      "They are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers.",
+      "It enhances candidates' college and career readiness by providing the evidence of competency and proficiency.",
+    ],
     careerRelevance:
-      "Autodesk capability can support entry-level opportunities in architecture, engineering, manufacturing, construction, product design and 3D visualisation. It is especially valuable when paired with a project portfolio.",
-    suitableFor: "Students, makers and learners considering design, engineering or architecture",
+      "Autodesk certifications can effectively launch and advance careers as designers, engineers, and makers.",
+    suitableFor: "Educators, students, adult career changers and companies seeking qualified candidates",
+    autodeskCredential: {
+      credentialName: "Autodesk Tinkercad 3D Design",
+      badgeName: "Tinkercad 3D Design",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/AutoCAD-(1)/tinkercad-3d-design-certified-user-badge-OL.png?lang=en-US&width=150&height=150&ext=.png",
+      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-certified-tinkercad-3d-design",
+    },
+  },
+  {
+    slug: "autodesk-certified-user-autocad",
+    name: "Autodesk Certified User: AutoCAD",
+    provider: "Autodesk · Certiport",
+    category: "Design and engineering",
+    tagline: "Design and make a better world. Start with certification.",
+    overview:
+      "The Autodesk Certified User certifications are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers. They provide evidence of competency and proficiency for college and career readiness.",
+    skills: ["AutoCAD"],
+    benefits: [
+      "The Autodesk Certified User certifications are an excellent way for candidates with about 150 hours of real-world Autodesk software experience to validate their software skills.",
+      "Earning this level of certification will give candidates confidence as they continue to master Autodesk products and pursue subsequent advanced certifications in the future.",
+    ],
+    careerRelevance:
+      "Autodesk certifications can effectively launch and advance careers as designers, engineers, and makers.",
+    suitableFor: "Educators, students, adult career changers and companies seeking qualified candidates",
+    autodeskCredential: {
+      credentialName: "Autodesk Certified User: AutoCAD",
+      badgeName: "AutoCAD",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/AutoCAD/autodesk-autocad-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
+      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-autocad-certified-user",
+    },
+  },
+  {
+    slug: "autodesk-certified-user-inventor",
+    name: "Autodesk Certified User: Inventor",
+    provider: "Autodesk · Certiport",
+    category: "Design and engineering",
+    tagline: "Design and make a better world. Start with certification.",
+    overview:
+      "The Autodesk Certified User certifications are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers. They provide evidence of competency and proficiency for college and career readiness.",
+    skills: ["Inventor"],
+    benefits: [
+      "The Autodesk Certified User certifications are an excellent way for candidates with about 150 hours of real-world Autodesk software experience to validate their software skills.",
+      "Earning this level of certification will give candidates confidence as they continue to master Autodesk products and pursue subsequent advanced certifications in the future.",
+    ],
+    careerRelevance:
+      "Autodesk certifications can effectively launch and advance careers as designers, engineers, and makers.",
+    suitableFor: "Educators, students, adult career changers and companies seeking qualified candidates",
+    autodeskCredential: {
+      credentialName: "Autodesk Certified User: Inventor",
+      badgeName: "Inventor",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Inventor/autodesk-inventor-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
+      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-inventor-certified-user",
+    },
+  },
+  {
+    slug: "autodesk-certified-user-fusion",
+    name: "Autodesk Certified User: Fusion",
+    provider: "Autodesk · Certiport",
+    category: "Design and engineering",
+    tagline: "Design and make a better world. Start with certification.",
+    overview:
+      "The Autodesk Certified User certifications are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers. They provide evidence of competency and proficiency for college and career readiness.",
+    skills: ["Fusion"],
+    benefits: [
+      "The Autodesk Certified User certifications are an excellent way for candidates with about 150 hours of real-world Autodesk software experience to validate their software skills.",
+      "Earning this level of certification will give candidates confidence as they continue to master Autodesk products and pursue subsequent advanced certifications in the future.",
+    ],
+    careerRelevance:
+      "Autodesk certifications can effectively launch and advance careers as designers, engineers, and makers.",
+    suitableFor: "Educators, students, adult career changers and companies seeking qualified candidates",
+    autodeskCredential: {
+      credentialName: "Autodesk Certified User: Fusion",
+      badgeName: "Fusion",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Fusion-360/autodesk-fusion-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
+      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-fusion-360-certified-user",
+    },
+  },
+  {
+    slug: "autodesk-certified-user-revit",
+    name: "Autodesk Certified User: Revit",
+    provider: "Autodesk · Certiport",
+    category: "Design and engineering",
+    tagline: "Design and make a better world. Start with certification.",
+    overview:
+      "The Autodesk Certified User certifications are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers. They provide evidence of competency and proficiency for college and career readiness.",
+    skills: ["Revit"],
+    benefits: [
+      "The Autodesk Certified User certifications are an excellent way for candidates with about 150 hours of real-world Autodesk software experience to validate their software skills.",
+      "Earning this level of certification will give candidates confidence as they continue to master Autodesk products and pursue subsequent advanced certifications in the future.",
+    ],
+    careerRelevance:
+      "Autodesk certifications can effectively launch and advance careers as designers, engineers, and makers.",
+    suitableFor: "Educators, students, adult career changers and companies seeking qualified candidates",
+    autodeskCredential: {
+      credentialName: "Autodesk Certified User: Revit",
+      badgeName: "Revit",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Revit/autodesk-revit-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
+      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-revit-architecture-certified-user",
+    },
+  },
+  {
+    slug: "autodesk-certified-user-maya",
+    name: "Autodesk Certified User: Maya",
+    provider: "Autodesk · Certiport",
+    category: "Design and engineering",
+    tagline: "Design and make a better world. Start with certification.",
+    overview:
+      "The Autodesk Certified User certifications are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers. They provide evidence of competency and proficiency for college and career readiness.",
+    skills: ["Maya"],
+    benefits: [
+      "The Autodesk Certified User certifications are an excellent way for candidates with about 150 hours of real-world Autodesk software experience to validate their software skills.",
+      "Earning this level of certification will give candidates confidence as they continue to master Autodesk products and pursue subsequent advanced certifications in the future.",
+    ],
+    careerRelevance:
+      "Autodesk certifications can effectively launch and advance careers as designers, engineers, and makers.",
+    suitableFor: "Educators, students, adult career changers and companies seeking qualified candidates",
+    autodeskCredential: {
+      credentialName: "Autodesk Certified User: Maya",
+      badgeName: "Maya",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Maya/autodesk-maya-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
+      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-maya-certified-user",
+    },
+  },
+  {
+    slug: "autodesk-certified-user-3ds-max",
+    name: "Autodesk Certified User: 3ds MAX",
+    provider: "Autodesk · Certiport",
+    category: "Design and engineering",
+    tagline: "Design and make a better world. Start with certification.",
+    overview:
+      "The Autodesk Certified User certifications are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers. They provide evidence of competency and proficiency for college and career readiness.",
+    skills: ["3ds Max"],
+    benefits: [
+      "The Autodesk Certified User certifications are an excellent way for candidates with about 150 hours of real-world Autodesk software experience to validate their software skills.",
+      "Earning this level of certification will give candidates confidence as they continue to master Autodesk products and pursue subsequent advanced certifications in the future.",
+    ],
+    careerRelevance:
+      "Autodesk certifications can effectively launch and advance careers as designers, engineers, and makers.",
+    suitableFor: "Educators, students, adult career changers and companies seeking qualified candidates",
+    autodeskCredential: {
+      credentialName: "Autodesk Certified User: 3ds MAX",
+      badgeName: "3ds Max",
+      imageUrl:
+        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/3ds-Max/autodesk-3ds-max-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
+      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-3ds-max-certified-user",
+    },
   },
   {
     slug: "cisco",

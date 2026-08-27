@@ -12,6 +12,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   if (slug === "adobe") redirect("/engagements/global-certifications");
+  if (slug === "autodesk") redirect("/engagements/global-certifications");
   const certification = getGlobalCertification(slug);
   return certification
     ? generatePageMetadata({
@@ -27,6 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function GlobalCertificationDetailRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   if (slug === "adobe") redirect("/engagements/global-certifications");
+  if (slug === "autodesk") redirect("/engagements/global-certifications");
   const certification = getGlobalCertification(slug);
   if (!certification) notFound();
 
