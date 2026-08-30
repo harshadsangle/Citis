@@ -90,4 +90,79 @@ function serviceWith(query) {
     strict_1.default.equal(audits.at(-1)?.action, "DOWNLOAD");
     strict_1.default.equal(audits.at(-1)?.tenantId, user.tenantId);
 });
+(0, node_test_1.default)("enrollment accepts an active institution Student and audits the mutation", async () => {
+    const audits = [];
+    const queries = [];
+    const db = {
+        query: async (text) => {
+            queries.push(text);
+            if (text.startsWith("SELECT c.id"))
+                return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+            if (text.startsWith("SELECT 1"))
+                return { rows: [{ allowed: 1 }] };
+            if (text.startsWith("SELECT u.id"))
+                return { rows: [{ id: "student-1", first_name: "Learner", last_name: "One" }] };
+            if (text.startsWith("INSERT INTO lms_enrollments"))
+                return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", learner_id: "student-1", status: "ACTIVE" }] };
+            return { rows: [] };
+        },
+    };
+    const audit = { record: async (input) => audits.push(input) };
+    const service = new lms_service_1.LmsService(db, audit, new resource_storage_service_1.ResourceStorageService());
+    const result = await service.enrollLearner("course-1", { learnerId: "student-1" }, request);
+    strict_1.default.equal(result.learner_id, "student-1");
+    strict_1.default.equal(audits[0].resource, "enrollment");
+    strict_1.default.equal(audits[0].action, "CREATE");
+    strict_1.default.ok(queries.some((query) => query.includes("ur.institution_id = $3")));
+});
+(0, node_test_1.default)("enrollment rejects a user who is not an active Student in the course institution", async () => {
+    let inserted = false;
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT c.id"))
+            return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+        if (text.startsWith("SELECT 1"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.startsWith("INSERT INTO lms_enrollments"))
+            inserted = true;
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(service.enrollLearner("course-1", { learnerId: "teacher-1" }, request), common_1.NotFoundException);
+    strict_1.default.equal(inserted, false);
+});
+(0, node_test_1.default)("duplicate instructor assignment is returned as a conflict", async () => {
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT c.id"))
+            return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+        if (text.startsWith("SELECT 1"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.startsWith("SELECT u.id"))
+            return { rows: [{ id: "teacher-1", first_name: "Teacher", last_name: "One" }] };
+        if (text.startsWith("INSERT INTO lms_instructor_assignments"))
+            throw Object.assign(new Error("duplicate"), { code: "23505" });
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(service.assignInstructor("course-1", { instructorId: "teacher-1" }, request), common_1.ConflictException);
+});
+(0, node_test_1.default)("removing an enrollment preserves the row and audits the removal", async () => {
+    const audits = [];
+    const db = {
+        query: async (text) => {
+            if (text.startsWith("SELECT c.id"))
+                return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+            if (text.startsWith("SELECT 1"))
+                return { rows: [{ allowed: 1 }] };
+            if (text.startsWith("SELECT * FROM lms_enrollments"))
+                return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", status: "ACTIVE" }] };
+            if (text.startsWith("UPDATE lms_enrollments"))
+                return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", status: "REMOVED" }] };
+            return { rows: [] };
+        },
+    };
+    const audit = { record: async (input) => audits.push(input) };
+    const service = new lms_service_1.LmsService(db, audit, new resource_storage_service_1.ResourceStorageService());
+    const result = await service.removeEnrollment("course-1", "enrollment-1", request);
+    strict_1.default.equal(result.status, "REMOVED");
+    strict_1.default.equal(audits[0].action, "REMOVE");
+    strict_1.default.equal(audits[0].institutionId, "institution-1");
+});
 //# sourceMappingURL=lms.service.spec.js.map
