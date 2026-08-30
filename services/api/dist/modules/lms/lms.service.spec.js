@@ -255,4 +255,75 @@ function serviceWith(query) {
     strict_1.default.equal(audits[0].resource, "assessment_completion");
     strict_1.default.equal(audits[0].action, "COMPLETE");
 });
+(0, node_test_1.default)("assignment creation is scoped to an assigned course module and audited", async () => {
+    const { service, audits } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT c.id"))
+            return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+        if (text.includes("FROM user_roles"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.startsWith("SELECT cm.id"))
+            return { rows: [{ id: "module-1", course_id: "course-1", status: "PUBLISHED" }] };
+        if (text.startsWith("INSERT INTO lms_assessments"))
+            return { rows: [{ id: "assignment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", title: "Portfolio", assessment_type: "ASSIGNMENT", status: "DRAFT", max_marks: 100 }] };
+        return { rows: [] };
+    });
+    const result = await service.createAssignment({
+        courseId: "course-1",
+        moduleId: "module-1",
+        title: "Portfolio",
+        instructions: "Submit your portfolio.",
+        maxMarks: 100,
+    }, request);
+    strict_1.default.equal(result.assessment_type, "ASSIGNMENT");
+    strict_1.default.equal(audits[0].resource, "assignment");
+    strict_1.default.equal(audits[0].action, "CREATE");
+});
+(0, node_test_1.default)("a learner submission is graded by scoped staff and completes assignment progress", async () => {
+    const learner = {
+        ...user,
+        id: "student-1",
+        roles: [{ code: "STUDENT", name: "Student" }],
+    };
+    const learnerRequest = { context: { ...request.context, user: learner } };
+    const assignment = { id: "assignment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", title: "Portfolio", assessment_type: "ASSIGNMENT", status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE", total_marks: "100", due_at: null };
+    let submission;
+    const { service, audits } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT a.*"))
+            return { rows: [assignment] };
+        if (text.startsWith("SELECT id, tenant_id"))
+            return { rows: [{ id: "enrollment-1" }] };
+        if (text.startsWith("SELECT * FROM lms_assignment_submissions"))
+            return { rows: submission ? [submission] : [] };
+        if (text.startsWith("INSERT INTO lms_assignment_submissions")) {
+            submission = { id: "submission-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assignment_id: "assignment-1", learner_id: "student-1", status: "SUBMITTED", submission_text: "My work" };
+            return { rows: [submission] };
+        }
+        if (text.includes("FROM user_roles"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.startsWith("UPDATE lms_assignment_submissions")) {
+            submission = { ...submission, status: "GRADED", grade: 86, graded_by: user.id, graded_at: new Date().toISOString() };
+            return { rows: [submission] };
+        }
+        if (text.startsWith("INSERT INTO lms_assessment_completions"))
+            return { rows: [{ id: "completion-1", assessment_id: "assignment-1", learner_id: "student-1", score: 86 }] };
+        return { rows: [] };
+    });
+    const submitted = await service.submitAssignment("assignment-1", { submissionText: "My work" }, learnerRequest);
+    strict_1.default.equal(submitted.status, "SUBMITTED");
+    const graded = await service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 86, feedback: "Strong work." }, request);
+    strict_1.default.equal(graded.status, "GRADED");
+    strict_1.default.equal(audits.some((audit) => audit.resource === "assignment_submission" && audit.action === "SUBMIT"), true);
+    strict_1.default.equal(audits.some((audit) => audit.resource === "assignment_submission" && audit.action === "GRADE"), true);
+    strict_1.default.equal(audits.some((audit) => audit.resource === "assessment_completion"), true);
+});
+(0, node_test_1.default)("assignment grades cannot exceed the configured maximum", async () => {
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT a.*"))
+            return { rows: [{ id: "assignment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assessment_type: "ASSIGNMENT", status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", total_marks: "50" }] };
+        if (text.includes("FROM user_roles"))
+            return { rows: [{ allowed: 1 }] };
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 51 }, request), common_1.BadRequestException);
+});
 //# sourceMappingURL=lms.service.spec.js.map
