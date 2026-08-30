@@ -874,6 +874,9 @@ let LmsService = class LmsService {
         const assessment = result.rows[0];
         if (!assessment)
             throw new common_1.NotFoundException("Assessment not found in the current tenant.");
+        if (assessment.assessment_type === "ASSIGNMENT") {
+            throw new common_1.BadRequestException("Assignment completion is recorded only after an instructor grades the submission.");
+        }
         if (assessment.status !== "PUBLISHED" || assessment.module_status !== "PUBLISHED" || assessment.course_status !== "PUBLISHED") {
             throw new common_1.BadRequestException("Only published assessments in published courses can be completed.");
         }
