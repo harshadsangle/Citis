@@ -19,6 +19,7 @@ import type {
 
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
+type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
 
 const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "SCORM", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
@@ -76,8 +77,8 @@ export class LmsService {
     const filter = this.statusFilter(query.status);
     const values = [user.tenantId, ...filter.values, pageSize, offset];
     const statusParam = filter.values.length ? " AND p.status = $2" : "";
-    const limitParam = filter.values.length ? "$4" : "$3";
-    const offsetParam = filter.values.length ? "$5" : "$4";
+    const limitParam = filter.values.length ? "$3" : "$2";
+    const offsetParam = filter.values.length ? "$4" : "$3";
     const [rows, total] = await Promise.all([
       this.db.query(
         `SELECT p.id, p.tenant_id, p.institution_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
@@ -266,7 +267,7 @@ export class LmsService {
     return { data: rows.rows, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
   }
 
-  async getChild(id: string, table: "course_modules" | "lessons" | "learning_resources", user: AuthenticatedUser) {
+  async getChild(id: string, table: LmsTable, user: AuthenticatedUser) {
     const result = await this.db.query(
       `SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`,
       [id, user.tenantId],

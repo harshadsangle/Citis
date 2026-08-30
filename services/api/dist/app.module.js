@@ -15,6 +15,7 @@ const audit_module_1 = require("./modules/audit/audit.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const campuses_module_1 = require("./modules/campuses/campuses.module");
 const institutions_module_1 = require("./modules/institutions/institutions.module");
+const lms_module_1 = require("./modules/lms/lms.module");
 const modules_module_1 = require("./modules/modules/modules.module");
 const rbac_module_1 = require("./modules/rbac/rbac.module");
 const tenants_module_1 = require("./modules/tenants/tenants.module");
@@ -35,6 +36,7 @@ exports.AppModule = AppModule = __decorate([
             users_module_1.UsersModule,
             rbac_module_1.RbacModule,
             modules_module_1.ModulesModule,
+            lms_module_1.LmsModule,
             audit_module_1.AuditModule,
         ],
     })

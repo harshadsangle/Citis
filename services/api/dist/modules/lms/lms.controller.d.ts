@@ -1,0 +1,37 @@
+import type { ContextRequest } from "../../common/request-context";
+import { ContentListQueryDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { LmsService } from "./lms.service";
+export declare class LmsController {
+    private readonly lms;
+    constructor(lms: LmsService);
+    programmes(request: ContextRequest, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    createProgramme(input: CreateProgrammeDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    programme(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    updateProgramme(id: string, input: UpdateProgrammeDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    publishProgramme(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    archiveProgramme(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    courses(request: ContextRequest, programmeId: string | undefined, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    createCourse(input: CreateCourseDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    course(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    updateCourse(id: string, input: UpdateCourseDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    publishCourse(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    archiveCourse(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    courseModules(request: ContextRequest, courseId: string | undefined, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    createCourseModule(input: CreateCourseModuleDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    courseModule(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    updateCourseModule(id: string, input: UpdateCourseModuleDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    publishCourseModule(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    archiveCourseModule(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    lessons(request: ContextRequest, moduleId: string | undefined, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    createLesson(input: CreateLessonDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    lesson(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    updateLesson(id: string, input: UpdateLessonDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    publishLesson(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    archiveLesson(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    learningResources(request: ContextRequest, lessonId: string | undefined, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    createLearningResource(input: CreateLearningResourceDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    learningResource(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    updateLearningResource(id: string, input: UpdateLearningResourceDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    publishLearningResource(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    archiveLearningResource(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+}
