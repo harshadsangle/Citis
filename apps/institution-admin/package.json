@@ -1,0 +1,15 @@
+{
+  "name": "@citis/institution-admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port 4101",
+    "build": "next build",
+    "start": "next start --port 4101"
+  },
+  "dependencies": {
+    "next": "^15.5.22",
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  }
+}

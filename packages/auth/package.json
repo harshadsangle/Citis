@@ -1,0 +1,6 @@
+{
+  "name": "@citis/auth",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Provider-independent CITIS identity contracts"
+}

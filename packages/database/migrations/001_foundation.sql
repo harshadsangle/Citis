@@ -218,7 +218,7 @@ WITH permission_seed(module, resource, action) AS (
     ('platform', 'tenant', 'VIEW'), ('platform', 'tenant', 'CREATE'), ('platform', 'tenant', 'UPDATE'), ('platform', 'tenant', 'ARCHIVE'),
     ('platform', 'institution', 'VIEW'), ('platform', 'institution', 'CREATE'), ('platform', 'institution', 'UPDATE'), ('platform', 'institution', 'ARCHIVE'),
     ('platform', 'module', 'VIEW'), ('platform', 'module', 'UPDATE'), ('platform', 'module', 'PUBLISH'),
-    ('identity', 'user', 'VIEW'), ('identity', 'user', 'CREATE'), ('identity', 'user', 'UPDATE'), ('identity', 'user', 'DISABLE'),
+    ('identity', 'user', 'VIEW'), ('identity', 'user', 'CREATE'), ('identity', 'user', 'UPDATE'),
     ('identity', 'role', 'VIEW'), ('identity', 'role', 'CREATE'), ('identity', 'role', 'UPDATE'), ('identity', 'role', 'DELETE'),
     ('identity', 'permission', 'VIEW'), ('identity', 'permission', 'UPDATE'),
     ('audit', 'audit_log', 'VIEW'), ('audit', 'audit_log', 'EXPORT'),

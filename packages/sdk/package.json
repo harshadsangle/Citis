@@ -1,0 +1,6 @@
+{
+  "name": "@citis/sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Generated/client API SDK boundary for CITIS portals"
+}
