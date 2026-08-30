@@ -26,7 +26,7 @@ async function main() {
         }, Promise.resolve(null));
         if (!migrationRoot)
             throw new Error("Could not locate packages/database/migrations from the current working directory.");
-        for (const version of ["001_foundation", "002_lms_course_management"]) {
+        for (const version of ["001_foundation", "002_lms_course_management", "003_lms_managed_resources", "004_lms_enrollment_assignments"]) {
             const migration = await (0, promises_1.readFile)((0, node_path_1.resolve)(migrationRoot, `${version}.sql`), "utf8");
             await client.query(migration);
             console.log(`Applied ${version}`);

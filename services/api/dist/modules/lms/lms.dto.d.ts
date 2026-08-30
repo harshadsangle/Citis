@@ -66,3 +66,16 @@ export declare class UpdateLearningResourceDto {
     duration?: number;
     sequence?: number;
 }
+export declare const LMS_RELATIONSHIP_STATUSES: readonly ["ACTIVE", "REMOVED"];
+export declare class RelationshipListQueryDto {
+    status?: string;
+}
+export declare class CandidateListQueryDto {
+    search?: string;
+}
+export declare class EnrollLearnerDto {
+    learnerId: string;
+}
+export declare class AssignInstructorDto {
+    instructorId: string;
+}

@@ -10,13 +10,14 @@ exports.LmsModule = void 0;
 const common_1 = require("@nestjs/common");
 const lms_controller_1 = require("./lms.controller");
 const lms_service_1 = require("./lms.service");
+const resource_storage_service_1 = require("./resource-storage.service");
 let LmsModule = class LmsModule {
 };
 exports.LmsModule = LmsModule;
 exports.LmsModule = LmsModule = __decorate([
     (0, common_1.Module)({
         controllers: [lms_controller_1.LmsController],
-        providers: [lms_service_1.LmsService],
+        providers: [lms_service_1.LmsService, resource_storage_service_1.ResourceStorageService],
     })
 ], LmsModule);
 //# sourceMappingURL=lms.module.js.map

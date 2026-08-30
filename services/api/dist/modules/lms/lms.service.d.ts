@@ -1,17 +1,20 @@
 import { AuditService } from "../../common/audit.service";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
-import type { ContentListQueryDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ResourceStorageService, type LmsUpload } from "./resource-storage.service";
+import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, EnrollLearnerDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
 export declare class LmsService {
     private readonly db;
     private readonly audit;
-    constructor(db: DatabaseService, audit: AuditService);
+    private readonly storage;
+    constructor(db: DatabaseService, audit: AuditService, storage: ResourceStorageService);
     private statusFilter;
     private run;
     private institutionFor;
     private auditMutation;
+    private auditAccess;
     listProgrammes(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto): Promise<{
         data: import("pg").QueryResultRow[];
         meta: {
@@ -71,10 +74,74 @@ export declare class LmsService {
     updateLesson(id: string, input: UpdateLessonDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     createLearningResource(input: CreateLearningResourceDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     updateLearningResource(id: string, input: UpdateLearningResourceDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
+    private resourceFor;
+    uploadResourceFile(id: string, file: LmsUpload, request: ContextRequest): Promise<any>;
+    uploadScormPackage(id: string, file: LmsUpload, request: ContextRequest): Promise<any>;
+    private replaceManagedFile;
+    getManagedFile(id: string, request: ContextRequest): Promise<{
+        content: Buffer<ArrayBufferLike>;
+        mimeType: unknown;
+        filename: unknown;
+    }>;
+    getScormLaunch(id: string, request: ContextRequest): Promise<{
+        launchUrl: string;
+    }>;
+    getScormAsset(id: string, assetPath: string, request: ContextRequest): Promise<{
+        content: Buffer<ArrayBufferLike>;
+        mimeType: string;
+    }>;
     private assertParent;
     private createChild;
     private updateChild;
     private validateResource;
+    private assertInstitutionAccess;
+    private relationshipCourse;
+    private relationshipStatus;
+    private eligiblePerson;
+    private listCandidates;
+    listEnrollmentCandidates(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: CandidateListQueryDto): Promise<{
+        data: import("pg").QueryResultRow[];
+        meta: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    listInstructorCandidates(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: CandidateListQueryDto): Promise<{
+        data: import("pg").QueryResultRow[];
+        meta: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    private listRelationships;
+    listEnrollments(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: RelationshipListQueryDto): Promise<{
+        data: import("pg").QueryResultRow[];
+        meta: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    listInstructorAssignments(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: RelationshipListQueryDto): Promise<{
+        data: import("pg").QueryResultRow[];
+        meta: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    private runRelationship;
+    enrollLearner(courseId: string, input: EnrollLearnerDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    assignInstructor(courseId: string, input: AssignInstructorDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    private removeRelationship;
+    removeEnrollment(courseId: string, enrollmentId: string, request: ContextRequest): Promise<Record<string, unknown>>;
+    removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest): Promise<Record<string, unknown>>;
     changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest): Promise<import("pg").QueryResultRow>;
 }
 export {};

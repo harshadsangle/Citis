@@ -1,6 +1,8 @@
+import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
-import { ContentListQueryDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, EnrollLearnerDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 import { LmsService } from "./lms.service";
+import type { LmsUpload } from "./resource-storage.service";
 export declare class LmsController {
     private readonly lms;
     constructor(lms: LmsService);
@@ -16,6 +18,14 @@ export declare class LmsController {
     updateCourse(id: string, input: UpdateCourseDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     publishCourse(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     archiveCourse(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    enrollmentCandidates(id: string, request: ContextRequest, query: CandidateListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    enrollments(id: string, request: ContextRequest, query: RelationshipListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    enrollLearner(id: string, input: EnrollLearnerDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    removeEnrollment(courseId: string, enrollmentId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    instructorCandidates(id: string, request: ContextRequest, query: CandidateListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    instructorAssignments(id: string, request: ContextRequest, query: RelationshipListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    assignInstructor(id: string, input: AssignInstructorDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     courseModules(request: ContextRequest, courseId: string | undefined, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
     createCourseModule(input: CreateCourseModuleDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     courseModule(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
@@ -34,4 +44,11 @@ export declare class LmsController {
     updateLearningResource(id: string, input: UpdateLearningResourceDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     publishLearningResource(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     archiveLearningResource(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    uploadLearningResourceFile(id: string, file: LmsUpload, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<any>>;
+    uploadScormPackage(id: string, file: LmsUpload, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<any>>;
+    downloadLearningResourceFile(id: string, request: ContextRequest, response: Response): Promise<Response<any, Record<string, any>>>;
+    launchScorm(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        launchUrl: string;
+    }>>;
+    serveScormAsset(id: string, asset: string, request: ContextRequest, response: Response): Promise<Response<any, Record<string, any>>>;
 }

@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LmsController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const pagination_1 = require("../../common/pagination");
 const response_1 = require("../../common/response");
 const permission_decorator_1 = require("../../guards/permission.decorator");
@@ -65,6 +66,38 @@ let LmsController = class LmsController {
     }
     async archiveCourse(id, request) {
         return (0, response_1.successResponse)(await this.lms.changeStatus(id, "course", "ARCHIVED", request), request);
+    }
+    async enrollmentCandidates(id, request, query) {
+        const page = (0, pagination_1.paginationFrom)(request);
+        const result = await this.lms.listEnrollmentCandidates(id, request.context.user, page.page, page.pageSize, page.offset, query);
+        return (0, response_1.paginatedResponse)(result.data, result.meta, request);
+    }
+    async enrollments(id, request, query) {
+        const page = (0, pagination_1.paginationFrom)(request);
+        const result = await this.lms.listEnrollments(id, request.context.user, page.page, page.pageSize, page.offset, query);
+        return (0, response_1.paginatedResponse)(result.data, result.meta, request);
+    }
+    async enrollLearner(id, input, request) {
+        return (0, response_1.successResponse)(await this.lms.enrollLearner(id, input, request), request);
+    }
+    async removeEnrollment(courseId, enrollmentId, request) {
+        return (0, response_1.successResponse)(await this.lms.removeEnrollment(courseId, enrollmentId, request), request);
+    }
+    async instructorCandidates(id, request, query) {
+        const page = (0, pagination_1.paginationFrom)(request);
+        const result = await this.lms.listInstructorCandidates(id, request.context.user, page.page, page.pageSize, page.offset, query);
+        return (0, response_1.paginatedResponse)(result.data, result.meta, request);
+    }
+    async instructorAssignments(id, request, query) {
+        const page = (0, pagination_1.paginationFrom)(request);
+        const result = await this.lms.listInstructorAssignments(id, request.context.user, page.page, page.pageSize, page.offset, query);
+        return (0, response_1.paginatedResponse)(result.data, result.meta, request);
+    }
+    async assignInstructor(id, input, request) {
+        return (0, response_1.successResponse)(await this.lms.assignInstructor(id, input, request), request);
+    }
+    async removeInstructorAssignment(courseId, assignmentId, request) {
+        return (0, response_1.successResponse)(await this.lms.removeInstructorAssignment(courseId, assignmentId, request), request);
     }
     async courseModules(request, courseId, query) {
         const page = (0, pagination_1.paginationFrom)(request);
@@ -125,6 +158,29 @@ let LmsController = class LmsController {
     }
     async archiveLearningResource(id, request) {
         return (0, response_1.successResponse)(await this.lms.changeStatus(id, "learning_resource", "ARCHIVED", request), request);
+    }
+    async uploadLearningResourceFile(id, file, request) {
+        return (0, response_1.successResponse)(await this.lms.uploadResourceFile(id, file, request), request);
+    }
+    async uploadScormPackage(id, file, request) {
+        return (0, response_1.successResponse)(await this.lms.uploadScormPackage(id, file, request), request);
+    }
+    async downloadLearningResourceFile(id, request, response) {
+        const file = await this.lms.getManagedFile(id, request);
+        response.setHeader("Content-Type", String(file.mimeType));
+        response.setHeader("Content-Disposition", `inline; filename="${String(file.filename).replace(/[\r\n"]/g, "")}"`);
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        return response.send(file.content);
+    }
+    async launchScorm(id, request) {
+        return (0, response_1.successResponse)(await this.lms.getScormLaunch(id, request), request);
+    }
+    async serveScormAsset(id, asset, request, response) {
+        const file = await this.lms.getScormAsset(id, asset, request);
+        response.setHeader("Content-Type", String(file.mimeType));
+        response.setHeader("Content-Disposition", "inline");
+        response.setHeader("X-Content-Type-Options", "nosniff");
+        return response.send(file.content);
     }
 };
 exports.LmsController = LmsController;
@@ -239,6 +295,86 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "archiveCourse", null);
+__decorate([
+    (0, common_1.Get)("courses/:id/enrollment-candidates"),
+    (0, permission_decorator_1.RequirePermission)("lms.enrollment.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, lms_dto_1.CandidateListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "enrollmentCandidates", null);
+__decorate([
+    (0, common_1.Get)("courses/:id/enrollments"),
+    (0, permission_decorator_1.RequirePermission)("lms.enrollment.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, lms_dto_1.RelationshipListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "enrollments", null);
+__decorate([
+    (0, common_1.Post)("courses/:id/enrollments"),
+    (0, permission_decorator_1.RequirePermission)("lms.enrollment.create"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.EnrollLearnerDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "enrollLearner", null);
+__decorate([
+    (0, common_1.Post)("courses/:courseId/enrollments/:enrollmentId/remove"),
+    (0, permission_decorator_1.RequirePermission)("lms.enrollment.archive"),
+    __param(0, (0, common_1.Param)("courseId")),
+    __param(1, (0, common_1.Param)("enrollmentId")),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "removeEnrollment", null);
+__decorate([
+    (0, common_1.Get)("courses/:id/instructor-candidates"),
+    (0, permission_decorator_1.RequirePermission)("lms.instructor_assignment.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, lms_dto_1.CandidateListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "instructorCandidates", null);
+__decorate([
+    (0, common_1.Get)("courses/:id/instructor-assignments"),
+    (0, permission_decorator_1.RequirePermission)("lms.instructor_assignment.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, lms_dto_1.RelationshipListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "instructorAssignments", null);
+__decorate([
+    (0, common_1.Post)("courses/:id/instructor-assignments"),
+    (0, permission_decorator_1.RequirePermission)("lms.instructor_assignment.create"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.AssignInstructorDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assignInstructor", null);
+__decorate([
+    (0, common_1.Post)("courses/:courseId/instructor-assignments/:assignmentId/remove"),
+    (0, permission_decorator_1.RequirePermission)("lms.instructor_assignment.archive"),
+    __param(0, (0, common_1.Param)("courseId")),
+    __param(1, (0, common_1.Param)("assignmentId")),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "removeInstructorAssignment", null);
 __decorate([
     (0, common_1.Get)("course-modules"),
     (0, permission_decorator_1.RequirePermission)("lms.course_module.view"),
@@ -407,6 +543,58 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "archiveLearningResource", null);
+__decorate([
+    (0, common_1.Post)("learning-resources/:id/file"),
+    (0, permission_decorator_1.RequirePermission)("lms.learning_resource.update"),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file", { limits: { fileSize: 50 * 1024 * 1024 } })),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "uploadLearningResourceFile", null);
+__decorate([
+    (0, common_1.Post)("learning-resources/:id/scorm"),
+    (0, permission_decorator_1.RequirePermission)("lms.learning_resource.update"),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)("file", { limits: { fileSize: 250 * 1024 * 1024 } })),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "uploadScormPackage", null);
+__decorate([
+    (0, common_1.Get)("learning-resources/:id/file"),
+    (0, permission_decorator_1.RequirePermission)("lms.learning_resource.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "downloadLearningResourceFile", null);
+__decorate([
+    (0, common_1.Get)("learning-resources/:id/scorm/launch"),
+    (0, permission_decorator_1.RequirePermission)("lms.learning_resource.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "launchScorm", null);
+__decorate([
+    (0, common_1.Get)("learning-resources/:id/scorm/*asset"),
+    (0, permission_decorator_1.RequirePermission)("lms.learning_resource.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Param)("asset")),
+    __param(2, (0, common_1.Req)()),
+    __param(3, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "serveScormAsset", null);
 exports.LmsController = LmsController = __decorate([
     (0, common_1.Controller)(),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, permission_guard_1.PermissionGuard),
