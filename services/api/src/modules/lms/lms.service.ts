@@ -13,7 +13,9 @@ import type {
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
+  CompleteAssessmentDto,
   EnrollLearnerDto,
+  ProgressViewerQueryDto,
   RelationshipListQueryDto,
   UpdateCourseDto,
   UpdateCourseModuleDto,
@@ -25,9 +27,20 @@ import type {
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
+type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 
 const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "SCORM", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
+
+function progressState(completed: number, total: number): ProgressState {
+  if (completed === 0) return "NOT_STARTED";
+  if (completed >= total && total > 0) return "COMPLETED";
+  return "IN_PROGRESS";
+}
+
+function progressPercentage(completed: number, total: number) {
+  return total > 0 ? Math.round((completed / total) * 10000) / 100 : 0;
+}
 
 @Injectable()
 export class LmsService {
@@ -855,6 +868,280 @@ export class LmsService {
 
   async removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest) {
     return this.removeRelationship(courseId, assignmentId, request, "instructor_assignment");
+  }
+
+  private async progressCourse(courseId: string, user: AuthenticatedUser) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT c.id, c.tenant_id, c.institution_id, c.title, c.code, c.description, c.status,
+              p.status AS programme_status, i.status AS institution_status
+       FROM courses c
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
+       WHERE c.id = $1 AND c.tenant_id = $2`,
+      [courseId, user.tenantId],
+    );
+    const course = result.rows[0];
+    if (!course) throw new NotFoundException("Course not found in the current tenant.");
+    if (course.status !== "PUBLISHED") throw new BadRequestException("Progress is available only for published courses.");
+    if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
+      throw new BadRequestException("The course institution or programme is not active.");
+    }
+    return course;
+  }
+
+  private async activeEnrollment(courseId: string, learnerId: string, user: AuthenticatedUser) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, tenant_id, institution_id, course_id, learner_id, status, enrolled_at
+       FROM lms_enrollments
+       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'`,
+      [user.tenantId, courseId, learnerId],
+    );
+    if (!result.rows[0]) throw new ForbiddenException("An active course enrollment is required.");
+    return result.rows[0];
+  }
+
+  private async assertProgressViewer(course: Record<string, unknown>, user: AuthenticatedUser, learnerId: string) {
+    const selfEnrollment = await this.db.query(
+      `SELECT 1
+       FROM lms_enrollments
+       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4 AND status = 'ACTIVE'
+       LIMIT 1`,
+      [user.tenantId, course.institution_id, course.id, learnerId],
+    );
+    if (!selfEnrollment.rows[0]) throw new NotFoundException("Active learner enrollment not found.");
+    if (learnerId === user.id) return;
+    if (user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN")) return;
+
+    const staffAccess = await this.db.query(
+      `SELECT 1
+       FROM user_roles ur
+       JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+       WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+         AND r.status = 'ACTIVE'
+         AND (
+           r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
+           OR (
+             r.code = 'TEACHER'
+             AND EXISTS (
+               SELECT 1
+               FROM lms_instructor_assignments ia
+               WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
+                 AND ia.instructor_id = ur.user_id AND ia.status = 'ACTIVE'
+             )
+           )
+         )
+       LIMIT 1`,
+      [user.id, user.tenantId, course.institution_id, course.id],
+    );
+    if (!staffAccess.rows[0]) throw new ForbiddenException("You are not authorized to view this learner's progress.");
+  }
+
+  private async calculateCourseProgress(course: Record<string, unknown>, learnerId: string, user: AuthenticatedUser) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT cm.id AS module_id, cm.title AS module_title, cm.sequence,
+              (SELECT count(*)::int
+               FROM lessons l
+               WHERE l.tenant_id = $2 AND l.module_id = cm.id AND l.status = 'PUBLISHED') AS lesson_total,
+              (SELECT count(*)::int
+               FROM lessons l
+               WHERE l.tenant_id = $2 AND l.module_id = cm.id AND l.status = 'PUBLISHED'
+                 AND EXISTS (
+                   SELECT 1 FROM lms_lesson_progress lp
+                   WHERE lp.tenant_id = $2 AND lp.course_id = $1 AND lp.module_id = cm.id
+                     AND lp.lesson_id = l.id AND lp.learner_id = $3 AND lp.status = 'COMPLETED'
+                 )) AS lesson_completed,
+              (SELECT count(*)::int
+               FROM lms_assessments a
+               WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id AND a.status = 'PUBLISHED') AS assessment_total,
+              (SELECT count(*)::int
+               FROM lms_assessments a
+               WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id AND a.status = 'PUBLISHED'
+                 AND EXISTS (
+                   SELECT 1 FROM lms_assessment_completions ac
+                   WHERE ac.tenant_id = $2 AND ac.course_id = $1 AND ac.module_id = cm.id
+                     AND ac.assessment_id = a.id AND ac.learner_id = $3 AND ac.status = 'COMPLETED'
+                 )) AS assessment_completed
+       FROM course_modules cm
+       WHERE cm.tenant_id = $2 AND cm.course_id = $1 AND cm.status = 'PUBLISHED'
+       ORDER BY cm.sequence ASC, cm.id ASC`,
+      [course.id, user.tenantId, learnerId],
+    );
+
+    const modules = result.rows.map((row) => {
+      const lessonTotal = Number(row.lesson_total ?? 0);
+      const lessonCompleted = Number(row.lesson_completed ?? 0);
+      const assessmentTotal = Number(row.assessment_total ?? 0);
+      const assessmentCompleted = Number(row.assessment_completed ?? 0);
+      const total = lessonTotal + assessmentTotal;
+      const completed = lessonCompleted + assessmentCompleted;
+      return {
+        id: row.module_id,
+        title: row.module_title,
+        sequence: Number(row.sequence),
+        state: progressState(completed, total),
+        percentage: progressPercentage(completed, total),
+        lessons: { completed: lessonCompleted, total: lessonTotal },
+        assessments: { completed: assessmentCompleted, total: assessmentTotal },
+      };
+    });
+    const lessons = modules.reduce((summary, module) => ({
+      completed: summary.completed + module.lessons.completed,
+      total: summary.total + module.lessons.total,
+    }), { completed: 0, total: 0 });
+    const assessments = modules.reduce((summary, module) => ({
+      completed: summary.completed + module.assessments.completed,
+      total: summary.total + module.assessments.total,
+    }), { completed: 0, total: 0 });
+    const total = lessons.total + assessments.total;
+    const completed = lessons.completed + assessments.completed;
+
+    return {
+      course: {
+        id: course.id,
+        title: course.title,
+        code: course.code,
+        description: course.description,
+        status: course.status,
+      },
+      learnerId,
+      state: progressState(completed, total),
+      percentage: progressPercentage(completed, total),
+      lessons,
+      assessments,
+      modules,
+    };
+  }
+
+  async listLearnerProgress(user: AuthenticatedUser) {
+    const result = await this.db.query<{ course_id: string }>(
+      `SELECT course_id
+       FROM lms_enrollments
+       WHERE tenant_id = $1 AND learner_id = $2 AND status = 'ACTIVE'
+       ORDER BY enrolled_at DESC, course_id ASC`,
+      [user.tenantId, user.id],
+    );
+    return Promise.all(result.rows.map(({ course_id }) => this.getCourseProgress(course_id, user)));
+  }
+
+  async getCourseProgress(courseId: string, user: AuthenticatedUser, learnerId = user.id) {
+    const course = await this.progressCourse(courseId, user);
+    await this.assertProgressViewer(course, user, learnerId);
+    return this.calculateCourseProgress(course, learnerId, user);
+  }
+
+  async completeLesson(lessonId: string, request: ContextRequest) {
+    const user = request.context.user!;
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT l.id, l.tenant_id, l.module_id, cm.course_id, c.institution_id,
+              l.status AS lesson_status, cm.status AS module_status, c.status AS course_status,
+              p.status AS programme_status, i.status AS institution_status
+       FROM lessons l
+       JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = l.tenant_id
+       JOIN courses c ON c.id = cm.course_id AND c.tenant_id = l.tenant_id
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = l.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = l.tenant_id
+       WHERE l.id = $1 AND l.tenant_id = $2`,
+      [lessonId, user.tenantId],
+    );
+    const lesson = result.rows[0];
+    if (!lesson) throw new NotFoundException("Lesson not found in the current tenant.");
+    if (lesson.course_status !== "PUBLISHED" || lesson.module_status !== "PUBLISHED" || lesson.lesson_status !== "PUBLISHED") {
+      throw new BadRequestException("Only published lessons in published courses can be completed.");
+    }
+    if (lesson.programme_status === "ARCHIVED" || lesson.institution_status !== "ACTIVE") {
+      throw new BadRequestException("The course institution or programme is not active.");
+    }
+    await this.activeEnrollment(String(lesson.course_id), user.id, user);
+    const beforeResult = await this.db.query<Record<string, unknown>>(
+      `SELECT * FROM lms_lesson_progress
+       WHERE tenant_id = $1 AND course_id = $2 AND lesson_id = $3 AND learner_id = $4`,
+      [user.tenantId, lesson.course_id, lesson.id, user.id],
+    );
+    const before = beforeResult.rows[0];
+    const completed = await this.db.query<Record<string, unknown>>(
+      `INSERT INTO lms_lesson_progress
+         (tenant_id, institution_id, course_id, module_id, lesson_id, learner_id, status, started_at, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'COMPLETED', now(), now())
+       ON CONFLICT (tenant_id, course_id, lesson_id, learner_id)
+       DO UPDATE SET status = 'COMPLETED', completed_at = COALESCE(lms_lesson_progress.completed_at, now()), updated_at = now()
+       RETURNING *`,
+      [user.tenantId, lesson.institution_id, lesson.course_id, lesson.module_id, lesson.id, user.id],
+    );
+    const row = completed.rows[0];
+    if (before?.status !== "COMPLETED") await this.auditMutation(request, "lesson_progress", "COMPLETE", row, before);
+    return row;
+  }
+
+  async completeAssessment(input: CompleteAssessmentDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT a.*, c.institution_id, c.status AS course_status, cm.status AS module_status,
+              p.status AS programme_status, i.status AS institution_status
+       FROM lms_assessments a
+       JOIN course_modules cm ON cm.id = a.module_id AND cm.tenant_id = a.tenant_id
+       JOIN courses c ON c.id = a.course_id AND c.tenant_id = a.tenant_id
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = a.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = a.tenant_id
+       WHERE a.id = $1 AND a.tenant_id = $2`,
+      [input.assessmentId, user.tenantId],
+    );
+    const assessment = result.rows[0];
+    if (!assessment) throw new NotFoundException("Assessment not found in the current tenant.");
+    if (assessment.status !== "PUBLISHED" || assessment.module_status !== "PUBLISHED" || assessment.course_status !== "PUBLISHED") {
+      throw new BadRequestException("Only published assessments in published courses can be completed.");
+    }
+    if (assessment.programme_status === "ARCHIVED" || assessment.institution_status !== "ACTIVE") {
+      throw new BadRequestException("The course institution or programme is not active.");
+    }
+    await this.activeEnrollment(String(assessment.course_id), user.id, user);
+    if (input.score !== undefined && assessment.total_marks !== null && input.score > Number(assessment.total_marks)) {
+      throw new BadRequestException("Assessment score cannot exceed total marks.");
+    }
+    const existingResult = await this.db.query<Record<string, unknown>>(
+      `SELECT * FROM lms_assessment_completions
+       WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND attempt_id = $4`,
+      [user.tenantId, assessment.id, user.id, input.attemptId.trim()],
+    );
+    const before = existingResult.rows[0];
+    if (!before && assessment.attempt_limit !== null) {
+      const attempts = await this.db.query<{ count: string }>(
+        `SELECT count(*)::text AS count
+         FROM lms_assessment_completions
+         WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND status = 'COMPLETED'`,
+        [user.tenantId, assessment.id, user.id],
+      );
+      if (Number(attempts.rows[0]?.count ?? 0) >= Number(assessment.attempt_limit)) {
+        throw new BadRequestException("The assessment attempt limit has been reached.");
+      }
+    }
+    const passed = input.passed ?? (
+      input.score !== undefined && assessment.passing_marks !== null
+        ? input.score >= Number(assessment.passing_marks)
+        : null
+    );
+    const completed = await this.db.query<Record<string, unknown>>(
+      `INSERT INTO lms_assessment_completions
+         (tenant_id, institution_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::timestamptz, now()))
+       ON CONFLICT (tenant_id, assessment_id, learner_id, attempt_id)
+       DO UPDATE SET score = EXCLUDED.score, passed = EXCLUDED.passed, completed_at = EXCLUDED.completed_at, updated_at = now()
+       RETURNING *`,
+      [
+        user.tenantId,
+        assessment.institution_id,
+        assessment.course_id,
+        assessment.module_id,
+        assessment.id,
+        user.id,
+        input.attemptId.trim(),
+        input.score ?? null,
+        passed,
+        input.completedAt ?? null,
+      ],
+    );
+    const row = completed.rows[0];
+    if (!before) await this.auditMutation(request, "assessment_completion", "COMPLETE", row);
+    return row;
   }
 
   async changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest) {

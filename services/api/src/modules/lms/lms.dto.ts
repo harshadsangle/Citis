@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, Min } from "class-validator";
+import { IsBoolean, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, Min } from "class-validator";
 
 export const LMS_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 export const LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"] as const;
@@ -250,4 +250,32 @@ export class EnrollLearnerDto {
 export class AssignInstructorDto {
   @IsUUID()
   instructorId!: string;
+}
+
+export class ProgressViewerQueryDto {
+  @IsOptional()
+  @IsUUID()
+  learnerId?: string;
+}
+
+export class CompleteAssessmentDto {
+  @IsUUID()
+  assessmentId!: string;
+
+  @IsString()
+  @Length(1, 180)
+  attemptId!: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  score?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  passed?: boolean;
+
+  @IsOptional()
+  @IsDateString()
+  completedAt?: string;
 }

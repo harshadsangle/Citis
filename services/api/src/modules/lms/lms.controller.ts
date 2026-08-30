@@ -11,12 +11,14 @@ import {
   ContentListQueryDto,
   CandidateListQueryDto,
   AssignInstructorDto,
+  CompleteAssessmentDto,
   CreateCourseDto,
   CreateCourseModuleDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
   EnrollLearnerDto,
+  ProgressViewerQueryDto,
   RelationshipListQueryDto,
   UpdateCourseDto,
   UpdateCourseModuleDto,
@@ -162,6 +164,30 @@ export class LmsController {
   @RequirePermission("lms.instructor_assignment.archive")
   async removeInstructorAssignment(@Param("courseId") courseId: string, @Param("assignmentId") assignmentId: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.removeInstructorAssignment(courseId, assignmentId, request), request);
+  }
+
+  @Get("progress")
+  @RequirePermission("lms.course_progress.view")
+  async learnerProgress(@Req() request: ContextRequest) {
+    return successResponse(await this.lms.listLearnerProgress(request.context.user!), request);
+  }
+
+  @Get("progress/courses/:courseId")
+  @RequirePermission("lms.course_progress.view")
+  async courseProgress(@Param("courseId") courseId: string, @Req() request: ContextRequest, @Query() query: ProgressViewerQueryDto) {
+    return successResponse(await this.lms.getCourseProgress(courseId, request.context.user!, query.learnerId), request);
+  }
+
+  @Post("progress/lessons/:lessonId/complete")
+  @RequirePermission("lms.lesson_progress.create")
+  async completeLesson(@Param("lessonId") lessonId: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.completeLesson(lessonId, request), request);
+  }
+
+  @Post("progress/assessment-completions")
+  @RequirePermission("lms.assessment_completion.create")
+  async completeAssessment(@Body() input: CompleteAssessmentDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.completeAssessment(input, request), request);
   }
 
   @Get("course-modules")
