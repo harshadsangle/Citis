@@ -1,15 +1,14 @@
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
   readonly pool: Pool;
 
-  constructor(config: ConfigService) {
+  constructor() {
     this.pool = new Pool({
-      connectionString: config.get<string>("DATABASE_URL") || process.env.DATABASE_URL,
-      max: Number(config.get<string>("DATABASE_POOL_MAX") || 10),
+      connectionString: process.env.DATABASE_URL,
+      max: Number(process.env.DATABASE_POOL_MAX || 10),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
     });

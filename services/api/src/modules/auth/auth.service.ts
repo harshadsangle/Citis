@@ -1,6 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcryptjs";
 import { DatabaseService } from "../../database/database.service";
 import type { AuthenticatedUser } from "../../common/request-context";
@@ -37,7 +36,6 @@ function toPrincipal(row: {
 export class AuthService {
   constructor(
     private readonly db: DatabaseService,
-    private readonly config: ConfigService,
   ) {}
 
   async login(input: LoginDto, metadata: { ipAddress?: string; userAgent?: string }) {
@@ -162,8 +160,8 @@ export class AuthService {
     const envKey = `${provider.toUpperCase()}_CLIENT_ID`;
     return {
       provider,
-      configured: Boolean(this.config.get<string>(envKey)),
-      status: this.config.get<string>(envKey) ? "READY_FOR_ADAPTER" : "CONFIGURATION_REQUIRED",
+      configured: Boolean(process.env[envKey]),
+      status: process.env[envKey] ? "READY_FOR_ADAPTER" : "CONFIGURATION_REQUIRED",
     };
   }
 
