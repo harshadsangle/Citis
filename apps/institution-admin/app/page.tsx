@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
+import CourseRelationships from "./CourseRelationships";
 
 type Kind = "programmes" | "courses" | "course-modules" | "lessons" | "learning-resources";
+type RelationshipMode = "enrollments" | "instructors";
 type Status = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type ResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
 
@@ -69,6 +71,19 @@ const sectionCopy: Record<Kind, { kicker: string; title: string; description: st
   },
 };
 
+const relationshipCopy: Record<RelationshipMode, { kicker: string; title: string; description: string }> = {
+  enrollments: {
+    kicker: "Course operations",
+    title: "Enrolled learners",
+    description: "Connect eligible learners to the selected published course.",
+  },
+  instructors: {
+    kicker: "Course operations",
+    title: "Assigned instructors",
+    description: "Allocate eligible teachers to the selected published course.",
+  },
+};
+
 function titleFor(record: ContentRecord) {
   return record.name || record.title || "Untitled";
 }
@@ -126,6 +141,7 @@ function uploadResource(id: string, file: File, resourceType: ResourceType) {
 
 export default function InstitutionAdminPage() {
   const [activeKind, setActiveKind] = useState<Kind>("programmes");
+  const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
   const [status, setStatus] = useState<"ALL" | Status>("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
@@ -140,7 +156,7 @@ export default function InstitutionAdminPage() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
 
-  const currentSection = sectionCopy[activeKind];
+  const currentSection = relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
   const activeParentId = activeKind === "courses"
     ? ids.programmeId
@@ -161,6 +177,11 @@ export default function InstitutionAdminPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      if (relationshipMode) {
+        setRecords([]);
+        setLoading(false);
+        return;
+      }
       if (!canLoad) {
         setRecords([]);
         setLoading(false);
@@ -187,7 +208,7 @@ export default function InstitutionAdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeKind, canLoad, ids, refreshToken, status]);
+  }, [activeKind, canLoad, ids, refreshToken, relationshipMode, status]);
 
   useEffect(() => {
     if (!toast) return;
@@ -196,17 +217,26 @@ export default function InstitutionAdminPage() {
   }, [toast]);
 
   const navSummary = useMemo(() => {
+    if (relationshipMode) return `${trail.map((node) => node.label).join(" / ")} / ${relationshipCopy[relationshipMode].title}`;
     if (!trail.length) return "Start with a programme";
     return trail.map((node) => node.label).join(" / ");
-  }, [trail]);
+  }, [relationshipMode, trail]);
 
   function showSection(kind: Kind) {
+    setRelationshipMode(null);
     setActiveKind(kind);
     setStatus("ALL");
     if (kind === "programmes") {
       setTrail([]);
       setIds({ programmeId: "", courseId: "", moduleId: "", lessonId: "" });
     }
+  }
+
+  function openRelationship(mode: RelationshipMode, courseId: string, courseLabel: string) {
+    const courseNode = { kind: "courses" as Kind, id: courseId, label: courseLabel };
+    setIds((current) => ({ ...current, courseId, moduleId: "", lessonId: "" }));
+    setTrail((current) => [...current.slice(0, 1), courseNode]);
+    setRelationshipMode(mode);
   }
 
   function selectRecord(record: ContentRecord) {
@@ -232,6 +262,7 @@ export default function InstitutionAdminPage() {
   }
 
   function selectTrail(node: TrailNode) {
+    setRelationshipMode(null);
     const nodeIndex = sectionOrder[node.kind];
     setTrail((current) => current.slice(0, nodeIndex + 1));
     setActiveKind(node.kind);
@@ -440,12 +471,12 @@ export default function InstitutionAdminPage() {
               <h1>{currentSection.title}</h1>
               <p>{currentSection.description}</p>
             </div>
-            <button className="primary-button" type="button" onClick={openCreate} disabled={activeKind !== "programmes" && !activeParentId}>
+             <button className="primary-button" type="button" onClick={openCreate} disabled={Boolean(relationshipMode) || (activeKind !== "programmes" && !activeParentId)}>
               <span>+</span> New {labelFor(activeKind).slice(0, -1)}
             </button>
           </div>
 
-          <div className="breadcrumb-bar">
+           <div className="breadcrumb-bar">
             <button type="button" className={trail.length === 0 ? "crumb current" : "crumb"} onClick={() => showSection("programmes")}>All programmes</button>
             {trail.map((node) => (
               <span className="crumb-group" key={node.id}>
@@ -453,17 +484,20 @@ export default function InstitutionAdminPage() {
                 <button type="button" className={node.kind === activeKind ? "crumb current" : "crumb"} onClick={() => selectTrail(node)}>{node.label}</button>
               </span>
             ))}
-            {activeKind !== "programmes" && <><span className="crumb-separator">/</span><span className="crumb current">{labelFor(activeKind)}</span></>}
+             {!relationshipMode && activeKind !== "programmes" && <><span className="crumb-separator">/</span><span className="crumb current">{labelFor(activeKind)}</span></>}
+             {relationshipMode && <><span className="crumb-separator">/</span><span className="crumb current">{relationshipCopy[relationshipMode].title}</span></>}
           </div>
 
-          <div className="metric-grid">
+           {!relationshipMode && <div className="metric-grid">
             <article className="metric-card"><span className="metric-label">Total in view</span><strong>{loading ? "—" : visibleRecords.length}</strong><span className="metric-foot">Current collection</span></article>
             <article className="metric-card"><span className="metric-label">Published</span><strong className="green-text">{loading ? "—" : publishedCount}</strong><span className="metric-foot">Ready for learners</span></article>
             <article className="metric-card"><span className="metric-label">Drafts</span><strong className="amber-text">{loading ? "—" : draftCount}</strong><span className="metric-foot">Still in progress</span></article>
             <article className="metric-card muted-metric"><span className="metric-label">Archived</span><strong>{loading ? "—" : archivedCount}</strong><span className="metric-foot">Not in active flow</span></article>
-          </div>
+           </div>}
 
-          <section className="content-panel">
+           {relationshipMode ? (
+             <CourseRelationships apiBase={API_BASE} courseId={ids.courseId} courseLabel={trail.at(-1)?.label || "Selected course"} mode={relationshipMode} />
+           ) : <section className="content-panel">
             <div className="panel-toolbar">
               <div>
                 <h2>{activeKind === "programmes" ? "Your programmes" : selectedParent ? `${labelFor(activeKind)} in ${selectedParent.label}` : labelFor(activeKind)}</h2>
@@ -499,7 +533,7 @@ export default function InstitutionAdminPage() {
               <div className="record-list">
                 <div className="list-head"><span>{supportsOrdering ? "Order" : "Name"}</span><span>Details</span><span>Status</span><span>Updated</span><span aria-hidden="true" /></div>
                 {visibleRecords.map((record, index) => (
-                  <article className="record-row" key={record.id}>
+                   <article className="record-row" key={record.id}>
                     <div className="record-primary">
                       {supportsOrdering ? (
                         <div className="order-controls"><button type="button" onClick={() => moveRecord(index, -1)} disabled={index === 0} aria-label="Move up">↑</button><span>{record.sequence || index + 1}</span><button type="button" onClick={() => moveRecord(index, 1)} disabled={index === visibleRecords.length - 1} aria-label="Move down">↓</button></div>
@@ -509,13 +543,13 @@ export default function InstitutionAdminPage() {
                     <div className="record-detail">{record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
                     <div><span className={`status-badge ${record.status.toLowerCase()}`}><span />{record.status.charAt(0) + record.status.slice(1).toLowerCase()}</span></div>
                     <div className="updated-detail">Recently edited</div>
-                    <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}{record.status !== "PUBLISHED" && <button type="button" onClick={() => changeStatus(record, "PUBLISHED")}>Publish</button>}{record.status !== "ARCHIVED" && <button className="danger-action" type="button" onClick={() => changeStatus(record, "ARCHIVED")}>Archive</button>}</div>
+                     <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button></>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}{record.status !== "PUBLISHED" && <button type="button" onClick={() => changeStatus(record, "PUBLISHED")}>Publish</button>}{record.status !== "ARCHIVED" && <button className="danger-action" type="button" onClick={() => changeStatus(record, "ARCHIVED")}>Archive</button>}</div>
                   </article>
                 ))}
               </div>
             )}
-          </section>
-          <p className="scope-note"><span>✓</span> All content is isolated to your authenticated tenant and recorded in the audit trail.</p>
+           </section>}
+           <p className="scope-note"><span>✓</span> {relationshipMode ? "All relationships are institution-scoped and recorded in the audit trail." : "All content is isolated to your authenticated tenant and recorded in the audit trail."}</p>
         </div>
       </section>
 
