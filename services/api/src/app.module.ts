@@ -26,6 +26,5 @@ import { UsersModule } from "./modules/users/users.module";
     ModulesModule,
     AuditModule,
   ],
-  providers: [PermissionGuard],
 })
 export class AppModule {}
