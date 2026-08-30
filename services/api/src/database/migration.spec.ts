@@ -7,6 +7,7 @@ const migration = readFileSync(resolve(process.cwd(), "../../packages/database/m
 const lmsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/002_lms_course_management.sql"), "utf8");
 const relationshipMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/004_lms_enrollment_assignments.sql"), "utf8");
 const progressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/005_lms_progress_tracking.sql"), "utf8");
+const assignmentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/006_lms_assignments.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -62,4 +63,14 @@ test("progress migration defines completion uniqueness, lifecycle rules, and lea
   assert.match(progressMigration, /lms\.course_progress\.view/);
   assert.match(progressMigration, /lms\.assessment_completion\.create/);
   assert.match(progressMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("assignment migration extends Blueprint assessments and defines isolated submissions", () => {
+  assert.match(assignmentMigration, /ALTER TABLE lms_assessments/);
+  assert.match(assignmentMigration, /ADD COLUMN IF NOT EXISTS instructions/);
+  assert.match(assignmentMigration, /CREATE TABLE IF NOT EXISTS lms_assignment_submissions\b/);
+  assert.match(assignmentMigration, /UNIQUE \(tenant_id, assignment_id, learner_id\)/);
+  assert.match(assignmentMigration, /status IN \('SUBMITTED', 'GRADED'\)/);
+  assert.match(assignmentMigration, /lms\.assignment_submission\.update/);
+  assert.match(assignmentMigration, /INSERT INTO schema_migrations \(version\)/);
 });

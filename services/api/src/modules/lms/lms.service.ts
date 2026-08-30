@@ -1092,6 +1092,9 @@ export class LmsService {
     );
     const assessment = result.rows[0];
     if (!assessment) throw new NotFoundException("Assessment not found in the current tenant.");
+    if (assessment.assessment_type === "ASSIGNMENT") {
+      throw new BadRequestException("Assignment completion is recorded only after an instructor grades the submission.");
+    }
     if (assessment.status !== "PUBLISHED" || assessment.module_status !== "PUBLISHED" || assessment.course_status !== "PUBLISHED") {
       throw new BadRequestException("Only published assessments in published courses can be completed.");
     }

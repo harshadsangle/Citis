@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import CourseRelationships from "./CourseRelationships";
+import AssignmentManager from "./AssignmentManager";
 
 type Kind = "programmes" | "courses" | "course-modules" | "lessons" | "learning-resources";
-type RelationshipMode = "enrollments" | "instructors";
+type RelationshipMode = "enrollments" | "instructors" | "assignments";
 type Status = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type ResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
 
@@ -81,6 +82,11 @@ const relationshipCopy: Record<RelationshipMode, { kicker: string; title: string
     kicker: "Course operations",
     title: "Assigned instructors",
     description: "Allocate eligible teachers to the selected published course.",
+  },
+  assignments: {
+    kicker: "Course operations",
+    title: "Assignments",
+    description: "Set work for learners and review course submissions.",
   },
 };
 
@@ -462,6 +468,14 @@ export default function InstitutionAdminPage() {
            >
              <span className="nav-icon">T</span>Instructors
            </button>
+            <button
+              className={`nav-link ${relationshipMode === "assignments" ? "active" : ""}`}
+              type="button"
+              disabled={!ids.courseId}
+              onClick={() => ids.courseId && openRelationship("assignments", ids.courseId, trail.at(-1)?.label || "Selected course")}
+            >
+              <span className="nav-icon">A</span>Assignments
+            </button>
         </nav>
         <div className="sidebar-footer">
           <div className="avatar">IA</div>
@@ -512,7 +526,9 @@ export default function InstitutionAdminPage() {
            </div>}
 
            {relationshipMode ? (
-             <CourseRelationships apiBase={API_BASE} courseId={ids.courseId} courseLabel={trail.at(-1)?.label || "Selected course"} mode={relationshipMode} />
+             relationshipMode === "assignments"
+               ? <AssignmentManager apiBase={API_BASE} courseId={ids.courseId} courseLabel={trail.at(-1)?.label || "Selected course"} />
+               : <CourseRelationships apiBase={API_BASE} courseId={ids.courseId} courseLabel={trail.at(-1)?.label || "Selected course"} mode={relationshipMode} />
            ) : <section className="content-panel">
             <div className="panel-toolbar">
               <div>
