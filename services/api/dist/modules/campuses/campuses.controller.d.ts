@@ -4,32 +4,8 @@ import { CampusesService } from "./campuses.service";
 export declare class CampusesController {
     private readonly campuses;
     constructor(campuses: CampusesService);
-    list(institutionId: string, request: ContextRequest): Promise<{
-        success: boolean;
-        data: import("pg").QueryResultRow[];
-        meta: {
-            requestId?: string | undefined;
-        };
-    }>;
-    get(id: string, request: ContextRequest): Promise<{
-        success: boolean;
-        data: import("pg").QueryResultRow;
-        meta: {
-            requestId?: string | undefined;
-        };
-    }>;
-    create(input: CreateCampusDto, request: ContextRequest): Promise<{
-        success: boolean;
-        data: import("pg").QueryResultRow;
-        meta: {
-            requestId?: string | undefined;
-        };
-    }>;
-    update(id: string, input: UpdateCampusDto, request: ContextRequest): Promise<{
-        success: boolean;
-        data: import("pg").QueryResultRow;
-        meta: {
-            requestId?: string | undefined;
-        };
-    }>;
+    list(institutionId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    get(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    create(input: CreateCampusDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
+    update(id: string, input: UpdateCampusDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
 }

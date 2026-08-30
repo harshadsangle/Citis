@@ -5,17 +5,10 @@ export interface PaginationMeta {
     total: number;
     totalPages: number;
 }
-export declare function successResponse<T>(data: T, request?: Request, meta?: Record<string, unknown>): {
-    success: boolean;
+export interface ApiSuccess<T> {
+    success: true;
     data: T;
-    meta: {
-        requestId?: string | undefined;
-    };
-};
-export declare function paginatedResponse<T>(data: T[], pagination: PaginationMeta, request?: Request): {
-    success: boolean;
-    data: T[];
-    meta: {
-        requestId?: string | undefined;
-    };
-};
+    meta: Record<string, unknown>;
+}
+export declare function successResponse<T>(data: T, request?: Request, meta?: Record<string, unknown>): ApiSuccess<T>;
+export declare function paginatedResponse<T>(data: T[], pagination: PaginationMeta, request?: Request): ApiSuccess<T[]>;
