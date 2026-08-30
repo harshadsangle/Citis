@@ -138,7 +138,8 @@ export function LoginForm() {
       const token = response.data.accessToken || response.data.token;
       if (!token) throw new Error("No access token returned");
       if (typeof window !== "undefined") (values.remember ? localStorage : sessionStorage).setItem("citis-token", token);
-      window.location.assign("/");
+       const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
+       window.location.assign(callbackUrl?.startsWith("/") ? callbackUrl : "/");
     } catch (error) { setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again."); }
   };
   return (
