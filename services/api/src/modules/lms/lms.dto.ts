@@ -279,3 +279,94 @@ export class CompleteAssessmentDto {
   @IsDateString()
   completedAt?: string;
 }
+
+export const ASSIGNMENT_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
+
+export class AssignmentListQueryDto {
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
+
+  @IsOptional()
+  @IsIn(ASSIGNMENT_STATUSES)
+  status?: string;
+}
+
+export class CreateAssignmentDto {
+  @IsUUID()
+  courseId!: string;
+
+  @IsUUID()
+  moduleId!: string;
+
+  @IsString()
+  @Length(2, 180)
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  @Max(4000)
+  description?: string;
+
+  @IsString()
+  @Length(2, 12000)
+  instructions!: string;
+
+  @IsOptional()
+  @IsDateString()
+  dueAt?: string;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  @Max(100000)
+  maxMarks!: number;
+}
+
+export class UpdateAssignmentDto {
+  @IsOptional()
+  @IsString()
+  @Length(2, 180)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  @Max(4000)
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(2, 12000)
+  instructions?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dueAt?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  @Max(100000)
+  maxMarks?: number;
+}
+
+export class SubmitAssignmentDto {
+  @IsString()
+  @Length(1, 20000)
+  submissionText!: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @Max(2048)
+  attachmentUrl?: string;
+}
+
+export class GradeAssignmentSubmissionDto {
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  grade!: number;
+
+  @IsOptional()
+  @IsString()
+  @Max(10000)
+  feedback?: string;
+}

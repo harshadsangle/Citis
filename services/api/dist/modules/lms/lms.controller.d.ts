@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
-import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CompleteAssessmentDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, EnrollLearnerDto, ProgressViewerQueryDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CompleteAssessmentDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 import { LmsService } from "./lms.service";
 import type { LmsUpload } from "./resource-storage.service";
 export declare class LmsController {
@@ -26,6 +26,16 @@ export declare class LmsController {
     instructorAssignments(id: string, request: ContextRequest, query: RelationshipListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
     assignInstructor(id: string, input: AssignInstructorDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    assignments(request: ContextRequest, query: AssignmentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    createAssignment(input: CreateAssignmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    assignment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    updateAssignment(id: string, input: UpdateAssignmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    publishAssignment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    archiveAssignment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    assignmentSubmissions(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    myAssignmentSubmission(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    submitAssignment(id: string, input: SubmitAssignmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    gradeAssignmentSubmission(id: string, submissionId: string, input: GradeAssignmentSubmissionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     learnerProgress(request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         course: {
             id: unknown;

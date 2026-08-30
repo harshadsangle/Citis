@@ -2,7 +2,7 @@ import { AuditService } from "../../common/audit.service";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, type LmsUpload } from "./resource-storage.service";
-import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CompleteAssessmentDto, EnrollLearnerDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CompleteAssessmentDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, RelationshipListQueryDto, SubmitAssignmentDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
 type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
@@ -219,6 +219,37 @@ export declare class LmsService {
     }>;
     completeLesson(lessonId: string, request: ContextRequest): Promise<Record<string, unknown>>;
     completeAssessment(input: CompleteAssessmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    private assignmentCourse;
+    private hasAssignmentStaffAccess;
+    private assertAssignmentStaffAccess;
+    private assignmentModule;
+    private assignmentFor;
+    private assertAssignmentViewer;
+    listAssignments(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssignmentListQueryDto): Promise<{
+        data: import("pg").QueryResultRow[];
+        meta: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    getAssignment(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>>;
+    createAssignment(input: CreateAssignmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    updateAssignment(id: string, input: UpdateAssignmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    changeAssignmentStatus(id: string, status: LmsStatus, request: ContextRequest): Promise<Record<string, unknown>>;
+    listAssignmentSubmissions(id: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number): Promise<{
+        data: import("pg").QueryResultRow[];
+        meta: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    getMyAssignmentSubmission(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>>;
+    submitAssignment(id: string, input: SubmitAssignmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    gradeAssignmentSubmission(id: string, submissionId: string, input: GradeAssignmentSubmissionDto, request: ContextRequest): Promise<Record<string, unknown>>;
     changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest): Promise<import("pg").QueryResultRow>;
 }
 export {};

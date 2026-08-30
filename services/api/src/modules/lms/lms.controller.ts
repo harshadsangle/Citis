@@ -11,15 +11,20 @@ import {
   ContentListQueryDto,
   CandidateListQueryDto,
   AssignInstructorDto,
+  AssignmentListQueryDto,
   CompleteAssessmentDto,
   CreateCourseDto,
   CreateCourseModuleDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
+  CreateAssignmentDto,
   EnrollLearnerDto,
+  GradeAssignmentSubmissionDto,
   ProgressViewerQueryDto,
   RelationshipListQueryDto,
+  SubmitAssignmentDto,
+  UpdateAssignmentDto,
   UpdateCourseDto,
   UpdateCourseModuleDto,
   UpdateLearningResourceDto,
@@ -164,6 +169,70 @@ export class LmsController {
   @RequirePermission("lms.instructor_assignment.archive")
   async removeInstructorAssignment(@Param("courseId") courseId: string, @Param("assignmentId") assignmentId: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.removeInstructorAssignment(courseId, assignmentId, request), request);
+  }
+
+  @Get("assignments")
+  @RequirePermission("lms.assignment.view")
+  async assignments(@Req() request: ContextRequest, @Query() query: AssignmentListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.lms.listAssignments(request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Post("assignments")
+  @RequirePermission("lms.assignment.create")
+  async createAssignment(@Body() input: CreateAssignmentDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.createAssignment(input, request), request);
+  }
+
+  @Get("assignments/:id")
+  @RequirePermission("lms.assignment.view")
+  async assignment(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.getAssignment(id, request.context.user!), request);
+  }
+
+  @Patch("assignments/:id")
+  @RequirePermission("lms.assignment.update")
+  async updateAssignment(@Param("id") id: string, @Body() input: UpdateAssignmentDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.updateAssignment(id, input, request), request);
+  }
+
+  @Post("assignments/:id/publish")
+  @RequirePermission("lms.assignment.publish")
+  async publishAssignment(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeAssignmentStatus(id, "PUBLISHED", request), request);
+  }
+
+  @Post("assignments/:id/archive")
+  @RequirePermission("lms.assignment.archive")
+  async archiveAssignment(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeAssignmentStatus(id, "ARCHIVED", request), request);
+  }
+
+  @Get("assignments/:id/submissions")
+  @RequirePermission("lms.assignment_submission.view")
+  async assignmentSubmissions(@Param("id") id: string, @Req() request: ContextRequest) {
+    const page = paginationFrom(request);
+    const result = await this.lms.listAssignmentSubmissions(id, request.context.user!, page.page, page.pageSize, page.offset);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Get("assignments/:id/submission")
+  @RequirePermission("lms.assignment_submission.view")
+  async myAssignmentSubmission(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.getMyAssignmentSubmission(id, request.context.user!), request);
+  }
+
+  @Post("assignments/:id/submissions")
+  @RequirePermission("lms.assignment_submission.create")
+  async submitAssignment(@Param("id") id: string, @Body() input: SubmitAssignmentDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.submitAssignment(id, input, request), request);
+  }
+
+  @Patch("assignments/:id/submissions/:submissionId/grade")
+  @RequirePermission("lms.assignment_submission.update")
+  async gradeAssignmentSubmission(@Param("id") id: string, @Param("submissionId") submissionId: string, @Body() input: GradeAssignmentSubmissionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.gradeAssignmentSubmission(id, submissionId, input, request), request);
   }
 
   @Get("progress")

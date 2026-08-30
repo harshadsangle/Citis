@@ -89,3 +89,32 @@ export declare class CompleteAssessmentDto {
     passed?: boolean;
     completedAt?: string;
 }
+export declare const ASSIGNMENT_STATUSES: readonly ["DRAFT", "PUBLISHED", "ARCHIVED"];
+export declare class AssignmentListQueryDto {
+    courseId?: string;
+    status?: string;
+}
+export declare class CreateAssignmentDto {
+    courseId: string;
+    moduleId: string;
+    title: string;
+    description?: string;
+    instructions: string;
+    dueAt?: string;
+    maxMarks: number;
+}
+export declare class UpdateAssignmentDto {
+    title?: string;
+    description?: string;
+    instructions?: string;
+    dueAt?: string;
+    maxMarks?: number;
+}
+export declare class SubmitAssignmentDto {
+    submissionText: string;
+    attachmentUrl?: string;
+}
+export declare class GradeAssignmentSubmissionDto {
+    grade: number;
+    feedback?: string;
+}

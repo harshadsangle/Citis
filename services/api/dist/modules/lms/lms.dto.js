@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CompleteAssessmentDto = exports.ProgressViewerQueryDto = exports.AssignInstructorDto = exports.EnrollLearnerDto = exports.CandidateListQueryDto = exports.RelationshipListQueryDto = exports.LMS_RELATIONSHIP_STATUSES = exports.UpdateLearningResourceDto = exports.CreateLearningResourceDto = exports.UpdateLessonDto = exports.CreateLessonDto = exports.UpdateCourseModuleDto = exports.CreateCourseModuleDto = exports.UpdateCourseDto = exports.CreateCourseDto = exports.UpdateProgrammeDto = exports.CreateProgrammeDto = exports.ContentListQueryDto = exports.LMS_RESOURCE_TYPES = exports.LMS_STATUSES = void 0;
+exports.GradeAssignmentSubmissionDto = exports.SubmitAssignmentDto = exports.UpdateAssignmentDto = exports.CreateAssignmentDto = exports.AssignmentListQueryDto = exports.ASSIGNMENT_STATUSES = exports.CompleteAssessmentDto = exports.ProgressViewerQueryDto = exports.AssignInstructorDto = exports.EnrollLearnerDto = exports.CandidateListQueryDto = exports.RelationshipListQueryDto = exports.LMS_RELATIONSHIP_STATUSES = exports.UpdateLearningResourceDto = exports.CreateLearningResourceDto = exports.UpdateLessonDto = exports.CreateLessonDto = exports.UpdateCourseModuleDto = exports.CreateCourseModuleDto = exports.UpdateCourseDto = exports.CreateCourseDto = exports.UpdateProgrammeDto = exports.CreateProgrammeDto = exports.ContentListQueryDto = exports.LMS_RESOURCE_TYPES = exports.LMS_STATUSES = void 0;
 const class_validator_1 = require("class-validator");
 exports.LMS_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"];
 exports.LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
@@ -414,4 +414,135 @@ __decorate([
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", String)
 ], CompleteAssessmentDto.prototype, "completedAt", void 0);
+exports.ASSIGNMENT_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"];
+class AssignmentListQueryDto {
+    courseId;
+    status;
+}
+exports.AssignmentListQueryDto = AssignmentListQueryDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], AssignmentListQueryDto.prototype, "courseId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(exports.ASSIGNMENT_STATUSES),
+    __metadata("design:type", String)
+], AssignmentListQueryDto.prototype, "status", void 0);
+class CreateAssignmentDto {
+    courseId;
+    moduleId;
+    title;
+    description;
+    instructions;
+    dueAt;
+    maxMarks;
+}
+exports.CreateAssignmentDto = CreateAssignmentDto;
+__decorate([
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateAssignmentDto.prototype, "courseId", void 0);
+__decorate([
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateAssignmentDto.prototype, "moduleId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(2, 180),
+    __metadata("design:type", String)
+], CreateAssignmentDto.prototype, "title", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Max)(4000),
+    __metadata("design:type", String)
+], CreateAssignmentDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(2, 12000),
+    __metadata("design:type", String)
+], CreateAssignmentDto.prototype, "instructions", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], CreateAssignmentDto.prototype, "dueAt", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)({ maxDecimalPlaces: 2 }),
+    (0, class_validator_1.Min)(0.01),
+    (0, class_validator_1.Max)(100000),
+    __metadata("design:type", Number)
+], CreateAssignmentDto.prototype, "maxMarks", void 0);
+class UpdateAssignmentDto {
+    title;
+    description;
+    instructions;
+    dueAt;
+    maxMarks;
+}
+exports.UpdateAssignmentDto = UpdateAssignmentDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(2, 180),
+    __metadata("design:type", String)
+], UpdateAssignmentDto.prototype, "title", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Max)(4000),
+    __metadata("design:type", String)
+], UpdateAssignmentDto.prototype, "description", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(2, 12000),
+    __metadata("design:type", String)
+], UpdateAssignmentDto.prototype, "instructions", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], UpdateAssignmentDto.prototype, "dueAt", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({ maxDecimalPlaces: 2 }),
+    (0, class_validator_1.Min)(0.01),
+    (0, class_validator_1.Max)(100000),
+    __metadata("design:type", Number)
+], UpdateAssignmentDto.prototype, "maxMarks", void 0);
+class SubmitAssignmentDto {
+    submissionText;
+    attachmentUrl;
+}
+exports.SubmitAssignmentDto = SubmitAssignmentDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(1, 20000),
+    __metadata("design:type", String)
+], SubmitAssignmentDto.prototype, "submissionText", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUrl)({ require_tld: false }),
+    (0, class_validator_1.Max)(2048),
+    __metadata("design:type", String)
+], SubmitAssignmentDto.prototype, "attachmentUrl", void 0);
+class GradeAssignmentSubmissionDto {
+    grade;
+    feedback;
+}
+exports.GradeAssignmentSubmissionDto = GradeAssignmentSubmissionDto;
+__decorate([
+    (0, class_validator_1.IsNumber)({ maxDecimalPlaces: 2 }),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], GradeAssignmentSubmissionDto.prototype, "grade", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Max)(10000),
+    __metadata("design:type", String)
+], GradeAssignmentSubmissionDto.prototype, "feedback", void 0);
 //# sourceMappingURL=lms.dto.js.map

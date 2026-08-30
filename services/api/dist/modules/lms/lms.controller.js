@@ -99,6 +99,40 @@ let LmsController = class LmsController {
     async removeInstructorAssignment(courseId, assignmentId, request) {
         return (0, response_1.successResponse)(await this.lms.removeInstructorAssignment(courseId, assignmentId, request), request);
     }
+    async assignments(request, query) {
+        const page = (0, pagination_1.paginationFrom)(request);
+        const result = await this.lms.listAssignments(request.context.user, page.page, page.pageSize, page.offset, query);
+        return (0, response_1.paginatedResponse)(result.data, result.meta, request);
+    }
+    async createAssignment(input, request) {
+        return (0, response_1.successResponse)(await this.lms.createAssignment(input, request), request);
+    }
+    async assignment(id, request) {
+        return (0, response_1.successResponse)(await this.lms.getAssignment(id, request.context.user), request);
+    }
+    async updateAssignment(id, input, request) {
+        return (0, response_1.successResponse)(await this.lms.updateAssignment(id, input, request), request);
+    }
+    async publishAssignment(id, request) {
+        return (0, response_1.successResponse)(await this.lms.changeAssignmentStatus(id, "PUBLISHED", request), request);
+    }
+    async archiveAssignment(id, request) {
+        return (0, response_1.successResponse)(await this.lms.changeAssignmentStatus(id, "ARCHIVED", request), request);
+    }
+    async assignmentSubmissions(id, request) {
+        const page = (0, pagination_1.paginationFrom)(request);
+        const result = await this.lms.listAssignmentSubmissions(id, request.context.user, page.page, page.pageSize, page.offset);
+        return (0, response_1.paginatedResponse)(result.data, result.meta, request);
+    }
+    async myAssignmentSubmission(id, request) {
+        return (0, response_1.successResponse)(await this.lms.getMyAssignmentSubmission(id, request.context.user), request);
+    }
+    async submitAssignment(id, input, request) {
+        return (0, response_1.successResponse)(await this.lms.submitAssignment(id, input, request), request);
+    }
+    async gradeAssignmentSubmission(id, submissionId, input, request) {
+        return (0, response_1.successResponse)(await this.lms.gradeAssignmentSubmission(id, submissionId, input, request), request);
+    }
     async learnerProgress(request) {
         return (0, response_1.successResponse)(await this.lms.listLearnerProgress(request.context.user), request);
     }
@@ -387,6 +421,100 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "removeInstructorAssignment", null);
+__decorate([
+    (0, common_1.Get)("assignments"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment.view"),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, lms_dto_1.AssignmentListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assignments", null);
+__decorate([
+    (0, common_1.Post)("assignments"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment.create"),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [lms_dto_1.CreateAssignmentDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "createAssignment", null);
+__decorate([
+    (0, common_1.Get)("assignments/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assignment", null);
+__decorate([
+    (0, common_1.Patch)("assignments/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment.update"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.UpdateAssignmentDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "updateAssignment", null);
+__decorate([
+    (0, common_1.Post)("assignments/:id/publish"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment.publish"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "publishAssignment", null);
+__decorate([
+    (0, common_1.Post)("assignments/:id/archive"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment.archive"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "archiveAssignment", null);
+__decorate([
+    (0, common_1.Get)("assignments/:id/submissions"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment_submission.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assignmentSubmissions", null);
+__decorate([
+    (0, common_1.Get)("assignments/:id/submission"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment_submission.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "myAssignmentSubmission", null);
+__decorate([
+    (0, common_1.Post)("assignments/:id/submissions"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment_submission.create"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.SubmitAssignmentDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "submitAssignment", null);
+__decorate([
+    (0, common_1.Patch)("assignments/:id/submissions/:submissionId/grade"),
+    (0, permission_decorator_1.RequirePermission)("lms.assignment_submission.update"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Param)("submissionId")),
+    __param(2, (0, common_1.Body)()),
+    __param(3, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, lms_dto_1.GradeAssignmentSubmissionDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "gradeAssignmentSubmission", null);
 __decorate([
     (0, common_1.Get)("progress"),
     (0, permission_decorator_1.RequirePermission)("lms.course_progress.view"),
