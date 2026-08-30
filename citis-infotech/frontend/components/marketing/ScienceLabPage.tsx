@@ -142,6 +142,13 @@ const scienceLabBanners = [
   },
 ] as const;
 
+const scienceLabResources = [
+  {
+    title: "Scholarlab Biology",
+    url: "https://www.youtube.com/watch?v=y5ev3xA_rH8&list=PL2n-lSyk8P1l0dfemVeHgDJmk5vYxz-iu",
+  },
+] as const;
+
 function SectionTitle({ children }: { children: string }) {
   return (
     <h2 className="font-heading text-3xl font-semibold leading-tight tracking-tight text-balance sm:text-4xl">
@@ -529,6 +536,22 @@ export function ScienceLabPage() {
               Bring Science Lab to Your School
             </a>
           </div>
+           <div className="mt-10 border-t border-border pt-8">
+             <p className="text-sm font-bold tracking-[0.14em] text-accent uppercase">Resources</p>
+             <div className="mt-4 flex flex-wrap gap-3">
+               {scienceLabResources.map((resource) => (
+                 <a
+                   key={resource.url}
+                   href={resource.url}
+                   target="_blank"
+                   rel="noreferrer"
+                   className="inline-flex items-center justify-center rounded-full border border-primary px-5 py-2.5 text-sm font-semibold text-primary transition hover:-translate-y-0.5 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                 >
+                   {resource.title}
+                 </a>
+               ))}
+             </div>
+           </div>
         </AnimatedSection>
       </section>
     </>
