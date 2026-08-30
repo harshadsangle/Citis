@@ -93,7 +93,14 @@ async function request<T>(path: string, init?: RequestInit) {
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new Error(payload?.message || payload?.error || "The request could not be completed.");
+    const message = typeof payload?.message === "string"
+      ? payload.message
+      : typeof payload?.error?.message === "string"
+        ? payload.error.message
+        : typeof payload?.error === "string"
+          ? payload.error
+          : "The request could not be completed.";
+    throw new Error(message);
   }
   return payload as T;
 }
