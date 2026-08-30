@@ -41,6 +41,10 @@ optional `details`, and the request ID in `meta`.
   `learning-resources`. Child collections accept a parent ID filter such as
   `programmeId`, `courseId`, `moduleId`, or `lessonId`, plus the shared
   `status` filter.
+- LMS course operations: authenticated, institution-scoped endpoints for
+  `courses/:id/enrollments` and `courses/:id/instructor-assignments`, plus
+  role-filtered candidate endpoints. These operations require a published
+  course and preserve removed relationship history.
 
 Use HTTP-only `citis_session` cookies for browser sessions. Bearer tokens are
 accepted by the API guard for non-browser clients, but browser code must not
@@ -54,3 +58,7 @@ children use a unique positive sequence, and resource metadata is validated
 against the selected resource type. Publish and archive actions are separate
 permission-protected endpoints and are recorded as `PUBLISH` or `ARCHIVE`
 audit actions.
+
+Enrollment and instructor-assignment writes derive tenant and institution
+ownership from the selected course, require an active Student or Teacher role
+in that institution, and are recorded as `CREATE` or `REMOVE` audit actions.
