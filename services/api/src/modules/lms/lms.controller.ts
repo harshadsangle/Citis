@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
 import { paginationFrom } from "../../common/pagination";
 import { paginatedResponse, successResponse } from "../../common/response";
@@ -19,6 +21,7 @@ import {
   UpdateProgrammeDto,
 } from "./lms.dto";
 import { LmsService } from "./lms.service";
+import type { LmsUpload } from "./resource-storage.service";
 
 @Controller()
 @UseGuards(AuthGuard, PermissionGuard)
@@ -213,5 +216,45 @@ export class LmsController {
   @RequirePermission("lms.learning_resource.archive")
   async archiveLearningResource(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.changeStatus(id, "learning_resource", "ARCHIVED", request), request);
+  }
+
+  @Post("learning-resources/:id/file")
+  @RequirePermission("lms.learning_resource.update")
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 50 * 1024 * 1024 } }))
+  async uploadLearningResourceFile(@Param("id") id: string, @UploadedFile() file: LmsUpload, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.uploadResourceFile(id, file, request), request);
+  }
+
+  @Post("learning-resources/:id/scorm")
+  @RequirePermission("lms.learning_resource.update")
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 250 * 1024 * 1024 } }))
+  async uploadScormPackage(@Param("id") id: string, @UploadedFile() file: LmsUpload, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.uploadScormPackage(id, file, request), request);
+  }
+
+  @Get("learning-resources/:id/file")
+  @RequirePermission("lms.learning_resource.view")
+  async downloadLearningResourceFile(@Param("id") id: string, @Req() request: ContextRequest, @Res() response: Response) {
+    const file = await this.lms.getManagedFile(id, request);
+    response.setHeader("Content-Type", String(file.mimeType));
+    response.setHeader("Content-Disposition", `inline; filename="${String(file.filename).replace(/[\r\n"]/g, "")}"`);
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    return response.send(file.content);
+  }
+
+  @Get("learning-resources/:id/scorm/launch")
+  @RequirePermission("lms.learning_resource.view")
+  async launchScorm(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.getScormLaunch(id, request), request);
+  }
+
+  @Get("learning-resources/:id/scorm/*asset")
+  @RequirePermission("lms.learning_resource.view")
+  async serveScormAsset(@Param("id") id: string, @Param("asset") asset: string, @Req() request: ContextRequest, @Res() response: Response) {
+    const file = await this.lms.getScormAsset(id, asset, request);
+    response.setHeader("Content-Type", String(file.mimeType));
+    response.setHeader("Content-Disposition", "inline");
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    return response.send(file.content);
   }
 }

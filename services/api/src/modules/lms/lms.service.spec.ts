@@ -3,6 +3,7 @@ import test from "node:test";
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { LmsService } from "./lms.service";
+import { ResourceStorageService } from "./resource-storage.service";
 
 const user: AuthenticatedUser = {
   id: "user-1",
@@ -27,7 +28,7 @@ function serviceWith(query: (text: string, values: unknown[]) => Promise<{ rows:
   const audits: Array<Record<string, unknown>> = [];
   const db = { query };
   const audit = { record: async (input: Record<string, unknown>) => audits.push(input) };
-  return { service: new LmsService(db as never, audit as never), audits };
+  return { service: new LmsService(db as never, audit as never, new ResourceStorageService()), audits };
 }
 
 test("course creation rejects a parent outside the authenticated tenant", async () => {
@@ -77,4 +78,29 @@ test("publishing content writes an auditable status mutation", async () => {
   assert.equal(audits.length, 1);
   assert.equal(audits[0].action, "PUBLISH");
   assert.equal(audits[0].tenantId, user.tenantId);
+});
+
+test("managed file delivery is tenant-scoped and auditable", async () => {
+  const audits: Array<Record<string, unknown>> = [];
+  const queries: Array<{ text: string; values: unknown[] }> = [];
+  const db = {
+    query: async (text: string, values: unknown[]) => {
+      queries.push({ text, values });
+      if (text.startsWith("SELECT lr.*")) {
+        return { rows: [{ id: "resource-1", tenant_id: user.tenantId, institution_id: "institution-1", resource_type: "PDF" }] };
+      }
+      return { rows: [{ id: "file-1", tenant_id: user.tenantId, resource_id: "resource-1", kind: "FILE", storage_key: "tenant-1/resource-1/file.pdf", original_filename: "file.pdf", mime_type: "application/pdf" }] };
+    },
+  };
+  const storage = { read: async (storageKey: string) => Buffer.from(storageKey) };
+  const audit = { record: async (input: Record<string, unknown>) => audits.push(input) };
+  const service = new LmsService(db as never, audit as never, storage as never);
+
+  const result = await service.getManagedFile("resource-1", request);
+
+  assert.deepEqual(result.content, Buffer.from("tenant-1/resource-1/file.pdf"));
+  assert.equal(queries[0].values[1], user.tenantId);
+  assert.equal(queries[1].values[1], user.tenantId);
+  assert.equal(audits.at(-1)?.action, "DOWNLOAD");
+  assert.equal(audits.at(-1)?.tenantId, user.tenantId);
 });

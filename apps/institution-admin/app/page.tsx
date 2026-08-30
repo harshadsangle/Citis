@@ -20,6 +20,10 @@ type ContentRecord = {
   file_path?: string | null;
   duration?: number | null;
   estimated_duration?: number | null;
+  managed_file_id?: string | null;
+  managed_file_name?: string | null;
+  managed_file_size?: number | null;
+  managed_file_mime_type?: string | null;
 };
 
 type TrailNode = { kind: Kind; id: string; label: string };
@@ -86,10 +90,16 @@ function parentQuery(kind: Kind, ids: { programmeId: string; courseId: string; m
 }
 
 async function request<T>(path: string, init?: RequestInit) {
+  const headers = new Headers(init?.headers);
+  if (init?.body instanceof FormData) {
+    headers.delete("Content-Type");
+  } else {
+    headers.set("Content-Type", "application/json");
+  }
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
     credentials: "include",
-    headers: { "Content-Type": "application/json", ...(init?.headers || {}) },
+    headers,
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
@@ -105,6 +115,15 @@ async function request<T>(path: string, init?: RequestInit) {
   return payload as T;
 }
 
+function uploadResource(id: string, file: File, resourceType: ResourceType) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return request<{ success: true; data: Record<string, unknown> }>(
+    `/learning-resources/${id}/${resourceType === "SCORM" ? "scorm" : "file"}`,
+    { method: "POST", body: formData },
+  );
+}
+
 export default function InstitutionAdminPage() {
   const [activeKind, setActiveKind] = useState<Kind>("programmes");
   const [status, setStatus] = useState<"ALL" | Status>("ALL");
@@ -117,6 +136,7 @@ export default function InstitutionAdminPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<ContentRecord | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
 
@@ -229,6 +249,7 @@ export default function InstitutionAdminPage() {
   function openCreate() {
     const nextSequence = records.reduce((highest, record) => Math.max(highest, Number(record.sequence) || 0), 0) + 1;
     setEditing(null);
+    setSelectedFile(null);
     setForm({
       institutionId: "",
       name: "",
@@ -247,6 +268,7 @@ export default function InstitutionAdminPage() {
 
   function openEdit(record: ContentRecord) {
     setEditing(record);
+    setSelectedFile(null);
     setForm({
       name: record.name || "",
       title: record.title || "",
@@ -306,14 +328,26 @@ export default function InstitutionAdminPage() {
 
     try {
       const path = `${endpointFor(activeKind)}${editing ? `/${editing.id}` : ""}`;
-      await request(path, { method: editing ? "PATCH" : "POST", body: JSON.stringify(body) });
+      const saved = await request<{ success: true; data: ContentRecord }>(path, { method: editing ? "PATCH" : "POST", body: JSON.stringify(body) });
+      if (activeKind === "learning-resources" && selectedFile) {
+        await uploadResource(editing?.id || saved.data.id, selectedFile, formValue("resourceType") as ResourceType);
+      }
       setModalOpen(false);
       setRefreshToken((current) => current + 1);
-      setToast(editing ? `${labelFor(activeKind).slice(0, -1)} updated.` : `${labelFor(activeKind).slice(0, -1)} created.`);
+      setToast(selectedFile ? "Resource saved and file uploaded." : editing ? `${labelFor(activeKind).slice(0, -1)} updated.` : `${labelFor(activeKind).slice(0, -1)} created.`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unable to save this item.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function launchScorm(record: ContentRecord) {
+    try {
+      const payload = await request<{ success: true; data: { launchUrl: string } }>(`/learning-resources/${record.id}/scorm/launch`);
+      window.open(payload.data.launchUrl, "_blank", "noopener,noreferrer");
+    } catch (launchError) {
+      setError(launchError instanceof Error ? launchError.message : "Unable to launch this SCORM package.");
     }
   }
 
@@ -472,10 +506,10 @@ export default function InstitutionAdminPage() {
                       ) : <div className="record-avatar">{(titleFor(record)[0] || "?").toUpperCase()}</div>}
                       <div><button className="record-title" type="button" onClick={() => selectRecord(record)}>{titleFor(record)}</button><span className="record-meta">{record.code || record.resource_type || (record.description ? record.description.slice(0, 44) : "No description")}</span></div>
                     </div>
-                    <div className="record-detail">{record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}` : record.description || "No description added"}</div>
+                    <div className="record-detail">{record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
                     <div><span className={`status-badge ${record.status.toLowerCase()}`}><span />{record.status.charAt(0) + record.status.slice(1).toLowerCase()}</span></div>
                     <div className="updated-detail">Recently edited</div>
-                    <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{record.status !== "PUBLISHED" && <button type="button" onClick={() => changeStatus(record, "PUBLISHED")}>Publish</button>}{record.status !== "ARCHIVED" && <button className="danger-action" type="button" onClick={() => changeStatus(record, "ARCHIVED")}>Archive</button>}</div>
+                    <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}{record.status !== "PUBLISHED" && <button type="button" onClick={() => changeStatus(record, "PUBLISHED")}>Publish</button>}{record.status !== "ARCHIVED" && <button className="danger-action" type="button" onClick={() => changeStatus(record, "ARCHIVED")}>Archive</button>}</div>
                   </article>
                 ))}
               </div>
@@ -498,7 +532,7 @@ export default function InstitutionAdminPage() {
               <label>Description<textarea value={formValue("description")} onChange={(event) => updateForm("description", event.target.value)} placeholder="What will learners or administrators find here?" rows={3} /></label>
               {(supportsOrdering || activeKind === "learning-resources") && <label>Order *<input required type="number" min={1} value={formValue("sequence")} onChange={(event) => updateForm("sequence", event.target.value)} /></label>}
               {activeKind === "lessons" && <label>Estimated duration (minutes)<input type="number" min={0} value={formValue("estimatedDuration")} onChange={(event) => updateForm("estimatedDuration", event.target.value)} placeholder="Optional" /></label>}
-              {activeKind === "learning-resources" && <><label>URL<input type="url" value={formValue("url")} onChange={(event) => updateForm("url", event.target.value)} placeholder="https://…" /></label><label>File path<input value={formValue("filePath")} onChange={(event) => updateForm("filePath", event.target.value)} placeholder="Optional managed file path" /></label><label>Duration (minutes)<input type="number" min={0} value={formValue("duration")} onChange={(event) => updateForm("duration", event.target.value)} placeholder="Optional" /></label><p className="field-hint">Videos, links, SCORM, and interactive resources require a URL. Documents can use a URL or file path.</p></>}
+              {activeKind === "learning-resources" && <><label>URL<input type="url" value={formValue("url")} onChange={(event) => updateForm("url", event.target.value)} placeholder="https://…" /></label>{["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(formValue("resourceType")) && <label>{formValue("resourceType") === "SCORM" ? "SCORM package (.zip)" : "Managed file"}<input type="file" accept={formValue("resourceType") === "SCORM" ? ".zip,application/zip" : ".pdf,.doc,.docx,.odt,.ppt,.pptx,.odp"} onChange={(event) => setSelectedFile(event.target.files?.[0] || null)} />{selectedFile && <span className="selected-file">{selectedFile.name} · {(selectedFile.size / 1024 / 1024).toFixed(1)} MB</span>}</label>}<label>Duration (minutes)<input type="number" min={0} value={formValue("duration")} onChange={(event) => updateForm("duration", event.target.value)} placeholder="Optional" /></label><p className="field-hint">Files are stored inside your tenant, scanned for safe paths, and served only after permission checks. SCORM packages must contain imsmanifest.xml.</p></>}
               <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? "Saving…" : editing ? "Save changes" : "Create draft"}</button></div>
             </form>
           </section>

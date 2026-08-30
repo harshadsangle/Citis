@@ -3,6 +3,7 @@ import { AuditService } from "../../common/audit.service";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
+import { ResourceStorageService, mimeTypeForFilename, type LmsUpload } from "./resource-storage.service";
 import type {
   ContentListQueryDto,
   CreateCourseDto,
@@ -29,6 +30,7 @@ export class LmsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly storage: ResourceStorageService,
   ) {}
 
   private statusFilter(status?: string) {
@@ -68,6 +70,22 @@ export class LmsService {
       action,
       previousValue: before,
       newValue: row,
+      ipAddress: request.context.ipAddress,
+      deviceContext: { userAgent: request.context.userAgent },
+    });
+  }
+
+  private async auditAccess(request: ContextRequest, resource: string, action: string, row: Record<string, unknown>, details: Record<string, unknown>) {
+    await this.audit.record({
+      tenantId: request.context.user!.tenantId,
+      institutionId: (row.institution_id as string | null) ?? null,
+      actorUserId: request.context.user!.id,
+      requestId: request.context.requestId,
+      module: "lms",
+      resource,
+      resourceId: row.id as string,
+      action,
+      newValue: details,
       ipAddress: request.context.ipAddress,
       deviceContext: { userAgent: request.context.userAgent },
     });
@@ -252,10 +270,13 @@ export class LmsService {
       ? "x.id, x.tenant_id, x.course_id, x.title, x.description, x.sequence, x.status, x.created_at, x.updated_at"
       : table === "lessons"
         ? "x.id, x.tenant_id, x.module_id, x.title, x.description, x.sequence, x.estimated_duration, x.status, x.created_at, x.updated_at"
-        : "x.id, x.tenant_id, x.lesson_id, x.resource_type, x.title, x.url, x.file_path, x.duration, x.sequence, x.status, x.created_at, x.updated_at";
+        : "x.id, x.tenant_id, x.lesson_id, x.resource_type, x.title, x.url, x.file_path, x.duration, x.sequence, x.status, x.created_at, x.updated_at, m.id AS managed_file_id, m.original_filename AS managed_file_name, m.byte_size AS managed_file_size, m.mime_type AS managed_file_mime_type";
+    const fromClause = table === "learning_resources"
+      ? `${table} x LEFT JOIN managed_files m ON m.resource_id = x.id AND m.tenant_id = x.tenant_id`
+      : `${table} x`;
     const [rows, total] = await Promise.all([
       this.db.query(
-        `SELECT ${selection} FROM ${table} x
+        `SELECT ${selection} FROM ${fromClause}
          WHERE ${clauses.join(" AND ")}
          ORDER BY x.sequence ASC LIMIT $${pageParam} OFFSET $${pageParam + 1}`,
         values,
@@ -358,6 +379,166 @@ export class LmsService {
     });
   }
 
+  private async resourceFor(id: string, user: AuthenticatedUser) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT lr.*, p.institution_id
+       FROM learning_resources lr
+       JOIN lessons l ON l.id = lr.lesson_id AND l.tenant_id = lr.tenant_id
+       JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = lr.tenant_id
+       JOIN courses c ON c.id = cm.course_id AND c.tenant_id = lr.tenant_id
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = lr.tenant_id
+       WHERE lr.id = $1 AND lr.tenant_id = $2`,
+      [id, user.tenantId],
+    );
+    if (!result.rows[0]) throw new NotFoundException("Learning resource not found.");
+    return result.rows[0];
+  }
+
+  async uploadResourceFile(id: string, file: LmsUpload, request: ContextRequest) {
+    const resource = await this.resourceFor(id, request.context.user!);
+    if (!["PDF", "DOCUMENT", "PRESENTATION"].includes(String(resource.resource_type))) {
+      throw new BadRequestException("Only document resources can receive managed files.");
+    }
+    const stored = await this.storage.storeDocument(request.context.user!.tenantId, id, file);
+    return this.replaceManagedFile(resource, stored, "FILE", request);
+  }
+
+  async uploadScormPackage(id: string, file: LmsUpload, request: ContextRequest) {
+    const resource = await this.resourceFor(id, request.context.user!);
+    if (resource.resource_type !== "SCORM") throw new BadRequestException("The resource must be a SCORM resource.");
+    const stored = await this.storage.storeScormPackage(request.context.user!.tenantId, id, file);
+    return this.replaceManagedFile(resource, stored, "SCORM", request);
+  }
+
+  private async replaceManagedFile(
+    resource: Record<string, unknown>,
+    stored: { storageKey: string; originalFilename: string; mimeType: string; byteSize: number; sha256: string; entrypoint?: string },
+    kind: "FILE" | "SCORM",
+    request: ContextRequest,
+  ) {
+    let previousStorageKey: string | null = null;
+    let committed = false;
+    try {
+      const managed = await this.db.transaction(async (client) => {
+        const previous = await client.query<{ storage_key: string }>(
+          "SELECT storage_key FROM managed_files WHERE resource_id = $1 FOR UPDATE",
+          [resource.id],
+        );
+        previousStorageKey = previous.rows[0]?.storage_key ?? null;
+        const result = await client.query(
+          `INSERT INTO managed_files
+            (tenant_id, institution_id, resource_id, kind, storage_key, original_filename, mime_type, byte_size, sha256, entrypoint, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           ON CONFLICT (resource_id) DO UPDATE SET
+             tenant_id = EXCLUDED.tenant_id, institution_id = EXCLUDED.institution_id, kind = EXCLUDED.kind,
+             storage_key = EXCLUDED.storage_key, original_filename = EXCLUDED.original_filename,
+             mime_type = EXCLUDED.mime_type, byte_size = EXCLUDED.byte_size, sha256 = EXCLUDED.sha256,
+             entrypoint = EXCLUDED.entrypoint, created_by = EXCLUDED.created_by, created_at = now()
+           RETURNING id, tenant_id, institution_id, resource_id, kind, storage_key, original_filename, mime_type, byte_size, sha256, entrypoint, created_at`,
+          [
+            request.context.user!.tenantId,
+            resource.institution_id,
+            resource.id,
+            kind,
+            stored.storageKey,
+            stored.originalFilename,
+            stored.mimeType,
+            stored.byteSize,
+            stored.sha256,
+            stored.entrypoint ?? null,
+            request.context.user!.id,
+          ],
+        );
+        return result.rows[0];
+      });
+      committed = true;
+      if (previousStorageKey && previousStorageKey !== stored.storageKey) await this.storage.remove(previousStorageKey);
+      await this.audit.record({
+        tenantId: request.context.user!.tenantId,
+        institutionId: resource.institution_id as string,
+        actorUserId: request.context.user!.id,
+        requestId: request.context.requestId,
+        module: "lms",
+        resource: "learning_resource_file",
+        resourceId: resource.id as string,
+        action: "UPLOAD",
+        newValue: {
+          resourceId: resource.id,
+          managedFileId: managed.id,
+          kind: managed.kind,
+          originalFilename: managed.original_filename,
+          mimeType: managed.mime_type,
+          byteSize: managed.byte_size,
+          sha256: managed.sha256,
+          entrypoint: managed.entrypoint,
+        },
+        ipAddress: request.context.ipAddress,
+        deviceContext: { userAgent: request.context.userAgent },
+      });
+      return managed;
+    } catch (error) {
+      if (!committed) await this.storage.remove(stored.storageKey);
+      throw error;
+    }
+  }
+
+  async getManagedFile(id: string, request: ContextRequest) {
+    const resource = await this.resourceFor(id, request.context.user!);
+    const result = await this.db.query<Record<string, unknown>>(
+      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND kind = 'FILE'",
+      [id, request.context.user!.tenantId],
+    );
+    if (!result.rows[0]) throw new NotFoundException("No managed file is attached to this resource.");
+    const managed = result.rows[0];
+    let content: Buffer;
+    try {
+      content = await this.storage.read(String(managed.storage_key));
+    } catch (error) {
+      if ((error as { code?: string }).code === "ENOENT") throw new NotFoundException("The managed file is unavailable.");
+      throw error;
+    }
+    await this.auditAccess(request, "learning_resource_file", "DOWNLOAD", resource, {
+      managedFileId: managed.id,
+      filename: managed.original_filename,
+    });
+    return { content, mimeType: managed.mime_type, filename: managed.original_filename };
+  }
+
+  async getScormLaunch(id: string, request: ContextRequest) {
+    const resource = await this.resourceFor(id, request.context.user!);
+    const result = await this.db.query<Record<string, unknown>>(
+      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND kind = 'SCORM'",
+      [id, request.context.user!.tenantId],
+    );
+    if (!result.rows[0]) throw new NotFoundException("No SCORM package is attached to this resource.");
+    await this.auditAccess(request, "learning_resource_scorm", "LAUNCH", resource, {
+      managedFileId: result.rows[0].id,
+      entrypoint: result.rows[0].entrypoint,
+    });
+    return { launchUrl: `/api/v1/learning-resources/${id}/scorm/${encodeURI(String(result.rows[0].entrypoint))}` };
+  }
+
+  async getScormAsset(id: string, assetPath: string, request: ContextRequest) {
+    const resource = await this.resourceFor(id, request.context.user!);
+    const result = await this.db.query<Record<string, unknown>>(
+      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND kind = 'SCORM'",
+      [id, request.context.user!.tenantId],
+    );
+    if (!result.rows[0]) throw new NotFoundException("No SCORM package is attached to this resource.");
+    let content: Buffer;
+    try {
+      content = await this.storage.readScormAsset(String(result.rows[0].storage_key), assetPath);
+    } catch (error) {
+      if ((error as { code?: string }).code === "ENOENT") throw new NotFoundException("The SCORM asset is unavailable.");
+      throw error;
+    }
+    await this.auditAccess(request, "learning_resource_scorm", "ASSET_ACCESS", resource, {
+      managedFileId: result.rows[0].id,
+      assetPath,
+    });
+    return { content, mimeType: mimeTypeForFilename(assetPath) };
+  }
+
   private async assertParent(table: "programmes" | "courses" | "course_modules" | "lessons", id: string, user: AuthenticatedUser) {
     const result = await this.db.query(`SELECT id FROM ${table} WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'`, [id, user.tenantId]);
     if (!result.rows[0]) throw new NotFoundException("Parent LMS content not found in the current tenant.");
@@ -414,9 +595,7 @@ export class LmsService {
     if (RESOURCE_TYPES_WITH_URL.includes(resourceType as LmsResourceType) && !url) {
       throw new BadRequestException(`${resourceType} resources require a URL.`);
     }
-    if (RESOURCE_TYPES_WITH_FILE_OR_URL.includes(resourceType as LmsResourceType) && !url && !filePath) {
-      throw new BadRequestException(`${resourceType} resources require a URL or file path.`);
-    }
+    if (RESOURCE_TYPES_WITH_FILE_OR_URL.includes(resourceType as LmsResourceType) && !url && !filePath) return;
   }
 
   async changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest) {
