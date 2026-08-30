@@ -8,7 +8,13 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
-export function successResponse<T>(data: T, request?: Request, meta: Record<string, unknown> = {}) {
+export interface ApiSuccess<T> {
+  success: true;
+  data: T;
+  meta: Record<string, unknown>;
+}
+
+export function successResponse<T>(data: T, request?: Request, meta: Record<string, unknown> = {}): ApiSuccess<T> {
   const requestId = (request as ContextRequest | undefined)?.context?.requestId;
   return {
     success: true,
@@ -21,6 +27,6 @@ export function paginatedResponse<T>(
   data: T[],
   pagination: PaginationMeta,
   request?: Request,
-) {
+): ApiSuccess<T[]> {
   return successResponse(data, request, { pagination });
 }
