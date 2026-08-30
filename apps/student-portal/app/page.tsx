@@ -19,6 +19,28 @@ type Progress = {
   }>;
 };
 
+type Assignment = {
+  id: string;
+  title: string;
+  instructions: string;
+  description?: string | null;
+  course_title?: string;
+  module_title?: string;
+  due_at?: string | null;
+  max_marks: number;
+  status: "PUBLISHED";
+};
+
+type Submission = {
+  id: string;
+  status: "SUBMITTED" | "GRADED";
+  submission_text: string;
+  grade?: number | null;
+  feedback?: string | null;
+  is_late: boolean;
+  submitted_at: string;
+};
+
 const stateLabel: Record<Progress["state"], string> = {
   NOT_STARTED: "Not started",
   IN_PROGRESS: "In progress",
@@ -35,21 +57,39 @@ function ProgressBar({ percentage }: { percentage: number }) {
 
 export default function StudentPortalPage() {
   const [courses, setCourses] = useState<Progress[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [submissions, setSubmissions] = useState<Record<string, Submission | null>>({});
+  const [submissionText, setSubmissionText] = useState<Record<string, string>>({});
+  const [submittingId, setSubmittingId] = useState("");
+  const [submissionNotice, setSubmissionNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    fetch("/api/v1/progress", { credentials: "include" })
-      .then(async (response) => {
-        if (!response.ok) {
+    Promise.all([fetch("/api/v1/progress", { credentials: "include" }), fetch("/api/v1/assignments", { credentials: "include" })])
+      .then(async ([progressResponse, assignmentResponse]) => {
+        if (!progressResponse.ok || !assignmentResponse.ok) {
+          const response = !progressResponse.ok ? progressResponse : assignmentResponse;
           const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
           throw new Error(body?.error?.message || "We couldn't load your learning progress.");
         }
-        return response.json() as Promise<{ data: Progress[] }>;
+        return Promise.all([
+          progressResponse.json() as Promise<{ data: Progress[] }>,
+          assignmentResponse.json() as Promise<{ data: Assignment[] }>,
+        ]);
       })
-      .then((body) => {
-        if (active) setCourses(body.data || []);
+      .then(async ([progressBody, assignmentBody]) => {
+        if (!active) return;
+        setCourses(progressBody.data || []);
+        setAssignments(assignmentBody.data || []);
+        const submissionEntries = await Promise.all((assignmentBody.data || []).map(async (assignment) => {
+          const response = await fetch(`/api/v1/assignments/${assignment.id}/submission`, { credentials: "include" });
+          if (!response.ok) return [assignment.id, null] as const;
+          const body = await response.json() as { data: Submission | null };
+          return [assignment.id, body.data] as const;
+        }));
+        if (active) setSubmissions(Object.fromEntries(submissionEntries));
       })
       .catch((reason: unknown) => {
         if (active) setError(reason instanceof Error ? reason.message : "We couldn't load your learning progress.");
@@ -61,6 +101,35 @@ export default function StudentPortalPage() {
       active = false;
     };
   }, []);
+
+  async function submitAssignment(assignment: Assignment) {
+    const text = (submissionText[assignment.id] || "").trim();
+    if (!text) return;
+    setSubmittingId(assignment.id);
+    setError("");
+    setSubmissionNotice("");
+    try {
+      const response = await fetch(`/api/v1/assignments/${assignment.id}/submissions`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ submissionText: text }),
+      });
+      const body = await response.json().catch(() => null) as { data?: Submission; error?: { message?: string } } | null;
+      if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't submit this assignment.");
+      setSubmissions((current) => ({ ...current, [assignment.id]: body.data! }));
+      setSubmissionText((current) => ({ ...current, [assignment.id]: "" }));
+      setSubmissionNotice("Assignment submitted successfully.");
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "We couldn't submit this assignment.");
+    } finally {
+      setSubmittingId("");
+    }
+  }
+
+  function dueLabel(value?: string | null) {
+    return value ? `Due ${new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(value))}` : "No due date";
+  }
 
   return (
     <main style={{ background: "#f5f8fb", color: "#12304a", fontFamily: "Arial, sans-serif", minHeight: "100vh", padding: "48px 24px" }}>
@@ -123,6 +192,47 @@ export default function StudentPortalPage() {
                 )}
               </article>
             ))}
+          </section>
+        )}
+        {!loading && !error && (
+          <section style={{ marginTop: 28 }}>
+            <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+              <div>
+                <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Course work</p>
+                <h2 style={{ fontSize: 28, margin: "6px 0 0" }}>Assignments</h2>
+              </div>
+              {submissionNotice && <span style={{ color: "#0f766e", fontSize: 14, fontWeight: 700 }}>{submissionNotice}</span>}
+            </div>
+            {assignments.length === 0 && <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>No published assignments are waiting for you.</div>}
+            {assignments.length > 0 && <div style={{ display: "grid", gap: 16 }}>
+              {assignments.map((assignment) => {
+                const submission = submissions[assignment.id];
+                return (
+                  <article key={assignment.id} style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, padding: "22px 24px" }}>
+                    <div style={{ alignItems: "start", display: "flex", gap: 16, justifyContent: "space-between" }}>
+                      <div>
+                        <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{assignment.course_title} · {assignment.module_title}</p>
+                        <h3 style={{ fontSize: 21, margin: "7px 0 5px" }}>{assignment.title}</h3>
+                        <p style={{ color: "#61718a", fontSize: 14, lineHeight: 1.55, margin: 0 }}>{assignment.instructions}</p>
+                      </div>
+                      <div style={{ color: "#61718a", fontSize: 13, textAlign: "right", whiteSpace: "nowrap" }}>{assignment.max_marks} marks<br />{dueLabel(assignment.due_at)}</div>
+                    </div>
+                    {submission ? (
+                      <div style={{ background: submission.status === "GRADED" ? "#eefbf7" : "#f5f8fb", borderRadius: 12, color: "#526f8c", marginTop: 18, padding: "13px 15px" }}>
+                        <strong style={{ color: submission.status === "GRADED" ? "#0f766e" : "#12304a" }}>{submission.status === "GRADED" ? `Graded: ${submission.grade}/${assignment.max_marks}` : "Submitted for review"}</strong>
+                        {submission.is_late && <span style={{ color: "#a06b22", marginLeft: 10 }}>Late submission</span>}
+                        {submission.feedback && <p style={{ lineHeight: 1.5, margin: "7px 0 0" }}>{submission.feedback}</p>}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: 18 }}>
+                        <textarea aria-label={`Submission for ${assignment.title}`} value={submissionText[assignment.id] || ""} onChange={(event) => setSubmissionText((current) => ({ ...current, [assignment.id]: event.target.value }))} placeholder="Write your submission here…" style={{ border: "1px solid #d8e2eb", borderRadius: 10, color: "#12304a", font: "inherit", minHeight: 105, padding: 12, resize: "vertical", width: "100%" }} />
+                        <button onClick={() => void submitAssignment(assignment)} disabled={submittingId === assignment.id || !(submissionText[assignment.id] || "").trim()} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, marginTop: 10, padding: "11px 16px" }} type="button">{submittingId === assignment.id ? "Submitting…" : "Submit assignment"}</button>
+                      </div>
+                    )}
+                  </article>
+                );
+              })}
+            </div>}
           </section>
         )}
       </div>
