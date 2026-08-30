@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 
 type Kind = "programmes" | "courses" | "course-modules" | "lessons" | "learning-resources";
 type Status = "DRAFT" | "PUBLISHED" | "ARCHIVED";
@@ -23,8 +24,6 @@ type ContentRecord = {
 
 type TrailNode = { kind: Kind; id: string; label: string };
 type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: number } } };
-type Institution = { id: string; name: string };
-
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1").replace(/\/$/, "");
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 
@@ -350,10 +349,10 @@ export default function InstitutionAdminPage() {
   return (
     <main className="admin-shell">
       <aside className="sidebar">
-        <a className="brand" href="/">
+        <Link className="brand" href="/">
           <span className="brand-mark">C</span>
           <span><strong>CITIS</strong><small>Skills Excellence Centre</small></span>
-        </a>
+        </Link>
         <div className="sidebar-label">Institution portal</div>
         <nav className="primary-nav" aria-label="Primary navigation">
           <button className="nav-link active" type="button"><span className="nav-icon">▦</span> Overview</button>
