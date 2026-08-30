@@ -79,3 +79,13 @@ export declare class EnrollLearnerDto {
 export declare class AssignInstructorDto {
     instructorId: string;
 }
+export declare class ProgressViewerQueryDto {
+    learnerId?: string;
+}
+export declare class CompleteAssessmentDto {
+    assessmentId: string;
+    attemptId: string;
+    score?: number;
+    passed?: boolean;
+    completedAt?: string;
+}

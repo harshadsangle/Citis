@@ -165,4 +165,76 @@ function serviceWith(query) {
     strict_1.default.equal(audits[0].action, "REMOVE");
     strict_1.default.equal(audits[0].institutionId, "institution-1");
 });
+(0, node_test_1.default)("course progress derives lesson and assessment totals by module", async () => {
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT c.id")) {
+            return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", title: "Digital Skills", code: "DS-101", description: "Foundations", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+        }
+        if (text.startsWith("SELECT 1"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.startsWith("SELECT cm.id")) {
+            return {
+                rows: [
+                    { module_id: "module-1", module_title: "Foundations", sequence: 1, lesson_total: 2, lesson_completed: 1, assessment_total: 1, assessment_completed: 1 },
+                    { module_id: "module-2", module_title: "Practice", sequence: 2, lesson_total: 1, lesson_completed: 0, assessment_total: 0, assessment_completed: 0 },
+                ],
+            };
+        }
+        return { rows: [] };
+    });
+    const result = await service.getCourseProgress("course-1", user);
+    strict_1.default.equal(result.state, "IN_PROGRESS");
+    strict_1.default.equal(result.percentage, 50);
+    strict_1.default.deepEqual(result.lessons, { completed: 1, total: 3 });
+    strict_1.default.deepEqual(result.assessments, { completed: 1, total: 1 });
+    strict_1.default.equal(result.modules[0].percentage, 66.67);
+    strict_1.default.equal(result.modules[1].state, "NOT_STARTED");
+});
+(0, node_test_1.default)("lesson completion requires an active enrollment and audits only the first transition", async () => {
+    const { service, audits } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT l.id")) {
+            return { rows: [{ id: "lesson-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+        }
+        if (text.startsWith("SELECT id, tenant_id"))
+            return { rows: [{ id: "enrollment-1" }] };
+        if (text.startsWith("SELECT * FROM lms_lesson_progress"))
+            return { rows: [] };
+        if (text.startsWith("INSERT INTO lms_lesson_progress"))
+            return { rows: [{ id: "progress-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_id: "lesson-1", learner_id: user.id, status: "COMPLETED" }] };
+        return { rows: [] };
+    });
+    const result = await service.completeLesson("lesson-1", request);
+    strict_1.default.equal(result.status, "COMPLETED");
+    strict_1.default.equal(audits[0].resource, "lesson_progress");
+    strict_1.default.equal(audits[0].action, "COMPLETE");
+});
+(0, node_test_1.default)("lesson completion rejects learners without an active course enrollment", async () => {
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT l.id")) {
+            return { rows: [{ id: "lesson-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+        }
+        if (text.startsWith("SELECT id, tenant_id"))
+            return { rows: [] };
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(service.completeLesson("lesson-1", request), common_1.ForbiddenException);
+});
+(0, node_test_1.default)("assessment completion records a result and derives pass status", async () => {
+    const { service, audits } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT a.*")) {
+            return { rows: [{ id: "assessment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE", total_marks: "100", passing_marks: "60", attempt_limit: null }] };
+        }
+        if (text.startsWith("SELECT id, tenant_id"))
+            return { rows: [{ id: "enrollment-1" }] };
+        if (text.startsWith("SELECT * FROM lms_assessment_completions"))
+            return { rows: [] };
+        if (text.startsWith("INSERT INTO lms_assessment_completions"))
+            return { rows: [{ id: "completion-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-1", learner_id: user.id, attempt_id: "attempt-1", score: 82, passed: true, status: "COMPLETED" }] };
+        return { rows: [] };
+    });
+    const result = await service.completeAssessment({ assessmentId: "assessment-1", attemptId: "attempt-1", score: 82 }, request);
+    strict_1.default.equal(result.passed, true);
+    strict_1.default.equal(audits[0].resource, "assessment_completion");
+    strict_1.default.equal(audits[0].action, "COMPLETE");
+});
 //# sourceMappingURL=lms.service.spec.js.map

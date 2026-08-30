@@ -99,6 +99,18 @@ let LmsController = class LmsController {
     async removeInstructorAssignment(courseId, assignmentId, request) {
         return (0, response_1.successResponse)(await this.lms.removeInstructorAssignment(courseId, assignmentId, request), request);
     }
+    async learnerProgress(request) {
+        return (0, response_1.successResponse)(await this.lms.listLearnerProgress(request.context.user), request);
+    }
+    async courseProgress(courseId, request, query) {
+        return (0, response_1.successResponse)(await this.lms.getCourseProgress(courseId, request.context.user, query.learnerId), request);
+    }
+    async completeLesson(lessonId, request) {
+        return (0, response_1.successResponse)(await this.lms.completeLesson(lessonId, request), request);
+    }
+    async completeAssessment(input, request) {
+        return (0, response_1.successResponse)(await this.lms.completeAssessment(input, request), request);
+    }
     async courseModules(request, courseId, query) {
         const page = (0, pagination_1.paginationFrom)(request);
         const result = await this.lms.listCourseModules(request.context.user, page.page, page.pageSize, page.offset, query, courseId);
@@ -375,6 +387,42 @@ __decorate([
     __metadata("design:paramtypes", [String, String, Object]),
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "removeInstructorAssignment", null);
+__decorate([
+    (0, common_1.Get)("progress"),
+    (0, permission_decorator_1.RequirePermission)("lms.course_progress.view"),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "learnerProgress", null);
+__decorate([
+    (0, common_1.Get)("progress/courses/:courseId"),
+    (0, permission_decorator_1.RequirePermission)("lms.course_progress.view"),
+    __param(0, (0, common_1.Param)("courseId")),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, lms_dto_1.ProgressViewerQueryDto]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "courseProgress", null);
+__decorate([
+    (0, common_1.Post)("progress/lessons/:lessonId/complete"),
+    (0, permission_decorator_1.RequirePermission)("lms.lesson_progress.create"),
+    __param(0, (0, common_1.Param)("lessonId")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "completeLesson", null);
+__decorate([
+    (0, common_1.Post)("progress/assessment-completions"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_completion.create"),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [lms_dto_1.CompleteAssessmentDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "completeAssessment", null);
 __decorate([
     (0, common_1.Get)("course-modules"),
     (0, permission_decorator_1.RequirePermission)("lms.course_module.view"),

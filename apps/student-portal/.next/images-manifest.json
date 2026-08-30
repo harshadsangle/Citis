@@ -28,37 +28,13 @@
     "disableStaticImages": false,
     "minimumCacheTTL": 60,
     "formats": [
-      "image/avif",
       "image/webp"
     ],
     "maximumResponseBody": 50000000,
     "dangerouslyAllowSVG": false,
     "contentSecurityPolicy": "script-src 'none'; frame-src 'none'; sandbox;",
     "contentDispositionType": "attachment",
-    "remotePatterns": [
-      {
-        "protocol": "http",
-        "hostname": "^(?:^(?:localhost)$)$",
-        "port": "5000",
-        "pathname": "^(?:\\/uploads(?:\\/(?!\\.{1,2}(?:\\/|$))(?:(?:(?!(?:^|\\/)\\.{1,2}(?:\\/|$)).)*?)|$))$"
-      },
-      {
-        "protocol": "http",
-        "hostname": "^(?:^(?:localhost)$)$",
-        "port": "1337",
-        "pathname": "^(?:\\/uploads(?:\\/(?!\\.{1,2}(?:\\/|$))(?:(?:(?!(?:^|\\/)\\.{1,2}(?:\\/|$)).)*?)|$))$"
-      },
-      {
-        "protocol": "https",
-        "hostname": "^(?:^(?:localhost)$)$",
-        "pathname": "^(?:\\/uploads(?:\\/(?!\\.{1,2}(?:\\/|$))(?:(?:(?!(?:^|\\/)\\.{1,2}(?:\\/|$)).)*?)|$))$"
-      },
-      {
-        "protocol": "https",
-        "hostname": "^(?:^(?:localhost)$)$",
-        "pathname": "^(?:\\/uploads(?:\\/(?!\\.{1,2}(?:\\/|$))(?:(?:(?!(?:^|\\/)\\.{1,2}(?:\\/|$)).)*?)|$))$"
-      }
-    ],
+    "remotePatterns": [],
     "unoptimized": false,
     "sizes": [
       640,

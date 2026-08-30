@@ -10,6 +10,7 @@ const node_path_1 = require("node:path");
 const migration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/001_foundation.sql"), "utf8");
 const lmsMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/002_lms_course_management.sql"), "utf8");
 const relationshipMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/004_lms_enrollment_assignments.sql"), "utf8");
+const progressMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/005_lms_progress_tracking.sql"), "utf8");
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
     (0, node_test_1.default)(`migration defines ${table}`, () => {
         strict_1.default.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
@@ -44,5 +45,18 @@ for (const table of ["lms_enrollments", "lms_instructor_assignments"]) {
     strict_1.default.match(relationshipMigration, /lms\.enrollment\.create/);
     strict_1.default.match(relationshipMigration, /lms\.instructor_assignment\.create/);
     strict_1.default.match(relationshipMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_completions"]) {
+    (0, node_test_1.default)(`progress migration defines ${table}`, () => {
+        strict_1.default.match(progressMigration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
+    });
+}
+(0, node_test_1.default)("progress migration defines completion uniqueness, lifecycle rules, and learner permissions", () => {
+    strict_1.default.match(progressMigration, /UNIQUE \(tenant_id, course_id, lesson_id, learner_id\)/);
+    strict_1.default.match(progressMigration, /UNIQUE \(tenant_id, assessment_id, learner_id, attempt_id\)/);
+    strict_1.default.match(progressMigration, /status IN \('IN_PROGRESS', 'COMPLETED'\)/);
+    strict_1.default.match(progressMigration, /lms\.course_progress\.view/);
+    strict_1.default.match(progressMigration, /lms\.assessment_completion\.create/);
+    strict_1.default.match(progressMigration, /INSERT INTO schema_migrations \(version\)/);
 });
 //# sourceMappingURL=migration.spec.js.map

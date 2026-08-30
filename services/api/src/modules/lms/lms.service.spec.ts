@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { LmsService } from "./lms.service";
 import { ResourceStorageService } from "./resource-storage.service";
@@ -179,4 +179,79 @@ test("removing an enrollment preserves the row and audits the removal", async ()
   assert.equal(result.status, "REMOVED");
   assert.equal(audits[0].action, "REMOVE");
   assert.equal(audits[0].institutionId, "institution-1");
+});
+
+test("course progress derives lesson and assessment totals by module", async () => {
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT c.id")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", title: "Digital Skills", code: "DS-101", description: "Foundations", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("SELECT cm.id")) {
+      return {
+        rows: [
+          { module_id: "module-1", module_title: "Foundations", sequence: 1, lesson_total: 2, lesson_completed: 1, assessment_total: 1, assessment_completed: 1 },
+          { module_id: "module-2", module_title: "Practice", sequence: 2, lesson_total: 1, lesson_completed: 0, assessment_total: 0, assessment_completed: 0 },
+        ],
+      };
+    }
+    return { rows: [] };
+  });
+
+  const result = await service.getCourseProgress("course-1", user);
+
+  assert.equal(result.state, "IN_PROGRESS");
+  assert.equal(result.percentage, 50);
+  assert.deepEqual(result.lessons, { completed: 1, total: 3 });
+  assert.deepEqual(result.assessments, { completed: 1, total: 1 });
+  assert.equal(result.modules[0].percentage, 66.67);
+  assert.equal(result.modules[1].state, "NOT_STARTED");
+});
+
+test("lesson completion requires an active enrollment and audits only the first transition", async () => {
+  const { service, audits } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT l.id")) {
+      return { rows: [{ id: "lesson-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
+    if (text.startsWith("SELECT * FROM lms_lesson_progress")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_lesson_progress")) return { rows: [{ id: "progress-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_id: "lesson-1", learner_id: user.id, status: "COMPLETED" }] };
+    return { rows: [] };
+  });
+
+  const result = await service.completeLesson("lesson-1", request);
+
+  assert.equal(result.status, "COMPLETED");
+  assert.equal(audits[0].resource, "lesson_progress");
+  assert.equal(audits[0].action, "COMPLETE");
+});
+
+test("lesson completion rejects learners without an active course enrollment", async () => {
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT l.id")) {
+      return { rows: [{ id: "lesson-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("SELECT id, tenant_id")) return { rows: [] };
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.completeLesson("lesson-1", request), ForbiddenException);
+});
+
+test("assessment completion records a result and derives pass status", async () => {
+  const { service, audits } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT a.*")) {
+      return { rows: [{ id: "assessment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE", total_marks: "100", passing_marks: "60", attempt_limit: null }] };
+    }
+    if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
+    if (text.startsWith("SELECT * FROM lms_assessment_completions")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_assessment_completions")) return { rows: [{ id: "completion-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-1", learner_id: user.id, attempt_id: "attempt-1", score: 82, passed: true, status: "COMPLETED" }] };
+    return { rows: [] };
+  });
+
+  const result = await service.completeAssessment({ assessmentId: "assessment-1", attemptId: "attempt-1", score: 82 }, request);
+
+  assert.equal(result.passed, true);
+  assert.equal(audits[0].resource, "assessment_completion");
+  assert.equal(audits[0].action, "COMPLETE");
 });

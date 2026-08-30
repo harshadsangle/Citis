@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
-import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, EnrollLearnerDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CompleteAssessmentDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, EnrollLearnerDto, ProgressViewerQueryDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 import { LmsService } from "./lms.service";
 import type { LmsUpload } from "./resource-storage.service";
 export declare class LmsController {
@@ -26,6 +26,78 @@ export declare class LmsController {
     instructorAssignments(id: string, request: ContextRequest, query: RelationshipListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
     assignInstructor(id: string, input: AssignInstructorDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    learnerProgress(request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        course: {
+            id: unknown;
+            title: unknown;
+            code: unknown;
+            description: unknown;
+            status: unknown;
+        };
+        learnerId: string;
+        state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+        percentage: number;
+        lessons: {
+            completed: number;
+            total: number;
+        };
+        assessments: {
+            completed: number;
+            total: number;
+        };
+        modules: {
+            id: unknown;
+            title: unknown;
+            sequence: number;
+            state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+            percentage: number;
+            lessons: {
+                completed: number;
+                total: number;
+            };
+            assessments: {
+                completed: number;
+                total: number;
+            };
+        }[];
+    }[]>>;
+    courseProgress(courseId: string, request: ContextRequest, query: ProgressViewerQueryDto): Promise<import("../../common/response").ApiSuccess<{
+        course: {
+            id: unknown;
+            title: unknown;
+            code: unknown;
+            description: unknown;
+            status: unknown;
+        };
+        learnerId: string;
+        state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+        percentage: number;
+        lessons: {
+            completed: number;
+            total: number;
+        };
+        assessments: {
+            completed: number;
+            total: number;
+        };
+        modules: {
+            id: unknown;
+            title: unknown;
+            sequence: number;
+            state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+            percentage: number;
+            lessons: {
+                completed: number;
+                total: number;
+            };
+            assessments: {
+                completed: number;
+                total: number;
+            };
+        }[];
+    }>>;
+    completeLesson(lessonId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    completeAssessment(input: CompleteAssessmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     courseModules(request: ContextRequest, courseId: string | undefined, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
     createCourseModule(input: CreateCourseModuleDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     courseModule(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;

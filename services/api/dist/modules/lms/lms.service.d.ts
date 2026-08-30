@@ -2,9 +2,10 @@ import { AuditService } from "../../common/audit.service";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, type LmsUpload } from "./resource-storage.service";
-import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, EnrollLearnerDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CompleteAssessmentDto, EnrollLearnerDto, RelationshipListQueryDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
+type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 export declare class LmsService {
     private readonly db;
     private readonly audit;
@@ -142,6 +143,82 @@ export declare class LmsService {
     private removeRelationship;
     removeEnrollment(courseId: string, enrollmentId: string, request: ContextRequest): Promise<Record<string, unknown>>;
     removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest): Promise<Record<string, unknown>>;
+    private progressCourse;
+    private activeEnrollment;
+    private assertProgressViewer;
+    private calculateCourseProgress;
+    listLearnerProgress(user: AuthenticatedUser): Promise<{
+        course: {
+            id: unknown;
+            title: unknown;
+            code: unknown;
+            description: unknown;
+            status: unknown;
+        };
+        learnerId: string;
+        state: ProgressState;
+        percentage: number;
+        lessons: {
+            completed: number;
+            total: number;
+        };
+        assessments: {
+            completed: number;
+            total: number;
+        };
+        modules: {
+            id: unknown;
+            title: unknown;
+            sequence: number;
+            state: ProgressState;
+            percentage: number;
+            lessons: {
+                completed: number;
+                total: number;
+            };
+            assessments: {
+                completed: number;
+                total: number;
+            };
+        }[];
+    }[]>;
+    getCourseProgress(courseId: string, user: AuthenticatedUser, learnerId?: string): Promise<{
+        course: {
+            id: unknown;
+            title: unknown;
+            code: unknown;
+            description: unknown;
+            status: unknown;
+        };
+        learnerId: string;
+        state: ProgressState;
+        percentage: number;
+        lessons: {
+            completed: number;
+            total: number;
+        };
+        assessments: {
+            completed: number;
+            total: number;
+        };
+        modules: {
+            id: unknown;
+            title: unknown;
+            sequence: number;
+            state: ProgressState;
+            percentage: number;
+            lessons: {
+                completed: number;
+                total: number;
+            };
+            assessments: {
+                completed: number;
+                total: number;
+            };
+        }[];
+    }>;
+    completeLesson(lessonId: string, request: ContextRequest): Promise<Record<string, unknown>>;
+    completeAssessment(input: CompleteAssessmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
     changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest): Promise<import("pg").QueryResultRow>;
 }
 export {};

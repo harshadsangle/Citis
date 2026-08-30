@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 const migration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/001_foundation.sql"), "utf8");
 const lmsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/002_lms_course_management.sql"), "utf8");
 const relationshipMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/004_lms_enrollment_assignments.sql"), "utf8");
+const progressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/005_lms_progress_tracking.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -46,4 +47,19 @@ test("relationship migration defines active uniqueness and LMS permissions", () 
   assert.match(relationshipMigration, /lms\.enrollment\.create/);
   assert.match(relationshipMigration, /lms\.instructor_assignment\.create/);
   assert.match(relationshipMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_completions"]) {
+  test(`progress migration defines ${table}`, () => {
+    assert.match(progressMigration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
+  });
+}
+
+test("progress migration defines completion uniqueness, lifecycle rules, and learner permissions", () => {
+  assert.match(progressMigration, /UNIQUE \(tenant_id, course_id, lesson_id, learner_id\)/);
+  assert.match(progressMigration, /UNIQUE \(tenant_id, assessment_id, learner_id, attempt_id\)/);
+  assert.match(progressMigration, /status IN \('IN_PROGRESS', 'COMPLETED'\)/);
+  assert.match(progressMigration, /lms\.course_progress\.view/);
+  assert.match(progressMigration, /lms\.assessment_completion\.create/);
+  assert.match(progressMigration, /INSERT INTO schema_migrations \(version\)/);
 });
