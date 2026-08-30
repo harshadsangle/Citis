@@ -190,6 +190,24 @@ function serviceWith(query) {
     strict_1.default.equal(result.modules[0].percentage, 66.67);
     strict_1.default.equal(result.modules[1].state, "NOT_STARTED");
 });
+(0, node_test_1.default)("course progress rejects institution staff outside their authorized scope", async () => {
+    const staff = {
+        ...user,
+        id: "teacher-1",
+        roles: [{ code: "TEACHER", name: "Teacher" }],
+    };
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT c.id")) {
+            return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", title: "Digital Skills", code: "DS-101", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+        }
+        if (text.includes("FROM lms_enrollments"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.includes("FROM user_roles"))
+            return { rows: [] };
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(service.getCourseProgress("course-1", staff, "student-1"), common_1.ForbiddenException);
+});
 (0, node_test_1.default)("lesson completion requires an active enrollment and audits only the first transition", async () => {
     const { service, audits } = serviceWith(async (text) => {
         if (text.startsWith("SELECT l.id")) {

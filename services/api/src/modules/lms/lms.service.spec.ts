@@ -208,6 +208,24 @@ test("course progress derives lesson and assessment totals by module", async () 
   assert.equal(result.modules[1].state, "NOT_STARTED");
 });
 
+test("course progress rejects institution staff outside their authorized scope", async () => {
+  const staff: AuthenticatedUser = {
+    ...user,
+    id: "teacher-1",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+  };
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT c.id")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", title: "Digital Skills", code: "DS-101", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM lms_enrollments")) return { rows: [{ allowed: 1 }] };
+    if (text.includes("FROM user_roles")) return { rows: [] };
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.getCourseProgress("course-1", staff, "student-1"), ForbiddenException);
+});
+
 test("lesson completion requires an active enrollment and audits only the first transition", async () => {
   const { service, audits } = serviceWith(async (text) => {
     if (text.startsWith("SELECT l.id")) {
