@@ -9,14 +9,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommonModule = void 0;
 const common_1 = require("@nestjs/common");
 const audit_service_1 = require("./audit.service");
+const permission_guard_1 = require("../guards/permission.guard");
 let CommonModule = class CommonModule {
 };
 exports.CommonModule = CommonModule;
 exports.CommonModule = CommonModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        providers: [audit_service_1.AuditService],
-        exports: [audit_service_1.AuditService],
+        providers: [audit_service_1.AuditService, permission_guard_1.PermissionGuard],
+        exports: [audit_service_1.AuditService, permission_guard_1.PermissionGuard],
     })
 ], CommonModule);
 //# sourceMappingURL=common.module.js.map

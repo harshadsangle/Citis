@@ -11,7 +11,6 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const common_module_1 = require("./common/common.module");
 const database_module_1 = require("./database/database.module");
-const permission_guard_1 = require("./guards/permission.guard");
 const audit_module_1 = require("./modules/audit/audit.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const campuses_module_1 = require("./modules/campuses/campuses.module");
@@ -38,7 +37,6 @@ exports.AppModule = AppModule = __decorate([
             modules_module_1.ModulesModule,
             audit_module_1.AuditModule,
         ],
-        providers: [permission_guard_1.PermissionGuard],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

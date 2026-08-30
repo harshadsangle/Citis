@@ -11,14 +11,13 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatabaseService = void 0;
 const common_1 = require("@nestjs/common");
-const config_1 = require("@nestjs/config");
 const pg_1 = require("pg");
 let DatabaseService = class DatabaseService {
     pool;
-    constructor(config) {
+    constructor() {
         this.pool = new pg_1.Pool({
-            connectionString: config.get("DATABASE_URL") || process.env.DATABASE_URL,
-            max: Number(config.get("DATABASE_POOL_MAX") || 10),
+            connectionString: process.env.DATABASE_URL,
+            max: Number(process.env.DATABASE_POOL_MAX || 10),
             idleTimeoutMillis: 30_000,
             connectionTimeoutMillis: 5_000,
         });
@@ -49,6 +48,6 @@ let DatabaseService = class DatabaseService {
 exports.DatabaseService = DatabaseService;
 exports.DatabaseService = DatabaseService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [config_1.ConfigService])
+    __metadata("design:paramtypes", [])
 ], DatabaseService);
 //# sourceMappingURL=database.service.js.map

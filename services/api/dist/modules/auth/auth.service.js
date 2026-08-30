@@ -45,7 +45,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const node_crypto_1 = require("node:crypto");
 const common_1 = require("@nestjs/common");
-const config_1 = require("@nestjs/config");
 const bcrypt = __importStar(require("bcryptjs"));
 const database_service_1 = require("../../database/database.service");
 const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
@@ -66,10 +65,8 @@ function toPrincipal(row) {
 }
 let AuthService = class AuthService {
     db;
-    config;
-    constructor(db, config) {
+    constructor(db) {
         this.db = db;
-        this.config = config;
     }
     async login(input, metadata) {
         const result = await this.db.query(`SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name, u.password_hash,
@@ -156,8 +153,8 @@ let AuthService = class AuthService {
         const envKey = `${provider.toUpperCase()}_CLIENT_ID`;
         return {
             provider,
-            configured: Boolean(this.config.get(envKey)),
-            status: this.config.get(envKey) ? "READY_FOR_ADAPTER" : "CONFIGURATION_REQUIRED",
+            configured: Boolean(process.env[envKey]),
+            status: process.env[envKey] ? "READY_FOR_ADAPTER" : "CONFIGURATION_REQUIRED",
         };
     }
     static platformTenantId() {
@@ -167,7 +164,6 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService,
-        config_1.ConfigService])
+    __metadata("design:paramtypes", [database_service_1.DatabaseService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map
