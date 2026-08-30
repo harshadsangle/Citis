@@ -151,6 +151,10 @@ const scienceLabResources = [
     title: "Scholarlab Chemistry",
     url: "https://www.youtube.com/watch?v=P0CeJ_k5NxE&list=PL2n-lSyk8P1keAA1jUTnArpNd6gH6Y6tN",
   },
+  {
+    title: "Scholarlab Physics",
+    url: "https://www.youtube.com/watch?v=tzN1ZCFzo08&list=PL2n-lSyk8P1mx5nnxG4kADNmN_Yk7k4SG",
+  },
 ] as const;
 
 function SectionTitle({ children }: { children: string }) {
