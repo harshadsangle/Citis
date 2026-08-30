@@ -1,7 +1,7 @@
 modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
 [nix]
 channel = "stable-25_05"
-packages = ["chromium"]
+packages = ["chromium", "freetype", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "openjpeg", "swig", "xcbuild"]
 
 [agent]
 expertMode = true
