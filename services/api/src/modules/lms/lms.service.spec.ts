@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { LmsService } from "./lms.service";
 import { ResourceStorageService } from "./resource-storage.service";
@@ -103,4 +103,80 @@ test("managed file delivery is tenant-scoped and auditable", async () => {
   assert.equal(queries[1].values[1], user.tenantId);
   assert.equal(audits.at(-1)?.action, "DOWNLOAD");
   assert.equal(audits.at(-1)?.tenantId, user.tenantId);
+});
+
+test("enrollment accepts an active institution Student and audits the mutation", async () => {
+  const audits: Array<Record<string, unknown>> = [];
+  const queries: string[] = [];
+  const db = {
+    query: async (text: string) => {
+      queries.push(text);
+      if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+      if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+      if (text.startsWith("SELECT u.id")) return { rows: [{ id: "student-1", first_name: "Learner", last_name: "One" }] };
+      if (text.startsWith("INSERT INTO lms_enrollments")) return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", learner_id: "student-1", status: "ACTIVE" }] };
+      return { rows: [] };
+    },
+  };
+  const audit = { record: async (input: Record<string, unknown>) => audits.push(input) };
+  const service = new LmsService(db as never, audit as never, new ResourceStorageService());
+
+  const result = await service.enrollLearner("course-1", { learnerId: "student-1" }, request);
+
+  assert.equal(result.learner_id, "student-1");
+  assert.equal(audits[0].resource, "enrollment");
+  assert.equal(audits[0].action, "CREATE");
+  assert.ok(queries.some((query) => query.includes("ur.institution_id = $3")));
+});
+
+test("enrollment rejects a user who is not an active Student in the course institution", async () => {
+  let inserted = false;
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("INSERT INTO lms_enrollments")) inserted = true;
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.enrollLearner("course-1", { learnerId: "teacher-1" }, request),
+    NotFoundException,
+  );
+  assert.equal(inserted, false);
+});
+
+test("duplicate instructor assignment is returned as a conflict", async () => {
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("SELECT u.id")) return { rows: [{ id: "teacher-1", first_name: "Teacher", last_name: "One" }] };
+    if (text.startsWith("INSERT INTO lms_instructor_assignments")) throw Object.assign(new Error("duplicate"), { code: "23505" });
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.assignInstructor("course-1", { instructorId: "teacher-1" }, request),
+    ConflictException,
+  );
+});
+
+test("removing an enrollment preserves the row and audits the removal", async () => {
+  const audits: Array<Record<string, unknown>> = [];
+  const db = {
+    query: async (text: string) => {
+      if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+      if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+      if (text.startsWith("SELECT * FROM lms_enrollments")) return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", status: "ACTIVE" }] };
+      if (text.startsWith("UPDATE lms_enrollments")) return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", status: "REMOVED" }] };
+      return { rows: [] };
+    },
+  };
+  const audit = { record: async (input: Record<string, unknown>) => audits.push(input) };
+  const service = new LmsService(db as never, audit as never, new ResourceStorageService());
+
+  const result = await service.removeEnrollment("course-1", "enrollment-1", request);
+
+  assert.equal(result.status, "REMOVED");
+  assert.equal(audits[0].action, "REMOVE");
+  assert.equal(audits[0].institutionId, "institution-1");
 });
