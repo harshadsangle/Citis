@@ -7,9 +7,11 @@ async function main() {
   const client = new Client({ connectionString: process.env.DATABASE_URL });
   await client.connect();
   try {
-    const migration = await readFile(resolve(process.cwd(), "packages/database/migrations/001_foundation.sql"), "utf8");
-    await client.query(migration);
-    console.log("Applied 001_foundation");
+    for (const version of ["001_foundation", "002_lms_course_management"]) {
+      const migration = await readFile(resolve(process.cwd(), `packages/database/migrations/${version}.sql`), "utf8");
+      await client.query(migration);
+      console.log(`Applied ${version}`);
+    }
   } finally {
     await client.end();
   }
