@@ -20,8 +20,16 @@ instructor allocations. Only active users with the Student or Teacher role in
 the course institution can be selected, and relationship create/remove
 mutations are written to the shared audit log.
 
-The following intentionally remain future work: cohorts, batches, assignments,
-assessments, progress, certificates, learning analytics, and external
+Learner progress is derived from the published course structure. Completing a
+published lesson records an idempotent lesson completion, and an assessment
+completion result records the learner's attempt and pass state. Course and
+module summaries include completed lessons and assessments and expose
+`NOT_STARTED`, `IN_PROGRESS`, or `COMPLETED` states. Learners can view only
+their own active enrollments; authorized institution staff can view enrolled
+learners only within their institution and assigned courses.
+
+The following intentionally remain future work: cohorts, batches, assessment
+authoring, assignments, certificates, learning analytics, and external
 providers.
 
 Future LMS capabilities must continue to own their tables and expose module

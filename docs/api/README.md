@@ -62,3 +62,23 @@ audit actions.
 Enrollment and instructor-assignment writes derive tenant and institution
 ownership from the selected course, require an active Student or Teacher role
 in that institution, and are recorded as `CREATE` or `REMOVE` audit actions.
+
+## Learner progress
+
+- `GET /api/v1/progress` returns the authenticated learner's active course
+  summaries.
+- `GET /api/v1/progress/courses/:courseId` returns course and module progress.
+  Authorized institution staff may pass `learnerId` to inspect an enrolled
+  learner in their institution or an actively assigned course.
+- `POST /api/v1/progress/lessons/:lessonId/complete` records completion for
+  the authenticated learner. Repeating the request is safe and does not create
+  duplicate progress.
+- `POST /api/v1/progress/assessment-completions` records a completed assessment
+  attempt from the assessment result flow. The request accepts an assessment
+  ID, attempt ID, optional score, pass state, and completion timestamp.
+
+Progress counts only published lessons, published assessments, and active
+enrollments. Lesson and assessment completion transitions are recorded in the
+shared audit log. The progress migration also seeds separate read and
+completion permissions; staff scope is checked server-side against the course
+institution and instructor allocation.
