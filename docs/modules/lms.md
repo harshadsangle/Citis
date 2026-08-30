@@ -19,6 +19,6 @@ The following intentionally remain future work: enrollment, cohorts, batches,
 instructor allocation, assignments, assessments, progress, certificates,
 learning analytics, file storage, SCORM execution, and external providers.
 
-When LMS delivery is added, it must own its tables and expose module services;
-other modules may consume its domain events but may not query its tables
-directly.
+Future LMS capabilities must continue to own their tables and expose module
+services; other modules may consume its domain events but may not query LMS
+tables directly.

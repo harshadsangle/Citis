@@ -36,7 +36,21 @@ optional `details`, and the request ID in `meta`.
 - `roles` and `permissions`: database-backed RBAC.
 - `modules` and `tenant-modules`: platform catalog and tenant activation.
 - `audit-logs`: authorized, paginated mutation history.
+- LMS course management: authenticated CRUD and publish/archive endpoints for
+  `programmes`, `courses`, `course-modules`, `lessons`, and
+  `learning-resources`. Child collections accept a parent ID filter such as
+  `programmeId`, `courseId`, `moduleId`, or `lessonId`, plus the shared
+  `status` filter.
 
 Use HTTP-only `citis_session` cookies for browser sessions. Bearer tokens are
 accepted by the API guard for non-browser clients, but browser code must not
 persist bearer tokens in local storage.
+
+## LMS mutation rules
+
+All LMS writes verify that the parent belongs to the authenticated tenant before
+creating child content. Codes are unique within their parent scope, ordered
+children use a unique positive sequence, and resource metadata is validated
+against the selected resource type. Publish and archive actions are separate
+permission-protected endpoints and are recorded as `PUBLISH` or `ARCHIVE`
+audit actions.
