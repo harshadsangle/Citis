@@ -446,6 +446,22 @@ export default function InstitutionAdminPage() {
               <span className="nav-icon">{section.icon}</span>{section.shortLabel}
             </button>
           ))}
+           <button
+             className={`nav-link ${relationshipMode === "enrollments" ? "active" : ""}`}
+             type="button"
+             disabled={!ids.courseId}
+             onClick={() => ids.courseId && openRelationship("enrollments", ids.courseId, trail.at(-1)?.label || "Selected course")}
+           >
+             <span className="nav-icon">E</span>Learners
+           </button>
+           <button
+             className={`nav-link ${relationshipMode === "instructors" ? "active" : ""}`}
+             type="button"
+             disabled={!ids.courseId}
+             onClick={() => ids.courseId && openRelationship("instructors", ids.courseId, trail.at(-1)?.label || "Selected course")}
+           >
+             <span className="nav-icon">T</span>Instructors
+           </button>
         </nav>
         <div className="sidebar-footer">
           <div className="avatar">IA</div>

@@ -123,6 +123,37 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 7px; padding-top: 17px; border-top: 1px solid #edf2f6; }
 .toast { position: fixed; z-index: 20; right: 25px; bottom: 25px; display: flex; align-items: center; gap: 9px; padding: 12px 16px; border: 1px solid #bce8dd; border-radius: 8px; color: #246e67; background: #effcf8; box-shadow: 0 8px 25px #174a791c; font-size: 11px; font-weight: 800; }
 .toast span { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; color: #fff; background: #39b494; font-size: 10px; }
+.relationship-panel { min-height: 360px; overflow: hidden; border: 1px solid #e1e9f2; border-radius: 11px; background: #fff; box-shadow: 0 8px 26px #1a4c770d; }
+.relationship-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 25px 26px 22px; border-bottom: 1px solid #edf1f6; }
+.relationship-heading h2 { margin-top: 7px; color: #18385e; font-size: 19px; letter-spacing: -.03em; }
+.relationship-heading p { max-width: 650px; margin-top: 8px; color: #8293a5; font-size: 11px; line-height: 1.6; }
+.relationship-heading p strong { color: #4d6986; }
+.relationship-count { display: grid; flex: 0 0 70px; place-items: center; width: 70px; height: 70px; border: 1px solid #dcefe9; border-radius: 12px; color: #399988; background: #f1fcf9; }
+.relationship-count strong { font-size: 22px; letter-spacing: -.04em; }
+.relationship-count span { margin-top: -18px; color: #83a59f; font-size: 9px; font-weight: 700; }
+.relationship-add { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 26px; background: #fbfdff; border-bottom: 1px solid #edf1f6; }
+.relationship-add h3 { color: #315575; font-size: 12px; }
+.relationship-add p { margin-top: 5px; color: #8a9bad; font-size: 10px; }
+.relationship-controls { display: grid; grid-template-columns: minmax(145px, 180px) minmax(210px, 280px) auto; align-items: center; gap: 8px; width: min(100%, 620px); }
+.relationship-controls input, .relationship-controls select { width: 100%; min-height: 37px; padding: 0 10px; border: 1px solid #dbe6ef; border-radius: 6px; outline: 0; color: #244669; background: #fff; font-size: 10px; }
+.relationship-controls input:focus, .relationship-controls select:focus { border-color: #71c5bd; box-shadow: 0 0 0 3px #71c5bd1c; }
+.relationship-controls .primary-button { min-height: 37px; padding: 0 12px; white-space: nowrap; }
+.relationship-list-heading, .relationship-row { display: grid; grid-template-columns: minmax(230px, 1.5fr) minmax(180px, 1fr) 80px; align-items: center; gap: 16px; padding: 0 26px; }
+.relationship-list-heading { min-height: 38px; color: #a2afbd; background: #fff; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.relationship-row { min-height: 67px; border-top: 1px solid #edf1f6; color: #7d90a5; font-size: 10px; }
+.relationship-row:hover { background: #fcfeff; }
+.relationship-person { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.relationship-person strong { overflow: hidden; color: #1b426c; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.relationship-row .danger-action { justify-self: end; padding: 4px 0; border: 0; color: #b57a7d; background: transparent; font-size: 10px; font-weight: 800; }
+.relationship-row .danger-action:hover { color: #a64f58; }
+.relationship-empty { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 190px; padding: 30px; color: #70849a; }
+.relationship-empty strong { color: #244669; font-size: 12px; }
+.relationship-empty p { margin-top: 7px; font-size: 10px; line-height: 1.5; }
+.relationship-alert { margin: 16px 26px 0; padding: 11px 13px; border-radius: 7px; font-size: 10px; }
+.relationship-alert strong { display: block; font-size: 10px; }
+.relationship-alert p { margin-top: 4px; line-height: 1.5; }
+.relationship-alert.error-box { color: #9d605c; background: #fff6f3; border: 1px solid #f2d8d0; }
+.relationship-alert.success-box { color: #267a6d; background: #effcf8; border: 1px solid #c8ebe2; }
 
 @media (max-width: 1060px) {
   .sidebar { width: 220px; flex-basis: 220px; }
@@ -159,6 +190,15 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
   .record-row > div:nth-child(3) { grid-column: 2; grid-row: 1; }
   .row-actions { grid-column: 1 / -1; grid-row: 3; justify-content: flex-start; padding-left: 43px; }
   .scope-note { line-height: 1.5; }
+  .relationship-heading, .relationship-add { align-items: flex-start; flex-direction: column; padding: 18px 15px; }
+  .relationship-count { align-self: flex-start; }
+  .relationship-controls { grid-template-columns: 1fr; width: 100%; }
+  .relationship-controls .primary-button { width: 100%; }
+  .relationship-list-heading { display: none; }
+  .relationship-row { grid-template-columns: 1fr auto; gap: 8px 12px; min-height: 88px; padding: 14px 15px; }
+  .relationship-row > span { grid-column: 1; padding-left: 42px; }
+  .relationship-row .danger-action { grid-column: 2; grid-row: 1 / span 2; }
+  .relationship-alert { margin-right: 15px; margin-left: 15px; }
 }
 @media (max-width: 430px) {
   .workspace-content { padding-right: 13px; padding-left: 13px; }

@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 
 const migration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/001_foundation.sql"), "utf8");
 const lmsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/002_lms_course_management.sql"), "utf8");
+const relationshipMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/004_lms_enrollment_assignments.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -32,4 +33,17 @@ test("LMS migration defines hierarchy constraints and resource validation", () =
   assert.match(lmsMigration, /UNIQUE \(lesson_id, sequence\)/);
   assert.match(lmsMigration, /resource_type IN \('VIDEO', 'PDF', 'DOCUMENT', 'PRESENTATION', 'LINK', 'SCORM', 'INTERACTIVE'\)/);
   assert.match(lmsMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+for (const table of ["lms_enrollments", "lms_instructor_assignments"]) {
+  test(`relationship migration defines ${table}`, () => {
+    assert.match(relationshipMigration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
+  });
+}
+
+test("relationship migration defines active uniqueness and LMS permissions", () => {
+  assert.match(relationshipMigration, /WHERE status = 'ACTIVE'/);
+  assert.match(relationshipMigration, /lms\.enrollment\.create/);
+  assert.match(relationshipMigration, /lms\.instructor_assignment\.create/);
+  assert.match(relationshipMigration, /INSERT INTO schema_migrations \(version\)/);
 });

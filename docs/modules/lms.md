@@ -15,9 +15,14 @@ filters, create/edit forms, ordering controls, and publish/archive actions. It
 uses the same-origin `/api/v1` path, which is proxied to the API service by the
 portal in development and can be pointed at another API with `LMS_API_ORIGIN`.
 
-The following intentionally remain future work: enrollment, cohorts, batches,
-instructor allocation, assignments, assessments, progress, certificates,
-learning analytics, file storage, SCORM execution, and external providers.
+Published courses can now have institution-scoped learner enrollments and
+instructor allocations. Only active users with the Student or Teacher role in
+the course institution can be selected, and relationship create/remove
+mutations are written to the shared audit log.
+
+The following intentionally remain future work: cohorts, batches, assignments,
+assessments, progress, certificates, learning analytics, and external
+providers.
 
 Future LMS capabilities must continue to own their tables and expose module
 services; other modules may consume its domain events but may not query LMS
