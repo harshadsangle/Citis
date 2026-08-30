@@ -9,11 +9,15 @@ import { PermissionGuard } from "../../guards/permission.guard";
 import { AuthGuard } from "../auth/auth.guard";
 import {
   ContentListQueryDto,
+  CandidateListQueryDto,
+  AssignInstructorDto,
   CreateCourseDto,
   CreateCourseModuleDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
+  EnrollLearnerDto,
+  RelationshipListQueryDto,
   UpdateCourseDto,
   UpdateCourseModuleDto,
   UpdateLearningResourceDto,
@@ -102,6 +106,62 @@ export class LmsController {
   @RequirePermission("lms.course.archive")
   async archiveCourse(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.changeStatus(id, "course", "ARCHIVED", request), request);
+  }
+
+  @Get("courses/:id/enrollment-candidates")
+  @RequirePermission("lms.enrollment.view")
+  async enrollmentCandidates(@Param("id") id: string, @Req() request: ContextRequest, @Query() query: CandidateListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.lms.listEnrollmentCandidates(id, request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Get("courses/:id/enrollments")
+  @RequirePermission("lms.enrollment.view")
+  async enrollments(@Param("id") id: string, @Req() request: ContextRequest, @Query() query: RelationshipListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.lms.listEnrollments(id, request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Post("courses/:id/enrollments")
+  @RequirePermission("lms.enrollment.create")
+  async enrollLearner(@Param("id") id: string, @Body() input: EnrollLearnerDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.enrollLearner(id, input, request), request);
+  }
+
+  @Post("courses/:courseId/enrollments/:enrollmentId/remove")
+  @RequirePermission("lms.enrollment.archive")
+  async removeEnrollment(@Param("courseId") courseId: string, @Param("enrollmentId") enrollmentId: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.removeEnrollment(courseId, enrollmentId, request), request);
+  }
+
+  @Get("courses/:id/instructor-candidates")
+  @RequirePermission("lms.instructor_assignment.view")
+  async instructorCandidates(@Param("id") id: string, @Req() request: ContextRequest, @Query() query: CandidateListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.lms.listInstructorCandidates(id, request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Get("courses/:id/instructor-assignments")
+  @RequirePermission("lms.instructor_assignment.view")
+  async instructorAssignments(@Param("id") id: string, @Req() request: ContextRequest, @Query() query: RelationshipListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.lms.listInstructorAssignments(id, request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Post("courses/:id/instructor-assignments")
+  @RequirePermission("lms.instructor_assignment.create")
+  async assignInstructor(@Param("id") id: string, @Body() input: AssignInstructorDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.assignInstructor(id, input, request), request);
+  }
+
+  @Post("courses/:courseId/instructor-assignments/:assignmentId/remove")
+  @RequirePermission("lms.instructor_assignment.archive")
+  async removeInstructorAssignment(@Param("courseId") courseId: string, @Param("assignmentId") assignmentId: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.removeInstructorAssignment(courseId, assignmentId, request), request);
   }
 
   @Get("course-modules")

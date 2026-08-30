@@ -226,3 +226,28 @@ export class UpdateLearningResourceDto {
   @Min(1)
   sequence?: number;
 }
+
+export const LMS_RELATIONSHIP_STATUSES = ["ACTIVE", "REMOVED"] as const;
+
+export class RelationshipListQueryDto {
+  @IsOptional()
+  @IsIn(LMS_RELATIONSHIP_STATUSES)
+  status?: string;
+}
+
+export class CandidateListQueryDto {
+  @IsOptional()
+  @IsString()
+  @Length(0, 120)
+  search?: string;
+}
+
+export class EnrollLearnerDto {
+  @IsUUID()
+  learnerId!: string;
+}
+
+export class AssignInstructorDto {
+  @IsUUID()
+  instructorId!: string;
+}

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
@@ -6,11 +6,15 @@ import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, mimeTypeForFilename, type LmsUpload } from "./resource-storage.service";
 import type {
   ContentListQueryDto,
+  CandidateListQueryDto,
+  AssignInstructorDto,
   CreateCourseDto,
   CreateCourseModuleDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
+  EnrollLearnerDto,
+  RelationshipListQueryDto,
   UpdateCourseDto,
   UpdateCourseModuleDto,
   UpdateLearningResourceDto,
@@ -596,6 +600,261 @@ export class LmsService {
       throw new BadRequestException(`${resourceType} resources require a URL.`);
     }
     if (RESOURCE_TYPES_WITH_FILE_OR_URL.includes(resourceType as LmsResourceType) && !url && !filePath) return;
+  }
+
+  private async assertInstitutionAccess(user: AuthenticatedUser, institutionId: string) {
+    if (user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN")) return;
+    const result = await this.db.query(
+      `SELECT 1
+       FROM user_roles ur
+       JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+       WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+         AND r.status = 'ACTIVE'
+         AND r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
+       LIMIT 1`,
+      [user.id, user.tenantId, institutionId],
+    );
+    if (!result.rows[0]) throw new ForbiddenException("You are not authorized for this institution.");
+  }
+
+  private async relationshipCourse(courseId: string, user: AuthenticatedUser) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT c.id, c.tenant_id, c.institution_id, c.title, c.code, c.status,
+              p.status AS programme_status, i.status AS institution_status
+       FROM courses c
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
+       WHERE c.id = $1 AND c.tenant_id = $2`,
+      [courseId, user.tenantId],
+    );
+    const course = result.rows[0];
+    if (!course) throw new NotFoundException("Course not found in the current tenant.");
+    await this.assertInstitutionAccess(user, String(course.institution_id));
+    if (course.status !== "PUBLISHED") throw new BadRequestException("Enrollments and instructor assignments require a published course.");
+    if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
+      throw new BadRequestException("The course institution or programme is not active.");
+    }
+    return course;
+  }
+
+  private relationshipStatus(status?: string) {
+    if (status && !["ACTIVE", "REMOVED"].includes(status)) {
+      throw new BadRequestException("Invalid relationship status.");
+    }
+    return status || "ACTIVE";
+  }
+
+  private async eligiblePerson(user: AuthenticatedUser, institutionId: string, personId: string, roleCode: "STUDENT" | "TEACHER") {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT u.id, u.tenant_id, u.first_name, u.last_name, u.email, u.mobile
+       FROM users u
+       JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+       JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+       WHERE u.id = $1 AND u.tenant_id = $2 AND u.status = 'ACTIVE'
+         AND ur.institution_id = $3 AND r.code = $4 AND r.status = 'ACTIVE'
+       LIMIT 1`,
+      [personId, user.tenantId, institutionId, roleCode],
+    );
+    if (!result.rows[0]) {
+      throw new NotFoundException(roleCode === "STUDENT"
+        ? "The learner was not found as an active Student in this institution."
+        : "The instructor was not found as an active Teacher in this institution.");
+    }
+    return result.rows[0];
+  }
+
+  private async listCandidates(
+    courseId: string,
+    user: AuthenticatedUser,
+    page: number,
+    pageSize: number,
+    offset: number,
+    query: CandidateListQueryDto,
+    roleCode: "STUDENT" | "TEACHER",
+  ) {
+    const course = await this.relationshipCourse(courseId, user);
+    const relationshipTable = roleCode === "STUDENT" ? "lms_enrollments" : "lms_instructor_assignments";
+    const relationshipColumn = roleCode === "STUDENT" ? "learner_id" : "instructor_id";
+    const search = query.search?.trim() || "";
+    const searchClause = search
+      ? " AND (u.first_name ILIKE $5 OR u.last_name ILIKE $5 OR concat_ws(' ', u.first_name, u.last_name) ILIKE $5 OR COALESCE(u.email, '') ILIKE $5)"
+      : "";
+    const values: unknown[] = [user.tenantId, course.institution_id, course.id, roleCode];
+    if (search) values.push(`%${search}%`);
+    const limitParam = values.length + 1;
+    const offsetParam = values.length + 2;
+    const [rows, total] = await Promise.all([
+      this.db.query(
+        `SELECT u.id, u.first_name, u.last_name, u.email, u.mobile
+         FROM users u
+         JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+         JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+         WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
+           AND ur.institution_id = $2 AND r.code = $4 AND r.status = 'ACTIVE'
+           AND NOT EXISTS (
+             SELECT 1 FROM ${relationshipTable} x
+             WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
+               AND x.${relationshipColumn} = u.id AND x.status = 'ACTIVE'
+           )${searchClause}
+         ORDER BY u.first_name ASC, u.last_name ASC, u.id ASC
+         LIMIT $${limitParam} OFFSET $${offsetParam}`,
+        [...values, pageSize, offset],
+      ),
+      this.db.query<{ count: string }>(
+        `SELECT count(DISTINCT u.id)::text AS count
+         FROM users u
+         JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+         JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+         WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
+           AND ur.institution_id = $2 AND r.code = $4 AND r.status = 'ACTIVE'
+           AND NOT EXISTS (
+             SELECT 1 FROM ${relationshipTable} x
+             WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
+               AND x.${relationshipColumn} = u.id AND x.status = 'ACTIVE'
+           )${searchClause}`,
+        values,
+      ),
+    ]);
+    return { data: rows.rows, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+  }
+
+  async listEnrollmentCandidates(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: CandidateListQueryDto) {
+    return this.listCandidates(courseId, user, page, pageSize, offset, query, "STUDENT");
+  }
+
+  async listInstructorCandidates(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: CandidateListQueryDto) {
+    return this.listCandidates(courseId, user, page, pageSize, offset, query, "TEACHER");
+  }
+
+  private async listRelationships(
+    courseId: string,
+    user: AuthenticatedUser,
+    page: number,
+    pageSize: number,
+    offset: number,
+    query: RelationshipListQueryDto,
+    kind: "enrollment" | "instructor_assignment",
+  ) {
+    const course = await this.relationshipCourse(courseId, user);
+    const table = kind === "enrollment" ? "lms_enrollments" : "lms_instructor_assignments";
+    const personColumn = kind === "enrollment" ? "learner_id" : "instructor_id";
+    const personAlias = kind === "enrollment" ? "learner" : "instructor";
+    const dateColumn = kind === "enrollment" ? "enrolled_at" : "assigned_at";
+    const status = this.relationshipStatus(query.status);
+    const values: unknown[] = [user.tenantId, course.institution_id, course.id, status];
+    const select = `x.id, x.tenant_id, x.institution_id, x.course_id, x.${personColumn}, x.status,
+                    x.${dateColumn}, x.removed_at, ${personAlias}.first_name AS ${personAlias}_first_name,
+                    ${personAlias}.last_name AS ${personAlias}_last_name, ${personAlias}.email AS ${personAlias}_email`;
+    const [rows, total] = await Promise.all([
+      this.db.query(
+        `SELECT ${select}
+         FROM ${table} x JOIN users ${personAlias} ON ${personAlias}.id = x.${personColumn} AND ${personAlias}.tenant_id = x.tenant_id
+         WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4
+         ORDER BY x.${dateColumn} DESC, x.id DESC LIMIT $5 OFFSET $6`,
+        [...values, pageSize, offset],
+      ),
+      this.db.query<{ count: string }>(
+        `SELECT count(*)::text AS count FROM ${table} x
+         WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4`,
+        values,
+      ),
+    ]);
+    return { data: rows.rows, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+  }
+
+  async listEnrollments(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: RelationshipListQueryDto) {
+    return this.listRelationships(courseId, user, page, pageSize, offset, query, "enrollment");
+  }
+
+  async listInstructorAssignments(courseId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: RelationshipListQueryDto) {
+    return this.listRelationships(courseId, user, page, pageSize, offset, query, "instructor_assignment");
+  }
+
+  private async runRelationship<T>(work: () => Promise<T>) {
+    try {
+      return await work();
+    } catch (error) {
+      if ((error as { code?: string }).code === "23505") {
+        throw new ConflictException("This person already has an active relationship with the course.");
+      }
+      if ((error as { code?: string }).code === "23514") {
+        throw new BadRequestException("The relationship status is invalid.");
+      }
+      throw error;
+    }
+  }
+
+  async enrollLearner(courseId: string, input: EnrollLearnerDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const course = await this.relationshipCourse(courseId, user);
+    await this.eligiblePerson(user, String(course.institution_id), input.learnerId, "STUDENT");
+    return this.runRelationship(async () => {
+      const result = await this.db.query<Record<string, unknown>>(
+        `INSERT INTO lms_enrollments (tenant_id, institution_id, course_id, learner_id, enrolled_by)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, tenant_id, institution_id, course_id, learner_id, status, enrolled_by, enrolled_at, removed_at, created_at, updated_at`,
+        [user.tenantId, course.institution_id, course.id, input.learnerId, user.id],
+      );
+      const row = result.rows[0];
+      await this.auditMutation(request, "enrollment", "CREATE", row);
+      return row;
+    });
+  }
+
+  async assignInstructor(courseId: string, input: AssignInstructorDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const course = await this.relationshipCourse(courseId, user);
+    await this.eligiblePerson(user, String(course.institution_id), input.instructorId, "TEACHER");
+    return this.runRelationship(async () => {
+      const result = await this.db.query<Record<string, unknown>>(
+        `INSERT INTO lms_instructor_assignments (tenant_id, institution_id, course_id, instructor_id, assigned_by)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, tenant_id, institution_id, course_id, instructor_id, status, assigned_by, assigned_at, removed_at, created_at, updated_at`,
+        [user.tenantId, course.institution_id, course.id, input.instructorId, user.id],
+      );
+      const row = result.rows[0];
+      await this.auditMutation(request, "instructor_assignment", "CREATE", row);
+      return row;
+    });
+  }
+
+  private async removeRelationship(
+    courseId: string,
+    relationshipId: string,
+    request: ContextRequest,
+    kind: "enrollment" | "instructor_assignment",
+  ) {
+    const user = request.context.user!;
+    const course = await this.relationshipCourse(courseId, user);
+    const table = kind === "enrollment" ? "lms_enrollments" : "lms_instructor_assignments";
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT * FROM ${table}
+       WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND course_id = $4`,
+      [relationshipId, user.tenantId, course.institution_id, course.id],
+    );
+    const before = result.rows[0];
+    if (!before) throw new NotFoundException("Course relationship not found.");
+    if (before.status !== "ACTIVE") throw new ConflictException("This course relationship has already been removed.");
+    return this.runRelationship(async () => {
+      const removed = await this.db.query<Record<string, unknown>>(
+        `UPDATE ${table}
+         SET status = 'REMOVED', removed_by = $2, removed_at = now(), updated_at = now()
+         WHERE id = $1 AND tenant_id = $3 AND institution_id = $4 AND course_id = $5 AND status = 'ACTIVE'
+         RETURNING *`,
+        [relationshipId, user.id, user.tenantId, course.institution_id, course.id],
+      );
+      if (!removed.rows[0]) throw new ConflictException("This course relationship has already been removed.");
+      await this.auditMutation(request, kind, "REMOVE", removed.rows[0], before);
+      return removed.rows[0];
+    });
+  }
+
+  async removeEnrollment(courseId: string, enrollmentId: string, request: ContextRequest) {
+    return this.removeRelationship(courseId, enrollmentId, request, "enrollment");
+  }
+
+  async removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest) {
+    return this.removeRelationship(courseId, assignmentId, request, "instructor_assignment");
   }
 
   async changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest) {
