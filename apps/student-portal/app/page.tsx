@@ -66,7 +66,7 @@ type AssessmentAttempt = {
   max_score?: number | null;
   passed?: boolean | null;
   grading_status?: "NOT_REQUIRED" | "PENDING" | "GRADED";
-  results?: Array<{ questionId: string; correct: boolean; awardedMarks: number }>;
+  results?: Array<{ questionId: string; correct: boolean | null; awardedMarks: number }>;
 };
 type AssessmentHistoryItem = {
   attempt_id: string;
