@@ -75,6 +75,8 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(scopeMigration, /ADD COLUMN IF NOT EXISTS institution_id uuid/);
     strict_1.default.match(scopeMigration, /user_roles_scope_campus_fk/);
     strict_1.default.match(scopeMigration, /lms_enrollments_course_scope_fk/);
+    strict_1.default.match(scopeMigration, /lms_enrollments_exact_course_campus_fk/);
+    strict_1.default.match(scopeMigration, /lms_assessments_exact_course_campus_fk/);
     strict_1.default.match(scopeMigration, /lms_assignment_submissions_assignment_scope_fk/);
     strict_1.default.match(scopeMigration, /user_roles_campus_requires_institution_ck/);
     strict_1.default.match(scopeMigration, /INSERT INTO schema_migrations \(version\)/);

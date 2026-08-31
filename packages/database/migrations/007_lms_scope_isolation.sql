@@ -97,6 +97,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS campuses_tenant_institution_id_key
 CREATE UNIQUE INDEX IF NOT EXISTS courses_tenant_institution_id_key
   ON courses (tenant_id, institution_id, id);
 
+CREATE UNIQUE INDEX IF NOT EXISTS courses_tenant_institution_id_campus_key
+  ON courses (tenant_id, institution_id, id, campus_id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS course_modules_tenant_course_id_key
   ON course_modules (tenant_id, course_id, id);
 
@@ -186,6 +189,12 @@ BEGIN
       FOREIGN KEY (tenant_id, institution_id, campus_id)
       REFERENCES campuses (tenant_id, institution_id, id);
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_enrollments_exact_course_campus_fk') THEN
+    ALTER TABLE lms_enrollments
+      ADD CONSTRAINT lms_enrollments_exact_course_campus_fk
+      FOREIGN KEY (tenant_id, institution_id, course_id, campus_id)
+      REFERENCES courses (tenant_id, institution_id, id, campus_id);
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_instructor_assignments_course_scope_fk') THEN
     ALTER TABLE lms_instructor_assignments
       ADD CONSTRAINT lms_instructor_assignments_course_scope_fk
@@ -197,6 +206,12 @@ BEGIN
       ADD CONSTRAINT lms_instructor_assignments_scope_campus_fk
       FOREIGN KEY (tenant_id, institution_id, campus_id)
       REFERENCES campuses (tenant_id, institution_id, id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_instructor_assignments_exact_course_campus_fk') THEN
+    ALTER TABLE lms_instructor_assignments
+      ADD CONSTRAINT lms_instructor_assignments_exact_course_campus_fk
+      FOREIGN KEY (tenant_id, institution_id, course_id, campus_id)
+      REFERENCES courses (tenant_id, institution_id, id, campus_id);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_assessments_course_scope_fk') THEN
     ALTER TABLE lms_assessments
@@ -216,6 +231,12 @@ BEGIN
       FOREIGN KEY (tenant_id, institution_id, campus_id)
       REFERENCES campuses (tenant_id, institution_id, id);
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_assessments_exact_course_campus_fk') THEN
+    ALTER TABLE lms_assessments
+      ADD CONSTRAINT lms_assessments_exact_course_campus_fk
+      FOREIGN KEY (tenant_id, institution_id, course_id, campus_id)
+      REFERENCES courses (tenant_id, institution_id, id, campus_id);
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_lesson_progress_course_scope_fk') THEN
     ALTER TABLE lms_lesson_progress
       ADD CONSTRAINT lms_lesson_progress_course_scope_fk
@@ -228,6 +249,12 @@ BEGIN
       FOREIGN KEY (tenant_id, institution_id, campus_id)
       REFERENCES campuses (tenant_id, institution_id, id);
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_lesson_progress_exact_course_campus_fk') THEN
+    ALTER TABLE lms_lesson_progress
+      ADD CONSTRAINT lms_lesson_progress_exact_course_campus_fk
+      FOREIGN KEY (tenant_id, institution_id, course_id, campus_id)
+      REFERENCES courses (tenant_id, institution_id, id, campus_id);
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_assessment_completions_course_scope_fk') THEN
     ALTER TABLE lms_assessment_completions
       ADD CONSTRAINT lms_assessment_completions_course_scope_fk
@@ -239,6 +266,12 @@ BEGIN
       ADD CONSTRAINT lms_assessment_completions_scope_campus_fk
       FOREIGN KEY (tenant_id, institution_id, campus_id)
       REFERENCES campuses (tenant_id, institution_id, id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_assessment_completions_exact_course_campus_fk') THEN
+    ALTER TABLE lms_assessment_completions
+      ADD CONSTRAINT lms_assessment_completions_exact_course_campus_fk
+      FOREIGN KEY (tenant_id, institution_id, course_id, campus_id)
+      REFERENCES courses (tenant_id, institution_id, id, campus_id);
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_assignment_submissions_course_scope_fk') THEN
     ALTER TABLE lms_assignment_submissions
@@ -257,6 +290,12 @@ BEGIN
       ADD CONSTRAINT lms_assignment_submissions_scope_campus_fk
       FOREIGN KEY (tenant_id, institution_id, campus_id)
       REFERENCES campuses (tenant_id, institution_id, id);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_assignment_submissions_exact_course_campus_fk') THEN
+    ALTER TABLE lms_assignment_submissions
+      ADD CONSTRAINT lms_assignment_submissions_exact_course_campus_fk
+      FOREIGN KEY (tenant_id, institution_id, course_id, campus_id)
+      REFERENCES courses (tenant_id, institution_id, id, campus_id);
   END IF;
 END $$;
 

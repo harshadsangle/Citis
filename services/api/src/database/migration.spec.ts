@@ -81,6 +81,8 @@ test("scope migration adds campus ancestry and composite integrity constraints",
   assert.match(scopeMigration, /ADD COLUMN IF NOT EXISTS institution_id uuid/);
   assert.match(scopeMigration, /user_roles_scope_campus_fk/);
   assert.match(scopeMigration, /lms_enrollments_course_scope_fk/);
+  assert.match(scopeMigration, /lms_enrollments_exact_course_campus_fk/);
+  assert.match(scopeMigration, /lms_assessments_exact_course_campus_fk/);
   assert.match(scopeMigration, /lms_assignment_submissions_assignment_scope_fk/);
   assert.match(scopeMigration, /user_roles_campus_requires_institution_ck/);
   assert.match(scopeMigration, /INSERT INTO schema_migrations \(version\)/);
