@@ -319,6 +319,12 @@ export class AssessmentService {
     await this.assertStaff(before, user);
     if (before.status === "ARCHIVED") throw new ConflictException("Archived assessments cannot be edited.");
     this.validateAssessmentInput(input, before.total_marks as number | null);
+    await this.validateAssessmentMarks(
+      id,
+      input.totalMarks ?? (before.total_marks as number | null),
+      input.passingMarks ?? (before.passing_marks as number | null),
+      user.tenantId,
+    );
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
         `UPDATE lms_assessments
@@ -350,6 +356,12 @@ export class AssessmentService {
         [user.tenantId, id],
       );
       if (Number(questionCount.rows[0]?.count ?? 0) === 0) throw new BadRequestException("Add at least one active question before publishing an assessment.");
+      await this.validateAssessmentMarks(
+        id,
+        before.total_marks as number | null,
+        before.passing_marks as number | null,
+        user.tenantId,
+      );
     }
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
@@ -484,6 +496,7 @@ export class AssessmentService {
     const user = request.context.user!;
     const assessment = await this.assessmentFor(assessmentId, user);
     await this.assertStaff(assessment, user);
+    if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
     this.validateOptions(input.questionType, input.options);
     return this.run(async () => this.db.transaction(async (client) => {
       const questionResult = await client.query<Record<string, unknown>>(
@@ -513,6 +526,7 @@ export class AssessmentService {
     const before = await this.questionFor(id, user);
     const assessment = await this.assessmentFor(String(before.assessment_id), user);
     await this.assertStaff(assessment, user);
+    if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
     const attempts = await this.db.query("SELECT 1 FROM lms_assessment_attempts WHERE assessment_id = $1 AND status = 'SUBMITTED' LIMIT 1", [assessment.id]);
     if (attempts.rows[0]) throw new ConflictException("Questions cannot be edited after an attempt has been submitted.");
     if (input.options) this.validateOptions(String(before.question_type), input.options);
@@ -545,6 +559,7 @@ export class AssessmentService {
     const before = await this.questionFor(id, user);
     const assessment = await this.assessmentFor(String(before.assessment_id), user);
     await this.assertStaff(assessment, user);
+    if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
     const result = await this.db.query<Record<string, unknown>>(
       `UPDATE lms_assessment_questions SET status = 'ARCHIVED', updated_at = now()
        WHERE id = $1 AND tenant_id = $2 RETURNING *`,
@@ -585,6 +600,7 @@ export class AssessmentService {
     const question = await this.questionFor(questionId, user);
     const assessment = await this.assessmentFor(String(question.assessment_id), user);
     await this.assertStaff(assessment, user);
+    if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
     const options = await this.allOptions(questionId, user);
     this.validateOptions(String(question.question_type), [...options, input]);
     const result = await this.run(() => this.db.query<Record<string, unknown>>(
@@ -605,6 +621,7 @@ export class AssessmentService {
     const question = await this.questionFor(String(before.question_id), user);
     const assessment = await this.assessmentFor(String(question.assessment_id), user);
     await this.assertStaff(assessment, user);
+    if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
     const existing = await this.allOptions(String(before.question_id), user);
     const options = existing.map((option) => String(option.value) === String(before.option_value)
       ? { value: input.value?.trim() ?? option.value, label: input.label?.trim() ?? option.label, isCorrect: input.isCorrect ?? option.isCorrect }
@@ -627,6 +644,7 @@ export class AssessmentService {
     const question = await this.questionFor(String(before.question_id), user);
     const assessment = await this.assessmentFor(String(question.assessment_id), user);
     await this.assertStaff(assessment, user);
+    if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
     const options = await this.allOptions(String(before.question_id), user);
     const remaining = options.filter((option) => option.value !== String(before.option_value));
     this.validateOptions(String(question.question_type), remaining);
