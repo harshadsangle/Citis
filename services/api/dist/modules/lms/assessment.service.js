@@ -14,8 +14,10 @@ const common_1 = require("@nestjs/common");
 const access_scope_1 = require("../../common/access-scope");
 const audit_service_1 = require("../../common/audit.service");
 const database_service_1 = require("../../database/database.service");
+const pagination_1 = require("../../common/pagination");
 const assessmentTypes = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"];
 const questionTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"];
+const manuallyGradedAssessmentTypes = ["PROJECT", "VIVA", "PRACTICAL"];
 function asString(value) {
     return typeof value === "string" ? value : "";
 }
@@ -529,6 +531,47 @@ let AssessmentService = class AssessmentService {
        FROM lms_assessment_answers WHERE tenant_id = $1 AND attempt_id = $2 ORDER BY question_id`, [user.tenantId, id]);
         return { ...attempt, questions, answers: answers.rows };
     }
+    async listAttempts(assessmentId, user, page, pageSize, offset, query) {
+        const assessment = await this.assessmentFor(assessmentId, user);
+        await this.assertStaff(assessment, user);
+        const values = [user.tenantId, assessmentId];
+        const clauses = ["at.tenant_id = $1", "at.assessment_id = $2", "at.status = 'SUBMITTED'"];
+        if (query.gradingStatus) {
+            values.push(query.gradingStatus);
+            clauses.push(`at.grading_status = $${values.length}`);
+        }
+        const result = await this.db.query(`SELECT at.id, at.tenant_id, at.institution_id, at.campus_id, at.course_id, at.module_id,
+              at.assessment_id, at.learner_id, at.attempt_number, at.status, at.score, at.max_score,
+              at.passed, at.grading_status, at.grader_id, at.graded_at, at.grading_feedback,
+              at.started_at, at.submitted_at, u.first_name AS learner_first_name,
+              u.last_name AS learner_last_name, u.email AS learner_email,
+              a.title AS assessment_title, a.assessment_type
+       FROM lms_assessment_attempts at
+       JOIN users u ON u.id = at.learner_id AND u.tenant_id = at.tenant_id
+       JOIN lms_assessments a ON a.id = at.assessment_id AND a.tenant_id = at.tenant_id
+       WHERE ${clauses.join(" AND ")}
+       ORDER BY at.submitted_at DESC, at.attempt_number DESC, at.id ASC`, values);
+        const visible = (0, access_scope_1.filterScopedRows)(user, result.rows);
+        return { data: visible.slice(offset, offset + pageSize), meta: (0, pagination_1.paginationMeta)(page, pageSize, visible.length) };
+    }
+    async listLearnerHistory(user, page, pageSize, offset) {
+        const result = await this.db.query(`SELECT at.id AS attempt_id, at.tenant_id, at.institution_id, at.campus_id, at.course_id,
+              at.module_id, at.assessment_id, at.attempt_number, at.score, at.max_score, at.passed,
+              at.grading_status, at.grading_feedback, at.submitted_at, a.title,
+              a.assessment_type, c.title AS course_title, c.code AS course_code, cm.title AS module_title
+       FROM lms_assessment_attempts at
+       JOIN lms_assessments a ON a.id = at.assessment_id AND a.tenant_id = at.tenant_id
+       JOIN courses c ON c.id = at.course_id AND c.tenant_id = at.tenant_id
+       JOIN course_modules cm ON cm.id = at.module_id AND cm.course_id = at.course_id AND cm.tenant_id = at.tenant_id
+       JOIN lms_enrollments e
+         ON e.tenant_id = at.tenant_id AND e.institution_id = at.institution_id
+        AND e.course_id = at.course_id AND e.learner_id = at.learner_id
+        AND e.campus_id IS NOT DISTINCT FROM at.campus_id AND e.status = 'ACTIVE'
+       WHERE at.tenant_id = $1 AND at.learner_id = $2 AND at.status = 'SUBMITTED'
+       ORDER BY at.submitted_at DESC, at.id ASC`, [user.tenantId, user.id]);
+        const visible = (0, access_scope_1.filterScopedRows)(user, result.rows);
+        return { data: visible.slice(offset, offset + pageSize), meta: (0, pagination_1.paginationMeta)(page, pageSize, visible.length) };
+    }
     scoreQuestion(question, answer) {
         const options = question.options;
         const supplied = answer.answer?.value;
@@ -572,15 +615,20 @@ let AssessmentService = class AssessmentService {
         if (input.answers.length !== questionMap.size || new Set(input.answers.map((answer) => answer.questionId)).size !== input.answers.length) {
             throw new common_1.BadRequestException("Submit exactly one answer for every active assessment question.");
         }
+        const requiresManualGrading = manuallyGradedAssessmentTypes.includes(String(attempt.assessment_type));
         const results = input.answers.map((answer) => {
             const question = questionMap.get(answer.questionId);
             if (!question)
                 throw new common_1.BadRequestException("An answer references an invalid assessment question.");
-            return { questionId: answer.questionId, ...this.scoreQuestion(question, answer), answer: answer.answer };
+            return {
+                questionId: answer.questionId,
+                ...(requiresManualGrading ? { correct: null, awardedMarks: 0 } : this.scoreQuestion(question, answer)),
+                answer: answer.answer,
+            };
         });
         const score = results.reduce((sum, result) => sum + result.awardedMarks, 0);
         const maxScore = questions.reduce((sum, question) => sum + Number(question.marks), 0);
-        const passed = attempt.passing_marks === null ? null : score >= Number(attempt.passing_marks);
+        const passed = requiresManualGrading || attempt.passing_marks === null ? null : score >= Number(attempt.passing_marks);
         return this.run(async () => this.db.transaction(async (client) => {
             const locked = await client.query("SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [id, user.tenantId]);
             if (locked.rows[0]?.status !== "IN_PROGRESS")
@@ -591,15 +639,80 @@ let AssessmentService = class AssessmentService {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11)`, [user.tenantId, attempt.institution_id, attempt.campus_id ?? null, attempt.course_id, attempt.module_id, attempt.assessment_id, id, result.questionId, JSON.stringify(result.answer), result.correct, result.awardedMarks]);
             }
             const updated = await client.query(`UPDATE lms_assessment_attempts
-         SET status = 'SUBMITTED', score = $3, max_score = $4, passed = $5, submitted_at = now(), updated_at = now()
-         WHERE id = $1 AND tenant_id = $2 RETURNING *`, [id, user.tenantId, score, maxScore, passed]);
+          SET status = 'SUBMITTED', score = $3, max_score = $4, passed = $5,
+              grading_status = $6, submitted_at = now(), updated_at = now()
+         WHERE id = $1 AND tenant_id = $2 RETURNING *`, [id, user.tenantId, score, maxScore, passed, requiresManualGrading ? "PENDING" : "NOT_REQUIRED"]);
+            await this.auditMutation(request, "assessment_attempt", "SUBMIT", updated.rows[0], attempt);
+            if (!requiresManualGrading) {
+                const completion = await client.query(`INSERT INTO lms_assessment_completions
+              (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
+            ON CONFLICT (tenant_id, assessment_id, learner_id, attempt_id)
+            DO UPDATE SET score = EXCLUDED.score, passed = EXCLUDED.passed, completed_at = EXCLUDED.completed_at, updated_at = now()
+            RETURNING *`, [user.tenantId, attempt.institution_id, attempt.campus_id ?? null, attempt.course_id, attempt.module_id, attempt.assessment_id, user.id, id, score, passed]);
+                await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
+            }
+            return { ...updated.rows[0], results };
+        }));
+    }
+    async gradeAttempt(id, input, request) {
+        const user = request.context.user;
+        const attempt = await this.attemptFor(id, user);
+        const staff = await this.hasStaffAccess(user, String(attempt.institution_id), String(attempt.course_id), attempt.campus_id);
+        if (!staff)
+            throw new common_1.ForbiddenException("You are not authorized to grade this assessment attempt.");
+        if (!manuallyGradedAssessmentTypes.includes(String(attempt.assessment_type))) {
+            throw new common_1.BadRequestException("This assessment is scored automatically.");
+        }
+        if (attempt.status !== "SUBMITTED" || attempt.grading_status !== "PENDING") {
+            throw new common_1.ConflictException("This assessment attempt is no longer awaiting grading.");
+        }
+        const questions = await this.questionRows(this.db, String(attempt.assessment_id), user, false);
+        const questionMap = new Map(questions.map((question) => [String(question.id), question]));
+        if (input.grades.length !== questionMap.size || new Set(input.grades.map((grade) => grade.questionId)).size !== input.grades.length) {
+            throw new common_1.BadRequestException("Grade exactly one mark for every active assessment question.");
+        }
+        for (const grade of input.grades) {
+            const question = questionMap.get(grade.questionId);
+            if (!question)
+                throw new common_1.BadRequestException("A grade references an invalid assessment question.");
+            if (grade.awardedMarks > Number(question.marks)) {
+                throw new common_1.BadRequestException("A question grade cannot exceed its configured marks.");
+            }
+        }
+        const score = input.grades.reduce((sum, grade) => sum + grade.awardedMarks, 0);
+        const maxScore = questions.reduce((sum, question) => sum + Number(question.marks), 0);
+        const passed = attempt.passing_marks === null ? null : score >= Number(attempt.passing_marks);
+        return this.run(async () => this.db.transaction(async (client) => {
+            const locked = await client.query("SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [id, user.tenantId]);
+            if (locked.rows[0]?.status !== "SUBMITTED" || locked.rows[0]?.grading_status !== "PENDING") {
+                throw new common_1.ConflictException("This assessment attempt is no longer awaiting grading.");
+            }
+            const answerRows = await client.query("SELECT question_id, answer_json FROM lms_assessment_answers WHERE tenant_id = $1 AND attempt_id = $2", [user.tenantId, id]);
+            if (answerRows.rows.length !== questions.length) {
+                throw new common_1.BadRequestException("Every assessment question must have a submitted answer before grading.");
+            }
+            const results = [];
+            for (const grade of input.grades) {
+                const answer = await client.query(`UPDATE lms_assessment_answers
+           SET awarded_marks = $3, is_correct = NULL
+           WHERE tenant_id = $1 AND attempt_id = $2 AND question_id = $4
+           RETURNING question_id, answer_json, awarded_marks`, [user.tenantId, id, grade.awardedMarks, grade.questionId]);
+                if (!answer.rows[0])
+                    throw new common_1.BadRequestException("Every grade must match a submitted assessment answer.");
+                results.push({ questionId: grade.questionId, answer: answer.rows[0].answer_json, correct: null, awardedMarks: grade.awardedMarks });
+            }
+            const updated = await client.query(`UPDATE lms_assessment_attempts
+         SET score = $3, max_score = $4, passed = $5, grading_status = 'GRADED',
+             grader_id = $6, graded_at = now(), grading_feedback = $7, updated_at = now()
+         WHERE id = $1 AND tenant_id = $2 RETURNING *`, [id, user.tenantId, score, maxScore, passed, user.id, input.feedback?.trim() || null]);
             const completion = await client.query(`INSERT INTO lms_assessment_completions
            (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
          ON CONFLICT (tenant_id, assessment_id, learner_id, attempt_id)
          DO UPDATE SET score = EXCLUDED.score, passed = EXCLUDED.passed, completed_at = EXCLUDED.completed_at, updated_at = now()
-         RETURNING *`, [user.tenantId, attempt.institution_id, attempt.campus_id ?? null, attempt.course_id, attempt.module_id, attempt.assessment_id, user.id, id, score, passed]);
-            await this.auditMutation(request, "assessment_attempt", "SUBMIT", updated.rows[0], attempt);
+         RETURNING *`, [user.tenantId, attempt.institution_id, attempt.campus_id ?? null, attempt.course_id, attempt.module_id, attempt.assessment_id, attempt.learner_id, id, score, passed]);
+            await this.auditMutation(request, "assessment_attempt", "GRADE", updated.rows[0], attempt);
             await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
             return { ...updated.rows[0], results };
         }));

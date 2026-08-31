@@ -14,6 +14,7 @@ const progressMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(p
 const assignmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/006_lms_assignments.sql"), "utf8");
 const scopeMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/007_lms_scope_isolation.sql"), "utf8");
 const assessmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/008_lms_assessment_engine.sql"), "utf8");
+const operationsMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/009_lms_assessment_operations.sql"), "utf8");
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
     (0, node_test_1.default)(`migration defines ${table}`, () => {
         strict_1.default.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
@@ -93,5 +94,12 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(assessmentMigration, /lms\.assessment_attempt\.create/);
     strict_1.default.match(assessmentMigration, /lms\.assessment_option\.update/);
     strict_1.default.match(assessmentMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+(0, node_test_1.default)("assessment operations migration defines manual grading and review permissions", () => {
+    strict_1.default.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grading_status/);
+    strict_1.default.match(operationsMigration, /grading_status IN \('NOT_REQUIRED', 'PENDING', 'GRADED'\)/);
+    strict_1.default.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grader_id/);
+    strict_1.default.match(operationsMigration, /'lms\.assessment_attempt\.grade'/);
+    strict_1.default.match(operationsMigration, /INSERT INTO schema_migrations \(version\)/);
 });
 //# sourceMappingURL=migration.spec.js.map

@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
-import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, AssessmentAttemptListQueryDto, EnrollLearnerDto, GradeAssessmentAttemptDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 import { LmsService } from "./lms.service";
 import { AssessmentService } from "./assessment.service";
 import type { LmsUpload } from "./resource-storage.service";
@@ -65,18 +65,28 @@ export declare class LmsController {
         };
         questions: Record<string, unknown>[];
     }>>;
+    assessmentAttempts(id: string, request: ContextRequest, query: AssessmentAttemptListQueryDto): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     assessmentAttempt(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         questions: Record<string, unknown>[];
         answers: Record<string, unknown>[];
     }>>;
     submitAssessmentAttempt(id: string, input: SubmitAssessmentAttemptDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
-        results: {
+        results: ({
             answer: Record<string, unknown>;
             correct: boolean;
             awardedMarks: number;
             questionId: string;
-        }[];
+        } | {
+            answer: Record<string, unknown>;
+            correct: null;
+            awardedMarks: number;
+            questionId: string;
+        })[];
     }>>;
+    gradeAssessmentAttempt(id: string, input: GradeAssessmentAttemptDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        results: Record<string, unknown>[];
+    }>>;
+    assessmentHistory(request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     learnerProgress(request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         course: {
             id: unknown;

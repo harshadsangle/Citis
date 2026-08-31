@@ -89,6 +89,10 @@ export declare class AssignmentListQueryDto {
     courseId?: string;
     status?: string;
 }
+export declare class AssessmentAttemptListQueryDto {
+    status?: string;
+    gradingStatus?: string;
+}
 export declare class CreateAssignmentDto {
     courseId: string;
     moduleId: string;
@@ -163,4 +167,12 @@ export declare class AssessmentAnswerDto {
 }
 export declare class SubmitAssessmentAttemptDto {
     answers: AssessmentAnswerDto[];
+}
+export declare class GradeAssessmentAttemptDto {
+    grades: GradeAssessmentQuestionDto[];
+    feedback?: string;
+}
+export declare class GradeAssessmentQuestionDto {
+    questionId: string;
+    awardedMarks: number;
 }
