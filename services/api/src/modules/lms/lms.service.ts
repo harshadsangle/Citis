@@ -269,7 +269,7 @@ export class LmsService {
          SET title = COALESCE($3, title), description = COALESCE($4, description), thumbnail = COALESCE($5, thumbnail),
              updated_by = $2, updated_at = now()
          WHERE id = $1 AND tenant_id = $6
-         RETURNING id, tenant_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`,
+          RETURNING id, tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`,
         [id, request.context.user!.id, input.title?.trim() || null, input.description?.trim() || null, input.thumbnail?.trim() || null, request.context.user!.tenantId],
       );
       if (!result.rows[0]) throw new NotFoundException("Course not found.");
@@ -486,8 +486,8 @@ export class LmsService {
     try {
       const managed = await this.db.transaction(async (client) => {
         const previous = await client.query<{ storage_key: string }>(
-          "SELECT storage_key FROM managed_files WHERE resource_id = $1 FOR UPDATE",
-          [resource.id],
+          "SELECT storage_key FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 FOR UPDATE",
+          [resource.id, request.context.user!.tenantId],
         );
         previousStorageKey = previous.rows[0]?.storage_key ?? null;
         const result = await client.query(
