@@ -330,7 +330,10 @@ export class AssessmentService {
     if (["SHORT_TEXT", "NUMERIC"].includes(questionType) && correct.length !== 1) {
       throw new BadRequestException("Text and numeric questions need exactly one correct answer.");
     }
-    if (questionType === "TRUE_FALSE" && new Set(values.map((value) => value.toLowerCase())).size !== 2) {
+    if (questionType === "TRUE_FALSE" && (() => {
+      const normalized = new Set(values.map((value) => value.toLowerCase()));
+      return normalized.size !== 2 || !normalized.has("true") || !normalized.has("false");
+    })()) {
       throw new BadRequestException("True/false questions need true and false options.");
     }
   }
