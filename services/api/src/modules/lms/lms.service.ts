@@ -1,10 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
 import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, mimeTypeForFilename, type LmsUpload } from "./resource-storage.service";
+import { CertificateService } from "./certificate.service";
 import type {
   ContentListQueryDto,
   CandidateListQueryDto,
@@ -53,6 +54,7 @@ export class LmsService {
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly storage: ResourceStorageService,
+    @Optional() private readonly certificates?: CertificateService,
   ) {}
 
   private statusFilter(status?: string) {
@@ -1189,6 +1191,7 @@ export class LmsService {
     );
     const row = completed.rows[0];
     if (before?.status !== "COMPLETED") await this.auditMutation(request, "lesson_progress", "COMPLETE", row, before);
+    await this.certificates?.issueIfEligible(user.tenantId, String(lesson.course_id), user.id, request);
     return row;
   }
 
@@ -1589,6 +1592,7 @@ export class LmsService {
         ],
       );
       await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
+      await this.certificates?.issueIfEligible(user.tenantId, String(assignment.course_id), String(before.learner_id), request);
       return row;
     });
   }

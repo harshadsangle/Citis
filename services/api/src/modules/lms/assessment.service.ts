@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from "@nestjs/common";
 import { assertScope, assertScopeForRead, filterScopedRows, isPlatformUser } from "../../common/access-scope";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { AuditService } from "../../common/audit.service";
@@ -18,6 +18,7 @@ import type {
   UpdateAssessmentQuestionDto,
   UpdateAssessmentOptionDto,
 } from "./lms.dto";
+import { CertificateService } from "./certificate.service";
 
 type Queryable = { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> };
 type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
@@ -45,6 +46,7 @@ export class AssessmentService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    @Optional() private readonly certificates?: CertificateService,
   ) {}
 
   private async courseFor(courseId: string, user: AuthenticatedUser) {
@@ -1060,6 +1062,7 @@ export class AssessmentService {
     if ("expired" in outcome && outcome.expired) {
       throw new ConflictException("This assessment attempt expired before it was submitted.");
     }
+    await this.certificates?.issueIfEligible(user.tenantId, String(attempt.course_id), user.id, request);
     return outcome;
   }
 
@@ -1092,7 +1095,7 @@ export class AssessmentService {
       : Number(attempt.total_marks_snapshot);
     const passingMarks = attempt.passing_marks_snapshot ?? attempt.passing_marks;
     const passed = passingMarks === null ? null : score >= Number(passingMarks);
-    return this.run(async () => this.db.transaction(async (client) => {
+    const outcome = await this.run(async () => this.db.transaction(async (client) => {
       const locked = await client.query<Record<string, unknown>>(
         "SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
         [id, user.tenantId],
@@ -1139,5 +1142,7 @@ export class AssessmentService {
       await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
       return { ...updated.rows[0], results };
     }));
+    await this.certificates?.issueIfEligible(user.tenantId, String(attempt.course_id), String(attempt.learner_id), request);
+    return outcome;
   }
 }
