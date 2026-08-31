@@ -108,4 +108,11 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(gradingPermissionMigration, /lms\.assessment_attempt\.update/);
     strict_1.default.match(gradingPermissionMigration, /010_lms_assessment_grading_permission/);
 });
+(0, node_test_1.default)("assessment attempt stability migration snapshots content, enforces expiry, and stores drafts", () => {
+    strict_1.default.match(attemptStabilityMigration, /question_snapshot jsonb/);
+    strict_1.default.match(attemptStabilityMigration, /expires_at timestamptz/);
+    strict_1.default.match(attemptStabilityMigration, /CREATE TABLE IF NOT EXISTS lms_assessment_attempt_drafts/);
+    strict_1.default.match(attemptStabilityMigration, /status IN \('IN_PROGRESS', 'SUBMITTED', 'EXPIRED'\)/);
+    strict_1.default.match(attemptStabilityMigration, /INSERT INTO schema_migrations \(version\)/);
+});
 //# sourceMappingURL=migration.spec.js.map

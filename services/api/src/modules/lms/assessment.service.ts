@@ -684,6 +684,12 @@ export class AssessmentService {
     if (assessment.status !== "PUBLISHED" || assessment.course_status !== "PUBLISHED" || assessment.module_status !== "PUBLISHED") {
       throw new BadRequestException("Only published assessments in published courses can be started.");
     }
+    await this.validateAssessmentMarks(
+      assessment.id as string,
+      assessment.total_marks as number | null,
+      assessment.passing_marks as number | null,
+      user.tenantId,
+    );
     return this.run(async () => this.db.transaction(async (client) => {
       await client.query("SELECT id FROM lms_assessments WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [assessment.id, user.tenantId]);
       const existing = await client.query<Record<string, unknown>>(
@@ -973,6 +979,14 @@ export class AssessmentService {
         [id, user.tenantId],
       );
       if (locked.rows[0]?.status !== "IN_PROGRESS") throw new ConflictException("This assessment attempt has already been submitted.");
+      const enrollment = await client.query(
+        `SELECT 1 FROM lms_enrollments
+         WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
+           AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+         LIMIT 1 FOR SHARE`,
+        [user.tenantId, attempt.institution_id, attempt.course_id, user.id, attempt.campus_id ?? null],
+      );
+      if (!enrollment.rows[0]) throw new ForbiddenException("An active course enrollment is required.");
       if (locked.rows[0]?.expires_at && new Date(String(locked.rows[0].expires_at)).getTime() <= Date.now()) {
         const expired = await client.query<Record<string, unknown>>(
           `UPDATE lms_assessment_attempts

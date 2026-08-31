@@ -581,6 +581,7 @@ let AssessmentService = class AssessmentService {
         if (assessment.status !== "PUBLISHED" || assessment.course_status !== "PUBLISHED" || assessment.module_status !== "PUBLISHED") {
             throw new common_1.BadRequestException("Only published assessments in published courses can be started.");
         }
+        await this.validateAssessmentMarks(assessment.id, assessment.total_marks, assessment.passing_marks, user.tenantId);
         return this.run(async () => this.db.transaction(async (client) => {
             await client.query("SELECT id FROM lms_assessments WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [assessment.id, user.tenantId]);
             const existing = await client.query(`SELECT * FROM lms_assessment_attempts
@@ -618,7 +619,13 @@ let AssessmentService = class AssessmentService {
                             assessment.passing_marks ?? null,
                             assessment.duration_minutes ?? null,
                         ]);
-                        attempt = updated.rows[0] ?? attempt;
+                        attempt = updated.rows[0] ?? {
+                            ...attempt,
+                            question_snapshot: snapshot,
+                            total_marks_snapshot: snapshot.reduce((sum, question) => sum + Number(question.marks), 0),
+                            passing_marks_snapshot: assessment.passing_marks ?? null,
+                            duration_minutes_snapshot: assessment.duration_minutes ?? null,
+                        };
                     }
                     const drafts = await this.draftRows(client, String(attempt.id), user.tenantId);
                     return {
@@ -838,6 +845,12 @@ let AssessmentService = class AssessmentService {
             const locked = await client.query("SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [id, user.tenantId]);
             if (locked.rows[0]?.status !== "IN_PROGRESS")
                 throw new common_1.ConflictException("This assessment attempt has already been submitted.");
+            const enrollment = await client.query(`SELECT 1 FROM lms_enrollments
+         WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
+           AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+         LIMIT 1 FOR SHARE`, [user.tenantId, attempt.institution_id, attempt.course_id, user.id, attempt.campus_id ?? null]);
+            if (!enrollment.rows[0])
+                throw new common_1.ForbiddenException("An active course enrollment is required.");
             if (locked.rows[0]?.expires_at && new Date(String(locked.rows[0].expires_at)).getTime() <= Date.now()) {
                 const expired = await client.query(`UPDATE lms_assessment_attempts
            SET status = 'EXPIRED', updated_at = now()

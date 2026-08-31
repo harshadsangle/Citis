@@ -120,6 +120,7 @@ test("attempt submission calculates the score server-side and writes a completio
     transaction: async (work: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<unknown>) => work({
       query: async (text: string, values?: unknown[]) => {
         if (text.startsWith("SELECT * FROM lms_assessment_attempts")) return { rows: [{ id: "attempt-1", status: "IN_PROGRESS" }] };
+        if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [{ id: "enrollment-1" }] };
         if (text.startsWith("UPDATE lms_assessment_attempts")) {
           updatedParameters = values || [];
           return { rows: [{ id: "attempt-1", status: "SUBMITTED", score: 2, max_score: 2, passed: true }] };
@@ -151,6 +152,7 @@ test("manual assessment submission remains pending and does not create a complet
     transaction: async (work: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<unknown>) => work({
       query: async (text: string, values?: unknown[]) => {
         if (text.startsWith("SELECT * FROM lms_assessment_attempts")) return { rows: [{ id: "attempt-2", status: "IN_PROGRESS" }] };
+        if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [{ id: "enrollment-1" }] };
         if (text.startsWith("UPDATE lms_assessment_attempts")) {
           updatedParameters = values || [];
           return { rows: [{ id: "attempt-2", status: "SUBMITTED", score: 0, max_score: 4, passed: null, grading_status: "PENDING" }] };
