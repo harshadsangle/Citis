@@ -945,6 +945,12 @@ export class AssessmentService {
       if (!Array.isArray(normalized)) throw new BadRequestException("Multiple-choice answers must be arrays.");
       correct = sameValues(normalized, correctValues);
     } else if (question.question_type === "NUMERIC") {
+      if (typeof supplied !== "string" && typeof supplied !== "number") {
+        throw new BadRequestException("Numeric answers must contain a valid number.");
+      }
+      if (typeof supplied === "string" && supplied.trim() === "") {
+        return { correct: false, awardedMarks: 0 };
+      }
       const expected = Number(correctValues[0]);
       const actual = Number(normalized);
       if (!Number.isFinite(actual) || !Number.isFinite(expected)) throw new BadRequestException("Numeric answers must contain a valid number.");
