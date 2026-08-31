@@ -33,8 +33,14 @@ assignments, projects, vivas, and practicals. Questions support single choice,
 multiple choice, true/false, short text, and numeric answers. Correct options
 are never returned to learners, objective scoring happens on the server, an
 attempt limit is enforced, and submitted attempts cannot be edited or scored
-again. The existing assignment submission and instructor-grading flow remains
-the authoritative completion path for assignment work.
+again. Project, viva, and practical attempts are submitted with a `PENDING`
+grading state; authorized instructors review the learner's answers and award
+marks before the attempt becomes complete. Grading is immutable, audited, and
+creates the same completion/progress record as an automatically scored attempt.
+Learners can view their own assessment history, while instructors can review
+attempts only within their persisted institution, campus, and course scope. The
+existing assignment submission and instructor-grading flow remains the
+authoritative completion path for assignment work.
 
 The following intentionally remain future work: cohorts, batches, certificates,
 learning analytics, and external providers.

@@ -47,8 +47,9 @@ optional `details`, and the request ID in `meta`.
   course and preserve removed relationship history.
 - LMS assessment operations: authenticated, institution/campus-scoped endpoints
   for `assessments`, question and option authoring, publish/archive actions,
-  learner attempt start/submit, and attempt results. Published learner payloads
-  omit correct answers.
+  learner attempt start/submit, instructor attempt review/grading, learner
+  assessment history, and attempt results. Published learner payloads omit
+  correct answers.
 
 Use HTTP-only `citis_session` cookies for browser sessions. Bearer tokens are
 accepted by the API guard for non-browser clients, but browser code must not
@@ -85,7 +86,12 @@ in that institution, and are recorded as `CREATE` or `REMOVE` audit actions.
   active student. `POST /api/v1/assessment-attempts/:id/submit` accepts one
   validated answer per active question. Scores, pass state, and
   `lms_assessment_completions` are generated server-side; learner-supplied
-  score and pass fields are not accepted.
+  score and pass fields are not accepted. Project, viva, and practical
+  submissions remain `PENDING` until staff submit
+  `PATCH /api/v1/assessment-attempts/:id/grade` with one awarded mark per
+  question and optional feedback. Staff can list submitted attempts with
+  `GET /api/v1/assessments/:id/attempts`; learners can read their own
+  submitted history with `GET /api/v1/assessment-history`.
 
 Progress counts only published lessons, published assessments, and active
 enrollments. Lesson and assessment completion transitions are recorded in the
