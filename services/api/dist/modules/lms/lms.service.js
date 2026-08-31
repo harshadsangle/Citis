@@ -324,8 +324,8 @@ let LmsService = class LmsService {
     }
     async createLearningResource(input, request) {
         const user = request.context.user;
-        await this.assertParent("lessons", input.lessonId, user);
         this.validateResource(input.resourceType, input.url, input.filePath);
+        await this.assertParent("lessons", input.lessonId, user);
         return this.run(async () => {
             const result = await this.db.query(`INSERT INTO learning_resources (tenant_id, lesson_id, resource_type, title, url, file_path, duration, sequence, created_by, updated_by)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)

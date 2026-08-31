@@ -31,7 +31,7 @@ let CampusesService = class CampusesService {
          ORDER BY created_at DESC LIMIT $3 OFFSET $4`, [tenantId, institutionId, pageSize, offset]),
             this.db.query("SELECT count(*)::text AS count FROM campuses WHERE tenant_id = $1 AND institution_id = $2", [tenantId, institutionId]),
         ]);
-        const visible = (0, access_scope_1.filterScopedRows)(user, rows.rows);
+        const visible = (0, access_scope_1.filterScopedRows)(user, rows.rows, "institution_id", "id");
         return { data: visible, meta: (0, pagination_1.paginationMeta)(page, pageSize, visible.length) };
     }
     async get(id, user) {
@@ -39,7 +39,7 @@ let CampusesService = class CampusesService {
         const result = await this.db.query("SELECT id, tenant_id, institution_id, name, address, city, state, country, timezone, status, created_at, updated_at FROM campuses WHERE id = $1 AND tenant_id = $2", [id, tenantId]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("Campus not found.");
-        (0, access_scope_1.assertScopeForRead)(user, result.rows[0].institution_id);
+        (0, access_scope_1.assertScopeForRead)(user, result.rows[0].institution_id, id);
         return result.rows[0];
     }
     async create(input, request) {

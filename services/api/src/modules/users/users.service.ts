@@ -78,7 +78,23 @@ export class UsersService {
 
   async assignRole(id: string, input: AssignRoleDto, request: ContextRequest) {
     const actor = request.context.user!;
-    const user = await this.get(id, actor);
+    const userResult = await this.db.query<{ id: string; tenant_id: string }>(
+      "SELECT id, tenant_id FROM users WHERE id = $1 AND tenant_id = $2",
+      [id, this.platform(actor) ? undefined : actor.tenantId],
+    );
+    if (!userResult.rows[0]) throw new NotFoundException("User not found.");
+    const existingScopes = await this.db.query<{ institution_id: string | null; campus_id: string | null }>(
+      "SELECT institution_id, campus_id FROM user_roles WHERE user_id = $1 AND tenant_id = $2",
+      [id, userResult.rows[0].tenant_id],
+    );
+    if (!this.platform(actor) && existingScopes.rows.length && !existingScopes.rows.some((scope) => (
+      scope.institution_id !== null
+      && actor.scopes.some((allowed) => allowed.institutionId === scope.institution_id
+        && (allowed.campusId === null || scope.campus_id === null || allowed.campusId === scope.campus_id))
+    ))) {
+      throw new NotFoundException("User not found.");
+    }
+    const user = userResult.rows[0];
     const role = await this.db.query<{ id: string; code: string }>("SELECT id, code FROM roles WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'", [input.roleId, user.tenant_id]);
     if (!role.rows[0]) throw new NotFoundException("Role not found in the user tenant.");
     const platformRole = role.rows[0].code === "CITIS_SUPER_ADMIN" || role.rows[0].code === "CITIS_PLATFORM_SUPPORT";

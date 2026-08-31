@@ -26,7 +26,7 @@ export class CampusesService {
       ),
       this.db.query<{ count: string }>("SELECT count(*)::text AS count FROM campuses WHERE tenant_id = $1 AND institution_id = $2", [tenantId, institutionId]),
     ]);
-    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
+    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>, "institution_id", "id");
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
@@ -37,7 +37,7 @@ export class CampusesService {
       [id, tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("Campus not found.");
-    assertScopeForRead(user, result.rows[0].institution_id);
+    assertScopeForRead(user, result.rows[0].institution_id, id);
     return result.rows[0];
   }
 

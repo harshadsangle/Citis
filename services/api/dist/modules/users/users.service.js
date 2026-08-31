@@ -111,7 +111,16 @@ let UsersService = class UsersService {
     }
     async assignRole(id, input, request) {
         const actor = request.context.user;
-        const user = await this.get(id, actor);
+        const userResult = await this.db.query("SELECT id, tenant_id FROM users WHERE id = $1 AND tenant_id = $2", [id, this.platform(actor) ? undefined : actor.tenantId]);
+        if (!userResult.rows[0])
+            throw new common_1.NotFoundException("User not found.");
+        const existingScopes = await this.db.query("SELECT institution_id, campus_id FROM user_roles WHERE user_id = $1 AND tenant_id = $2", [id, userResult.rows[0].tenant_id]);
+        if (!this.platform(actor) && existingScopes.rows.length && !existingScopes.rows.some((scope) => (scope.institution_id !== null
+            && actor.scopes.some((allowed) => allowed.institutionId === scope.institution_id
+                && (allowed.campusId === null || scope.campus_id === null || allowed.campusId === scope.campus_id))))) {
+            throw new common_1.NotFoundException("User not found.");
+        }
+        const user = userResult.rows[0];
         const role = await this.db.query("SELECT id, code FROM roles WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'", [input.roleId, user.tenant_id]);
         if (!role.rows[0])
             throw new common_1.NotFoundException("Role not found in the user tenant.");
