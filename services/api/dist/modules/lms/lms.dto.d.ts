@@ -120,3 +120,49 @@ export declare class GradeAssignmentSubmissionDto {
     grade: number;
     feedback?: string;
 }
+export declare const LMS_ASSESSMENT_TYPES: readonly ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"];
+export declare const LMS_QUESTION_TYPES: readonly ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"];
+export declare class CreateAssessmentDto {
+    courseId: string;
+    moduleId: string;
+    title: string;
+    description?: string;
+    assessmentType: string;
+    totalMarks?: number;
+    passingMarks?: number;
+    durationMinutes?: number;
+    attemptLimit?: number;
+}
+export declare class UpdateAssessmentDto {
+    title?: string;
+    description?: string;
+    totalMarks?: number;
+    passingMarks?: number;
+    durationMinutes?: number;
+    attemptLimit?: number;
+}
+export declare class CreateAssessmentOptionDto {
+    value: string;
+    label: string;
+    isCorrect: boolean;
+}
+export declare class CreateAssessmentQuestionDto {
+    prompt: string;
+    questionType: string;
+    marks: number;
+    sequence: number;
+    options: CreateAssessmentOptionDto[];
+}
+export declare class UpdateAssessmentQuestionDto {
+    prompt?: string;
+    marks?: number;
+    sequence?: number;
+    options?: CreateAssessmentOptionDto[];
+}
+export declare class AssessmentAnswerDto {
+    questionId: string;
+    answer: Record<string, unknown>;
+}
+export declare class SubmitAssessmentAttemptDto {
+    answers: AssessmentAnswerDto[];
+}

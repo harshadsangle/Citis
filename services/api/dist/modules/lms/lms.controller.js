@@ -22,10 +22,13 @@ const permission_guard_1 = require("../../guards/permission.guard");
 const auth_guard_1 = require("../auth/auth.guard");
 const lms_dto_1 = require("./lms.dto");
 const lms_service_1 = require("./lms.service");
+const assessment_service_1 = require("./assessment.service");
 let LmsController = class LmsController {
     lms;
-    constructor(lms) {
+    assessments;
+    constructor(lms, assessments) {
         this.lms = lms;
+        this.assessments = assessments;
     }
     async programmes(request, query) {
         const page = (0, pagination_1.paginationFrom)(request);
@@ -133,6 +136,47 @@ let LmsController = class LmsController {
     async gradeAssignmentSubmission(id, submissionId, input, request) {
         return (0, response_1.successResponse)(await this.lms.gradeAssignmentSubmission(id, submissionId, input, request), request);
     }
+    async assessmentsList(request, query) {
+        const page = (0, pagination_1.paginationFrom)(request);
+        const result = await this.assessments.listAssessments(request.context.user, page.page, page.pageSize, page.offset, query);
+        return (0, response_1.paginatedResponse)(result.data, result.meta, request);
+    }
+    async createAssessment(input, request) {
+        return (0, response_1.successResponse)(await this.assessments.createAssessment(input, request), request);
+    }
+    async assessment(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.getAssessment(id, request.context.user), request);
+    }
+    async updateAssessment(id, input, request) {
+        return (0, response_1.successResponse)(await this.assessments.updateAssessment(id, input, request), request);
+    }
+    async publishAssessment(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.changeAssessmentStatus(id, "PUBLISHED", request), request);
+    }
+    async archiveAssessment(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.changeAssessmentStatus(id, "ARCHIVED", request), request);
+    }
+    async assessmentQuestions(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.listQuestions(id, request.context.user), request);
+    }
+    async createAssessmentQuestion(id, input, request) {
+        return (0, response_1.successResponse)(await this.assessments.createQuestion(id, input, request), request);
+    }
+    async updateAssessmentQuestion(id, input, request) {
+        return (0, response_1.successResponse)(await this.assessments.updateQuestion(id, input, request), request);
+    }
+    async archiveAssessmentQuestion(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.archiveQuestion(id, request), request);
+    }
+    async startAssessmentAttempt(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.startAttempt(id, request), request);
+    }
+    async assessmentAttempt(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.getAttempt(id, request.context.user), request);
+    }
+    async submitAssessmentAttempt(id, input, request) {
+        return (0, response_1.successResponse)(await this.assessments.submitAttempt(id, input, request), request);
+    }
     async learnerProgress(request) {
         return (0, response_1.successResponse)(await this.lms.listLearnerProgress(request.context.user), request);
     }
@@ -141,9 +185,6 @@ let LmsController = class LmsController {
     }
     async completeLesson(lessonId, request) {
         return (0, response_1.successResponse)(await this.lms.completeLesson(lessonId, request), request);
-    }
-    async completeAssessment(input, request) {
-        return (0, response_1.successResponse)(await this.lms.completeAssessment(input, request), request);
     }
     async courseModules(request, courseId, query) {
         const page = (0, pagination_1.paginationFrom)(request);
@@ -516,6 +557,127 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "gradeAssignmentSubmission", null);
 __decorate([
+    (0, common_1.Get)("assessments"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment.view"),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, lms_dto_1.AssignmentListQueryDto]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assessmentsList", null);
+__decorate([
+    (0, common_1.Post)("assessments"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment.create"),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [lms_dto_1.CreateAssessmentDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "createAssessment", null);
+__decorate([
+    (0, common_1.Get)("assessments/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assessment", null);
+__decorate([
+    (0, common_1.Patch)("assessments/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment.update"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.UpdateAssessmentDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "updateAssessment", null);
+__decorate([
+    (0, common_1.Post)("assessments/:id/publish"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment.publish"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "publishAssessment", null);
+__decorate([
+    (0, common_1.Post)("assessments/:id/archive"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment.archive"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "archiveAssessment", null);
+__decorate([
+    (0, common_1.Get)("assessments/:id/questions"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_question.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assessmentQuestions", null);
+__decorate([
+    (0, common_1.Post)("assessments/:id/questions"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_question.create"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.CreateAssessmentQuestionDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "createAssessmentQuestion", null);
+__decorate([
+    (0, common_1.Patch)("assessment-questions/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_question.update"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.UpdateAssessmentQuestionDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "updateAssessmentQuestion", null);
+__decorate([
+    (0, common_1.Post)("assessment-questions/:id/archive"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_question.archive"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "archiveAssessmentQuestion", null);
+__decorate([
+    (0, common_1.Post)("assessments/:id/attempts"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.create"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "startAssessmentAttempt", null);
+__decorate([
+    (0, common_1.Get)("assessment-attempts/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.view"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "assessmentAttempt", null);
+__decorate([
+    (0, common_1.Post)("assessment-attempts/:id/submit"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.update"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.SubmitAssessmentAttemptDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "submitAssessmentAttempt", null);
+__decorate([
     (0, common_1.Get)("progress"),
     (0, permission_decorator_1.RequirePermission)("lms.course_progress.view"),
     __param(0, (0, common_1.Req)()),
@@ -542,15 +704,6 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "completeLesson", null);
-__decorate([
-    (0, common_1.Post)("progress/assessment-completions"),
-    (0, permission_decorator_1.RequirePermission)("lms.assessment_completion.create"),
-    __param(0, (0, common_1.Body)()),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [lms_dto_1.CompleteAssessmentDto, Object]),
-    __metadata("design:returntype", Promise)
-], LmsController.prototype, "completeAssessment", null);
 __decorate([
     (0, common_1.Get)("course-modules"),
     (0, permission_decorator_1.RequirePermission)("lms.course_module.view"),
@@ -774,6 +927,6 @@ __decorate([
 exports.LmsController = LmsController = __decorate([
     (0, common_1.Controller)(),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard, permission_guard_1.PermissionGuard),
-    __metadata("design:paramtypes", [lms_service_1.LmsService])
+    __metadata("design:paramtypes", [lms_service_1.LmsService, assessment_service_1.AssessmentService])
 ], LmsController);
 //# sourceMappingURL=lms.controller.js.map

@@ -1,11 +1,13 @@
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
-import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CompleteAssessmentDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 import { LmsService } from "./lms.service";
+import { AssessmentService } from "./assessment.service";
 import type { LmsUpload } from "./resource-storage.service";
 export declare class LmsController {
     private readonly lms;
-    constructor(lms: LmsService);
+    private readonly assessments;
+    constructor(lms: LmsService, assessments: AssessmentService);
     programmes(request: ContextRequest, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     createProgramme(input: CreateProgrammeDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     programme(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
@@ -36,6 +38,43 @@ export declare class LmsController {
     myAssignmentSubmission(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     submitAssignment(id: string, input: SubmitAssignmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     gradeAssignmentSubmission(id: string, submissionId: string, input: GradeAssignmentSubmissionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    assessmentsList(request: ContextRequest, query: AssignmentListQueryDto): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
+    createAssessment(input: CreateAssessmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    assessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        institution_id: string;
+        campus_id: string | null;
+    }>>;
+    updateAssessment(id: string, input: UpdateAssessmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    publishAssessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    archiveAssessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    assessmentQuestions(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
+    createAssessmentQuestion(id: string, input: CreateAssessmentQuestionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        options: import("./lms.dto").CreateAssessmentOptionDto[];
+    }>>;
+    updateAssessmentQuestion(id: string, input: UpdateAssessmentQuestionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    archiveAssessmentQuestion(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    startAssessmentAttempt(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        assessment: {
+            id: any;
+            title: any;
+            assessment_type: any;
+            duration_minutes: any;
+            attempt_limit: any;
+        };
+        questions: Record<string, unknown>[];
+    }>>;
+    assessmentAttempt(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        questions: Record<string, unknown>[];
+        answers: Record<string, unknown>[];
+    }>>;
+    submitAssessmentAttempt(id: string, input: SubmitAssessmentAttemptDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        results: {
+            answer: Record<string, unknown>;
+            correct: boolean;
+            awardedMarks: number;
+            questionId: string;
+        }[];
+    }>>;
     learnerProgress(request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         course: {
             id: unknown;
@@ -107,7 +146,6 @@ export declare class LmsController {
         }[];
     }>>;
     completeLesson(lessonId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
-    completeAssessment(input: CompleteAssessmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     courseModules(request: ContextRequest, courseId: string | undefined, query: ContentListQueryDto): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     createCourseModule(input: CreateCourseModuleDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     courseModule(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
