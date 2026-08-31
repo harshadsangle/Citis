@@ -198,6 +198,23 @@ export class AssessmentService {
     }
   }
 
+  private async validateAssessmentMarks(id: string, totalMarks: number | null | undefined, passingMarks: number | null | undefined) {
+    const result = await this.db.query<{ total: string | null; count: string }>(
+      `SELECT COALESCE(SUM(marks), 0)::numeric AS total, count(*)::text AS count
+       FROM lms_assessment_questions
+       WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'ACTIVE'`,
+      [this.currentTenantId, id],
+    );
+    if (Number(result.rows[0]?.count ?? 0) === 0) return;
+    const questionTotal = Number(result.rows[0]?.total ?? 0);
+    if (totalMarks !== null && totalMarks !== undefined && Math.round(Number(totalMarks) * 100) !== Math.round(questionTotal * 100)) {
+      throw new BadRequestException("Total marks must equal the sum of active question marks.");
+    }
+    if (passingMarks !== null && passingMarks !== undefined && Number(passingMarks) > questionTotal) {
+      throw new BadRequestException("Passing marks cannot exceed the sum of active question marks.");
+    }
+  }
+
   async listAssessments(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssignmentListQueryDto) {
     let courseIds: string[] | undefined;
     if (query.courseId) {
@@ -856,7 +873,8 @@ export class AssessmentService {
     if (attempt.assessment_status !== "PUBLISHED" || attempt.course_status !== "PUBLISHED" || attempt.module_status !== "PUBLISHED") {
       throw new BadRequestException("Only published assessments in published courses can be submitted.");
     }
-    const questions = await this.questionRows(this.db, String(attempt.assessment_id), user, true);
+    await this.assertActiveEnrollmentForAttempt(attempt, user);
+    const questions = await this.questionsForAttempt(this.db, attempt, user, true);
     const questionMap = new Map(questions.map((question) => [String(question.id), question]));
     if (input.answers.length !== questionMap.size || new Set(input.answers.map((answer) => answer.questionId)).size !== input.answers.length) {
       throw new BadRequestException("Submit exactly one answer for every active assessment question.");
@@ -872,14 +890,28 @@ export class AssessmentService {
       };
     });
     const score = results.reduce((sum, result) => sum + result.awardedMarks, 0);
-    const maxScore = questions.reduce((sum, question) => sum + Number(question.marks), 0);
-    const passed = requiresManualGrading || attempt.passing_marks === null ? null : score >= Number(attempt.passing_marks);
-    return this.run(async () => this.db.transaction(async (client) => {
+    const maxScore = attempt.total_marks_snapshot === null || attempt.total_marks_snapshot === undefined
+      ? questions.reduce((sum, question) => sum + Number(question.marks), 0)
+      : Number(attempt.total_marks_snapshot);
+    const passingMarks = attempt.passing_marks_snapshot ?? attempt.passing_marks;
+    const passed = requiresManualGrading || passingMarks === null ? null : score >= Number(passingMarks);
+    const outcome = await this.run(async () => this.db.transaction(async (client) => {
       const locked = await client.query<Record<string, unknown>>(
         "SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
         [id, user.tenantId],
       );
       if (locked.rows[0]?.status !== "IN_PROGRESS") throw new ConflictException("This assessment attempt has already been submitted.");
+      if (locked.rows[0]?.expires_at && new Date(String(locked.rows[0].expires_at)).getTime() <= Date.now()) {
+        const expired = await client.query<Record<string, unknown>>(
+          `UPDATE lms_assessment_attempts
+           SET status = 'EXPIRED', updated_at = now()
+           WHERE id = $1 AND tenant_id = $2 AND status = 'IN_PROGRESS'
+           RETURNING *`,
+          [id, user.tenantId],
+        );
+        await this.auditMutation(request, "assessment_attempt", "EXPIRE", expired.rows[0], attempt);
+        return { expired: true as const, attempt: expired.rows[0] };
+      }
       for (const result of results) {
         await client.query(
           `INSERT INTO lms_assessment_answers
@@ -888,6 +920,7 @@ export class AssessmentService {
           [user.tenantId, attempt.institution_id, attempt.campus_id ?? null, attempt.course_id, attempt.module_id, attempt.assessment_id, id, result.questionId, JSON.stringify(result.answer), result.correct, result.awardedMarks],
         );
       }
+      await client.query("DELETE FROM lms_assessment_attempt_drafts WHERE tenant_id = $1 AND attempt_id = $2", [user.tenantId, id]);
       const updated = await client.query<Record<string, unknown>>(
         `UPDATE lms_assessment_attempts
           SET status = 'SUBMITTED', score = $3, max_score = $4, passed = $5,
@@ -910,6 +943,10 @@ export class AssessmentService {
       }
       return { ...updated.rows[0], results };
     }));
+    if ("expired" in outcome && outcome.expired) {
+      throw new ConflictException("This assessment attempt expired before it was submitted.");
+    }
+    return outcome;
   }
 
   async gradeAttempt(id: string, input: GradeAssessmentAttemptDto, request: ContextRequest) {
