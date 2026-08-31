@@ -407,8 +407,8 @@ export class LmsService {
 
   async createLearningResource(input: CreateLearningResourceDto, request: ContextRequest) {
     const user = request.context.user!;
-    await this.assertParent("lessons", input.lessonId, user);
     this.validateResource(input.resourceType, input.url, input.filePath);
+    await this.assertParent("lessons", input.lessonId, user);
     return this.run(async () => {
       const result = await this.db.query(
         `INSERT INTO learning_resources (tenant_id, lesson_id, resource_type, title, url, file_path, duration, sequence, created_by, updated_by)
