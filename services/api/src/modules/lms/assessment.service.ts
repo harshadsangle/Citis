@@ -658,8 +658,58 @@ export class AssessmentService {
         [user.tenantId, assessment.id, user.id],
       );
       if (existing.rows[0]) {
-        const questions = await this.questionRows(client, String(assessment.id), user, false);
-        return { ...existing.rows[0], assessment: { id: assessment.id, title: assessment.title, assessment_type: assessment.assessment_type, duration_minutes: assessment.duration_minutes, attempt_limit: assessment.attempt_limit }, questions };
+        let attempt = existing.rows[0];
+        if (attempt.expires_at && new Date(String(attempt.expires_at)).getTime() <= Date.now()) {
+          const expired = await client.query<Record<string, unknown>>(
+            `UPDATE lms_assessment_attempts
+             SET status = 'EXPIRED', updated_at = now()
+             WHERE id = $1 AND tenant_id = $2 AND status = 'IN_PROGRESS'
+             RETURNING *`,
+            [attempt.id, user.tenantId],
+          );
+          if (expired.rows[0]) {
+            await this.auditMutation(request, "assessment_attempt", "EXPIRE", expired.rows[0], attempt);
+            attempt = expired.rows[0];
+          }
+        } else {
+          let snapshot = this.snapshotQuestions(attempt, true);
+          if (!snapshot) {
+            snapshot = await this.questionRows(client, String(assessment.id), user, true);
+            const updated = await client.query<Record<string, unknown>>(
+              `UPDATE lms_assessment_attempts
+               SET question_snapshot = $3::jsonb,
+                   total_marks_snapshot = $4,
+                   passing_marks_snapshot = $5,
+                   duration_minutes_snapshot = $6,
+                   expires_at = CASE WHEN $6::int IS NULL THEN NULL ELSE started_at + ($6::text || ' minutes')::interval END,
+                   updated_at = now()
+               WHERE id = $1 AND tenant_id = $2
+               RETURNING *`,
+              [
+                attempt.id,
+                user.tenantId,
+                JSON.stringify(snapshot),
+                snapshot.reduce((sum, question) => sum + Number(question.marks), 0),
+                assessment.passing_marks ?? null,
+                assessment.duration_minutes ?? null,
+              ],
+            );
+            attempt = updated.rows[0] ?? attempt;
+          }
+          const drafts = await this.draftRows(client, String(attempt.id), user.tenantId);
+          return {
+            ...this.publicAttempt(attempt),
+            assessment: {
+              id: assessment.id,
+              title: assessment.title,
+              assessment_type: assessment.assessment_type,
+              duration_minutes: attempt.duration_minutes_snapshot ?? assessment.duration_minutes,
+              attempt_limit: assessment.attempt_limit,
+            },
+            questions: this.snapshotQuestions(attempt, false) ?? [],
+            draft_answers: drafts,
+          };
+        }
       }
       const count = await client.query<{ count: string }>(
         `SELECT count(*)::text AS count FROM lms_assessment_attempts
@@ -672,15 +722,41 @@ export class AssessmentService {
       }
       const inserted = await client.query<Record<string, unknown>>(
         `INSERT INTO lms_assessment_attempts
-           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_number)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_number,
+            question_snapshot, total_marks_snapshot, passing_marks_snapshot, duration_minutes_snapshot, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12,
+                 CASE WHEN $12::int IS NULL THEN NULL ELSE now() + ($12::text || ' minutes')::interval END)
          RETURNING *`,
-        [user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id, assessment.module_id, assessment.id, user.id, attemptNumber],
+        [
+          user.tenantId,
+          assessment.institution_id,
+          assessment.campus_id ?? null,
+          assessment.course_id,
+          assessment.module_id,
+          assessment.id,
+          user.id,
+          attemptNumber,
+          JSON.stringify(await this.questionRows(client, String(assessment.id), user, true)),
+          assessment.total_marks ?? null,
+          assessment.passing_marks ?? null,
+          assessment.duration_minutes ?? null,
+        ],
       );
       const attempt = inserted.rows[0];
-      const questions = await this.questionRows(client, String(assessment.id), user, false);
+      const questions = this.snapshotQuestions(attempt, false) ?? [];
       await this.auditMutation(request, "assessment_attempt", "START", attempt);
-      return { ...attempt, assessment: { id: assessment.id, title: assessment.title, assessment_type: assessment.assessment_type, duration_minutes: assessment.duration_minutes, attempt_limit: assessment.attempt_limit }, questions };
+      return {
+        ...this.publicAttempt(attempt),
+        assessment: {
+          id: assessment.id,
+          title: assessment.title,
+          assessment_type: assessment.assessment_type,
+          duration_minutes: attempt.duration_minutes_snapshot ?? assessment.duration_minutes,
+          attempt_limit: assessment.attempt_limit,
+        },
+        questions,
+        draft_answers: [],
+      };
     }));
   }
 
@@ -688,13 +764,16 @@ export class AssessmentService {
     const attempt = await this.attemptFor(id, user);
     const staff = await this.hasStaffAccess(user, String(attempt.institution_id), String(attempt.course_id), attempt.campus_id as string | null);
     if (!staff && attempt.learner_id !== user.id) throw new NotFoundException("Assessment attempt not found.");
-    const questions = await this.questionRows(this.db, String(attempt.assessment_id), user, staff);
+    const questions = await this.questionsForAttempt(this.db, attempt, user, staff);
     const answers = await this.db.query<Record<string, unknown>>(
       `SELECT question_id, answer_json, is_correct, awarded_marks
        FROM lms_assessment_answers WHERE tenant_id = $1 AND attempt_id = $2 ORDER BY question_id`,
       [user.tenantId, id],
     );
-    return { ...attempt, questions, answers: answers.rows };
+    const draftAnswers = !staff && attempt.status === "IN_PROGRESS"
+      ? await this.draftRows(this.db, String(attempt.id), user.tenantId)
+      : [];
+    return { ...this.publicAttempt(attempt), questions, answers: answers.rows, draft_answers: draftAnswers };
   }
 
   async listAttempts(assessmentId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssessmentAttemptListQueryDto) {
