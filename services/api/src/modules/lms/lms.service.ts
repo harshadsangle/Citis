@@ -965,7 +965,7 @@ export class LmsService {
 
   private async progressCourse(courseId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT c.id, c.tenant_id, c.institution_id, c.title, c.code, c.description, c.status,
+      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.description, c.status,
               p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
@@ -975,6 +975,7 @@ export class LmsService {
     );
     const course = result.rows[0];
     if (!course) throw new NotFoundException("Course not found in the current tenant.");
+    assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
     if (course.status !== "PUBLISHED") throw new BadRequestException("Progress is available only for published courses.");
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution or programme is not active.");
@@ -995,21 +996,23 @@ export class LmsService {
 
   private async assertProgressViewer(course: Record<string, unknown>, user: AuthenticatedUser, learnerId: string) {
     const selfEnrollment = await this.db.query(
-      `SELECT 1
+       `SELECT 1
        FROM lms_enrollments
-       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4 AND status = 'ACTIVE'
+        WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
+          AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
        LIMIT 1`,
-      [user.tenantId, course.institution_id, course.id, learnerId],
+      [user.tenantId, course.institution_id, course.id, learnerId, course.campus_id ?? null],
     );
     if (!selfEnrollment.rows[0]) throw new NotFoundException("Active learner enrollment not found.");
     if (learnerId === user.id) return;
-    if (user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN")) return;
+     if (isPlatformUser(user)) return;
 
     const staffAccess = await this.db.query(
       `SELECT 1
        FROM user_roles ur
        JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
-       WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+        WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+          AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
          AND r.status = 'ACTIVE'
          AND (
            r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
@@ -1018,13 +1021,14 @@ export class LmsService {
              AND EXISTS (
                SELECT 1
                FROM lms_instructor_assignments ia
-               WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
+                WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
+                  AND ia.campus_id IS NOT DISTINCT FROM $5
                  AND ia.instructor_id = ur.user_id AND ia.status = 'ACTIVE'
              )
            )
          )
        LIMIT 1`,
-      [user.id, user.tenantId, course.institution_id, course.id],
+       [user.id, user.tenantId, course.institution_id, course.id, course.campus_id ?? null],
     );
     if (!staffAccess.rows[0]) throw new ForbiddenException("You are not authorized to view this learner's progress.");
   }
@@ -1125,7 +1129,7 @@ export class LmsService {
   async completeLesson(lessonId: string, request: ContextRequest) {
     const user = request.context.user!;
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT l.id, l.tenant_id, l.module_id, cm.course_id, c.institution_id,
+       `SELECT l.id, l.tenant_id, l.module_id, cm.course_id, c.institution_id, c.campus_id,
               l.status AS lesson_status, cm.status AS module_status, c.status AS course_status,
               p.status AS programme_status, i.status AS institution_status
        FROM lessons l
@@ -1138,6 +1142,7 @@ export class LmsService {
     );
     const lesson = result.rows[0];
     if (!lesson) throw new NotFoundException("Lesson not found in the current tenant.");
+    assertScope(user, String(lesson.institution_id), lesson.campus_id as string | null | undefined);
     if (lesson.course_status !== "PUBLISHED" || lesson.module_status !== "PUBLISHED" || lesson.lesson_status !== "PUBLISHED") {
       throw new BadRequestException("Only published lessons in published courses can be completed.");
     }
@@ -1153,12 +1158,12 @@ export class LmsService {
     const before = beforeResult.rows[0];
     const completed = await this.db.query<Record<string, unknown>>(
       `INSERT INTO lms_lesson_progress
-         (tenant_id, institution_id, course_id, module_id, lesson_id, learner_id, status, started_at, completed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'COMPLETED', now(), now())
+          (tenant_id, institution_id, campus_id, course_id, module_id, lesson_id, learner_id, status, started_at, completed_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'COMPLETED', now(), now())
        ON CONFLICT (tenant_id, course_id, lesson_id, learner_id)
        DO UPDATE SET status = 'COMPLETED', completed_at = COALESCE(lms_lesson_progress.completed_at, now()), updated_at = now()
        RETURNING *`,
-      [user.tenantId, lesson.institution_id, lesson.course_id, lesson.module_id, lesson.id, user.id],
+       [user.tenantId, lesson.institution_id, lesson.campus_id ?? null, lesson.course_id, lesson.module_id, lesson.id, user.id],
     );
     const row = completed.rows[0];
     if (before?.status !== "COMPLETED") await this.auditMutation(request, "lesson_progress", "COMPLETE", row, before);
@@ -1168,7 +1173,7 @@ export class LmsService {
   async completeAssessment(input: CompleteAssessmentDto, request: ContextRequest) {
     const user = request.context.user!;
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT a.*, c.institution_id, c.status AS course_status, cm.status AS module_status,
+       `SELECT a.*, c.institution_id, c.campus_id, c.status AS course_status, cm.status AS module_status,
               p.status AS programme_status, i.status AS institution_status
        FROM lms_assessments a
        JOIN course_modules cm ON cm.id = a.module_id AND cm.tenant_id = a.tenant_id
@@ -1180,6 +1185,7 @@ export class LmsService {
     );
     const assessment = result.rows[0];
     if (!assessment) throw new NotFoundException("Assessment not found in the current tenant.");
+    assertScope(user, String(assessment.institution_id), assessment.campus_id as string | null | undefined);
     if (assessment.assessment_type === "ASSIGNMENT") {
       throw new BadRequestException("Assignment completion is recorded only after an instructor grades the submission.");
     }
@@ -1195,16 +1201,18 @@ export class LmsService {
     }
     const existingResult = await this.db.query<Record<string, unknown>>(
       `SELECT * FROM lms_assessment_completions
-       WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND attempt_id = $4`,
-      [user.tenantId, assessment.id, user.id, input.attemptId.trim()],
+        WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND attempt_id = $4
+          AND campus_id IS NOT DISTINCT FROM $5`,
+       [user.tenantId, assessment.id, user.id, input.attemptId.trim(), assessment.campus_id ?? null],
     );
     const before = existingResult.rows[0];
     if (!before && assessment.attempt_limit !== null) {
       const attempts = await this.db.query<{ count: string }>(
         `SELECT count(*)::text AS count
          FROM lms_assessment_completions
-         WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND status = 'COMPLETED'`,
-        [user.tenantId, assessment.id, user.id],
+          WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3
+            AND campus_id IS NOT DISTINCT FROM $4 AND status = 'COMPLETED'`,
+         [user.tenantId, assessment.id, user.id, assessment.campus_id ?? null],
       );
       if (Number(attempts.rows[0]?.count ?? 0) >= Number(assessment.attempt_limit)) {
         throw new BadRequestException("The assessment attempt limit has been reached.");
@@ -1217,22 +1225,23 @@ export class LmsService {
     );
     const completed = await this.db.query<Record<string, unknown>>(
       `INSERT INTO lms_assessment_completions
-         (tenant_id, institution_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE($10::timestamptz, now()))
+          (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, COALESCE($11::timestamptz, now()))
        ON CONFLICT (tenant_id, assessment_id, learner_id, attempt_id)
        DO UPDATE SET score = EXCLUDED.score, passed = EXCLUDED.passed, completed_at = EXCLUDED.completed_at, updated_at = now()
        RETURNING *`,
       [
-        user.tenantId,
-        assessment.institution_id,
-        assessment.course_id,
-        assessment.module_id,
-        assessment.id,
-        user.id,
-        input.attemptId.trim(),
-        input.score ?? null,
-        passed,
-        input.completedAt ?? null,
+         user.tenantId,
+         assessment.institution_id,
+         assessment.campus_id ?? null,
+         assessment.course_id,
+         assessment.module_id,
+         assessment.id,
+         user.id,
+         input.attemptId.trim(),
+         input.score ?? null,
+         passed,
+         input.completedAt ?? null,
       ],
     );
     const row = completed.rows[0];
@@ -1242,7 +1251,7 @@ export class LmsService {
 
   private async assignmentCourse(courseId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT c.id, c.tenant_id, c.institution_id, c.title, c.code, c.status,
+      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
               p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
@@ -1252,19 +1261,21 @@ export class LmsService {
     );
     const course = result.rows[0];
     if (!course) throw new NotFoundException("Course not found in the current tenant.");
+    assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE" || course.status === "ARCHIVED") {
       throw new BadRequestException("The course institution, programme, or course is not active.");
     }
     return course;
   }
 
-  private async hasAssignmentStaffAccess(user: AuthenticatedUser, institutionId: string, courseId: string) {
-    if (user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN")) return true;
+  private async hasAssignmentStaffAccess(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
+    if (isPlatformUser(user)) return true;
     const result = await this.db.query(
       `SELECT 1
        FROM user_roles ur
        JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
-       WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+        WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+          AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
          AND r.status = 'ACTIVE'
          AND (
            r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
@@ -1273,19 +1284,20 @@ export class LmsService {
              AND EXISTS (
                SELECT 1
                FROM lms_instructor_assignments ia
-               WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
+                WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
+                  AND ia.campus_id IS NOT DISTINCT FROM $5
                  AND ia.instructor_id = ur.user_id AND ia.status = 'ACTIVE'
              )
            )
          )
        LIMIT 1`,
-      [user.id, user.tenantId, institutionId, courseId],
+       [user.id, user.tenantId, institutionId, courseId, campusId ?? null],
     );
     return Boolean(result.rows[0]);
   }
 
-  private async assertAssignmentStaffAccess(user: AuthenticatedUser, institutionId: string, courseId: string) {
-    if (!await this.hasAssignmentStaffAccess(user, institutionId, courseId)) {
+  private async assertAssignmentStaffAccess(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
+    if (!await this.hasAssignmentStaffAccess(user, institutionId, courseId, campusId)) {
       throw new ForbiddenException("You are not authorized to manage assignments for this course.");
     }
   }
@@ -1304,7 +1316,7 @@ export class LmsService {
 
   private async assignmentFor(id: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT a.*, c.institution_id, c.title AS course_title, c.status AS course_status,
+       `SELECT a.*, c.institution_id, c.campus_id, c.title AS course_title, c.status AS course_status,
               cm.title AS module_title, cm.status AS module_status,
               p.status AS programme_status, i.status AS institution_status
        FROM lms_assessments a
@@ -1317,11 +1329,12 @@ export class LmsService {
     );
     const assignment = result.rows[0];
     if (!assignment) throw new NotFoundException("Assignment not found in the current tenant.");
+    assertScopeForRead(user, String(assignment.institution_id), assignment.campus_id as string | null | undefined);
     return assignment;
   }
 
   private async assertAssignmentViewer(assignment: Record<string, unknown>, user: AuthenticatedUser) {
-    if (await this.hasAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id))) return;
+    if (await this.hasAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id), assignment.campus_id as string | null)) return;
     if (assignment.status !== "PUBLISHED" || assignment.course_status !== "PUBLISHED" || assignment.module_status !== "PUBLISHED") {
       throw new NotFoundException("Assignment not found.");
     }
@@ -1334,7 +1347,7 @@ export class LmsService {
     const clauses = ["a.tenant_id = $1", "a.assessment_type = 'ASSIGNMENT'"];
     if (query.courseId) {
       const course = await this.assignmentCourse(query.courseId, user);
-      const staff = await this.hasAssignmentStaffAccess(user, String(course.institution_id), String(course.id));
+      const staff = await this.hasAssignmentStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id as string | null);
       if (!staff) await this.activeEnrollment(String(course.id), user.id, user);
       values.push(query.courseId);
       clauses.push(`a.course_id = $${values.length}`);
@@ -1375,7 +1388,8 @@ export class LmsService {
         values,
       ),
     ]);
-    return { data: rows.rows, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
+    return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
   async getAssignment(id: string, user: AuthenticatedUser) {
@@ -1387,25 +1401,26 @@ export class LmsService {
   async createAssignment(input: CreateAssignmentDto, request: ContextRequest) {
     const user = request.context.user!;
     const course = await this.assignmentCourse(input.courseId, user);
-    await this.assertAssignmentStaffAccess(user, String(course.institution_id), String(course.id));
+    await this.assertAssignmentStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id as string | null);
     const module = await this.assignmentModule(input.moduleId, input.courseId, user);
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
         `INSERT INTO lms_assessments
-           (tenant_id, institution_id, course_id, module_id, title, description, instructions, due_at, total_marks, assessment_type, attempt_limit)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ASSIGNMENT', 1)
-         RETURNING id, tenant_id, institution_id, course_id, module_id, title, description, instructions,
+           (tenant_id, institution_id, campus_id, course_id, module_id, title, description, instructions, due_at, total_marks, assessment_type, attempt_limit)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNMENT', 1)
+         RETURNING id, tenant_id, institution_id, campus_id, course_id, module_id, title, description, instructions,
                    due_at, total_marks AS max_marks, assessment_type, status, created_at, updated_at`,
         [
           user.tenantId,
           course.institution_id,
-          course.id,
-          module.id,
-          input.title.trim(),
-          input.description?.trim() || null,
-          input.instructions.trim(),
-          input.dueAt ?? null,
-          input.maxMarks,
+           course.campus_id ?? null,
+           course.id,
+           module.id,
+           input.title.trim(),
+           input.description?.trim() || null,
+           input.instructions.trim(),
+           input.dueAt ?? null,
+           input.maxMarks,
         ],
       );
       const row = result.rows[0];
@@ -1417,7 +1432,7 @@ export class LmsService {
   async updateAssignment(id: string, input: UpdateAssignmentDto, request: ContextRequest) {
     const user = request.context.user!;
     const before = await this.assignmentFor(id, user);
-    await this.assertAssignmentStaffAccess(user, String(before.institution_id), String(before.course_id));
+    await this.assertAssignmentStaffAccess(user, String(before.institution_id), String(before.course_id), before.campus_id as string | null);
     if (before.status === "ARCHIVED") throw new ConflictException("Archived assignments cannot be edited.");
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
@@ -1448,7 +1463,7 @@ export class LmsService {
   async changeAssignmentStatus(id: string, status: LmsStatus, request: ContextRequest) {
     const user = request.context.user!;
     const before = await this.assignmentFor(id, user);
-    await this.assertAssignmentStaffAccess(user, String(before.institution_id), String(before.course_id));
+    await this.assertAssignmentStaffAccess(user, String(before.institution_id), String(before.course_id), before.campus_id as string | null);
     if (status === "PUBLISHED" && (before.course_status !== "PUBLISHED" || before.module_status !== "PUBLISHED")) {
       throw new BadRequestException("Assignments can be published only inside published courses and modules.");
     }
@@ -1470,7 +1485,7 @@ export class LmsService {
 
   async listAssignmentSubmissions(id: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number) {
     const assignment = await this.assignmentFor(id, user);
-    await this.assertAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id));
+    await this.assertAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id), assignment.campus_id as string | null);
     const values = [user.tenantId, id, pageSize, offset];
     const [rows, total] = await Promise.all([
       this.db.query(
