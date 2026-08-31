@@ -21,7 +21,9 @@ import {
   CreateLessonDto,
   CreateProgrammeDto,
   CreateAssignmentDto,
+  AssessmentAttemptListQueryDto,
   EnrollLearnerDto,
+  GradeAssessmentAttemptDto,
   GradeAssignmentSubmissionDto,
   ProgressViewerQueryDto,
   RelationshipListQueryDto,
@@ -328,6 +330,14 @@ export class LmsController {
     return successResponse(await this.assessments.startAttempt(id, request), request);
   }
 
+  @Get("assessments/:id/attempts")
+  @RequirePermission("lms.assessment_attempt.view")
+  async assessmentAttempts(@Param("id") id: string, @Req() request: ContextRequest, @Query() query: AssessmentAttemptListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.assessments.listAttempts(id, request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
   @Get("assessment-attempts/:id")
   @RequirePermission("lms.assessment_attempt.view")
   async assessmentAttempt(@Param("id") id: string, @Req() request: ContextRequest) {
@@ -338,6 +348,20 @@ export class LmsController {
   @RequirePermission("lms.assessment_attempt.update")
   async submitAssessmentAttempt(@Param("id") id: string, @Body() input: SubmitAssessmentAttemptDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.submitAttempt(id, input, request), request);
+  }
+
+  @Patch("assessment-attempts/:id/grade")
+  @RequirePermission("lms.assessment_attempt.grade")
+  async gradeAssessmentAttempt(@Param("id") id: string, @Body() input: GradeAssessmentAttemptDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.gradeAttempt(id, input, request), request);
+  }
+
+  @Get("assessment-history")
+  @RequirePermission("lms.assessment_attempt.view")
+  async assessmentHistory(@Req() request: ContextRequest) {
+    const page = paginationFrom(request);
+    const result = await this.assessments.listLearnerHistory(request.context.user!, page.page, page.pageSize, page.offset);
+    return paginatedResponse(result.data, result.meta, request);
   }
 
   @Get("progress")

@@ -279,6 +279,16 @@ export class AssignmentListQueryDto {
   status?: string;
 }
 
+export class AssessmentAttemptListQueryDto {
+  @IsOptional()
+  @IsIn(["SUBMITTED"])
+  status?: string;
+
+  @IsOptional()
+  @IsIn(["PENDING", "GRADED", "NOT_REQUIRED"])
+  gradingStatus?: string;
+}
+
 export class CreateAssignmentDto {
   @IsUUID()
   courseId!: string;
@@ -527,4 +537,26 @@ export class SubmitAssessmentAttemptDto {
   @ValidateNested({ each: true })
   @Type(() => AssessmentAnswerDto)
   answers!: AssessmentAnswerDto[];
+}
+
+export class GradeAssessmentAttemptDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => GradeAssessmentQuestionDto)
+  grades!: GradeAssessmentQuestionDto[];
+
+  @IsOptional()
+  @IsString()
+  @Max(10000)
+  feedback?: string;
+}
+
+export class GradeAssessmentQuestionDto {
+  @IsUUID()
+  questionId!: string;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100000)
+  awardedMarks!: number;
 }
