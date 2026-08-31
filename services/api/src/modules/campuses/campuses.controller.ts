@@ -17,14 +17,14 @@ export class CampusesController {
   @RequirePermission("platform.institution.view")
   async list(@Query("institutionId") institutionId: string, @Req() request: ContextRequest) {
     const pagination = paginationFrom(request);
-    const result = await this.campuses.list(institutionId, request.context.user!.tenantId, pagination.page, pagination.pageSize, pagination.offset);
+    const result = await this.campuses.list(institutionId, request.context.user!, pagination.page, pagination.pageSize, pagination.offset);
     return paginatedResponse(result.data, result.meta, request);
   }
 
   @Get(":id")
   @RequirePermission("platform.institution.view")
   async get(@Param("id") id: string, @Req() request: ContextRequest) {
-    return successResponse(await this.campuses.get(id, request.context.user!.tenantId), request);
+    return successResponse(await this.campuses.get(id, request.context.user!), request);
   }
 
   @Post()

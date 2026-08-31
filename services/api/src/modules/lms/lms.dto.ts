@@ -13,6 +13,10 @@ export class CreateProgrammeDto {
   @IsUUID()
   institutionId!: string;
 
+  @IsOptional()
+  @IsUUID()
+  campusId?: string;
+
   @IsString()
   @Length(2, 180)
   name!: string;
@@ -43,6 +47,10 @@ export class UpdateProgrammeDto {
 export class CreateCourseDto {
   @IsUUID()
   programmeId!: string;
+
+  @IsOptional()
+  @IsUUID()
+  campusId?: string;
 
   @IsString()
   @Length(2, 180)

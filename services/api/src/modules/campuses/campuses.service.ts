@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
+import { assertScope, assertScopeForRead, filterScopedRows } from "../../common/access-scope";
+import type { AuthenticatedUser } from "../../common/request-context";
 import { paginationMeta } from "../../common/pagination";
 import type { ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
@@ -12,7 +14,9 @@ export class CampusesService {
     private readonly audit: AuditService,
   ) {}
 
-  async list(institutionId: string, tenantId: string, page: number, pageSize: number, offset: number) {
+  async list(institutionId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number) {
+    assertScopeForRead(user, institutionId);
+    const tenantId = user.tenantId;
     const [rows, total] = await Promise.all([
       this.db.query(
         `SELECT id, tenant_id, institution_id, name, address, city, state, country, timezone, status, created_at, updated_at
@@ -22,20 +26,24 @@ export class CampusesService {
       ),
       this.db.query<{ count: string }>("SELECT count(*)::text AS count FROM campuses WHERE tenant_id = $1 AND institution_id = $2", [tenantId, institutionId]),
     ]);
-    return { data: rows.rows, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
+    return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
-  async get(id: string, tenantId: string) {
+  async get(id: string, user: AuthenticatedUser) {
+    const tenantId = user.tenantId;
     const result = await this.db.query(
       "SELECT id, tenant_id, institution_id, name, address, city, state, country, timezone, status, created_at, updated_at FROM campuses WHERE id = $1 AND tenant_id = $2",
       [id, tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("Campus not found.");
+    assertScopeForRead(user, result.rows[0].institution_id);
     return result.rows[0];
   }
 
   async create(input: CreateCampusDto, request: ContextRequest) {
     const tenantId = request.context.user!.tenantId;
+    assertScope(request.context.user!, input.institutionId);
     const institution = await this.db.query<{ id: string }>("SELECT id FROM institutions WHERE id = $1 AND tenant_id = $2", [input.institutionId, tenantId]);
     if (!institution.rows[0]) throw new NotFoundException("Institution not found in the current tenant.");
     const result = await this.db.query(
@@ -52,6 +60,7 @@ export class CampusesService {
   async update(id: string, input: UpdateCampusDto, request: ContextRequest) {
     const tenantId = request.context.user!.tenantId;
     const before = await this.get(id, tenantId);
+    assertScope(request.context.user!, before.institution_id);
     const result = await this.db.query(
       `UPDATE campuses SET name = COALESCE($2, name), status = COALESCE($3, status), address = COALESCE($4, address),
          city = COALESCE($5, city), state = COALESCE($6, state), country = COALESCE($7, country),

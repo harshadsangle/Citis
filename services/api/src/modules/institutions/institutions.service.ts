@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
+import { assertScope, assertScopeForRead, filterScopedRows, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
@@ -15,7 +16,7 @@ export class InstitutionsService {
   ) {}
 
   private targetTenant(user: AuthenticatedUser, requested?: string) {
-    const platform = user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT");
+    const platform = isPlatformUser(user);
     return platform ? requested ?? null : user.tenantId;
   }
 
@@ -29,7 +30,8 @@ export class InstitutionsService {
         FROM institutions i ${where} ORDER BY i.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pageSize, offset]),
       this.db.query<{ count: string }>(`SELECT count(*)::text AS count FROM institutions i ${where}`, values),
     ]);
-    return { data: rows.rows, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
+    return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
   async get(id: string, user: AuthenticatedUser) {
@@ -39,11 +41,13 @@ export class InstitutionsService {
       [id, this.targetTenant(user)],
     );
     if (!result.rows[0]) throw new NotFoundException("Institution not found.");
+    assertScopeForRead(user, id);
     return result.rows[0];
   }
 
   async create(input: CreateInstitutionDto, request: ContextRequest) {
     const user = request.context.user!;
+    if (!isPlatformUser(user)) throw new NotFoundException("Institution creation is not available in the current scope.");
     const tenantId = this.targetTenant(user, input.tenantId) ?? input.tenantId;
     if (!tenantId) throw new NotFoundException("A tenant scope is required.");
     const slug = input.slug?.trim() || input.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -72,6 +76,7 @@ export class InstitutionsService {
 
   async update(id: string, input: UpdateInstitutionDto, request: ContextRequest) {
     const before = await this.get(id, request.context.user!);
+    assertScope(request.context.user!, id);
     const result = await this.db.query(
       `UPDATE institutions
        SET name = COALESCE($2, name), status = COALESCE($3, status), email = COALESCE($4, email),
