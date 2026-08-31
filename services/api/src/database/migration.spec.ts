@@ -10,6 +10,7 @@ const progressMigration = readFileSync(resolve(process.cwd(), "../../packages/da
 const assignmentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/006_lms_assignments.sql"), "utf8");
 const scopeMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/007_lms_scope_isolation.sql"), "utf8");
 const assessmentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/008_lms_assessment_engine.sql"), "utf8");
+const operationsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/009_lms_assessment_operations.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -100,4 +101,12 @@ test("assessment migration defines isolated questions, options, attempts, and im
   assert.match(assessmentMigration, /lms\.assessment_attempt\.create/);
   assert.match(assessmentMigration, /lms\.assessment_option\.update/);
   assert.match(assessmentMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("assessment operations migration defines manual grading and review permissions", () => {
+  assert.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grading_status/);
+  assert.match(operationsMigration, /grading_status IN \('NOT_REQUIRED', 'PENDING', 'GRADED'\)/);
+  assert.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grader_id/);
+  assert.match(operationsMigration, /'lms\.assessment_attempt\.grade'/);
+  assert.match(operationsMigration, /INSERT INTO schema_migrations \(version\)/);
 });

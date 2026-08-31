@@ -65,7 +65,23 @@ type AssessmentAttempt = {
   score?: number | null;
   max_score?: number | null;
   passed?: boolean | null;
+  grading_status?: "NOT_REQUIRED" | "PENDING" | "GRADED";
   results?: Array<{ questionId: string; correct: boolean; awardedMarks: number }>;
+};
+type AssessmentHistoryItem = {
+  attempt_id: string;
+  title: string;
+  assessment_type: string;
+  course_title: string;
+  course_code: string;
+  module_title: string;
+  attempt_number: number;
+  score?: number | null;
+  max_score?: number | null;
+  passed?: boolean | null;
+  grading_status: "NOT_REQUIRED" | "PENDING" | "GRADED";
+  grading_feedback?: string | null;
+  submitted_at: string;
 };
 
 const stateLabel: Record<Progress["state"], string> = {
@@ -86,6 +102,7 @@ export default function StudentPortalPage() {
   const [courses, setCourses] = useState<Progress[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryItem[]>([]);
   const [activeAttempt, setActiveAttempt] = useState<AssessmentAttempt | null>(null);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [assessmentNotice, setAssessmentNotice] = useState("");
@@ -99,10 +116,10 @@ export default function StudentPortalPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([fetch("/api/v1/progress", { credentials: "include" }), fetch("/api/v1/assignments", { credentials: "include" }), fetch("/api/v1/assessments", { credentials: "include" })])
-      .then(async ([progressResponse, assignmentResponse, assessmentResponse]) => {
-        if (!progressResponse.ok || !assignmentResponse.ok || !assessmentResponse.ok) {
-          const response = !progressResponse.ok ? progressResponse : !assignmentResponse.ok ? assignmentResponse : assessmentResponse;
+    Promise.all([fetch("/api/v1/progress", { credentials: "include" }), fetch("/api/v1/assignments", { credentials: "include" }), fetch("/api/v1/assessments", { credentials: "include" }), fetch("/api/v1/assessment-history?page=1&pageSize=100", { credentials: "include" })])
+      .then(async ([progressResponse, assignmentResponse, assessmentResponse, historyResponse]) => {
+        if (!progressResponse.ok || !assignmentResponse.ok || !assessmentResponse.ok || !historyResponse.ok) {
+          const response = !progressResponse.ok ? progressResponse : !assignmentResponse.ok ? assignmentResponse : !assessmentResponse.ok ? assessmentResponse : historyResponse;
           const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
           throw new Error(body?.error?.message || "We couldn't load your learning progress.");
         }
@@ -110,13 +127,15 @@ export default function StudentPortalPage() {
           progressResponse.json() as Promise<{ data: Progress[] }>,
           assignmentResponse.json() as Promise<{ data: Assignment[] }>,
           assessmentResponse.json() as Promise<{ data: Assessment[] }>,
+          historyResponse.json() as Promise<{ data: AssessmentHistoryItem[] }>,
         ]);
       })
-      .then(async ([progressBody, assignmentBody, assessmentBody]) => {
+      .then(async ([progressBody, assignmentBody, assessmentBody, historyBody]) => {
         if (!active) return;
         setCourses(progressBody.data || []);
         setAssignments(assignmentBody.data || []);
         setAssessments(assessmentBody.data || []);
+        setAssessmentHistory(historyBody.data || []);
         const submissionEntries = await Promise.all((assignmentBody.data || []).map(async (assignment) => {
           const response = await fetch(`/api/v1/assignments/${assignment.id}/submission`, { credentials: "include" });
           if (!response.ok) return [assignment.id, null] as const;
@@ -135,6 +154,13 @@ export default function StudentPortalPage() {
       active = false;
     };
   }, []);
+
+  async function loadAssessmentHistory() {
+    const response = await fetch("/api/v1/assessment-history?page=1&pageSize=100", { credentials: "include" });
+    if (!response.ok) return;
+    const body = await response.json() as { data: AssessmentHistoryItem[] };
+    setAssessmentHistory(body.data || []);
+  }
 
   async function startAssessment(assessment: Assessment) {
     setAssessmentBusy(assessment.id);
@@ -168,6 +194,7 @@ export default function StudentPortalPage() {
       const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't submit this assessment.");
       setActiveAttempt(body.data);
+      await loadAssessmentHistory();
       setAssessmentNotice("Assessment submitted. Your result was calculated by the server.");
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "We couldn't submit this assessment.");
@@ -278,6 +305,31 @@ export default function StudentPortalPage() {
         )}
         {!loading && !error && (
           <section style={{ marginTop: 28 }}>
+            <div style={{ marginBottom: 14 }}>
+              <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Your record</p>
+              <h2 style={{ fontSize: 28, margin: "6px 0 0" }}>Assessment history</h2>
+            </div>
+            {assessmentHistory.length === 0 ? <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>Your submitted assessment results will appear here.</div> : (
+              <div style={{ display: "grid", gap: 12 }}>
+                {assessmentHistory.map((item) => (
+                  <article key={item.attempt_id} style={{ alignItems: "center", background: "white", border: "1px solid #d8e2eb", borderRadius: 16, display: "flex", gap: 16, justifyContent: "space-between", padding: "17px 20px" }}>
+                    <div>
+                      <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{item.course_code} · {item.module_title}</p>
+                      <h3 style={{ fontSize: 19, margin: "6px 0 4px" }}>{item.title}</h3>
+                      <span style={{ color: "#61718a", fontSize: 13 }}>Attempt {item.attempt_number} · {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(item.submitted_at))}</span>
+                    </div>
+                    <div style={{ color: item.grading_status === "PENDING" ? "#a06b22" : item.passed === false ? "#ad5b4d" : "#0f766e", fontSize: 14, fontWeight: 700, textAlign: "right" }}>
+                      {item.grading_status === "PENDING" ? "Awaiting instructor review" : `${item.score ?? "—"}/${item.max_score ?? "—"} · ${item.passed ? "Passed" : item.passed === false ? "Not passed" : "Graded"}`}
+                      {item.grading_feedback && <p style={{ color: "#61718a", fontSize: 13, fontWeight: 400, lineHeight: 1.4, margin: "6px 0 0", maxWidth: 260 }}>{item.grading_feedback}</p>}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+        {!loading && !error && (
+          <section style={{ marginTop: 28 }}>
             <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
               <div>
                 <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Knowledge checks</p>
@@ -289,7 +341,7 @@ export default function StudentPortalPage() {
               <article style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, padding: "24px 26px" }}>
                 <div style={{ alignItems: "start", display: "flex", justifyContent: "space-between", gap: 18 }}>
                   <div><p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>Attempt in progress</p><h3 style={{ fontSize: 24, margin: "7px 0" }}>{activeAttempt.assessment.title}</h3></div>
-                  {activeAttempt.status === "SUBMITTED" && <strong style={{ color: activeAttempt.passed === false ? "#ad5b4d" : "#0f766e", fontSize: 22 }}>{activeAttempt.score}/{activeAttempt.max_score} {activeAttempt.passed === null ? "" : activeAttempt.passed ? "· Passed" : "· Not passed"}</strong>}
+                   {activeAttempt.status === "SUBMITTED" && <strong style={{ color: activeAttempt.grading_status === "PENDING" ? "#a06b22" : activeAttempt.passed === false ? "#ad5b4d" : "#0f766e", fontSize: 22 }}>{activeAttempt.grading_status === "PENDING" ? "Awaiting instructor review" : `${activeAttempt.score}/${activeAttempt.max_score} ${activeAttempt.passed === null ? "" : activeAttempt.passed ? "· Passed" : "· Not passed"}`}</strong>}
                 </div>
                 <div style={{ display: "grid", gap: 18, marginTop: 22 }}>
                   {activeAttempt.questions.map((question, index) => {
@@ -304,7 +356,7 @@ export default function StudentPortalPage() {
                           {question.options.map((option) => <label key={option.id} style={{ alignItems: "center", color: "#526f8c", display: "flex", gap: 9 }}><input disabled={activeAttempt.status === "SUBMITTED"} type={question.question_type === "MULTIPLE_CHOICE" ? "checkbox" : "radio"} name={question.id} checked={Array.isArray(selected) ? selected.includes(option.value) : selected === option.value} onChange={(event) => setAnswer(question, option.value, event.target.checked)} />{option.label}</label>)}
                         </div>
                       )}
-                      {result && <span style={{ color: result.correct ? "#0f766e" : "#ad5b4d", display: "inline-block", fontSize: 13, fontWeight: 700, marginTop: 8 }}>{result.correct ? "Correct" : "Review this answer"} · {result.awardedMarks} marks</span>}
+                       {result && <span style={{ color: result.correct === null ? "#a06b22" : result.correct ? "#0f766e" : "#ad5b4d", display: "inline-block", fontSize: 13, fontWeight: 700, marginTop: 8 }}>{result.correct === null ? "Awaiting instructor review" : result.correct ? "Correct" : "Review this answer"} · {result.awardedMarks} marks</span>}
                     </div>;
                   })}
                 </div>

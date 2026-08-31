@@ -643,9 +643,11 @@ export class AssessmentService {
               at.assessment_id, at.learner_id, at.attempt_number, at.status, at.score, at.max_score,
               at.passed, at.grading_status, at.grader_id, at.graded_at, at.grading_feedback,
               at.started_at, at.submitted_at, u.first_name AS learner_first_name,
-              u.last_name AS learner_last_name, u.email AS learner_email
+              u.last_name AS learner_last_name, u.email AS learner_email,
+              a.title AS assessment_title, a.assessment_type
        FROM lms_assessment_attempts at
        JOIN users u ON u.id = at.learner_id AND u.tenant_id = at.tenant_id
+       JOIN lms_assessments a ON a.id = at.assessment_id AND a.tenant_id = at.tenant_id
        WHERE ${clauses.join(" AND ")}
        ORDER BY at.submitted_at DESC, at.attempt_number DESC, at.id ASC`,
       values,
