@@ -113,6 +113,7 @@ test("attempt submission calculates the score server-side and writes a completio
   const db = {
     query: async (text: string) => {
       if (text.startsWith("SELECT at.*")) return { rows: [{ id: "attempt-1", tenant_id: learner.tenantId, institution_id: "institution-1", campus_id: "campus-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-1", learner_id: learner.id, status: "IN_PROGRESS", assessment_type: "PRACTICE_QUIZ", assessment_status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", passing_marks: "1" }] };
+      if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [{ id: "enrollment-1" }] };
       if (text.startsWith("SELECT q.id")) return { rows: [{ id: "q-1", tenant_id: learner.tenantId, institution_id: "institution-1", campus_id: "campus-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-1", prompt: "Pick one", question_type: "SINGLE_CHOICE", marks: "2", sequence: 1, status: "ACTIVE", option_id: "o-1", option_value: "yes", option_label: "Yes", option_sequence: 1, is_correct: true }] };
       return { rows: [] };
     },
@@ -143,6 +144,7 @@ test("manual assessment submission remains pending and does not create a complet
   const db = {
     query: async (text: string) => {
       if (text.startsWith("SELECT at.*")) return { rows: [{ id: "attempt-2", tenant_id: learner.tenantId, institution_id: "institution-1", campus_id: "campus-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-2", learner_id: learner.id, status: "IN_PROGRESS", assessment_type: "PROJECT", assessment_status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", passing_marks: "2" }] };
+      if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [{ id: "enrollment-1" }] };
       if (text.startsWith("SELECT q.id")) return { rows: [{ id: "q-2", tenant_id: learner.tenantId, institution_id: "institution-1", campus_id: "campus-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-2", prompt: "Build the prototype", question_type: "SHORT_TEXT", marks: "4", sequence: 1, status: "ACTIVE", option_id: "o-2", option_value: "prototype", option_label: "Prototype", option_sequence: 1, is_correct: true }] };
       return { rows: [] };
     },

@@ -729,7 +729,13 @@ export class AssessmentService {
                 assessment.duration_minutes ?? null,
               ],
             );
-            attempt = updated.rows[0] ?? attempt;
+            attempt = updated.rows[0] ?? {
+              ...attempt,
+              question_snapshot: snapshot,
+              total_marks_snapshot: snapshot.reduce((sum, question) => sum + Number(question.marks), 0),
+              passing_marks_snapshot: assessment.passing_marks ?? null,
+              duration_minutes_snapshot: assessment.duration_minutes ?? null,
+            };
           }
           const drafts = await this.draftRows(client, String(attempt.id), user.tenantId);
           return {
