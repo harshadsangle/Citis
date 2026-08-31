@@ -134,9 +134,9 @@ export function LoginForm() {
   const onSubmit = async (values: LoginInput) => {
     setServerError("");
     try {
-       await authService.login(values.email, values.password);
-       const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
-       window.location.assign(callbackUrl?.startsWith("/") ? callbackUrl : "/");
+      await authService.login(values.email, values.password);
+      const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl");
+      window.location.assign(callbackUrl?.startsWith("/") ? callbackUrl : "/");
     } catch (error) { setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again."); }
   };
   return (
