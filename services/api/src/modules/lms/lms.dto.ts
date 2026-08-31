@@ -539,6 +539,13 @@ export class SubmitAssessmentAttemptDto {
   answers!: AssessmentAnswerDto[];
 }
 
+export class SaveAssessmentDraftDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AssessmentAnswerDto)
+  answers!: AssessmentAnswerDto[];
+}
+
 export class GradeAssessmentAttemptDto {
   @IsArray()
   @ValidateNested({ each: true })

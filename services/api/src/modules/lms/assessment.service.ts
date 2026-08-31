@@ -12,6 +12,7 @@ import type {
   CreateAssessmentQuestionDto,
   CreateAssessmentOptionDto,
   GradeAssessmentAttemptDto,
+  SaveAssessmentDraftDto,
   SubmitAssessmentAttemptDto,
   UpdateAssessmentDto,
   UpdateAssessmentQuestionDto,

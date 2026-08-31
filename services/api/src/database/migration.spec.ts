@@ -12,6 +12,7 @@ const scopeMigration = readFileSync(resolve(process.cwd(), "../../packages/datab
 const assessmentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/008_lms_assessment_engine.sql"), "utf8");
 const operationsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/009_lms_assessment_operations.sql"), "utf8");
 const gradingPermissionMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/010_lms_assessment_grading_permission.sql"), "utf8");
+const attemptStabilityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/011_lms_assessment_attempt_stability.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {

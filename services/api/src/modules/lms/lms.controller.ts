@@ -23,6 +23,7 @@ import {
   CreateAssignmentDto,
   AssessmentAttemptListQueryDto,
   EnrollLearnerDto,
+  SaveAssessmentDraftDto,
   GradeAssessmentAttemptDto,
   GradeAssignmentSubmissionDto,
   ProgressViewerQueryDto,
@@ -348,6 +349,12 @@ export class LmsController {
   @RequirePermission("lms.assessment_attempt.update")
   async submitAssessmentAttempt(@Param("id") id: string, @Body() input: SubmitAssessmentAttemptDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.submitAttempt(id, input, request), request);
+  }
+
+  @Patch("assessment-attempts/:id/draft")
+  @RequirePermission("lms.assessment_attempt.update")
+  async saveAssessmentDraft(@Param("id") id: string, @Body() input: SaveAssessmentDraftDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.saveDraft(id, input, request), request);
   }
 
   @Patch("assessment-attempts/:id/grade")
