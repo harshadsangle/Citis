@@ -198,12 +198,12 @@ export class AssessmentService {
     }
   }
 
-  private async validateAssessmentMarks(id: string, totalMarks: number | null | undefined, passingMarks: number | null | undefined) {
+  private async validateAssessmentMarks(id: string, totalMarks: number | null | undefined, passingMarks: number | null | undefined, tenantId: string) {
     const result = await this.db.query<{ total: string | null; count: string }>(
       `SELECT COALESCE(SUM(marks), 0)::numeric AS total, count(*)::text AS count
        FROM lms_assessment_questions
        WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'ACTIVE'`,
-      [this.currentTenantId, id],
+      [tenantId, id],
     );
     if (Number(result.rows[0]?.count ?? 0) === 0) return;
     const questionTotal = Number(result.rows[0]?.total ?? 0);
