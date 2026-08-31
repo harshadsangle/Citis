@@ -1,9 +1,8 @@
 /**
- * Explicit API base URL. Set NEXT_PUBLIC_API_URL in your environment to connect
- * a backend. When unset, all apiFetch calls fail with a clear configuration error
- * so the admin UI surfaces the problem rather than silently hitting localhost.
+ * The integrated site uses its same-origin Next rewrite by default. An explicit
+ * URL remains supported for deployments where the API has its own public origin.
  */
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.trim() ?? "";
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.trim() || "/api/v1";
 
 export class ApiError extends Error {
   constructor(
@@ -80,20 +79,12 @@ async function request<T>(baseUrl: string, path: string, options: FetchOptions =
   return response.json() as Promise<T>;
 }
 
-/** Returns true when NEXT_PUBLIC_API_URL is explicitly set. */
+/** Returns true when an API base URL is available. */
 export function isApiConfigured(): boolean {
   return Boolean(API_URL);
 }
 
 export function apiFetch<T>(path: string, options?: FetchOptions) {
-  if (!API_URL) {
-    return Promise.reject(
-      new ApiError(
-        "Backend not configured — set NEXT_PUBLIC_API_URL to connect a live API.",
-        0,
-      ),
-    );
-  }
   return request<T>(API_URL, path, options);
 }
 

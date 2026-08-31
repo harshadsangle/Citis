@@ -222,7 +222,7 @@ export function Navbar() {
                 );
               })}
               <HeaderSocialLinks className="mt-3 justify-center border-t border-border pt-4" />
-              <Button asChild variant="accent" className="mt-4 rounded-full"><Link href="/lms">Skills Excellence Centre <ArrowRight /></Link></Button>
+               <Button asChild variant="accent" className="mt-4 rounded-full"><Link href="/lms">Skills Excellence Centre <ArrowRight /></Link></Button>
             </nav>
           </motion.div>
         )}

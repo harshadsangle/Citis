@@ -1,0 +1,6 @@
+{
+  "name": "@citis/database",
+  "version": "0.1.0",
+  "private": true,
+  "description": "CITIS Education Platform PostgreSQL migrations and database conventions"
+}

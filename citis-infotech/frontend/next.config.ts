@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 const apiHost = process.env.NEXT_PUBLIC_API_HOST ?? "localhost";
 const strapiHost = process.env.NEXT_PUBLIC_STRAPI_HOST ?? "localhost";
+const lmsApiOrigin = process.env.LMS_API_ORIGIN ?? "http://127.0.0.1:4000/api/v1";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -21,6 +22,12 @@ const nextConfig: NextConfig = {
   },
   turbopack: {
     root: resolve(__dirname),
+  },
+  async rewrites() {
+    return [
+      { source: "/api/v1", destination: lmsApiOrigin },
+      { source: "/api/v1/:path*", destination: `${lmsApiOrigin}/:path*` },
+    ];
   },
   async headers() {
     const securityHeaders = [

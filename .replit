@@ -1,7 +1,7 @@
 modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
 [nix]
 channel = "stable-25_05"
-packages = ["chromium"]
+packages = ["chromium", "freetype", "gumbo", "harfbuzz", "jbig2dec", "libjpeg_turbo", "mupdf", "openjpeg", "swig", "xcbuild"]
 
 [agent]
 expertMode = true
@@ -24,11 +24,27 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev --prefix citis-infotech"
+args = "bash scripts/start-all-dev.sh"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[ports]]
+localPort = 4000
+externalPort = 3000
+
+[[ports]]
+localPort = 4101
+externalPort = 3001
+
+[[ports]]
+localPort = 4102
+externalPort = 3003
+
+[[ports]]
+localPort = 4103
+externalPort = 3002
 
 [[ports]]
 localPort = 5000

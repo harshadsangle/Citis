@@ -545,7 +545,7 @@ export function ScienceLabPage() {
             </a>
           </div>
            <div className="mt-10 border-t border-border pt-8">
-             <p className="text-sm font-bold tracking-[0.14em] text-accent uppercase">Resources</p>
+             <p className="text-sm font-bold tracking-[0.14em] text-primary uppercase">Resources</p>
              <div className="mt-4 flex flex-wrap gap-3">
                {scienceLabResources.map((resource) => (
                  <a
