@@ -209,6 +209,25 @@ function serviceWith(query) {
     });
     await strict_1.default.rejects(service.getCourseProgress("course-1", staff, "student-1"), common_1.ForbiddenException);
 });
+(0, node_test_1.default)("teacher course listing is limited to active instructor assignments", async () => {
+    const teacher = {
+        ...user,
+        id: "teacher-1",
+        roles: [{ code: "TEACHER", name: "Teacher" }],
+    };
+    const queries = [];
+    const { service } = serviceWith(async (text) => {
+        queries.push(text);
+        if (text.startsWith("SELECT c.id")) {
+            return { rows: [{ id: "assigned-course", tenant_id: teacher.tenantId, institution_id: "institution-1", title: "Assigned course", code: "AC-101", status: "PUBLISHED" }] };
+        }
+        return { rows: [{ count: "1" }] };
+    });
+    const result = await service.listCourses(teacher, 1, 100, 0, {});
+    strict_1.default.equal(result.data.length, 1);
+    strict_1.default.ok(queries.some((query) => query.includes("lms_instructor_assignments")));
+    strict_1.default.ok(queries.some((query) => query.includes("ia.instructor_id")));
+});
 (0, node_test_1.default)("lesson completion requires an active enrollment and audits only the first transition", async () => {
     const { service, audits } = serviceWith(async (text) => {
         if (text.startsWith("SELECT l.id")) {

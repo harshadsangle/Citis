@@ -792,7 +792,7 @@ export class LmsService {
     query: CandidateListQueryDto,
     roleCode: "STUDENT" | "TEACHER",
   ) {
-    const course = await this.relationshipCourse(courseId, user, kind === "enrollment");
+    const course = await this.relationshipCourse(courseId, user);
     const relationshipTable = roleCode === "STUDENT" ? "lms_enrollments" : "lms_instructor_assignments";
     const relationshipColumn = roleCode === "STUDENT" ? "learner_id" : "instructor_id";
     const search = query.search?.trim() || "";
@@ -859,7 +859,7 @@ export class LmsService {
     query: RelationshipListQueryDto,
     kind: "enrollment" | "instructor_assignment",
   ) {
-    const course = await this.relationshipCourse(courseId, user);
+    const course = await this.relationshipCourse(courseId, user, kind === "enrollment");
     const table = kind === "enrollment" ? "lms_enrollments" : "lms_instructor_assignments";
     const personColumn = kind === "enrollment" ? "learner_id" : "instructor_id";
     const personAlias = kind === "enrollment" ? "learner" : "instructor";

@@ -163,6 +163,23 @@ let LmsService = class LmsService {
         const filter = this.statusFilter(query.status);
         const values = [user.tenantId];
         const clauses = ["c.tenant_id = $1"];
+        const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
+        const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
+            && !user.roles.some((role) => administratorRoles.includes(role.code))
+            && !(0, access_scope_1.isPlatformUser)(user);
+        if (instructorOnly) {
+            values.push(user.id);
+            clauses.push(`EXISTS (
+        SELECT 1
+        FROM lms_instructor_assignments ia
+        WHERE ia.tenant_id = c.tenant_id
+          AND ia.institution_id = c.institution_id
+          AND ia.course_id = c.id
+          AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
+          AND ia.instructor_id = $${values.length}
+          AND ia.status = 'ACTIVE'
+      )`);
+        }
         if (programmeId) {
             values.push(programmeId);
             clauses.push(`c.programme_id = $${values.length}`);
@@ -581,7 +598,7 @@ let LmsService = class LmsService {
         if (!result.rows[0])
             throw new common_1.ForbiddenException("You are not authorized for this institution.");
     }
-    async relationshipCourse(courseId, user) {
+    async relationshipCourse(courseId, user, allowAssignedTeacher = false) {
         const result = await this.db.query(`SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
               p.status AS programme_status, i.status AS institution_status
        FROM courses c
@@ -591,7 +608,12 @@ let LmsService = class LmsService {
         const course = result.rows[0];
         if (!course)
             throw new common_1.NotFoundException("Course not found in the current tenant.");
-        await this.assertInstitutionAccess(user, String(course.institution_id), course.campus_id);
+        if (allowAssignedTeacher && await this.hasAssignmentStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id)) {
+            // Assigned teachers may read the roster for their own course.
+        }
+        else {
+            await this.assertInstitutionAccess(user, String(course.institution_id), course.campus_id);
+        }
         if (course.status !== "PUBLISHED")
             throw new common_1.BadRequestException("Enrollments and instructor assignments require a published course.");
         if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
@@ -674,7 +696,7 @@ let LmsService = class LmsService {
         return this.listCandidates(courseId, user, page, pageSize, offset, query, "TEACHER");
     }
     async listRelationships(courseId, user, page, pageSize, offset, query, kind) {
-        const course = await this.relationshipCourse(courseId, user);
+        const course = await this.relationshipCourse(courseId, user, kind === "enrollment");
         const table = kind === "enrollment" ? "lms_enrollments" : "lms_instructor_assignments";
         const personColumn = kind === "enrollment" ? "learner_id" : "instructor_id";
         const personAlias = kind === "enrollment" ? "learner" : "instructor";
@@ -689,7 +711,7 @@ let LmsService = class LmsService {
          FROM ${table} x JOIN users ${personAlias} ON ${personAlias}.id = x.${personColumn} AND ${personAlias}.tenant_id = x.tenant_id
           WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4
             AND x.campus_id IS NOT DISTINCT FROM $5
-         ORDER BY x.${dateColumn} DESC, x.id DESC LIMIT $5 OFFSET $6`, [...values, pageSize, offset]),
+           ORDER BY x.${dateColumn} DESC, x.id DESC LIMIT $6 OFFSET $7`, [...values, pageSize, offset]),
             this.db.query(`SELECT count(*)::text AS count FROM ${table} x
           WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4
             AND x.campus_id IS NOT DISTINCT FROM $5`, values),

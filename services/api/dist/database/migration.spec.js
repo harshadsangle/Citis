@@ -17,6 +17,7 @@ const assessmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)
 const operationsMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/009_lms_assessment_operations.sql"), "utf8");
 const gradingPermissionMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/010_lms_assessment_grading_permission.sql"), "utf8");
 const attemptStabilityMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/011_lms_assessment_attempt_stability.sql"), "utf8");
+const instructorDashboardMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/012_lms_instructor_dashboard_access.sql"), "utf8");
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
     (0, node_test_1.default)(`migration defines ${table}`, () => {
         strict_1.default.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
@@ -114,5 +115,11 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(attemptStabilityMigration, /CREATE TABLE IF NOT EXISTS lms_assessment_attempt_drafts/);
     strict_1.default.match(attemptStabilityMigration, /status IN \('IN_PROGRESS', 'SUBMITTED', 'EXPIRED'\)/);
     strict_1.default.match(attemptStabilityMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+(0, node_test_1.default)("instructor dashboard migration grants read-only course and roster access", () => {
+    strict_1.default.match(instructorDashboardMigration, /r\.code = 'TEACHER'/);
+    strict_1.default.match(instructorDashboardMigration, /lms\.course\.view/);
+    strict_1.default.match(instructorDashboardMigration, /lms\.enrollment\.view/);
+    strict_1.default.match(instructorDashboardMigration, /012_lms_instructor_dashboard_access/);
 });
 //# sourceMappingURL=migration.spec.js.map

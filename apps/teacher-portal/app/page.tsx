@@ -219,7 +219,6 @@ export default function TeacherPortalPage() {
   const progressRows = courseData.flatMap((item) => item.progress);
   const progressValues = progressRows.map(({ progress }) => progress?.percentage).filter((value): value is number => typeof value === "number");
   const averageProgress = progressValues.length ? Math.round(progressValues.reduce((sum, value) => sum + value, 0) / progressValues.length) : 0;
-  const selectedPending = selected?.submissions.filter(({ submission }) => submission.status === "SUBMITTED") || [];
 
   function selectCourse(courseId: string, scrollToSubmissions = false) {
     setSelectedCourseId(courseId);
@@ -338,7 +337,7 @@ export default function TeacherPortalPage() {
               <div className="panel actions-panel">
                 <div className="panel-heading"><div><p className="eyebrow">What needs attention</p><h2>Instructor actions</h2></div><span className="action-spark">✦</span></div>
                 <div className="action-list">
-                  <button className="action-row" type="button" onClick={() => selected && selectCourse(selected.course.id, true)} disabled={!selected || selectedPending.length === 0}>
+                  <button className="action-row" type="button" onClick={() => pendingSubmissions[0] && selectCourse(pendingSubmissions[0].course.id, true)} disabled={pendingSubmissions.length === 0}>
                     <span className="action-icon review">✓</span><span><strong>Review submissions</strong><small>{pendingSubmissions.length ? `${pendingSubmissions.length} learner ${pendingSubmissions.length === 1 ? "submission" : "submissions"} waiting` : "Your review queue is clear"}</small></span><b>→</b>
                   </button>
                   <button className="action-row" type="button" onClick={() => document.getElementById("learners")?.scrollIntoView({ behavior: "smooth", block: "start" })} disabled={!selected}>
