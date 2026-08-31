@@ -105,7 +105,7 @@ export class AssessmentService {
     }
   }
 
-  private async assessmentFor(id: string, user: AuthenticatedUser) {
+  private async assessmentFor(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>> {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT a.*, c.institution_id AS course_institution_id, c.campus_id AS course_campus_id,
               c.title AS course_title, c.status AS course_status, cm.title AS module_title,
@@ -327,7 +327,7 @@ export class AssessmentService {
     }
   }
 
-  private async questionFor(id: string, user: AuthenticatedUser) {
+  private async questionFor(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>> {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT q.*, a.title AS assessment_title, a.status AS assessment_status, a.assessment_type,
               a.course_id, a.institution_id AS assessment_institution_id, a.campus_id AS assessment_campus_id,
@@ -347,7 +347,7 @@ export class AssessmentService {
 
   private async questionRows(executor: Queryable, assessmentId: string, user: AuthenticatedUser, includeCorrect: boolean) {
     const correctColumn = includeCorrect ? ", o.is_correct" : "";
-    const result = await executor.query<Record<string, unknown>>(
+    const result = await executor.query(
       `SELECT q.id, q.tenant_id, q.institution_id, q.campus_id, q.course_id, q.module_id,
               q.assessment_id, q.prompt, q.question_type, q.marks, q.sequence, q.status,
               o.id AS option_id, o.option_value, o.option_label, o.sequence AS option_sequence${correctColumn}
@@ -455,7 +455,7 @@ export class AssessmentService {
     return row;
   }
 
-  private async attemptFor(id: string, user: AuthenticatedUser) {
+  private async attemptFor(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>> {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT at.*, a.title, a.assessment_type, a.status AS assessment_status, a.total_marks,
               a.passing_marks, a.duration_minutes, a.attempt_limit, c.status AS course_status,

@@ -40,10 +40,7 @@ export declare class LmsController {
     gradeAssignmentSubmission(id: string, submissionId: string, input: GradeAssignmentSubmissionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     assessmentsList(request: ContextRequest, query: AssignmentListQueryDto): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     createAssessment(input: CreateAssessmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
-    assessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
-        institution_id: string;
-        campus_id: string | null;
-    }>>;
+    assessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     updateAssessment(id: string, input: UpdateAssessmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     publishAssessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     archiveAssessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
@@ -55,11 +52,11 @@ export declare class LmsController {
     archiveAssessmentQuestion(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     startAssessmentAttempt(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         assessment: {
-            id: any;
-            title: any;
-            assessment_type: any;
-            duration_minutes: any;
-            attempt_limit: any;
+            id: unknown;
+            title: unknown;
+            assessment_type: unknown;
+            duration_minutes: unknown;
+            attempt_limit: unknown;
         };
         questions: Record<string, unknown>[];
     }>>;

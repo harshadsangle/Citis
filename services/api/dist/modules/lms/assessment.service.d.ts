@@ -25,10 +25,7 @@ export declare class AssessmentService {
             totalPages: number;
         };
     }>;
-    getAssessment(id: string, user: AuthenticatedUser): Promise<{
-        institution_id: string;
-        campus_id: string | null;
-    }>;
+    getAssessment(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>>;
     createAssessment(input: CreateAssessmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
     updateAssessment(id: string, input: UpdateAssessmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
     changeAssessmentStatus(id: string, status: AssessmentStatus, request: ContextRequest): Promise<Record<string, unknown>>;
@@ -44,11 +41,11 @@ export declare class AssessmentService {
     private attemptFor;
     startAttempt(assessmentId: string, request: ContextRequest): Promise<{
         assessment: {
-            id: any;
-            title: any;
-            assessment_type: any;
-            duration_minutes: any;
-            attempt_limit: any;
+            id: unknown;
+            title: unknown;
+            assessment_type: unknown;
+            duration_minutes: unknown;
+            attempt_limit: unknown;
         };
         questions: Record<string, unknown>[];
     }>;
