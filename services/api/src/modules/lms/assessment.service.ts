@@ -811,6 +811,58 @@ export class AssessmentService {
     return { ...this.publicAttempt(attempt), questions, answers: answers.rows, draft_answers: draftAnswers };
   }
 
+  async saveDraft(id: string, input: SaveAssessmentDraftDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const attempt = await this.attemptFor(id, user);
+    if (attempt.learner_id !== user.id) throw new ForbiddenException("Only the learner who started an attempt can save it.");
+    if (attempt.assessment_type === "ASSIGNMENT") throw new BadRequestException("Assignments use the assignment submission flow.");
+    if (attempt.status !== "IN_PROGRESS") throw new ConflictException("Only an in-progress attempt can save answers.");
+    await this.assertActiveEnrollmentForAttempt(attempt, user);
+    if (attempt.expires_at && new Date(String(attempt.expires_at)).getTime() <= Date.now()) {
+      throw new ConflictException("This assessment attempt has expired.");
+    }
+    const questions = await this.questionsForAttempt(this.db, attempt, user, false);
+    const questionIds = new Set(questions.map((question) => String(question.id)));
+    if (new Set(input.answers.map((answer) => answer.questionId)).size !== input.answers.length ||
+        input.answers.some((answer) => !questionIds.has(answer.questionId))) {
+      throw new BadRequestException("Draft answers must reference active questions exactly once.");
+    }
+    return this.run(async () => this.db.transaction(async (client) => {
+      const locked = await client.query<Record<string, unknown>>(
+        "SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
+        [id, user.tenantId],
+      );
+      if (locked.rows[0]?.status !== "IN_PROGRESS") throw new ConflictException("Only an in-progress attempt can save answers.");
+      if (locked.rows[0]?.expires_at && new Date(String(locked.rows[0].expires_at)).getTime() <= Date.now()) {
+        await client.query(
+          "UPDATE lms_assessment_attempts SET status = 'EXPIRED', updated_at = now() WHERE id = $1 AND tenant_id = $2",
+          [id, user.tenantId],
+        );
+        throw new ConflictException("This assessment attempt has expired.");
+      }
+      await client.query("DELETE FROM lms_assessment_attempt_drafts WHERE tenant_id = $1 AND attempt_id = $2", [user.tenantId, id]);
+      for (const answer of input.answers) {
+        await client.query(
+          `INSERT INTO lms_assessment_attempt_drafts
+             (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, attempt_id, question_id, answer_json)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)`,
+          [
+            user.tenantId,
+            attempt.institution_id,
+            attempt.campus_id ?? null,
+            attempt.course_id,
+            attempt.module_id,
+            attempt.assessment_id,
+            id,
+            answer.questionId,
+            JSON.stringify(answer.answer),
+          ],
+        );
+      }
+      return { attemptId: id, saved: input.answers.length };
+    }));
+  }
+
   async listAttempts(assessmentId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssessmentAttemptListQueryDto) {
     const assessment = await this.assessmentFor(assessmentId, user);
     await this.assertStaff(assessment, user);
@@ -978,7 +1030,7 @@ export class AssessmentService {
     if (attempt.status !== "SUBMITTED" || attempt.grading_status !== "PENDING") {
       throw new ConflictException("This assessment attempt is no longer awaiting grading.");
     }
-    const questions = await this.questionRows(this.db, String(attempt.assessment_id), user, false);
+    const questions = await this.questionsForAttempt(this.db, attempt, user, false);
     const questionMap = new Map(questions.map((question) => [String(question.id), question]));
     if (input.grades.length !== questionMap.size || new Set(input.grades.map((grade) => grade.questionId)).size !== input.grades.length) {
       throw new BadRequestException("Grade exactly one mark for every active assessment question.");
@@ -991,8 +1043,11 @@ export class AssessmentService {
       }
     }
     const score = input.grades.reduce((sum, grade) => sum + grade.awardedMarks, 0);
-    const maxScore = questions.reduce((sum, question) => sum + Number(question.marks), 0);
-    const passed = attempt.passing_marks === null ? null : score >= Number(attempt.passing_marks);
+    const maxScore = attempt.total_marks_snapshot === null || attempt.total_marks_snapshot === undefined
+      ? questions.reduce((sum, question) => sum + Number(question.marks), 0)
+      : Number(attempt.total_marks_snapshot);
+    const passingMarks = attempt.passing_marks_snapshot ?? attempt.passing_marks;
+    const passed = passingMarks === null ? null : score >= Number(passingMarks);
     return this.run(async () => this.db.transaction(async (client) => {
       const locked = await client.query<Record<string, unknown>>(
         "SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
