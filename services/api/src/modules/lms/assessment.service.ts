@@ -252,6 +252,10 @@ export class AssessmentService {
     const isAdministrator = user.roles.some((role) =>
       ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].includes(role.code),
     );
+    const isStudent = user.roles.some((role) => role.code === "STUDENT");
+    if (!courseIds && !isPlatform && !isTeacher && !isAdministrator && !isStudent) {
+      return { data: [], meta: { page, pageSize, total: 0, totalPages: 0 } };
+    }
     if (!courseIds && !isPlatform && isTeacher && !isAdministrator) {
       values.push(user.id);
       clauses.push(`EXISTS (
@@ -263,6 +267,10 @@ export class AssessmentService {
           AND ia.instructor_id = $${values.length}
           AND ia.status = 'ACTIVE'
       )`);
+    }
+    if (query.status) {
+      values.push(query.status);
+      clauses.push(`a.status = $${values.length}`);
     }
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT a.id, a.tenant_id, a.institution_id, a.campus_id, a.course_id, a.module_id, a.title,
@@ -378,6 +386,9 @@ export class AssessmentService {
   private validateOptions(questionType: string, options: CreateAssessmentOptionDto[]) {
     if (!questionTypes.includes(questionType as QuestionType)) throw new BadRequestException("Unsupported question type.");
     if (!options.length) throw new BadRequestException("Each question needs at least one answer option.");
+    if (options.some((option) => !option.value.trim() || !option.label.trim())) {
+      throw new BadRequestException("Question options must include a value and label.");
+    }
     const values = options.map((option) => option.value.trim());
     if (new Set(values).size !== values.length) throw new BadRequestException("Question option values must be unique.");
     const correct = options.filter((option) => option.isCorrect);
@@ -527,7 +538,10 @@ export class AssessmentService {
     const assessment = await this.assessmentFor(String(before.assessment_id), user);
     await this.assertStaff(assessment, user);
     if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
-    const attempts = await this.db.query("SELECT 1 FROM lms_assessment_attempts WHERE assessment_id = $1 AND status = 'SUBMITTED' LIMIT 1", [assessment.id]);
+    const attempts = await this.db.query(
+      "SELECT 1 FROM lms_assessment_attempts WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'SUBMITTED' LIMIT 1",
+      [user.tenantId, assessment.id],
+    );
     if (attempts.rows[0]) throw new ConflictException("Questions cannot be edited after an attempt has been submitted.");
     if (input.options) this.validateOptions(String(before.question_type), input.options);
     return this.run(async () => this.db.transaction(async (client) => {
