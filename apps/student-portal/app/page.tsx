@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from "react";
 
+async function fetchAllPages<T>(path: string): Promise<T[]> {
+  const rows: T[] = [];
+  for (let page = 1; page <= 100; page += 1) {
+    const response = await fetch(`${path}${path.includes("?") ? "&" : "?"}page=${page}&pageSize=100`, { credentials: "include" });
+    const body = await response.json().catch(() => null) as { data?: T[]; meta?: { totalPages?: number }; error?: { message?: string } } | null;
+    if (!response.ok) throw new Error(body?.error?.message || "We couldn't load your learning progress.");
+    rows.push(...(body?.data || []));
+    if (!body?.meta?.totalPages || page >= body.meta.totalPages) break;
+  }
+  return rows;
+}
+
 type Progress = {
   course: { id: string; title: string; code: string; description?: string | null };
   state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
@@ -61,7 +73,10 @@ type AssessmentAttempt = {
   id: string;
   assessment: { id: string; title: string; assessment_type: string; duration_minutes?: number | null };
   questions: AssessmentQuestion[];
-  status: "IN_PROGRESS" | "SUBMITTED";
+  status: "IN_PROGRESS" | "SUBMITTED" | "EXPIRED";
+  expires_at?: string | null;
+  started_at?: string;
+  draft_answers?: Array<{ question_id: string; answer_json: { value?: string | string[] } }>;
   score?: number | null;
   max_score?: number | null;
   passed?: boolean | null;
@@ -107,6 +122,7 @@ export default function StudentPortalPage() {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [assessmentNotice, setAssessmentNotice] = useState("");
   const [assessmentBusy, setAssessmentBusy] = useState("");
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
   const [submissions, setSubmissions] = useState<Record<string, Submission | null>>({});
   const [submissionText, setSubmissionText] = useState<Record<string, string>>({});
   const [submittingId, setSubmittingId] = useState("");
@@ -116,27 +132,23 @@ export default function StudentPortalPage() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([fetch("/api/v1/progress", { credentials: "include" }), fetch("/api/v1/assignments", { credentials: "include" }), fetch("/api/v1/assessments", { credentials: "include" }), fetch("/api/v1/assessment-history?page=1&pageSize=100", { credentials: "include" })])
-      .then(async ([progressResponse, assignmentResponse, assessmentResponse, historyResponse]) => {
-        if (!progressResponse.ok || !assignmentResponse.ok || !assessmentResponse.ok || !historyResponse.ok) {
-          const response = !progressResponse.ok ? progressResponse : !assignmentResponse.ok ? assignmentResponse : !assessmentResponse.ok ? assessmentResponse : historyResponse;
-          const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
-          throw new Error(body?.error?.message || "We couldn't load your learning progress.");
-        }
-        return Promise.all([
-          progressResponse.json() as Promise<{ data: Progress[] }>,
-          assignmentResponse.json() as Promise<{ data: Assignment[] }>,
-          assessmentResponse.json() as Promise<{ data: Assessment[] }>,
-          historyResponse.json() as Promise<{ data: AssessmentHistoryItem[] }>,
-        ]);
-      })
+    Promise.all([
+      fetch("/api/v1/progress", { credentials: "include" }).then(async (response) => {
+        const body = await response.json().catch(() => null) as { data?: Progress[]; error?: { message?: string } } | null;
+        if (!response.ok) throw new Error(body?.error?.message || "We couldn't load your learning progress.");
+        return body?.data || [];
+      }),
+      fetchAllPages<Assignment>("/api/v1/assignments"),
+      fetchAllPages<Assessment>("/api/v1/assessments"),
+      fetchAllPages<AssessmentHistoryItem>("/api/v1/assessment-history"),
+    ])
       .then(async ([progressBody, assignmentBody, assessmentBody, historyBody]) => {
         if (!active) return;
-        setCourses(progressBody.data || []);
-        setAssignments(assignmentBody.data || []);
-        setAssessments(assessmentBody.data || []);
-        setAssessmentHistory(historyBody.data || []);
-        const submissionEntries = await Promise.all((assignmentBody.data || []).map(async (assignment) => {
+        setCourses(progressBody);
+        setAssignments(assignmentBody);
+        setAssessments(assessmentBody);
+        setAssessmentHistory(historyBody);
+        const submissionEntries = await Promise.all(assignmentBody.map(async (assignment) => {
           const response = await fetch(`/api/v1/assignments/${assignment.id}/submission`, { credentials: "include" });
           if (!response.ok) return [assignment.id, null] as const;
           const body = await response.json() as { data: Submission | null };
@@ -171,13 +183,46 @@ export default function StudentPortalPage() {
       const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't start this assessment.");
       setActiveAttempt(body.data);
-      setAnswers({});
+      setAnswers(Object.fromEntries((body.data.draft_answers || []).map((draft) => [draft.question_id, draft.answer_json.value ?? ""])));
+      setRemainingSeconds(body.data.expires_at ? Math.max(0, Math.ceil((new Date(body.data.expires_at).getTime() - Date.now()) / 1000)) : null);
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "We couldn't start this assessment.");
     } finally {
       setAssessmentBusy("");
     }
   }
+
+  useEffect(() => {
+    if (!activeAttempt || activeAttempt.status !== "IN_PROGRESS" || !activeAttempt.expires_at) {
+      setRemainingSeconds(null);
+      return;
+    }
+    const update = () => {
+      const remaining = Math.max(0, Math.ceil((new Date(activeAttempt.expires_at as string).getTime() - Date.now()) / 1000));
+      setRemainingSeconds(remaining);
+      if (remaining === 0) setAssessmentNotice("Time expired. This attempt can no longer be submitted.");
+    };
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, [activeAttempt]);
+
+  useEffect(() => {
+    if (!activeAttempt || activeAttempt.status !== "IN_PROGRESS") return;
+    const timer = window.setTimeout(() => {
+      void fetch(`/api/v1/assessment-attempts/${activeAttempt.id}/draft`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          answers: activeAttempt.questions
+            .filter((question) => answers[question.id] !== undefined)
+            .map((question) => ({ questionId: question.id, answer: { value: answers[question.id] } })),
+        }),
+      });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [activeAttempt, answers]);
 
   async function submitAssessment() {
     if (!activeAttempt) return;
@@ -191,7 +236,7 @@ export default function StudentPortalPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: activeAttempt.questions.map((question) => ({ questionId: question.id, answer: { value: answers[question.id] ?? (question.question_type === "MULTIPLE_CHOICE" ? [] : "") } })) }),
       });
-      const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
+    const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't submit this assessment.");
       setActiveAttempt(body.data);
       await loadAssessmentHistory();
@@ -360,8 +405,13 @@ export default function StudentPortalPage() {
                     </div>;
                   })}
                 </div>
-                {activeAttempt.status === "IN_PROGRESS" && <button onClick={() => void submitAssessment()} disabled={assessmentBusy === activeAttempt.id} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, marginTop: 22, padding: "11px 16px" }} type="button">{assessmentBusy === activeAttempt.id ? "Submitting…" : "Submit assessment"}</button>}
-                {activeAttempt.status === "SUBMITTED" && <button onClick={() => setActiveAttempt(null)} style={{ background: "transparent", border: "1px solid #c9d7e2", borderRadius: 9, color: "#12304a", cursor: "pointer", fontWeight: 700, marginTop: 22, padding: "10px 14px" }} type="button">Back to assessments</button>}
+                {activeAttempt.status === "IN_PROGRESS" && <div style={{ alignItems: "center", display: "flex", gap: 14, marginTop: 22 }}>
+                  <strong style={{ color: remainingSeconds !== null && remainingSeconds < 60 ? "#ad5b4d" : "#61718a" }}>
+                    {remainingSeconds === null ? "No time limit" : `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")} remaining`}
+                  </strong>
+                  <button onClick={() => void submitAssessment()} disabled={assessmentBusy === activeAttempt.id || remainingSeconds === 0} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, padding: "11px 16px" }} type="button">{assessmentBusy === activeAttempt.id ? "Submitting…" : "Submit assessment"}</button>
+                </div>}
+                {(activeAttempt.status === "SUBMITTED" || activeAttempt.status === "EXPIRED") && <button onClick={() => setActiveAttempt(null)} style={{ background: "transparent", border: "1px solid #c9d7e2", borderRadius: 9, color: "#12304a", cursor: "pointer", fontWeight: 700, marginTop: 22, padding: "10px 14px" }} type="button">Back to assessments</button>}
               </article>
             ) : assessments.length === 0 ? <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>No published assessments are waiting for you.</div> : (
               <div style={{ display: "grid", gap: 16 }}>

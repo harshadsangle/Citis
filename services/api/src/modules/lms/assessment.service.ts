@@ -900,10 +900,6 @@ export class AssessmentService {
        JOIN lms_assessments a ON a.id = at.assessment_id AND a.tenant_id = at.tenant_id
        JOIN courses c ON c.id = at.course_id AND c.tenant_id = at.tenant_id
        JOIN course_modules cm ON cm.id = at.module_id AND cm.course_id = at.course_id AND cm.tenant_id = at.tenant_id
-       JOIN lms_enrollments e
-         ON e.tenant_id = at.tenant_id AND e.institution_id = at.institution_id
-        AND e.course_id = at.course_id AND e.learner_id = at.learner_id
-        AND e.campus_id IS NOT DISTINCT FROM at.campus_id AND e.status = 'ACTIVE'
        WHERE at.tenant_id = $1 AND at.learner_id = $2 AND at.status = 'SUBMITTED'
        ORDER BY at.submitted_at DESC, at.id ASC`,
       [user.tenantId, user.id],
