@@ -490,7 +490,7 @@ export default function InstitutionAdminPage() {
           <div className="topbar-actions">
             <span className="environment-pill"><span className="online-dot" /> Connected workspace</span>
             <button className="icon-button" type="button" aria-label="Notifications">♢<span className="notification-dot" /></button>
-            <a className="help-link" href="/lms/login">Need help?</a>
+            <a className="help-link" href="/auth/login">Need help?</a>
           </div>
         </header>
 
@@ -549,7 +549,7 @@ export default function InstitutionAdminPage() {
             {error && (
               <div className="state-box error-box">
                 <div className="state-symbol">!</div>
-                <div><strong>We couldn’t load this workspace</strong><p>{error}</p><a href="/lms/login">Sign in to continue</a></div>
+                <div><strong>We couldn’t load this workspace</strong><p>{error}</p><a href="/auth/login">Sign in to continue</a></div>
               </div>
             )}
             {!error && loading && (

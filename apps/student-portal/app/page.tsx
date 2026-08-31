@@ -148,7 +148,7 @@ export default function StudentPortalPage() {
           <section style={{ background: "#fff8f5", border: "1px solid #f0c5b8", borderRadius: 20, padding: 28 }}>
             <h2 style={{ margin: "0 0 8px" }}>We couldn’t load your progress</h2>
             <p style={{ color: "#7d5d55", margin: 0 }}>{error}</p>
-            <a href="/auth/login?callbackUrl=%2F" style={{ color: "#0f766e", display: "inline-block", fontWeight: 700, marginTop: 18 }}>Sign in to continue</a>
+            <a href="/auth/login" style={{ color: "#0f766e", display: "inline-block", fontWeight: 700, marginTop: 18 }}>Sign in to continue</a>
           </section>
         )}
         {!loading && !error && courses.length === 0 && (
