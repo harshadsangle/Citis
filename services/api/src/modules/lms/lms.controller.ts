@@ -351,7 +351,7 @@ export class LmsController {
   }
 
   @Patch("assessment-attempts/:id/grade")
-  @RequirePermission("lms.assessment_attempt.grade")
+  @RequirePermission("lms.assessment_attempt.update")
   async gradeAssessmentAttempt(@Param("id") id: string, @Body() input: GradeAssessmentAttemptDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.gradeAttempt(id, input, request), request);
   }

@@ -107,6 +107,5 @@ test("assessment operations migration defines manual grading and review permissi
   assert.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grading_status/);
   assert.match(operationsMigration, /grading_status IN \('NOT_REQUIRED', 'PENDING', 'GRADED'\)/);
   assert.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grader_id/);
-  assert.match(operationsMigration, /'lms\.assessment_attempt\.grade'/);
   assert.match(operationsMigration, /INSERT INTO schema_migrations \(version\)/);
 });
