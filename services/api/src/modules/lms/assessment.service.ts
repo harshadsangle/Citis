@@ -12,6 +12,7 @@ import type {
   SubmitAssessmentAttemptDto,
   UpdateAssessmentDto,
   UpdateAssessmentQuestionDto,
+  UpdateAssessmentOptionDto,
 } from "./lms.dto";
 
 type Queryable = { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> };
@@ -43,7 +44,7 @@ export class AssessmentService {
 
   private async courseFor(courseId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
+      `SELECT c.id, c.id AS course_id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
               p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
@@ -455,6 +456,86 @@ export class AssessmentService {
     return row;
   }
 
+  private async optionFor(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>> {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT o.*, q.question_type, q.assessment_id, q.prompt, a.title AS assessment_title,
+              a.institution_id AS assessment_institution_id, a.campus_id AS assessment_campus_id
+       FROM lms_assessment_options o
+       JOIN lms_assessment_questions q ON q.id = o.question_id AND q.tenant_id = o.tenant_id
+       JOIN lms_assessments a ON a.id = q.assessment_id AND a.tenant_id = q.tenant_id
+       WHERE o.id = $1 AND o.tenant_id = $2`,
+      [id, user.tenantId],
+    );
+    const option = result.rows[0];
+    if (!option) throw new NotFoundException("Assessment option not found.");
+    assertScopeForRead(user, String(option.assessment_institution_id ?? option.institution_id), option.assessment_campus_id as string | null | undefined);
+    return { ...option, institution_id: option.assessment_institution_id ?? option.institution_id, campus_id: option.assessment_campus_id ?? option.campus_id };
+  }
+
+  private async allOptions(questionId: string, user: AuthenticatedUser) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, option_value AS value, option_label AS label, is_correct AS "isCorrect"
+       FROM lms_assessment_options WHERE tenant_id = $1 AND question_id = $2 ORDER BY sequence`,
+      [user.tenantId, questionId],
+    );
+    return result.rows.map((row) => ({ value: String(row.value), label: String(row.label), isCorrect: Boolean(row.isCorrect) }));
+  }
+
+  async createOption(questionId: string, input: CreateAssessmentOptionDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const question = await this.questionFor(questionId, user);
+    const assessment = await this.assessmentFor(String(question.assessment_id), user);
+    await this.assertStaff(assessment, user);
+    const options = await this.allOptions(questionId, user);
+    this.validateOptions(String(question.question_type), [...options, input]);
+    const result = await this.run(() => this.db.query<Record<string, unknown>>(
+      `INSERT INTO lms_assessment_options
+         (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, question_id, option_value, option_label, is_correct, sequence)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+         (SELECT COALESCE(MAX(sequence), 0) + 1 FROM lms_assessment_options WHERE tenant_id = $1 AND question_id = $7))
+       RETURNING *`,
+      [user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id, assessment.module_id, assessment.id, questionId, input.value.trim(), input.label.trim(), input.isCorrect],
+    ));
+    await this.auditMutation(request, "assessment_option", "CREATE", result.rows[0]);
+    return result.rows[0];
+  }
+
+  async updateOption(id: string, input: UpdateAssessmentOptionDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const before = await this.optionFor(id, user);
+    const question = await this.questionFor(String(before.question_id), user);
+    const assessment = await this.assessmentFor(String(question.assessment_id), user);
+    await this.assertStaff(assessment, user);
+    const existing = await this.allOptions(String(before.question_id), user);
+    const options = existing.map((option) => String(option.value) === String(before.option_value)
+      ? { value: input.value?.trim() ?? option.value, label: input.label?.trim() ?? option.label, isCorrect: input.isCorrect ?? option.isCorrect }
+      : option);
+    this.validateOptions(String(question.question_type), options);
+    const result = await this.run(() => this.db.query<Record<string, unknown>>(
+      `UPDATE lms_assessment_options
+       SET option_value = COALESCE($3, option_value), option_label = COALESCE($4, option_label),
+           is_correct = COALESCE($5, is_correct)
+       WHERE id = $1 AND tenant_id = $2 RETURNING *`,
+      [id, user.tenantId, input.value?.trim() || null, input.label?.trim() || null, input.isCorrect ?? null],
+    ));
+    await this.auditMutation(request, "assessment_option", "UPDATE", result.rows[0], before);
+    return result.rows[0];
+  }
+
+  async archiveOption(id: string, request: ContextRequest) {
+    const user = request.context.user!;
+    const before = await this.optionFor(id, user);
+    const question = await this.questionFor(String(before.question_id), user);
+    const assessment = await this.assessmentFor(String(question.assessment_id), user);
+    await this.assertStaff(assessment, user);
+    const options = await this.allOptions(String(before.question_id), user);
+    const remaining = options.filter((option) => option.value !== String(before.option_value));
+    this.validateOptions(String(question.question_type), remaining);
+    await this.db.query("DELETE FROM lms_assessment_options WHERE id = $1 AND tenant_id = $2", [id, user.tenantId]);
+    await this.auditMutation(request, "assessment_option", "ARCHIVE", before);
+    return { ...before, status: "ARCHIVED" };
+  }
+
   private async attemptFor(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>> {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT at.*, a.title, a.assessment_type, a.status AS assessment_status, a.total_marks,
@@ -490,7 +571,7 @@ export class AssessmentService {
       await client.query("SELECT id FROM lms_assessments WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [assessment.id, user.tenantId]);
       const count = await client.query<{ count: string }>(
         `SELECT count(*)::text AS count FROM lms_assessment_attempts
-         WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND status = 'SUBMITTED'`,
+         WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3`,
         [user.tenantId, assessment.id, user.id],
       );
       const attemptNumber = Number(count.rows[0]?.count ?? 0) + 1;

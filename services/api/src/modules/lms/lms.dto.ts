@@ -472,6 +472,22 @@ export class CreateAssessmentOptionDto {
   isCorrect!: boolean;
 }
 
+export class UpdateAssessmentOptionDto {
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  value?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  label?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isCorrect?: boolean;
+}
+
 export class CreateAssessmentQuestionDto {
   @IsString()
   @Length(2, 2000)

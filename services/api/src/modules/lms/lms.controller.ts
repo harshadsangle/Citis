@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
@@ -14,6 +14,7 @@ import {
   AssignmentListQueryDto,
   CreateAssessmentDto,
   CreateAssessmentQuestionDto,
+  CreateAssessmentOptionDto,
   CreateCourseDto,
   CreateCourseModuleDto,
   CreateLearningResourceDto,
@@ -28,6 +29,7 @@ import {
   SubmitAssessmentAttemptDto,
   UpdateAssessmentDto,
   UpdateAssessmentQuestionDto,
+  UpdateAssessmentOptionDto,
   UpdateAssignmentDto,
   UpdateCourseDto,
   UpdateCourseModuleDto,
@@ -300,6 +302,24 @@ export class LmsController {
   @RequirePermission("lms.assessment_question.archive")
   async archiveAssessmentQuestion(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.archiveQuestion(id, request), request);
+  }
+
+  @Post("assessment-questions/:id/options")
+  @RequirePermission("lms.assessment_option.create")
+  async createAssessmentOption(@Param("id") id: string, @Body() input: CreateAssessmentOptionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.createOption(id, input, request), request);
+  }
+
+  @Patch("assessment-options/:id")
+  @RequirePermission("lms.assessment_option.update")
+  async updateAssessmentOption(@Param("id") id: string, @Body() input: UpdateAssessmentOptionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.updateOption(id, input, request), request);
+  }
+
+  @Delete("assessment-options/:id")
+  @RequirePermission("lms.assessment_option.archive")
+  async archiveAssessmentOption(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.archiveOption(id, request), request);
   }
 
   @Post("assessments/:id/attempts")

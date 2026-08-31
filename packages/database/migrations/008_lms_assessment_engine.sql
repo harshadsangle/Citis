@@ -140,6 +140,9 @@ WITH permission_seed(module, resource, action, description) AS (
     ('lms', 'assessment_question', 'CREATE', 'Create LMS assessment questions'),
     ('lms', 'assessment_question', 'UPDATE', 'Update LMS assessment questions'),
     ('lms', 'assessment_question', 'ARCHIVE', 'Archive LMS assessment questions'),
+    ('lms', 'assessment_option', 'CREATE', 'Create LMS assessment options'),
+    ('lms', 'assessment_option', 'UPDATE', 'Update LMS assessment options'),
+    ('lms', 'assessment_option', 'ARCHIVE', 'Archive LMS assessment options'),
     ('lms', 'assessment_attempt', 'VIEW', 'View LMS assessment attempts'),
     ('lms', 'assessment_attempt', 'CREATE', 'Start LMS assessment attempts'),
     ('lms', 'assessment_attempt', 'UPDATE', 'Submit LMS assessment attempts')
@@ -162,6 +165,7 @@ WHERE r.tenant_id = '00000000-0000-0000-0000-000000000001'
         'lms.assessment.publish', 'lms.assessment.archive',
         'lms.assessment_question.view', 'lms.assessment_question.create',
         'lms.assessment_question.update', 'lms.assessment_question.archive',
+        'lms.assessment_option.create', 'lms.assessment_option.update', 'lms.assessment_option.archive',
         'lms.assessment_attempt.view'
       )
     )
