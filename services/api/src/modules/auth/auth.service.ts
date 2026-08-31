@@ -3,6 +3,7 @@ import { Injectable, UnauthorizedException } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
 import { DatabaseService } from "../../database/database.service";
 import type { AuthenticatedUser } from "../../common/request-context";
+import type { AccessScope } from "../../common/access-scope";
 import type { LoginDto, OtpRequestDto, OtpVerifyDto } from "./auth.dto";
 
 const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
@@ -20,6 +21,7 @@ function toPrincipal(row: {
   last_name: string;
   roles: Array<{ code: string; name: string }> | null;
   permissions: string[] | null;
+  scopes: AccessScope[] | null;
 }): AuthenticatedUser {
   return {
     id: row.id,
@@ -29,6 +31,7 @@ function toPrincipal(row: {
     lastName: row.last_name,
     roles: row.roles ?? [],
     permissions: row.permissions ?? [],
+    scopes: row.scopes ?? [],
   };
 }
 
@@ -92,6 +95,7 @@ export class AuthService {
       last_name: string;
       roles: Array<{ code: string; name: string }> | null;
       permissions: string[] | null;
+      scopes: AccessScope[] | null;
     }>(
       `SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name,
         COALESCE((
@@ -106,7 +110,19 @@ export class AuthService {
           JOIN role_permissions rp ON rp.role_id = r.id
           JOIN permissions p ON p.id = rp.permission_id
           WHERE ur.user_id = u.id AND ur.tenant_id = u.tenant_id AND r.status = 'ACTIVE'
-        ), '[]'::json) AS permissions
+         ), '[]'::json) AS permissions,
+         COALESCE((
+           SELECT jsonb_agg(DISTINCT jsonb_build_object(
+             'institutionId', ur.institution_id,
+             'campusId', ur.campus_id
+           ))
+           FROM user_roles ur
+           JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+           WHERE ur.user_id = u.id
+             AND ur.tenant_id = u.tenant_id
+             AND ur.institution_id IS NOT NULL
+             AND r.status = 'ACTIVE'
+         ), '[]'::jsonb) AS scopes
        FROM auth_sessions s
        JOIN users u ON u.id = s.user_id
        JOIN tenants t ON t.id = u.tenant_id

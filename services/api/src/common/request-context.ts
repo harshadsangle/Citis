@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
+import type { AccessScope } from "./access-scope";
 
 export interface AuthenticatedUser {
   id: string;
@@ -9,6 +10,7 @@ export interface AuthenticatedUser {
   lastName: string;
   roles: Array<{ code: string; name: string }>;
   permissions: string[];
+  scopes: AccessScope[];
 }
 
 export interface RequestContext {
