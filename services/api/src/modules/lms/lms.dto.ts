@@ -1,4 +1,5 @@
-import { IsBoolean, IsDateString, IsIn, IsInt, IsNumber, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, Min } from "class-validator";
+import { Type } from "class-transformer";
+import { IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, Min, ValidateNested } from "class-validator";
 
 export const LMS_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 export const LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"] as const;
@@ -377,4 +378,159 @@ export class GradeAssignmentSubmissionDto {
   @IsString()
   @Max(10000)
   feedback?: string;
+}
+
+export const LMS_ASSESSMENT_TYPES = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"] as const;
+export const LMS_QUESTION_TYPES = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"] as const;
+
+export class CreateAssessmentDto {
+  @IsUUID()
+  courseId!: string;
+
+  @IsUUID()
+  moduleId!: string;
+
+  @IsString()
+  @Length(2, 180)
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  @Max(4000)
+  description?: string;
+
+  @IsIn(LMS_ASSESSMENT_TYPES)
+  assessmentType!: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  totalMarks?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  passingMarks?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1440)
+  durationMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  attemptLimit?: number;
+}
+
+export class UpdateAssessmentDto {
+  @IsOptional()
+  @IsString()
+  @Length(2, 180)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  @Max(4000)
+  description?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  totalMarks?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  passingMarks?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1440)
+  durationMinutes?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  attemptLimit?: number;
+}
+
+export class CreateAssessmentOptionDto {
+  @IsString()
+  @Length(1, 300)
+  value!: string;
+
+  @IsString()
+  @Length(1, 300)
+  label!: string;
+
+  @IsBoolean()
+  isCorrect!: boolean;
+}
+
+export class CreateAssessmentQuestionDto {
+  @IsString()
+  @Length(2, 2000)
+  prompt!: string;
+
+  @IsIn(LMS_QUESTION_TYPES)
+  questionType!: string;
+
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  @Max(100000)
+  marks!: number;
+
+  @IsInt()
+  @Min(1)
+  sequence!: number;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateAssessmentOptionDto)
+  options!: CreateAssessmentOptionDto[];
+}
+
+export class UpdateAssessmentQuestionDto {
+  @IsOptional()
+  @IsString()
+  @Length(2, 2000)
+  prompt?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  @Max(100000)
+  marks?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  sequence?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateAssessmentOptionDto)
+  options?: CreateAssessmentOptionDto[];
+}
+
+export class AssessmentAnswerDto {
+  @IsUUID()
+  questionId!: string;
+
+  @IsDefined()
+  @IsObject()
+  answer!: Record<string, unknown>;
+}
+
+export class SubmitAssessmentAttemptDto {
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AssessmentAnswerDto)
+  answers!: AssessmentAnswerDto[];
 }

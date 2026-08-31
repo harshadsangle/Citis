@@ -12,7 +12,8 @@ import {
   CandidateListQueryDto,
   AssignInstructorDto,
   AssignmentListQueryDto,
-  CompleteAssessmentDto,
+  CreateAssessmentDto,
+  CreateAssessmentQuestionDto,
   CreateCourseDto,
   CreateCourseModuleDto,
   CreateLearningResourceDto,
@@ -24,6 +25,9 @@ import {
   ProgressViewerQueryDto,
   RelationshipListQueryDto,
   SubmitAssignmentDto,
+  SubmitAssessmentAttemptDto,
+  UpdateAssessmentDto,
+  UpdateAssessmentQuestionDto,
   UpdateAssignmentDto,
   UpdateCourseDto,
   UpdateCourseModuleDto,
@@ -32,12 +36,13 @@ import {
   UpdateProgrammeDto,
 } from "./lms.dto";
 import { LmsService } from "./lms.service";
+import { AssessmentService } from "./assessment.service";
 import type { LmsUpload } from "./resource-storage.service";
 
 @Controller()
 @UseGuards(AuthGuard, PermissionGuard)
 export class LmsController {
-  constructor(private readonly lms: LmsService) {}
+  constructor(private readonly lms: LmsService, private readonly assessments: AssessmentService) {}
 
   @Get("programmes")
   @RequirePermission("lms.programme.view")
@@ -235,6 +240,86 @@ export class LmsController {
     return successResponse(await this.lms.gradeAssignmentSubmission(id, submissionId, input, request), request);
   }
 
+  @Get("assessments")
+  @RequirePermission("lms.assessment.view")
+  async assessmentsList(@Req() request: ContextRequest, @Query() query: AssignmentListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.assessments.listAssessments(request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Post("assessments")
+  @RequirePermission("lms.assessment.create")
+  async createAssessment(@Body() input: CreateAssessmentDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.createAssessment(input, request), request);
+  }
+
+  @Get("assessments/:id")
+  @RequirePermission("lms.assessment.view")
+  async assessment(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.getAssessment(id, request.context.user!), request);
+  }
+
+  @Patch("assessments/:id")
+  @RequirePermission("lms.assessment.update")
+  async updateAssessment(@Param("id") id: string, @Body() input: UpdateAssessmentDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.updateAssessment(id, input, request), request);
+  }
+
+  @Post("assessments/:id/publish")
+  @RequirePermission("lms.assessment.publish")
+  async publishAssessment(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.changeAssessmentStatus(id, "PUBLISHED", request), request);
+  }
+
+  @Post("assessments/:id/archive")
+  @RequirePermission("lms.assessment.archive")
+  async archiveAssessment(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.changeAssessmentStatus(id, "ARCHIVED", request), request);
+  }
+
+  @Get("assessments/:id/questions")
+  @RequirePermission("lms.assessment_question.view")
+  async assessmentQuestions(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.listQuestions(id, request.context.user!), request);
+  }
+
+  @Post("assessments/:id/questions")
+  @RequirePermission("lms.assessment_question.create")
+  async createAssessmentQuestion(@Param("id") id: string, @Body() input: CreateAssessmentQuestionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.createQuestion(id, input, request), request);
+  }
+
+  @Patch("assessment-questions/:id")
+  @RequirePermission("lms.assessment_question.update")
+  async updateAssessmentQuestion(@Param("id") id: string, @Body() input: UpdateAssessmentQuestionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.updateQuestion(id, input, request), request);
+  }
+
+  @Post("assessment-questions/:id/archive")
+  @RequirePermission("lms.assessment_question.archive")
+  async archiveAssessmentQuestion(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.archiveQuestion(id, request), request);
+  }
+
+  @Post("assessments/:id/attempts")
+  @RequirePermission("lms.assessment_attempt.create")
+  async startAssessmentAttempt(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.startAttempt(id, request), request);
+  }
+
+  @Get("assessment-attempts/:id")
+  @RequirePermission("lms.assessment_attempt.view")
+  async assessmentAttempt(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.getAttempt(id, request.context.user!), request);
+  }
+
+  @Post("assessment-attempts/:id/submit")
+  @RequirePermission("lms.assessment_attempt.update")
+  async submitAssessmentAttempt(@Param("id") id: string, @Body() input: SubmitAssessmentAttemptDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.submitAttempt(id, input, request), request);
+  }
+
   @Get("progress")
   @RequirePermission("lms.course_progress.view")
   async learnerProgress(@Req() request: ContextRequest) {
@@ -251,12 +336,6 @@ export class LmsController {
   @RequirePermission("lms.lesson_progress.create")
   async completeLesson(@Param("lessonId") lessonId: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.completeLesson(lessonId, request), request);
-  }
-
-  @Post("progress/assessment-completions")
-  @RequirePermission("lms.assessment_completion.create")
-  async completeAssessment(@Body() input: CompleteAssessmentDto, @Req() request: ContextRequest) {
-    return successResponse(await this.lms.completeAssessment(input, request), request);
   }
 
   @Get("course-modules")
