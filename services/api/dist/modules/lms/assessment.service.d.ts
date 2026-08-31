@@ -2,11 +2,13 @@ import type { AuthenticatedUser, ContextRequest } from "../../common/request-con
 import { AuditService } from "../../common/audit.service";
 import { DatabaseService } from "../../database/database.service";
 import type { AssessmentAttemptListQueryDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, GradeAssessmentAttemptDto, SaveAssessmentDraftDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto } from "./lms.dto";
+import { CertificateService } from "./certificate.service";
 type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export declare class AssessmentService {
     private readonly db;
     private readonly audit;
-    constructor(db: DatabaseService, audit: AuditService);
+    private readonly certificates?;
+    constructor(db: DatabaseService, audit: AuditService, certificates?: CertificateService | undefined);
     private courseFor;
     private moduleFor;
     private hasStaffAccess;

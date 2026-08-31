@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LmsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -16,6 +19,7 @@ const access_scope_1 = require("../../common/access-scope");
 const pagination_1 = require("../../common/pagination");
 const database_service_1 = require("../../database/database.service");
 const resource_storage_service_1 = require("./resource-storage.service");
+const certificate_service_1 = require("./certificate.service");
 const RESOURCE_TYPES_WITH_URL = ["VIDEO", "LINK", "SCORM", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL = ["PDF", "DOCUMENT", "PRESENTATION"];
 function progressState(completed, total) {
@@ -32,10 +36,12 @@ let LmsService = class LmsService {
     db;
     audit;
     storage;
-    constructor(db, audit, storage) {
+    certificates;
+    constructor(db, audit, storage, certificates) {
         this.db = db;
         this.audit = audit;
         this.storage = storage;
+        this.certificates = certificates;
     }
     statusFilter(status) {
         if (!status)
@@ -971,6 +977,7 @@ let LmsService = class LmsService {
         const row = completed.rows[0];
         if (before?.status !== "COMPLETED")
             await this.auditMutation(request, "lesson_progress", "COMPLETE", row, before);
+        await this.certificates?.issueIfEligible(user.tenantId, String(lesson.course_id), user.id, request);
         return row;
     }
     async assignmentCourse(courseId, user) {
@@ -1047,7 +1054,11 @@ let LmsService = class LmsService {
     async assertAssignmentViewer(assignment, user) {
         if (await this.hasAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id), assignment.campus_id))
             return;
-        if (assignment.status !== "PUBLISHED" || assignment.course_status !== "PUBLISHED" || assignment.module_status !== "PUBLISHED") {
+        if (assignment.status !== "PUBLISHED"
+            || assignment.course_status !== "PUBLISHED"
+            || assignment.module_status !== "PUBLISHED"
+            || assignment.programme_status === "ARCHIVED"
+            || assignment.institution_status !== "ACTIVE") {
             throw new common_1.NotFoundException("Assignment not found.");
         }
         await this.activeEnrollment(String(assignment.course_id), user.id, user);
@@ -1059,8 +1070,10 @@ let LmsService = class LmsService {
         if (query.courseId) {
             const course = await this.assignmentCourse(query.courseId, user);
             const staff = await this.hasAssignmentStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id);
-            if (!staff)
+            if (!staff) {
                 await this.activeEnrollment(String(course.id), user.id, user);
+                clauses.push("a.status = 'PUBLISHED'", "c.status = 'PUBLISHED'", "cm.status = 'PUBLISHED'", "p.status = 'PUBLISHED'", "i.status = 'ACTIVE'");
+            }
             values.push(query.courseId);
             clauses.push(`a.course_id = $${values.length}`);
             if (!staff)
@@ -1219,7 +1232,11 @@ let LmsService = class LmsService {
         if (submissionText.length > 20000)
             throw new common_1.BadRequestException("Submission text cannot exceed 20,000 characters.");
         const assignment = await this.assignmentFor(id, user);
-        if (assignment.status !== "PUBLISHED" || assignment.course_status !== "PUBLISHED" || assignment.module_status !== "PUBLISHED") {
+        if (assignment.status !== "PUBLISHED"
+            || assignment.course_status !== "PUBLISHED"
+            || assignment.module_status !== "PUBLISHED"
+            || assignment.programme_status === "ARCHIVED"
+            || assignment.institution_status !== "ACTIVE") {
             throw new common_1.BadRequestException("Only published assignments in published courses can be submitted.");
         }
         await this.activeEnrollment(String(assignment.course_id), user.id, user);
@@ -1292,6 +1309,7 @@ let LmsService = class LmsService {
                 input.grade,
             ]);
             await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
+            await this.certificates?.issueIfEligible(user.tenantId, String(assignment.course_id), String(before.learner_id), request);
             return row;
         });
     }
@@ -1312,8 +1330,10 @@ let LmsService = class LmsService {
 exports.LmsService = LmsService;
 exports.LmsService = LmsService = __decorate([
     (0, common_1.Injectable)(),
+    __param(3, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [database_service_1.DatabaseService,
         audit_service_1.AuditService,
-        resource_storage_service_1.ResourceStorageService])
+        resource_storage_service_1.ResourceStorageService,
+        certificate_service_1.CertificateService])
 ], LmsService);
 //# sourceMappingURL=lms.service.js.map

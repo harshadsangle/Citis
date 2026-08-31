@@ -296,7 +296,7 @@ export class CertificateService {
         [tenantId, eligibleEnrollment.enrollment_id],
       );
       return existing.rows[0] ? { ...existing.rows[0], issued_now: false } : null;
-    });
+    }) as (Record<string, unknown> & { issued_now: boolean }) | null;
 
     if (issued && request && issued.issued_now) {
       await this.audit.record({

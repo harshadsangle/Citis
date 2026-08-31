@@ -12,13 +12,15 @@ const lms_controller_1 = require("./lms.controller");
 const lms_service_1 = require("./lms.service");
 const resource_storage_service_1 = require("./resource-storage.service");
 const assessment_service_1 = require("./assessment.service");
+const certificate_controller_1 = require("./certificate.controller");
+const certificate_service_1 = require("./certificate.service");
 let LmsModule = class LmsModule {
 };
 exports.LmsModule = LmsModule;
 exports.LmsModule = LmsModule = __decorate([
     (0, common_1.Module)({
-        controllers: [lms_controller_1.LmsController],
-        providers: [lms_service_1.LmsService, resource_storage_service_1.ResourceStorageService, assessment_service_1.AssessmentService],
+        controllers: [lms_controller_1.LmsController, certificate_controller_1.CertificateController, certificate_controller_1.PublicCertificateController],
+        providers: [lms_service_1.LmsService, resource_storage_service_1.ResourceStorageService, assessment_service_1.AssessmentService, certificate_service_1.CertificateService],
     })
 ], LmsModule);
 //# sourceMappingURL=lms.module.js.map

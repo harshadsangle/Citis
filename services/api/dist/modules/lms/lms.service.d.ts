@@ -2,6 +2,7 @@ import { AuditService } from "../../common/audit.service";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, type LmsUpload } from "./resource-storage.service";
+import { CertificateService } from "./certificate.service";
 import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, RelationshipListQueryDto, SubmitAssignmentDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
@@ -10,7 +11,8 @@ export declare class LmsService {
     private readonly db;
     private readonly audit;
     private readonly storage;
-    constructor(db: DatabaseService, audit: AuditService, storage: ResourceStorageService);
+    private readonly certificates?;
+    constructor(db: DatabaseService, audit: AuditService, storage: ResourceStorageService, certificates?: CertificateService | undefined);
     private statusFilter;
     private run;
     private institutionFor;

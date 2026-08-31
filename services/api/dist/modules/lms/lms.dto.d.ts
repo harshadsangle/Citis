@@ -84,6 +84,10 @@ export declare class AssignInstructorDto {
 export declare class ProgressViewerQueryDto {
     learnerId?: string;
 }
+export declare class CertificateListQueryDto {
+    courseId?: string;
+    learnerId?: string;
+}
 export declare const ASSIGNMENT_STATUSES: readonly ["DRAFT", "PUBLISHED", "ARCHIVED"];
 export declare class AssignmentListQueryDto {
     courseId?: string;

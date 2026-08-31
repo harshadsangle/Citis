@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AssessmentService = void 0;
 const common_1 = require("@nestjs/common");
@@ -15,6 +18,7 @@ const access_scope_1 = require("../../common/access-scope");
 const audit_service_1 = require("../../common/audit.service");
 const database_service_1 = require("../../database/database.service");
 const pagination_1 = require("../../common/pagination");
+const certificate_service_1 = require("./certificate.service");
 const assessmentTypes = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"];
 const questionTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"];
 const manuallyGradedAssessmentTypes = ["PROJECT", "VIVA", "PRACTICAL"];
@@ -32,9 +36,11 @@ function sameValues(left, right) {
 let AssessmentService = class AssessmentService {
     db;
     audit;
-    constructor(db, audit) {
+    certificates;
+    constructor(db, audit, certificates) {
         this.db = db;
         this.audit = audit;
+        this.certificates = certificates;
     }
     async courseFor(courseId, user) {
         const result = await this.db.query(`SELECT c.id, c.id AS course_id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
@@ -911,6 +917,7 @@ let AssessmentService = class AssessmentService {
         if ("expired" in outcome && outcome.expired) {
             throw new common_1.ConflictException("This assessment attempt expired before it was submitted.");
         }
+        await this.certificates?.issueIfEligible(user.tenantId, String(attempt.course_id), user.id, request);
         return outcome;
     }
     async gradeAttempt(id, input, request) {
@@ -944,7 +951,7 @@ let AssessmentService = class AssessmentService {
             : Number(attempt.total_marks_snapshot);
         const passingMarks = attempt.passing_marks_snapshot ?? attempt.passing_marks;
         const passed = passingMarks === null ? null : score >= Number(passingMarks);
-        return this.run(async () => this.db.transaction(async (client) => {
+        const outcome = await this.run(async () => this.db.transaction(async (client) => {
             const locked = await client.query("SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [id, user.tenantId]);
             if (locked.rows[0]?.status !== "SUBMITTED" || locked.rows[0]?.grading_status !== "PENDING") {
                 throw new common_1.ConflictException("This assessment attempt is no longer awaiting grading.");
@@ -977,12 +984,16 @@ let AssessmentService = class AssessmentService {
             await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
             return { ...updated.rows[0], results };
         }));
+        await this.certificates?.issueIfEligible(user.tenantId, String(attempt.course_id), String(attempt.learner_id), request);
+        return outcome;
     }
 };
 exports.AssessmentService = AssessmentService;
 exports.AssessmentService = AssessmentService = __decorate([
     (0, common_1.Injectable)(),
+    __param(2, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [database_service_1.DatabaseService,
-        audit_service_1.AuditService])
+        audit_service_1.AuditService,
+        certificate_service_1.CertificateService])
 ], AssessmentService);
 //# sourceMappingURL=assessment.service.js.map
