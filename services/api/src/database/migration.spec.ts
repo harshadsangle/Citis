@@ -13,6 +13,7 @@ const assessmentMigration = readFileSync(resolve(process.cwd(), "../../packages/
 const operationsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/009_lms_assessment_operations.sql"), "utf8");
 const gradingPermissionMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/010_lms_assessment_grading_permission.sql"), "utf8");
 const attemptStabilityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/011_lms_assessment_attempt_stability.sql"), "utf8");
+const instructorDashboardMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/012_lms_instructor_dashboard_access.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -124,4 +125,11 @@ test("assessment attempt stability migration snapshots content, enforces expiry,
   assert.match(attemptStabilityMigration, /CREATE TABLE IF NOT EXISTS lms_assessment_attempt_drafts/);
   assert.match(attemptStabilityMigration, /status IN \('IN_PROGRESS', 'SUBMITTED', 'EXPIRED'\)/);
   assert.match(attemptStabilityMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("instructor dashboard migration grants read-only course and roster access", () => {
+  assert.match(instructorDashboardMigration, /r\.code = 'TEACHER'/);
+  assert.match(instructorDashboardMigration, /lms\.course\.view/);
+  assert.match(instructorDashboardMigration, /lms\.enrollment\.view/);
+  assert.match(instructorDashboardMigration, /012_lms_instructor_dashboard_access/);
 });

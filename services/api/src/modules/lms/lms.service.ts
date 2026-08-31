@@ -731,7 +731,7 @@ export class LmsService {
     if (!result.rows[0]) throw new ForbiddenException("You are not authorized for this institution.");
   }
 
-  private async relationshipCourse(courseId: string, user: AuthenticatedUser) {
+  private async relationshipCourse(courseId: string, user: AuthenticatedUser, allowAssignedTeacher = false) {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
               p.status AS programme_status, i.status AS institution_status
@@ -743,7 +743,11 @@ export class LmsService {
     );
     const course = result.rows[0];
     if (!course) throw new NotFoundException("Course not found in the current tenant.");
-     await this.assertInstitutionAccess(user, String(course.institution_id), course.campus_id as string | null);
+     if (allowAssignedTeacher && await this.hasAssignmentStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id as string | null)) {
+       // Assigned teachers may read the roster for their own course.
+     } else {
+       await this.assertInstitutionAccess(user, String(course.institution_id), course.campus_id as string | null);
+     }
     if (course.status !== "PUBLISHED") throw new BadRequestException("Enrollments and instructor assignments require a published course.");
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution or programme is not active.");
@@ -788,7 +792,7 @@ export class LmsService {
     query: CandidateListQueryDto,
     roleCode: "STUDENT" | "TEACHER",
   ) {
-    const course = await this.relationshipCourse(courseId, user);
+    const course = await this.relationshipCourse(courseId, user, kind === "enrollment");
     const relationshipTable = roleCode === "STUDENT" ? "lms_enrollments" : "lms_instructor_assignments";
     const relationshipColumn = roleCode === "STUDENT" ? "learner_id" : "instructor_id";
     const search = query.search?.trim() || "";
@@ -871,7 +875,7 @@ export class LmsService {
          FROM ${table} x JOIN users ${personAlias} ON ${personAlias}.id = x.${personColumn} AND ${personAlias}.tenant_id = x.tenant_id
           WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4
             AND x.campus_id IS NOT DISTINCT FROM $5
-         ORDER BY x.${dateColumn} DESC, x.id DESC LIMIT $5 OFFSET $6`,
+           ORDER BY x.${dateColumn} DESC, x.id DESC LIMIT $6 OFFSET $7`,
         [...values, pageSize, offset],
       ),
       this.db.query<{ count: string }>(
