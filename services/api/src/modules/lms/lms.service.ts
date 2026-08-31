@@ -199,6 +199,23 @@ export class LmsService {
     const filter = this.statusFilter(query.status);
     const values: unknown[] = [user.tenantId];
     const clauses = ["c.tenant_id = $1"];
+    const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
+    const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
+      && !user.roles.some((role) => administratorRoles.includes(role.code))
+      && !isPlatformUser(user);
+    if (instructorOnly) {
+      values.push(user.id);
+      clauses.push(`EXISTS (
+        SELECT 1
+        FROM lms_instructor_assignments ia
+        WHERE ia.tenant_id = c.tenant_id
+          AND ia.institution_id = c.institution_id
+          AND ia.course_id = c.id
+          AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
+          AND ia.instructor_id = $${values.length}
+          AND ia.status = 'ACTIVE'
+      )`);
+    }
     if (programmeId) {
       values.push(programmeId);
       clauses.push(`c.programme_id = $${values.length}`);
