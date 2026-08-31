@@ -475,7 +475,7 @@ export class AssessmentService {
   }
 
   private async draftRows(executor: Queryable, attemptId: string, tenantId: string) {
-    const result = await executor.query<Record<string, unknown>>(
+    const result = await executor.query(
       `SELECT question_id, answer_json
        FROM lms_assessment_attempt_drafts
        WHERE tenant_id = $1 AND attempt_id = $2

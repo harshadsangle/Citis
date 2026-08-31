@@ -191,6 +191,9 @@ let LmsController = class LmsController {
     async submitAssessmentAttempt(id, input, request) {
         return (0, response_1.successResponse)(await this.assessments.submitAttempt(id, input, request), request);
     }
+    async saveAssessmentDraft(id, input, request) {
+        return (0, response_1.successResponse)(await this.assessments.saveDraft(id, input, request), request);
+    }
     async gradeAssessmentAttempt(id, input, request) {
         return (0, response_1.successResponse)(await this.assessments.gradeAttempt(id, input, request), request);
     }
@@ -738,6 +741,16 @@ __decorate([
     __metadata("design:paramtypes", [String, lms_dto_1.SubmitAssessmentAttemptDto, Object]),
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "submitAssessmentAttempt", null);
+__decorate([
+    (0, common_1.Patch)("assessment-attempts/:id/draft"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.update"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.SaveAssessmentDraftDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "saveAssessmentDraft", null);
 __decorate([
     (0, common_1.Patch)("assessment-attempts/:id/grade"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.update"),

@@ -123,6 +123,14 @@ let AssessmentService = class AssessmentService {
             throw new common_1.ForbiddenException("An active course enrollment is required.");
         return false;
     }
+    async assertActiveEnrollmentForAttempt(attempt, user) {
+        const enrollment = await this.db.query(`SELECT 1 FROM lms_enrollments
+       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
+         AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+       LIMIT 1`, [user.tenantId, attempt.institution_id, attempt.course_id, user.id, attempt.campus_id ?? null]);
+        if (!enrollment.rows[0])
+            throw new common_1.ForbiddenException("An active course enrollment is required.");
+    }
     async auditMutation(request, resource, action, row, before) {
         await this.audit.record({
             tenantId: request.context.user.tenantId,
@@ -161,6 +169,20 @@ let AssessmentService = class AssessmentService {
             throw new common_1.BadRequestException("Passing marks cannot exceed total marks.");
         }
     }
+    async validateAssessmentMarks(id, totalMarks, passingMarks, tenantId) {
+        const result = await this.db.query(`SELECT COALESCE(SUM(marks), 0)::numeric AS total, count(*)::text AS count
+       FROM lms_assessment_questions
+       WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'ACTIVE'`, [tenantId, id]);
+        if (Number(result.rows[0]?.count ?? 0) === 0)
+            return;
+        const questionTotal = Number(result.rows[0]?.total ?? 0);
+        if (totalMarks !== null && totalMarks !== undefined && Math.round(Number(totalMarks) * 100) !== Math.round(questionTotal * 100)) {
+            throw new common_1.BadRequestException("Total marks must equal the sum of active question marks.");
+        }
+        if (passingMarks !== null && passingMarks !== undefined && Number(passingMarks) > questionTotal) {
+            throw new common_1.BadRequestException("Passing marks cannot exceed the sum of active question marks.");
+        }
+    }
     async listAssessments(user, page, pageSize, offset, query) {
         let courseIds;
         if (query.courseId) {
@@ -187,6 +209,22 @@ let AssessmentService = class AssessmentService {
             values.push(courseIds);
             clauses.push(`a.course_id = ANY($${values.length}::uuid[])`);
             clauses.push("a.status = 'PUBLISHED'");
+        }
+        clauses.push("a.assessment_type <> 'ASSIGNMENT'");
+        const isPlatform = (0, access_scope_1.isPlatformUser)(user);
+        const isTeacher = user.roles.some((role) => role.code === "TEACHER");
+        const isAdministrator = user.roles.some((role) => ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].includes(role.code));
+        if (!courseIds && !isPlatform && isTeacher && !isAdministrator) {
+            values.push(user.id);
+            clauses.push(`EXISTS (
+        SELECT 1 FROM lms_instructor_assignments ia
+        WHERE ia.tenant_id = a.tenant_id
+          AND ia.institution_id = a.institution_id
+          AND ia.course_id = a.course_id
+          AND ia.campus_id IS NOT DISTINCT FROM a.campus_id
+          AND ia.instructor_id = $${values.length}
+          AND ia.status = 'ACTIVE'
+      )`);
         }
         const result = await this.db.query(`SELECT a.id, a.tenant_id, a.institution_id, a.campus_id, a.course_id, a.module_id, a.title,
               a.description, a.assessment_type, a.total_marks, a.passing_marks, a.duration_minutes,
@@ -235,6 +273,7 @@ let AssessmentService = class AssessmentService {
         if (before.status === "ARCHIVED")
             throw new common_1.ConflictException("Archived assessments cannot be edited.");
         this.validateAssessmentInput(input, before.total_marks);
+        await this.validateAssessmentMarks(id, input.totalMarks ?? before.total_marks, input.passingMarks ?? before.passing_marks, user.tenantId);
         return this.run(async () => {
             const result = await this.db.query(`UPDATE lms_assessments
          SET title = COALESCE($3, title), description = COALESCE($4, description),
@@ -260,6 +299,7 @@ let AssessmentService = class AssessmentService {
             const questionCount = await this.db.query("SELECT count(*)::text AS count FROM lms_assessment_questions WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'ACTIVE'", [user.tenantId, id]);
             if (Number(questionCount.rows[0]?.count ?? 0) === 0)
                 throw new common_1.BadRequestException("Add at least one active question before publishing an assessment.");
+            await this.validateAssessmentMarks(id, before.total_marks, before.passing_marks, user.tenantId);
         }
         return this.run(async () => {
             const result = await this.db.query(`UPDATE lms_assessments SET status = $3, updated_at = now()
@@ -338,6 +378,39 @@ let AssessmentService = class AssessmentService {
         }
         return [...questions.values()];
     }
+    snapshotQuestions(attempt, includeCorrect) {
+        const raw = attempt.question_snapshot;
+        const snapshot = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (!Array.isArray(snapshot) || snapshot.length === 0)
+            return null;
+        return snapshot.map((question) => {
+            const options = Array.isArray(question.options)
+                ? question.options.map((option) => {
+                    const result = { ...option };
+                    if (!includeCorrect)
+                        delete result.is_correct;
+                    return result;
+                })
+                : [];
+            return { ...question, options };
+        });
+    }
+    async questionsForAttempt(executor, attempt, user, includeCorrect) {
+        return this.snapshotQuestions(attempt, includeCorrect)
+            ?? this.questionRows(executor, String(attempt.assessment_id), user, includeCorrect);
+    }
+    publicAttempt(attempt) {
+        const result = { ...attempt };
+        delete result.question_snapshot;
+        return result;
+    }
+    async draftRows(executor, attemptId, tenantId) {
+        const result = await executor.query(`SELECT question_id, answer_json
+       FROM lms_assessment_attempt_drafts
+       WHERE tenant_id = $1 AND attempt_id = $2
+       ORDER BY question_id`, [tenantId, attemptId]);
+        return result.rows;
+    }
     async listQuestions(assessmentId, user) {
         const assessment = await this.assessmentFor(assessmentId, user);
         const staff = await this.assertLearnerAccess(assessment, user);
@@ -348,6 +421,8 @@ let AssessmentService = class AssessmentService {
         const user = request.context.user;
         const assessment = await this.assessmentFor(assessmentId, user);
         await this.assertStaff(assessment, user);
+        if (assessment.status === "PUBLISHED")
+            throw new common_1.ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
         this.validateOptions(input.questionType, input.options);
         return this.run(async () => this.db.transaction(async (client) => {
             const questionResult = await client.query(`INSERT INTO lms_assessment_questions
@@ -370,6 +445,8 @@ let AssessmentService = class AssessmentService {
         const before = await this.questionFor(id, user);
         const assessment = await this.assessmentFor(String(before.assessment_id), user);
         await this.assertStaff(assessment, user);
+        if (assessment.status === "PUBLISHED")
+            throw new common_1.ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
         const attempts = await this.db.query("SELECT 1 FROM lms_assessment_attempts WHERE assessment_id = $1 AND status = 'SUBMITTED' LIMIT 1", [assessment.id]);
         if (attempts.rows[0])
             throw new common_1.ConflictException("Questions cannot be edited after an attempt has been submitted.");
@@ -397,6 +474,8 @@ let AssessmentService = class AssessmentService {
         const before = await this.questionFor(id, user);
         const assessment = await this.assessmentFor(String(before.assessment_id), user);
         await this.assertStaff(assessment, user);
+        if (assessment.status === "PUBLISHED")
+            throw new common_1.ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
         const result = await this.db.query(`UPDATE lms_assessment_questions SET status = 'ARCHIVED', updated_at = now()
        WHERE id = $1 AND tenant_id = $2 RETURNING *`, [id, user.tenantId]);
         const row = result.rows[0];
@@ -426,6 +505,8 @@ let AssessmentService = class AssessmentService {
         const question = await this.questionFor(questionId, user);
         const assessment = await this.assessmentFor(String(question.assessment_id), user);
         await this.assertStaff(assessment, user);
+        if (assessment.status === "PUBLISHED")
+            throw new common_1.ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
         const options = await this.allOptions(questionId, user);
         this.validateOptions(String(question.question_type), [...options, input]);
         const result = await this.run(() => this.db.query(`INSERT INTO lms_assessment_options
@@ -442,6 +523,8 @@ let AssessmentService = class AssessmentService {
         const question = await this.questionFor(String(before.question_id), user);
         const assessment = await this.assessmentFor(String(question.assessment_id), user);
         await this.assertStaff(assessment, user);
+        if (assessment.status === "PUBLISHED")
+            throw new common_1.ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
         const existing = await this.allOptions(String(before.question_id), user);
         const options = existing.map((option) => String(option.value) === String(before.option_value)
             ? { value: input.value?.trim() ?? option.value, label: input.label?.trim() ?? option.label, isCorrect: input.isCorrect ?? option.isCorrect }
@@ -460,6 +543,8 @@ let AssessmentService = class AssessmentService {
         const question = await this.questionFor(String(before.question_id), user);
         const assessment = await this.assessmentFor(String(question.assessment_id), user);
         await this.assertStaff(assessment, user);
+        if (assessment.status === "PUBLISHED")
+            throw new common_1.ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
         const options = await this.allOptions(String(before.question_id), user);
         const remaining = options.filter((option) => option.value !== String(before.option_value));
         this.validateOptions(String(question.question_type), remaining);
@@ -502,8 +587,53 @@ let AssessmentService = class AssessmentService {
          WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND status = 'IN_PROGRESS'
          ORDER BY started_at DESC LIMIT 1`, [user.tenantId, assessment.id, user.id]);
             if (existing.rows[0]) {
-                const questions = await this.questionRows(client, String(assessment.id), user, false);
-                return { ...existing.rows[0], assessment: { id: assessment.id, title: assessment.title, assessment_type: assessment.assessment_type, duration_minutes: assessment.duration_minutes, attempt_limit: assessment.attempt_limit }, questions };
+                let attempt = existing.rows[0];
+                if (attempt.expires_at && new Date(String(attempt.expires_at)).getTime() <= Date.now()) {
+                    const expired = await client.query(`UPDATE lms_assessment_attempts
+             SET status = 'EXPIRED', updated_at = now()
+             WHERE id = $1 AND tenant_id = $2 AND status = 'IN_PROGRESS'
+             RETURNING *`, [attempt.id, user.tenantId]);
+                    if (expired.rows[0]) {
+                        await this.auditMutation(request, "assessment_attempt", "EXPIRE", expired.rows[0], attempt);
+                        attempt = expired.rows[0];
+                    }
+                }
+                else {
+                    let snapshot = this.snapshotQuestions(attempt, true);
+                    if (!snapshot) {
+                        snapshot = await this.questionRows(client, String(assessment.id), user, true);
+                        const updated = await client.query(`UPDATE lms_assessment_attempts
+               SET question_snapshot = $3::jsonb,
+                   total_marks_snapshot = $4,
+                   passing_marks_snapshot = $5,
+                   duration_minutes_snapshot = $6,
+                   expires_at = CASE WHEN $6::int IS NULL THEN NULL ELSE started_at + ($6::text || ' minutes')::interval END,
+                   updated_at = now()
+               WHERE id = $1 AND tenant_id = $2
+               RETURNING *`, [
+                            attempt.id,
+                            user.tenantId,
+                            JSON.stringify(snapshot),
+                            snapshot.reduce((sum, question) => sum + Number(question.marks), 0),
+                            assessment.passing_marks ?? null,
+                            assessment.duration_minutes ?? null,
+                        ]);
+                        attempt = updated.rows[0] ?? attempt;
+                    }
+                    const drafts = await this.draftRows(client, String(attempt.id), user.tenantId);
+                    return {
+                        ...this.publicAttempt(attempt),
+                        assessment: {
+                            id: assessment.id,
+                            title: assessment.title,
+                            assessment_type: assessment.assessment_type,
+                            duration_minutes: attempt.duration_minutes_snapshot ?? assessment.duration_minutes,
+                            attempt_limit: assessment.attempt_limit,
+                        },
+                        questions: this.snapshotQuestions(attempt, false) ?? [],
+                        draft_answers: drafts,
+                    };
+                }
             }
             const count = await client.query(`SELECT count(*)::text AS count FROM lms_assessment_attempts
          WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3`, [user.tenantId, assessment.id, user.id]);
@@ -512,13 +642,39 @@ let AssessmentService = class AssessmentService {
                 throw new common_1.BadRequestException("The assessment attempt limit has been reached.");
             }
             const inserted = await client.query(`INSERT INTO lms_assessment_attempts
-           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_number)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         RETURNING *`, [user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id, assessment.module_id, assessment.id, user.id, attemptNumber]);
+           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_number,
+            question_snapshot, total_marks_snapshot, passing_marks_snapshot, duration_minutes_snapshot, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11, $12,
+                 CASE WHEN $12::int IS NULL THEN NULL ELSE now() + ($12::text || ' minutes')::interval END)
+         RETURNING *`, [
+                user.tenantId,
+                assessment.institution_id,
+                assessment.campus_id ?? null,
+                assessment.course_id,
+                assessment.module_id,
+                assessment.id,
+                user.id,
+                attemptNumber,
+                JSON.stringify(await this.questionRows(client, String(assessment.id), user, true)),
+                assessment.total_marks ?? null,
+                assessment.passing_marks ?? null,
+                assessment.duration_minutes ?? null,
+            ]);
             const attempt = inserted.rows[0];
-            const questions = await this.questionRows(client, String(assessment.id), user, false);
+            const questions = this.snapshotQuestions(attempt, false) ?? [];
             await this.auditMutation(request, "assessment_attempt", "START", attempt);
-            return { ...attempt, assessment: { id: assessment.id, title: assessment.title, assessment_type: assessment.assessment_type, duration_minutes: assessment.duration_minutes, attempt_limit: assessment.attempt_limit }, questions };
+            return {
+                ...this.publicAttempt(attempt),
+                assessment: {
+                    id: assessment.id,
+                    title: assessment.title,
+                    assessment_type: assessment.assessment_type,
+                    duration_minutes: attempt.duration_minutes_snapshot ?? assessment.duration_minutes,
+                    attempt_limit: assessment.attempt_limit,
+                },
+                questions,
+                draft_answers: [],
+            };
         }));
     }
     async getAttempt(id, user) {
@@ -526,10 +682,59 @@ let AssessmentService = class AssessmentService {
         const staff = await this.hasStaffAccess(user, String(attempt.institution_id), String(attempt.course_id), attempt.campus_id);
         if (!staff && attempt.learner_id !== user.id)
             throw new common_1.NotFoundException("Assessment attempt not found.");
-        const questions = await this.questionRows(this.db, String(attempt.assessment_id), user, staff);
+        const questions = await this.questionsForAttempt(this.db, attempt, user, staff);
         const answers = await this.db.query(`SELECT question_id, answer_json, is_correct, awarded_marks
        FROM lms_assessment_answers WHERE tenant_id = $1 AND attempt_id = $2 ORDER BY question_id`, [user.tenantId, id]);
-        return { ...attempt, questions, answers: answers.rows };
+        const draftAnswers = !staff && attempt.status === "IN_PROGRESS"
+            ? await this.draftRows(this.db, String(attempt.id), user.tenantId)
+            : [];
+        return { ...this.publicAttempt(attempt), questions, answers: answers.rows, draft_answers: draftAnswers };
+    }
+    async saveDraft(id, input, request) {
+        const user = request.context.user;
+        const attempt = await this.attemptFor(id, user);
+        if (attempt.learner_id !== user.id)
+            throw new common_1.ForbiddenException("Only the learner who started an attempt can save it.");
+        if (attempt.assessment_type === "ASSIGNMENT")
+            throw new common_1.BadRequestException("Assignments use the assignment submission flow.");
+        if (attempt.status !== "IN_PROGRESS")
+            throw new common_1.ConflictException("Only an in-progress attempt can save answers.");
+        await this.assertActiveEnrollmentForAttempt(attempt, user);
+        if (attempt.expires_at && new Date(String(attempt.expires_at)).getTime() <= Date.now()) {
+            throw new common_1.ConflictException("This assessment attempt has expired.");
+        }
+        const questions = await this.questionsForAttempt(this.db, attempt, user, false);
+        const questionIds = new Set(questions.map((question) => String(question.id)));
+        if (new Set(input.answers.map((answer) => answer.questionId)).size !== input.answers.length ||
+            input.answers.some((answer) => !questionIds.has(answer.questionId))) {
+            throw new common_1.BadRequestException("Draft answers must reference active questions exactly once.");
+        }
+        return this.run(async () => this.db.transaction(async (client) => {
+            const locked = await client.query("SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [id, user.tenantId]);
+            if (locked.rows[0]?.status !== "IN_PROGRESS")
+                throw new common_1.ConflictException("Only an in-progress attempt can save answers.");
+            if (locked.rows[0]?.expires_at && new Date(String(locked.rows[0].expires_at)).getTime() <= Date.now()) {
+                await client.query("UPDATE lms_assessment_attempts SET status = 'EXPIRED', updated_at = now() WHERE id = $1 AND tenant_id = $2", [id, user.tenantId]);
+                throw new common_1.ConflictException("This assessment attempt has expired.");
+            }
+            await client.query("DELETE FROM lms_assessment_attempt_drafts WHERE tenant_id = $1 AND attempt_id = $2", [user.tenantId, id]);
+            for (const answer of input.answers) {
+                await client.query(`INSERT INTO lms_assessment_attempt_drafts
+             (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, attempt_id, question_id, answer_json)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)`, [
+                    user.tenantId,
+                    attempt.institution_id,
+                    attempt.campus_id ?? null,
+                    attempt.course_id,
+                    attempt.module_id,
+                    attempt.assessment_id,
+                    id,
+                    answer.questionId,
+                    JSON.stringify(answer.answer),
+                ]);
+            }
+            return { attemptId: id, saved: input.answers.length };
+        }));
     }
     async listAttempts(assessmentId, user, page, pageSize, offset, query) {
         const assessment = await this.assessmentFor(assessmentId, user);
@@ -563,10 +768,6 @@ let AssessmentService = class AssessmentService {
        JOIN lms_assessments a ON a.id = at.assessment_id AND a.tenant_id = at.tenant_id
        JOIN courses c ON c.id = at.course_id AND c.tenant_id = at.tenant_id
        JOIN course_modules cm ON cm.id = at.module_id AND cm.course_id = at.course_id AND cm.tenant_id = at.tenant_id
-       JOIN lms_enrollments e
-         ON e.tenant_id = at.tenant_id AND e.institution_id = at.institution_id
-        AND e.course_id = at.course_id AND e.learner_id = at.learner_id
-        AND e.campus_id IS NOT DISTINCT FROM at.campus_id AND e.status = 'ACTIVE'
        WHERE at.tenant_id = $1 AND at.learner_id = $2 AND at.status = 'SUBMITTED'
        ORDER BY at.submitted_at DESC, at.id ASC`, [user.tenantId, user.id]);
         const visible = (0, access_scope_1.filterScopedRows)(user, result.rows);
@@ -610,7 +811,8 @@ let AssessmentService = class AssessmentService {
         if (attempt.assessment_status !== "PUBLISHED" || attempt.course_status !== "PUBLISHED" || attempt.module_status !== "PUBLISHED") {
             throw new common_1.BadRequestException("Only published assessments in published courses can be submitted.");
         }
-        const questions = await this.questionRows(this.db, String(attempt.assessment_id), user, true);
+        await this.assertActiveEnrollmentForAttempt(attempt, user);
+        const questions = await this.questionsForAttempt(this.db, attempt, user, true);
         const questionMap = new Map(questions.map((question) => [String(question.id), question]));
         if (input.answers.length !== questionMap.size || new Set(input.answers.map((answer) => answer.questionId)).size !== input.answers.length) {
             throw new common_1.BadRequestException("Submit exactly one answer for every active assessment question.");
@@ -627,17 +829,29 @@ let AssessmentService = class AssessmentService {
             };
         });
         const score = results.reduce((sum, result) => sum + result.awardedMarks, 0);
-        const maxScore = questions.reduce((sum, question) => sum + Number(question.marks), 0);
-        const passed = requiresManualGrading || attempt.passing_marks === null ? null : score >= Number(attempt.passing_marks);
-        return this.run(async () => this.db.transaction(async (client) => {
+        const maxScore = attempt.total_marks_snapshot === null || attempt.total_marks_snapshot === undefined
+            ? questions.reduce((sum, question) => sum + Number(question.marks), 0)
+            : Number(attempt.total_marks_snapshot);
+        const passingMarks = attempt.passing_marks_snapshot ?? attempt.passing_marks;
+        const passed = requiresManualGrading || passingMarks === null ? null : score >= Number(passingMarks);
+        const outcome = await this.run(async () => this.db.transaction(async (client) => {
             const locked = await client.query("SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [id, user.tenantId]);
             if (locked.rows[0]?.status !== "IN_PROGRESS")
                 throw new common_1.ConflictException("This assessment attempt has already been submitted.");
+            if (locked.rows[0]?.expires_at && new Date(String(locked.rows[0].expires_at)).getTime() <= Date.now()) {
+                const expired = await client.query(`UPDATE lms_assessment_attempts
+           SET status = 'EXPIRED', updated_at = now()
+           WHERE id = $1 AND tenant_id = $2 AND status = 'IN_PROGRESS'
+           RETURNING *`, [id, user.tenantId]);
+                await this.auditMutation(request, "assessment_attempt", "EXPIRE", expired.rows[0], attempt);
+                return { expired: true, attempt: expired.rows[0] };
+            }
             for (const result of results) {
                 await client.query(`INSERT INTO lms_assessment_answers
              (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, attempt_id, question_id, answer_json, is_correct, awarded_marks)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10, $11)`, [user.tenantId, attempt.institution_id, attempt.campus_id ?? null, attempt.course_id, attempt.module_id, attempt.assessment_id, id, result.questionId, JSON.stringify(result.answer), result.correct, result.awardedMarks]);
             }
+            await client.query("DELETE FROM lms_assessment_attempt_drafts WHERE tenant_id = $1 AND attempt_id = $2", [user.tenantId, id]);
             const updated = await client.query(`UPDATE lms_assessment_attempts
           SET status = 'SUBMITTED', score = $3, max_score = $4, passed = $5,
               grading_status = $6, submitted_at = now(), updated_at = now()
@@ -654,6 +868,10 @@ let AssessmentService = class AssessmentService {
             }
             return { ...updated.rows[0], results };
         }));
+        if ("expired" in outcome && outcome.expired) {
+            throw new common_1.ConflictException("This assessment attempt expired before it was submitted.");
+        }
+        return outcome;
     }
     async gradeAttempt(id, input, request) {
         const user = request.context.user;
@@ -667,7 +885,7 @@ let AssessmentService = class AssessmentService {
         if (attempt.status !== "SUBMITTED" || attempt.grading_status !== "PENDING") {
             throw new common_1.ConflictException("This assessment attempt is no longer awaiting grading.");
         }
-        const questions = await this.questionRows(this.db, String(attempt.assessment_id), user, false);
+        const questions = await this.questionsForAttempt(this.db, attempt, user, false);
         const questionMap = new Map(questions.map((question) => [String(question.id), question]));
         if (input.grades.length !== questionMap.size || new Set(input.grades.map((grade) => grade.questionId)).size !== input.grades.length) {
             throw new common_1.BadRequestException("Grade exactly one mark for every active assessment question.");
@@ -681,8 +899,11 @@ let AssessmentService = class AssessmentService {
             }
         }
         const score = input.grades.reduce((sum, grade) => sum + grade.awardedMarks, 0);
-        const maxScore = questions.reduce((sum, question) => sum + Number(question.marks), 0);
-        const passed = attempt.passing_marks === null ? null : score >= Number(attempt.passing_marks);
+        const maxScore = attempt.total_marks_snapshot === null || attempt.total_marks_snapshot === undefined
+            ? questions.reduce((sum, question) => sum + Number(question.marks), 0)
+            : Number(attempt.total_marks_snapshot);
+        const passingMarks = attempt.passing_marks_snapshot ?? attempt.passing_marks;
+        const passed = passingMarks === null ? null : score >= Number(passingMarks);
         return this.run(async () => this.db.transaction(async (client) => {
             const locked = await client.query("SELECT * FROM lms_assessment_attempts WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [id, user.tenantId]);
             if (locked.rows[0]?.status !== "SUBMITTED" || locked.rows[0]?.grading_status !== "PENDING") {

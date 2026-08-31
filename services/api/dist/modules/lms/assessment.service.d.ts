@@ -1,7 +1,7 @@
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { AuditService } from "../../common/audit.service";
 import { DatabaseService } from "../../database/database.service";
-import type { AssessmentAttemptListQueryDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, GradeAssessmentAttemptDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto } from "./lms.dto";
+import type { AssessmentAttemptListQueryDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, GradeAssessmentAttemptDto, SaveAssessmentDraftDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto } from "./lms.dto";
 type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export declare class AssessmentService {
     private readonly db;
@@ -13,9 +13,11 @@ export declare class AssessmentService {
     private assertStaff;
     private assessmentFor;
     private assertLearnerAccess;
+    private assertActiveEnrollmentForAttempt;
     private auditMutation;
     private run;
     private validateAssessmentInput;
+    private validateAssessmentMarks;
     listAssessments(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssignmentListQueryDto): Promise<{
         data: Record<string, unknown>[];
         meta: {
@@ -32,6 +34,10 @@ export declare class AssessmentService {
     private validateOptions;
     private questionFor;
     private questionRows;
+    private snapshotQuestions;
+    private questionsForAttempt;
+    private publicAttempt;
+    private draftRows;
     listQuestions(assessmentId: string, user: AuthenticatedUser): Promise<Record<string, unknown>[]>;
     createQuestion(assessmentId: string, input: CreateAssessmentQuestionDto, request: ContextRequest): Promise<{
         options: CreateAssessmentOptionDto[];
@@ -55,10 +61,16 @@ export declare class AssessmentService {
             attempt_limit: unknown;
         };
         questions: Record<string, unknown>[];
+        draft_answers: Record<string, unknown>[];
     }>;
     getAttempt(id: string, user: AuthenticatedUser): Promise<{
         questions: Record<string, unknown>[];
         answers: Record<string, unknown>[];
+        draft_answers: Record<string, unknown>[];
+    }>;
+    saveDraft(id: string, input: SaveAssessmentDraftDto, request: ContextRequest): Promise<{
+        attemptId: string;
+        saved: number;
     }>;
     listAttempts(assessmentId: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssessmentAttemptListQueryDto): Promise<{
         data: Record<string, unknown>[];
@@ -91,6 +103,8 @@ export declare class AssessmentService {
             awardedMarks: number;
             questionId: string;
         })[];
+        expired?: undefined;
+        attempt?: undefined;
     }>;
     gradeAttempt(id: string, input: GradeAssessmentAttemptDto, request: ContextRequest): Promise<{
         results: Record<string, unknown>[];

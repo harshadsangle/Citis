@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
-import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, AssessmentAttemptListQueryDto, EnrollLearnerDto, GradeAssessmentAttemptDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, AssessmentAttemptListQueryDto, EnrollLearnerDto, SaveAssessmentDraftDto, GradeAssessmentAttemptDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 import { LmsService } from "./lms.service";
 import { AssessmentService } from "./assessment.service";
 import type { LmsUpload } from "./resource-storage.service";
@@ -64,11 +64,13 @@ export declare class LmsController {
             attempt_limit: unknown;
         };
         questions: Record<string, unknown>[];
+        draft_answers: Record<string, unknown>[];
     }>>;
     assessmentAttempts(id: string, request: ContextRequest, query: AssessmentAttemptListQueryDto): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     assessmentAttempt(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         questions: Record<string, unknown>[];
         answers: Record<string, unknown>[];
+        draft_answers: Record<string, unknown>[];
     }>>;
     submitAssessmentAttempt(id: string, input: SubmitAssessmentAttemptDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         results: ({
@@ -82,6 +84,12 @@ export declare class LmsController {
             awardedMarks: number;
             questionId: string;
         })[];
+        expired?: undefined;
+        attempt?: undefined;
+    }>>;
+    saveAssessmentDraft(id: string, input: SaveAssessmentDraftDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        attemptId: string;
+        saved: number;
     }>>;
     gradeAssessmentAttempt(id: string, input: GradeAssessmentAttemptDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         results: Record<string, unknown>[];

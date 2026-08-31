@@ -181,7 +181,7 @@ const request = {
         query: async (text) => {
             if (text.startsWith("SELECT at.*"))
                 return { rows: [{ id: "attempt-3", tenant_id: staff.tenantId, institution_id: "institution-1", campus_id: "campus-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-3", learner_id: "learner-1", status: "SUBMITTED", grading_status: currentStatus, assessment_type: "PRACTICAL", assessment_status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", passing_marks: "3", course_institution_id: "institution-1", course_campus_id: "campus-1" }] };
-            if (text.startsWith("SELECT 1 FROM user_roles"))
+            if (text.includes("FROM user_roles"))
                 return { rows: [{ ok: 1 }] };
             if (text.startsWith("SELECT q.id"))
                 return { rows: [{ id: "q-3", tenant_id: staff.tenantId, institution_id: "institution-1", campus_id: "campus-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-3", prompt: "Demonstrate the skill", question_type: "SHORT_TEXT", marks: "5", sequence: 1, status: "ACTIVE", option_id: "o-3", option_value: "demo", option_label: "Demonstration", option_sequence: 1, is_correct: true }] };

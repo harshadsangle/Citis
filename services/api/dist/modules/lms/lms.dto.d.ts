@@ -168,6 +168,9 @@ export declare class AssessmentAnswerDto {
 export declare class SubmitAssessmentAttemptDto {
     answers: AssessmentAnswerDto[];
 }
+export declare class SaveAssessmentDraftDto {
+    answers: AssessmentAnswerDto[];
+}
 export declare class GradeAssessmentAttemptDto {
     grades: GradeAssessmentQuestionDto[];
     feedback?: string;
