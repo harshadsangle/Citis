@@ -28,11 +28,11 @@ let CampusesController = class CampusesController {
     }
     async list(institutionId, request) {
         const pagination = (0, pagination_1.paginationFrom)(request);
-        const result = await this.campuses.list(institutionId, request.context.user.tenantId, pagination.page, pagination.pageSize, pagination.offset);
+        const result = await this.campuses.list(institutionId, request.context.user, pagination.page, pagination.pageSize, pagination.offset);
         return (0, response_1.paginatedResponse)(result.data, result.meta, request);
     }
     async get(id, request) {
-        return (0, response_1.successResponse)(await this.campuses.get(id, request.context.user.tenantId), request);
+        return (0, response_1.successResponse)(await this.campuses.get(id, request.context.user), request);
     }
     async create(input, request) {
         return (0, response_1.successResponse)(await this.campuses.create(input, request), request);

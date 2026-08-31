@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.LmsService = void 0;
 const common_1 = require("@nestjs/common");
 const audit_service_1 = require("../../common/audit.service");
+const access_scope_1 = require("../../common/access-scope");
 const pagination_1 = require("../../common/pagination");
 const database_service_1 = require("../../database/database.service");
 const resource_storage_service_1 = require("./resource-storage.service");
@@ -59,7 +60,18 @@ let LmsService = class LmsService {
         const result = await this.db.query("SELECT id, tenant_id FROM institutions WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'", [institutionId, user.tenantId]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("Institution not found in the current tenant.");
+        (0, access_scope_1.assertScope)(user, institutionId);
         return result.rows[0];
+    }
+    async campusFor(user, institutionId, campusId) {
+        if (!campusId)
+            return null;
+        const result = await this.db.query(`SELECT id FROM campuses
+       WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND status <> 'ARCHIVED'`, [campusId, user.tenantId, institutionId]);
+        if (!result.rows[0])
+            throw new common_1.NotFoundException("Campus not found in the current institution.");
+        (0, access_scope_1.assertScope)(user, institutionId, campusId);
+        return campusId;
     }
     async auditMutation(request, resource, action, row, before) {
         await this.audit.record({
@@ -106,7 +118,8 @@ let LmsService = class LmsService {
          ORDER BY p.created_at DESC LIMIT ${limitParam} OFFSET ${offsetParam}`, values),
             this.db.query(`SELECT count(*)::text AS count FROM programmes p WHERE p.tenant_id = $1${statusParam}`, values.slice(0, filter.values.length ? 2 : 1)),
         ]);
-        return { data: rows.rows, meta: (0, pagination_1.paginationMeta)(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+        const visible = (0, access_scope_1.filterScopedRows)(user, rows.rows);
+        return { data: visible, meta: (0, pagination_1.paginationMeta)(page, pageSize, visible.length) };
     }
     async getProgramme(id, user) {
         const result = await this.db.query(`SELECT p.id, p.tenant_id, p.institution_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
@@ -115,15 +128,17 @@ let LmsService = class LmsService {
        WHERE p.id = $1 AND p.tenant_id = $2`, [id, user.tenantId]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("Programme not found.");
+        (0, access_scope_1.assertScopeForRead)(user, String(result.rows[0].institution_id), result.rows[0].campus_id);
         return result.rows[0];
     }
     async createProgramme(input, request) {
         const user = request.context.user;
         await this.institutionFor(user, input.institutionId);
+        const campusId = await this.campusFor(user, input.institutionId, input.campusId);
         return this.run(async () => {
-            const result = await this.db.query(`INSERT INTO programmes (tenant_id, institution_id, name, code, description, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $6)
-         RETURNING id, tenant_id, institution_id, name, code, description, status, created_at, updated_at`, [user.tenantId, input.institutionId, input.name.trim(), input.code.trim().toUpperCase(), input.description?.trim() || null, user.id]);
+            const result = await this.db.query(`INSERT INTO programmes (tenant_id, institution_id, campus_id, name, code, description, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+         RETURNING id, tenant_id, institution_id, campus_id, name, code, description, status, created_at, updated_at`, [user.tenantId, input.institutionId, campusId, input.name.trim(), input.code.trim().toUpperCase(), input.description?.trim() || null, user.id]);
             const row = result.rows[0];
             await this.auditMutation(request, "programme", "CREATE", row);
             return row;
@@ -157,14 +172,15 @@ let LmsService = class LmsService {
         const pageParam = values.length + 1;
         values.push(pageSize, offset);
         const [rows, total] = await Promise.all([
-            this.db.query(`SELECT c.id, c.tenant_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
+            this.db.query(`SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
                 c.created_at, c.updated_at
          FROM courses c JOIN programmes p ON p.id = c.programme_id
          WHERE ${clauses.join(" AND ")}
          ORDER BY c.created_at DESC LIMIT $${pageParam} OFFSET $${pageParam + 1}`, values),
             this.db.query(`SELECT count(*)::text AS count FROM courses c WHERE ${clauses.join(" AND ")}`, values.slice(0, -2)),
         ]);
-        return { data: rows.rows, meta: (0, pagination_1.paginationMeta)(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+        const visible = (0, access_scope_1.filterScopedRows)(user, rows.rows);
+        return { data: visible, meta: (0, pagination_1.paginationMeta)(page, pageSize, visible.length) };
     }
     async getCourse(id, user) {
         const result = await this.db.query(`SELECT c.id, c.tenant_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
@@ -173,17 +189,23 @@ let LmsService = class LmsService {
        WHERE c.id = $1 AND c.tenant_id = $2`, [id, user.tenantId]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("Course not found.");
+        (0, access_scope_1.assertScopeForRead)(user, String(result.rows[0].institution_id), result.rows[0].campus_id);
         return result.rows[0];
     }
     async createCourse(input, request) {
         const user = request.context.user;
-        const parent = await this.db.query("SELECT id FROM programmes WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'", [input.programmeId, user.tenantId]);
+        const parent = await this.db.query("SELECT id, institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'", [input.programmeId, user.tenantId]);
         if (!parent.rows[0])
             throw new common_1.NotFoundException("Programme not found in the current tenant.");
+        (0, access_scope_1.assertScope)(user, parent.rows[0].institution_id, parent.rows[0].campus_id);
+        if (parent.rows[0].campus_id && input.campusId && parent.rows[0].campus_id !== input.campusId) {
+            throw new common_1.BadRequestException("A course campus must match its programme campus.");
+        }
+        const campusId = await this.campusFor(user, parent.rows[0].institution_id, input.campusId ?? parent.rows[0].campus_id);
         return this.run(async () => {
-            const result = await this.db.query(`INSERT INTO courses (tenant_id, programme_id, title, code, description, thumbnail, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
-         RETURNING id, tenant_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`, [user.tenantId, input.programmeId, input.title.trim(), input.code.trim().toUpperCase(), input.description?.trim() || null, input.thumbnail?.trim() || null, user.id]);
+            const result = await this.db.query(`INSERT INTO courses (tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+         RETURNING id, tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`, [user.tenantId, parent.rows[0].institution_id, campusId, input.programmeId, input.title.trim(), input.code.trim().toUpperCase(), input.description?.trim() || null, input.thumbnail?.trim() || null, user.id]);
             const row = result.rows[0];
             await this.auditMutation(request, "course", "CREATE", row);
             return row;
@@ -227,13 +249,25 @@ let LmsService = class LmsService {
         const pageParam = values.length + 1;
         values.push(pageSize, offset);
         const selection = table === "course_modules"
-            ? "x.id, x.tenant_id, x.course_id, x.title, x.description, x.sequence, x.status, x.created_at, x.updated_at"
+            ? "x.id, x.tenant_id, p.institution_id, c.campus_id, x.course_id, x.title, x.description, x.sequence, x.status, x.created_at, x.updated_at"
             : table === "lessons"
-                ? "x.id, x.tenant_id, x.module_id, x.title, x.description, x.sequence, x.estimated_duration, x.status, x.created_at, x.updated_at"
-                : "x.id, x.tenant_id, x.lesson_id, x.resource_type, x.title, x.url, x.file_path, x.duration, x.sequence, x.status, x.created_at, x.updated_at, m.id AS managed_file_id, m.original_filename AS managed_file_name, m.byte_size AS managed_file_size, m.mime_type AS managed_file_mime_type";
+                ? "x.id, x.tenant_id, p.institution_id, c.campus_id, x.module_id, x.title, x.description, x.sequence, x.estimated_duration, x.status, x.created_at, x.updated_at"
+                : "x.id, x.tenant_id, p.institution_id, c.campus_id, x.lesson_id, x.resource_type, x.title, x.url, x.file_path, x.duration, x.sequence, x.status, x.created_at, x.updated_at, m.id AS managed_file_id, m.original_filename AS managed_file_name, m.byte_size AS managed_file_size, m.mime_type AS managed_file_mime_type";
         const fromClause = table === "learning_resources"
-            ? `${table} x LEFT JOIN managed_files m ON m.resource_id = x.id AND m.tenant_id = x.tenant_id`
-            : `${table} x`;
+            ? `${table} x
+         JOIN lessons l ON l.id = x.lesson_id AND l.tenant_id = x.tenant_id
+         JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = x.tenant_id
+         JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
+         JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+         LEFT JOIN managed_files m ON m.resource_id = x.id AND m.tenant_id = x.tenant_id`
+            : table === "lessons"
+                ? `${table} x
+           JOIN course_modules cm ON cm.id = x.module_id AND cm.tenant_id = x.tenant_id
+           JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
+           JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id`
+                : `${table} x
+           JOIN courses c ON c.id = x.course_id AND c.tenant_id = x.tenant_id
+           JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id`;
         const [rows, total] = await Promise.all([
             this.db.query(`SELECT ${selection} FROM ${fromClause}
          WHERE ${clauses.join(" AND ")}
@@ -242,13 +276,16 @@ let LmsService = class LmsService {
         ]);
         void parentTable;
         void resource;
-        return { data: rows.rows, meta: (0, pagination_1.paginationMeta)(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+        const visible = (0, access_scope_1.filterScopedRows)(user, rows.rows);
+        return { data: visible, meta: (0, pagination_1.paginationMeta)(page, pageSize, visible.length) };
     }
     async getChild(id, table, user) {
+        const scope = await this.contentScope(id, table, user);
+        (0, access_scope_1.assertScopeForRead)(user, scope.institution_id, scope.campus_id);
         const result = await this.db.query(`SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`, [id, user.tenantId]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("LMS content not found.");
-        return result.rows[0];
+        return { ...result.rows[0], institution_id: scope.institution_id, campus_id: scope.campus_id };
     }
     async createCourseModule(input, request) {
         const user = request.context.user;
@@ -459,9 +496,41 @@ let LmsService = class LmsService {
         return { content, mimeType: (0, resource_storage_service_1.mimeTypeForFilename)(assetPath) };
     }
     async assertParent(table, id, user) {
+        const scope = await this.contentScope(id, table, user);
         const result = await this.db.query(`SELECT id FROM ${table} WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'`, [id, user.tenantId]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("Parent LMS content not found in the current tenant.");
+        (0, access_scope_1.assertScope)(user, scope.institution_id, scope.campus_id);
+    }
+    async contentScope(id, table, user) {
+        const query = table === "programmes"
+            ? "SELECT institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2"
+            : table === "courses"
+                ? "SELECT institution_id, campus_id FROM courses WHERE id = $1 AND tenant_id = $2"
+                : table === "course_modules"
+                    ? `SELECT p.institution_id, c.campus_id
+             FROM course_modules x
+             JOIN courses c ON c.id = x.course_id AND c.tenant_id = x.tenant_id
+             JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+             WHERE x.id = $1 AND x.tenant_id = $2`
+                    : table === "lessons"
+                        ? `SELECT p.institution_id, c.campus_id
+               FROM lessons x
+               JOIN course_modules cm ON cm.id = x.module_id AND cm.tenant_id = x.tenant_id
+               JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
+               JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+               WHERE x.id = $1 AND x.tenant_id = $2`
+                        : `SELECT p.institution_id, c.campus_id
+               FROM learning_resources x
+               JOIN lessons l ON l.id = x.lesson_id AND l.tenant_id = x.tenant_id
+               JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = x.tenant_id
+               JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
+               JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+               WHERE x.id = $1 AND x.tenant_id = $2`;
+        const result = await this.db.query(query, [id, user.tenantId]);
+        if (!result.rows[0])
+            throw new common_1.NotFoundException("LMS content not found.");
+        return result.rows[0];
     }
     async createChild(table, resource, parentId, title, description, sequence, user, request) {
         return this.run(async () => {

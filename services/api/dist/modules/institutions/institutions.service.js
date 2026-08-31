@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InstitutionsService = void 0;
 const common_1 = require("@nestjs/common");
 const audit_service_1 = require("../../common/audit.service");
+const access_scope_1 = require("../../common/access-scope");
 const pagination_1 = require("../../common/pagination");
 const database_service_1 = require("../../database/database.service");
 const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
@@ -23,7 +24,7 @@ let InstitutionsService = class InstitutionsService {
         this.audit = audit;
     }
     targetTenant(user, requested) {
-        const platform = user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT");
+        const platform = (0, access_scope_1.isPlatformUser)(user);
         return platform ? requested ?? null : user.tenantId;
     }
     async list(user, page, pageSize, offset, tenantId) {
@@ -37,17 +38,21 @@ let InstitutionsService = class InstitutionsService {
         FROM institutions i ${where} ORDER BY i.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pageSize, offset]),
             this.db.query(`SELECT count(*)::text AS count FROM institutions i ${where}`, values),
         ]);
-        return { data: rows.rows, meta: (0, pagination_1.paginationMeta)(page, pageSize, Number(total.rows[0]?.count ?? 0)) };
+        const visible = (0, access_scope_1.filterScopedRows)(user, rows.rows);
+        return { data: visible, meta: (0, pagination_1.paginationMeta)(page, pageSize, visible.length) };
     }
     async get(id, user) {
         const result = await this.db.query(`SELECT id, tenant_id, name, slug, institution_type, logo_url, email, phone, website, status, created_at, updated_at
        FROM institutions WHERE id = $1 AND ($2::uuid IS NULL OR tenant_id = $2)`, [id, this.targetTenant(user)]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("Institution not found.");
+        (0, access_scope_1.assertScopeForRead)(user, id);
         return result.rows[0];
     }
     async create(input, request) {
         const user = request.context.user;
+        if (!(0, access_scope_1.isPlatformUser)(user))
+            throw new common_1.NotFoundException("Institution creation is not available in the current scope.");
         const tenantId = this.targetTenant(user, input.tenantId) ?? input.tenantId;
         if (!tenantId)
             throw new common_1.NotFoundException("A tenant scope is required.");
@@ -73,6 +78,7 @@ let InstitutionsService = class InstitutionsService {
     }
     async update(id, input, request) {
         const before = await this.get(id, request.context.user);
+        (0, access_scope_1.assertScope)(request.context.user, id);
         const result = await this.db.query(`UPDATE institutions
        SET name = COALESCE($2, name), status = COALESCE($3, status), email = COALESCE($4, email),
            phone = COALESCE($5, phone), website = COALESCE($6, website), updated_by = $7, updated_at = now()

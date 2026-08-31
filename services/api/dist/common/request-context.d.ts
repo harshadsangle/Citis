@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import type { AccessScope } from "./access-scope";
 export interface AuthenticatedUser {
     id: string;
     tenantId: string;
@@ -10,6 +11,7 @@ export interface AuthenticatedUser {
         name: string;
     }>;
     permissions: string[];
+    scopes: AccessScope[];
 }
 export interface RequestContext {
     requestId: string;

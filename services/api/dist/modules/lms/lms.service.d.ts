@@ -14,10 +14,11 @@ export declare class LmsService {
     private statusFilter;
     private run;
     private institutionFor;
+    private campusFor;
     private auditMutation;
     private auditAccess;
     listProgrammes(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto): Promise<{
-        data: import("pg").QueryResultRow[];
+        data: Record<string, unknown>[];
         meta: {
             page: number;
             pageSize: number;
@@ -29,7 +30,7 @@ export declare class LmsService {
     createProgramme(input: CreateProgrammeDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     updateProgramme(id: string, input: UpdateProgrammeDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     listCourses(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto, programmeId?: string): Promise<{
-        data: import("pg").QueryResultRow[];
+        data: Record<string, unknown>[];
         meta: {
             page: number;
             pageSize: number;
@@ -41,7 +42,7 @@ export declare class LmsService {
     createCourse(input: CreateCourseDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     updateCourse(id: string, input: UpdateCourseDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     listCourseModules(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto, courseId?: string): Promise<{
-        data: import("pg").QueryResultRow[];
+        data: Record<string, unknown>[];
         meta: {
             page: number;
             pageSize: number;
@@ -50,7 +51,7 @@ export declare class LmsService {
         };
     }>;
     listLessons(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto, moduleId?: string): Promise<{
-        data: import("pg").QueryResultRow[];
+        data: Record<string, unknown>[];
         meta: {
             page: number;
             pageSize: number;
@@ -59,7 +60,7 @@ export declare class LmsService {
         };
     }>;
     listResources(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto, lessonId?: string): Promise<{
-        data: import("pg").QueryResultRow[];
+        data: Record<string, unknown>[];
         meta: {
             page: number;
             pageSize: number;
@@ -68,7 +69,10 @@ export declare class LmsService {
         };
     }>;
     private listChild;
-    getChild(id: string, table: LmsTable, user: AuthenticatedUser): Promise<import("pg").QueryResultRow>;
+    getChild(id: string, table: LmsTable, user: AuthenticatedUser): Promise<{
+        institution_id: string;
+        campus_id: string | null;
+    }>;
     createCourseModule(input: CreateCourseModuleDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     updateCourseModule(id: string, input: UpdateCourseModuleDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     createLesson(input: CreateLessonDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
@@ -92,6 +96,7 @@ export declare class LmsService {
         mimeType: string;
     }>;
     private assertParent;
+    private contentScope;
     private createChild;
     private updateChild;
     private validateResource;

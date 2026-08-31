@@ -8,7 +8,7 @@ export declare class InstitutionsService {
     constructor(db: DatabaseService, audit: AuditService);
     private targetTenant;
     list(user: AuthenticatedUser, page: number, pageSize: number, offset: number, tenantId?: string): Promise<{
-        data: import("pg").QueryResultRow[];
+        data: Record<string, unknown>[];
         meta: {
             page: number;
             pageSize: number;

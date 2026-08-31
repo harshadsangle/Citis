@@ -61,6 +61,7 @@ function toPrincipal(row) {
         lastName: row.last_name,
         roles: row.roles ?? [],
         permissions: row.permissions ?? [],
+        scopes: row.scopes ?? [],
     };
 }
 let AuthService = class AuthService {
@@ -109,7 +110,19 @@ let AuthService = class AuthService {
           JOIN role_permissions rp ON rp.role_id = r.id
           JOIN permissions p ON p.id = rp.permission_id
           WHERE ur.user_id = u.id AND ur.tenant_id = u.tenant_id AND r.status = 'ACTIVE'
-        ), '[]'::json) AS permissions
+         ), '[]'::json) AS permissions,
+         COALESCE((
+           SELECT jsonb_agg(DISTINCT jsonb_build_object(
+             'institutionId', ur.institution_id,
+             'campusId', ur.campus_id
+           ))
+           FROM user_roles ur
+           JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+           WHERE ur.user_id = u.id
+             AND ur.tenant_id = u.tenant_id
+             AND ur.institution_id IS NOT NULL
+             AND r.status = 'ACTIVE'
+         ), '[]'::jsonb) AS scopes
        FROM auth_sessions s
        JOIN users u ON u.id = s.user_id
        JOIN tenants t ON t.id = u.tenant_id

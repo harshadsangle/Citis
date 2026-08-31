@@ -24,6 +24,7 @@ __decorate([
 ], ContentListQueryDto.prototype, "status", void 0);
 class CreateProgrammeDto {
     institutionId;
+    campusId;
     name;
     code;
     description;
@@ -33,6 +34,11 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateProgrammeDto.prototype, "institutionId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateProgrammeDto.prototype, "campusId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.Length)(2, 180),
@@ -69,6 +75,7 @@ __decorate([
 ], UpdateProgrammeDto.prototype, "description", void 0);
 class CreateCourseDto {
     programmeId;
+    campusId;
     title;
     code;
     description;
@@ -79,6 +86,11 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], CreateCourseDto.prototype, "programmeId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateCourseDto.prototype, "campusId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.Length)(2, 180),

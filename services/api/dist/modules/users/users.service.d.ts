@@ -20,4 +20,5 @@ export declare class UsersService {
     create(input: CreateUserDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     update(id: string, input: UpdateUserDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
     assignRole(id: string, input: AssignRoleDto, request: ContextRequest): Promise<import("pg").QueryResultRow>;
+    private userScopePredicate;
 }

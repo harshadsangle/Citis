@@ -5,6 +5,7 @@ export declare class ContentListQueryDto {
 }
 export declare class CreateProgrammeDto {
     institutionId: string;
+    campusId?: string;
     name: string;
     code: string;
     description?: string;
@@ -15,6 +16,7 @@ export declare class UpdateProgrammeDto {
 }
 export declare class CreateCourseDto {
     programmeId: string;
+    campusId?: string;
     title: string;
     code: string;
     description?: string;

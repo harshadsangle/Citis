@@ -46,6 +46,7 @@ exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const bcrypt = __importStar(require("bcryptjs"));
 const audit_service_1 = require("../../common/audit.service");
+const access_scope_1 = require("../../common/access-scope");
 const pagination_1 = require("../../common/pagination");
 const database_service_1 = require("../../database/database.service");
 let UsersService = class UsersService {
@@ -56,14 +57,18 @@ let UsersService = class UsersService {
         this.audit = audit;
     }
     platform(user) {
-        return user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT");
+        return (0, access_scope_1.isPlatformUser)(user);
     }
     async list(user, page, pageSize, offset, tenantId) {
         const scope = this.platform(user) ? tenantId : user.tenantId;
         const values = [];
-        const where = scope ? "WHERE u.tenant_id = $1" : "";
+        const where = scope
+            ? `WHERE u.tenant_id = $1${this.userScopePredicate(user, "u", 2)}`
+            : "";
         if (scope)
             values.push(scope);
+        if (!this.platform(user))
+            values.push(user.id);
         const [rows, total] = await Promise.all([
             this.db.query(`SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at
         FROM users u ${where} ORDER BY u.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pageSize, offset]),
@@ -73,7 +78,7 @@ let UsersService = class UsersService {
     }
     async get(id, user) {
         const result = await this.db.query(`SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at
-       FROM users u WHERE u.id = $1 AND ($2::uuid IS NULL OR u.tenant_id = $2)`, [id, this.platform(user) ? null : user.tenantId]);
+       FROM users u WHERE u.id = $1 AND ($2::uuid IS NULL OR u.tenant_id = $2)${this.userScopePredicate(user, "u", 3)}`, this.platform(user) ? [id, null] : [id, user.tenantId, user.id]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("User not found.");
         return result.rows[0];
@@ -107,9 +112,31 @@ let UsersService = class UsersService {
     async assignRole(id, input, request) {
         const actor = request.context.user;
         const user = await this.get(id, actor);
-        const role = await this.db.query("SELECT id FROM roles WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'", [input.roleId, user.tenant_id]);
+        const role = await this.db.query("SELECT id, code FROM roles WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'", [input.roleId, user.tenant_id]);
         if (!role.rows[0])
             throw new common_1.NotFoundException("Role not found in the user tenant.");
+        const platformRole = role.rows[0].code === "CITIS_SUPER_ADMIN" || role.rows[0].code === "CITIS_PLATFORM_SUPPORT";
+        if (platformRole && (input.institutionId || input.campusId)) {
+            throw new common_1.BadRequestException("Platform roles cannot be assigned to an institution or campus.");
+        }
+        if (!platformRole && !input.institutionId) {
+            throw new common_1.BadRequestException("An institution is required for a scoped role.");
+        }
+        if (input.campusId && !input.institutionId) {
+            throw new common_1.BadRequestException("A campus must be assigned with its institution.");
+        }
+        if (input.institutionId) {
+            const scope = await this.db.query(`SELECT i.id, c.id AS campus_id
+         FROM institutions i
+         LEFT JOIN campuses c ON c.id = $3 AND c.tenant_id = i.tenant_id AND c.institution_id = i.id
+         WHERE i.id = $1 AND i.tenant_id = $2 AND i.status <> 'ARCHIVED'
+           AND ($3::uuid IS NULL OR c.id IS NOT NULL)`, [input.institutionId, user.tenant_id, input.campusId ?? null]);
+            if (!scope.rows[0] || (input.campusId && scope.rows[0].campus_id !== input.campusId)) {
+                throw new common_1.NotFoundException("Institution or campus not found in the user tenant.");
+            }
+            if (!this.platform(actor))
+                (0, access_scope_1.assertScope)(actor, input.institutionId, input.campusId ?? null);
+        }
         const result = await this.db.query(`INSERT INTO user_roles (tenant_id, user_id, role_id, institution_id, campus_id)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id, role_id, institution_id, campus_id) DO NOTHING
@@ -117,6 +144,23 @@ let UsersService = class UsersService {
         const assignment = result.rows[0] ?? { userId: id, roleId: input.roleId, institutionId: input.institutionId ?? null, campusId: input.campusId ?? null };
         await this.audit.record({ tenantId: user.tenant_id, actorUserId: actor.id, requestId: request.context.requestId, module: "identity", resource: "user_role", resourceId: id, action: "CREATE", newValue: assignment, ipAddress: request.context.ipAddress, deviceContext: { userAgent: request.context.userAgent } });
         return assignment;
+    }
+    userScopePredicate(user, alias, actorParameter) {
+        if (this.platform(user))
+            return "";
+        return ` AND EXISTS (
+      SELECT 1
+      FROM user_roles target_scope
+      JOIN user_roles actor_scope
+        ON actor_scope.user_id = $${actorParameter}
+       AND actor_scope.tenant_id = target_scope.tenant_id
+       AND actor_scope.institution_id = target_scope.institution_id
+       AND (actor_scope.campus_id IS NULL OR target_scope.campus_id IS NULL OR actor_scope.campus_id = target_scope.campus_id)
+      JOIN roles target_role ON target_role.id = target_scope.role_id AND target_role.tenant_id = target_scope.tenant_id
+      WHERE target_scope.user_id = ${alias}.id
+        AND target_scope.tenant_id = ${alias}.tenant_id
+        AND target_role.status = 'ACTIVE'
+    )`;
     }
 };
 exports.UsersService = UsersService;

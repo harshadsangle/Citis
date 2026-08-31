@@ -4,7 +4,7 @@ import { InstitutionsService } from "./institutions.service";
 export declare class InstitutionsController {
     private readonly institutions;
     constructor(institutions: InstitutionsService);
-    list(request: ContextRequest, tenantId?: string): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    list(request: ContextRequest, tenantId?: string): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     get(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     create(input: CreateInstitutionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
     update(id: string, input: UpdateInstitutionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow>>;
