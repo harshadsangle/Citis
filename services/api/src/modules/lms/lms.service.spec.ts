@@ -337,6 +337,99 @@ test("a learner submission is graded by scoped staff and completes assignment pr
   assert.equal(audits.some((audit) => audit.resource === "assessment_completion"), true);
 });
 
+test("learner assignment listings include only published content from enrolled courses", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "student-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+  };
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    if (text.startsWith("SELECT course_id")) return { rows: [{ course_id: "course-1" }] };
+    if (text.startsWith("SELECT a.id")) {
+      return {
+        rows: [{
+          id: "assignment-1",
+          tenant_id: learner.tenantId,
+          institution_id: "institution-1",
+          course_id: "course-1",
+          module_id: "module-1",
+          title: "Portfolio",
+          status: "PUBLISHED",
+        }],
+      };
+    }
+    return { rows: [{ count: "1" }] };
+  });
+
+  const result = await service.listAssignments(learner, 1, 20, 0, {});
+
+  assert.equal(result.data.length, 1);
+  assert.ok(queries.some((query) => query.includes("c.status = 'PUBLISHED'")));
+  assert.ok(queries.some((query) => query.includes("cm.status = 'PUBLISHED'")));
+  assert.ok(queries.some((query) => query.includes("JOIN institutions i")));
+});
+
+test("learner assignment submissions reject blank work before touching the database", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "student-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+  };
+  let queryCount = 0;
+  const { service } = serviceWith(async () => {
+    queryCount += 1;
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.submitAssignment("assignment-1", { submissionText: " \n\t " }, { context: { ...request.context, user: learner } } as unknown as ContextRequest),
+    BadRequestException,
+  );
+  assert.equal(queryCount, 0);
+});
+
+test("graded learner assignment submissions cannot be replaced", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "student-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+  };
+  const assignment = {
+    id: "assignment-1",
+    tenant_id: learner.tenantId,
+    institution_id: "institution-1",
+    course_id: "course-1",
+    module_id: "module-1",
+    title: "Portfolio",
+    assessment_type: "ASSIGNMENT",
+    status: "PUBLISHED",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+    programme_status: "PUBLISHED",
+    institution_status: "ACTIVE",
+    total_marks: "100",
+    due_at: null,
+  };
+  let insertAttempted = false;
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
+    if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
+    if (text.startsWith("SELECT * FROM lms_assignment_submissions")) {
+      return { rows: [{ id: "submission-1", status: "GRADED", grade: 90 }] };
+    }
+    if (text.startsWith("INSERT INTO lms_assignment_submissions")) insertAttempted = true;
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.submitAssignment("assignment-1", { submissionText: "New work" }, { context: { ...request.context, user: learner } } as unknown as ContextRequest),
+    ConflictException,
+  );
+  assert.equal(insertAttempted, false);
+});
+
 test("assignment grades cannot exceed the configured maximum", async () => {
   const { service } = serviceWith(async (text) => {
     if (text.startsWith("SELECT a.*")) return { rows: [{ id: "assignment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assessment_type: "ASSIGNMENT", status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", total_marks: "50" }] };

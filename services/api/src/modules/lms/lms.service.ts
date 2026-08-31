@@ -1306,7 +1306,13 @@ export class LmsService {
       if (!enrolled.rows.length) return { data: [], meta: paginationMeta(page, pageSize, 0) };
       values.push(enrolled.rows.map((row) => row.course_id));
       clauses.push(`a.course_id = ANY($${values.length}::uuid[])`);
-      clauses.push("a.status = 'PUBLISHED'");
+      clauses.push(
+        "a.status = 'PUBLISHED'",
+        "c.status = 'PUBLISHED'",
+        "cm.status = 'PUBLISHED'",
+        "p.status = 'PUBLISHED'",
+        "i.status = 'ACTIVE'",
+      );
     }
     if (filter.values.length) {
       values.push(filter.values[0]);
@@ -1321,13 +1327,21 @@ export class LmsService {
          FROM lms_assessments a
          JOIN courses c ON c.id = a.course_id AND c.tenant_id = a.tenant_id
          JOIN course_modules cm ON cm.id = a.module_id AND cm.course_id = a.course_id AND cm.tenant_id = a.tenant_id
+         JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = a.tenant_id
+         JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = a.tenant_id
          WHERE ${clauses.join(" AND ")}
          ORDER BY a.due_at ASC NULLS LAST, a.created_at DESC, a.id ASC
          LIMIT $${pageParam} OFFSET $${pageParam + 1}`,
         [...values, pageSize, offset],
       ),
       this.db.query<{ count: string }>(
-        `SELECT count(*)::text AS count FROM lms_assessments a WHERE ${clauses.join(" AND ")}`,
+         `SELECT count(*)::text AS count
+          FROM lms_assessments a
+          JOIN courses c ON c.id = a.course_id AND c.tenant_id = a.tenant_id
+          JOIN course_modules cm ON cm.id = a.module_id AND cm.course_id = a.course_id AND cm.tenant_id = a.tenant_id
+          JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = a.tenant_id
+          JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = a.tenant_id
+          WHERE ${clauses.join(" AND ")}`,
         values,
       ),
     ]);
@@ -1464,6 +1478,9 @@ export class LmsService {
 
   async submitAssignment(id: string, input: SubmitAssignmentDto, request: ContextRequest) {
     const user = request.context.user!;
+    const submissionText = typeof input.submissionText === "string" ? input.submissionText.trim() : "";
+    if (!submissionText) throw new BadRequestException("Submission text cannot be empty.");
+    if (submissionText.length > 20000) throw new BadRequestException("Submission text cannot exceed 20,000 characters.");
     const assignment = await this.assignmentFor(id, user);
     if (assignment.status !== "PUBLISHED" || assignment.course_status !== "PUBLISHED" || assignment.module_status !== "PUBLISHED") {
       throw new BadRequestException("Only published assignments in published courses can be submitted.");
@@ -1495,7 +1512,7 @@ export class LmsService {
           assignment.module_id,
           assignment.id,
           user.id,
-          input.submissionText.trim(),
+           submissionText,
           input.attachmentUrl?.trim() || null,
           assignment.due_at ?? null,
         ],

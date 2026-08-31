@@ -127,6 +127,8 @@ export default function StudentPortalPage() {
   const [submissionText, setSubmissionText] = useState<Record<string, string>>({});
   const [submittingId, setSubmittingId] = useState("");
   const [submissionNotice, setSubmissionNotice] = useState("");
+  const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
+  const [submissionValidation, setSubmissionValidation] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -258,7 +260,11 @@ export default function StudentPortalPage() {
 
   async function submitAssignment(assignment: Assignment) {
     const text = (submissionText[assignment.id] || "").trim();
-    if (!text) return;
+    if (!text) {
+      setSubmissionValidation("Add your written work before submitting.");
+      return;
+    }
+    setSubmissionValidation("");
     setSubmittingId(assignment.id);
     setError("");
     setSubmissionNotice("");
@@ -433,6 +439,43 @@ export default function StudentPortalPage() {
               {submissionNotice && <span style={{ color: "#0f766e", fontSize: 14, fontWeight: 700 }}>{submissionNotice}</span>}
             </div>
             {assignments.length === 0 && <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>No published assignments are waiting for you.</div>}
+            {activeAssignmentId && assignments.some((assignment) => assignment.id === activeAssignmentId) && (() => {
+              const assignment = assignments.find((item) => item.id === activeAssignmentId)!;
+              const submission = submissions[assignment.id];
+              return (
+                <article style={{ background: "white", border: "1px solid #b9d9d4", borderRadius: 20, boxShadow: "0 12px 30px rgba(18, 48, 74, 0.06)", marginBottom: 16, padding: "24px 26px" }}>
+                  <button onClick={() => { setActiveAssignmentId(null); setSubmissionValidation(""); }} style={{ background: "transparent", border: 0, color: "#0f766e", cursor: "pointer", fontWeight: 700, padding: 0 }} type="button">← Back to assignments</button>
+                  <div style={{ alignItems: "start", display: "flex", gap: 16, justifyContent: "space-between", marginTop: 18 }}>
+                    <div>
+                      <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{assignment.course_title} · {assignment.module_title}</p>
+                      <h3 style={{ fontSize: 27, margin: "7px 0 8px" }}>{assignment.title}</h3>
+                      {assignment.description && <p style={{ color: "#61718a", lineHeight: 1.55, margin: "0 0 12px" }}>{assignment.description}</p>}
+                      <p style={{ color: "#526f8c", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" }}>{assignment.instructions}</p>
+                    </div>
+                    <div style={{ color: "#61718a", fontSize: 13, textAlign: "right", whiteSpace: "nowrap" }}>{assignment.max_marks} marks<br />{dueLabel(assignment.due_at)}</div>
+                  </div>
+                  {submission ? (
+                    <div style={{ background: submission.status === "GRADED" ? "#eefbf7" : "#f5f8fb", borderRadius: 12, marginTop: 22, padding: "16px 18px" }}>
+                      <strong style={{ color: submission.status === "GRADED" ? "#0f766e" : "#12304a" }}>{submission.status === "GRADED" ? `Graded: ${submission.grade}/${assignment.max_marks}` : "Submitted for instructor review"}</strong>
+                      {submission.is_late && <span style={{ color: "#a06b22", marginLeft: 10 }}>Late submission</span>}
+                      <p style={{ color: "#61718a", fontSize: 13, margin: "7px 0 0" }}>Submitted {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(submission.submitted_at))}</p>
+                      <p style={{ color: "#526f8c", lineHeight: 1.55, margin: "14px 0 0", whiteSpace: "pre-wrap" }}>{submission.submission_text}</p>
+                      {submission.feedback && <p style={{ borderTop: "1px solid #d8e2eb", color: "#526f8c", lineHeight: 1.5, margin: "14px 0 0", paddingTop: 12 }}><strong>Instructor feedback:</strong> {submission.feedback}</p>}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 22 }}>
+                      <label htmlFor="assignment-submission" style={{ display: "block", fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Your submission</label>
+                      <textarea id="assignment-submission" aria-describedby="assignment-submission-help" aria-invalid={Boolean(submissionValidation)} maxLength={20000} value={submissionText[assignment.id] || ""} onChange={(event) => { setSubmissionValidation(""); setSubmissionText((current) => ({ ...current, [assignment.id]: event.target.value })); }} placeholder="Write your work here…" style={{ border: `1px solid ${submissionValidation ? "#c86b5e" : "#d8e2eb"}`, borderRadius: 10, color: "#12304a", font: "inherit", minHeight: 170, padding: 12, resize: "vertical", width: "100%" }} />
+                      <div id="assignment-submission-help" style={{ alignItems: "center", color: submissionValidation ? "#ad5b4d" : "#71879a", display: "flex", fontSize: 13, justifyContent: "space-between", marginTop: 7 }}>
+                        <span>{submissionValidation || "Use up to 20,000 characters."}</span>
+                        <span>{(submissionText[assignment.id] || "").length}/20,000</span>
+                      </div>
+                      <button onClick={() => void submitAssignment(assignment)} disabled={submittingId === assignment.id} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, marginTop: 13, padding: "11px 16px" }} type="button">{submittingId === assignment.id ? "Submitting…" : "Submit work"}</button>
+                    </div>
+                  )}
+                </article>
+              );
+            })()}
             {assignments.length > 0 && <div style={{ display: "grid", gap: 16 }}>
               {assignments.map((assignment) => {
                 const submission = submissions[assignment.id];
@@ -442,22 +485,18 @@ export default function StudentPortalPage() {
                       <div>
                         <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{assignment.course_title} · {assignment.module_title}</p>
                         <h3 style={{ fontSize: 21, margin: "7px 0 5px" }}>{assignment.title}</h3>
-                        <p style={{ color: "#61718a", fontSize: 14, lineHeight: 1.55, margin: 0 }}>{assignment.instructions}</p>
+                        <p style={{ color: "#61718a", fontSize: 14, lineHeight: 1.55, margin: 0 }}>{assignment.description || assignment.instructions}</p>
                       </div>
                       <div style={{ color: "#61718a", fontSize: 13, textAlign: "right", whiteSpace: "nowrap" }}>{assignment.max_marks} marks<br />{dueLabel(assignment.due_at)}</div>
                     </div>
-                    {submission ? (
+                    {submission && (
                       <div style={{ background: submission.status === "GRADED" ? "#eefbf7" : "#f5f8fb", borderRadius: 12, color: "#526f8c", marginTop: 18, padding: "13px 15px" }}>
                         <strong style={{ color: submission.status === "GRADED" ? "#0f766e" : "#12304a" }}>{submission.status === "GRADED" ? `Graded: ${submission.grade}/${assignment.max_marks}` : "Submitted for review"}</strong>
                         {submission.is_late && <span style={{ color: "#a06b22", marginLeft: 10 }}>Late submission</span>}
                         {submission.feedback && <p style={{ lineHeight: 1.5, margin: "7px 0 0" }}>{submission.feedback}</p>}
                       </div>
-                    ) : (
-                      <div style={{ marginTop: 18 }}>
-                        <textarea aria-label={`Submission for ${assignment.title}`} value={submissionText[assignment.id] || ""} onChange={(event) => setSubmissionText((current) => ({ ...current, [assignment.id]: event.target.value }))} placeholder="Write your submission here…" style={{ border: "1px solid #d8e2eb", borderRadius: 10, color: "#12304a", font: "inherit", minHeight: 105, padding: 12, resize: "vertical", width: "100%" }} />
-                        <button onClick={() => void submitAssignment(assignment)} disabled={submittingId === assignment.id || !(submissionText[assignment.id] || "").trim()} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, marginTop: 10, padding: "11px 16px" }} type="button">{submittingId === assignment.id ? "Submitting…" : "Submit assignment"}</button>
-                      </div>
                     )}
+                    <button onClick={() => { setActiveAssignmentId(assignment.id); setSubmissionValidation(""); }} style={{ background: "transparent", border: "1px solid #c9d7e2", borderRadius: 9, color: "#0f766e", cursor: "pointer", fontWeight: 700, marginTop: 18, padding: "10px 14px" }} type="button">{submission ? "Open submission" : "Open assignment"}</button>
                   </article>
                 );
               })}

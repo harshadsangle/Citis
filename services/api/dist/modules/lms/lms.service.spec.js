@@ -318,6 +318,90 @@ function serviceWith(query) {
     strict_1.default.equal(audits.some((audit) => audit.resource === "assignment_submission" && audit.action === "GRADE"), true);
     strict_1.default.equal(audits.some((audit) => audit.resource === "assessment_completion"), true);
 });
+(0, node_test_1.default)("learner assignment listings include only published content from enrolled courses", async () => {
+    const learner = {
+        ...user,
+        id: "student-1",
+        roles: [{ code: "STUDENT", name: "Student" }],
+    };
+    const queries = [];
+    const { service } = serviceWith(async (text) => {
+        queries.push(text);
+        if (text.startsWith("SELECT course_id"))
+            return { rows: [{ course_id: "course-1" }] };
+        if (text.startsWith("SELECT a.id")) {
+            return {
+                rows: [{
+                        id: "assignment-1",
+                        tenant_id: learner.tenantId,
+                        institution_id: "institution-1",
+                        course_id: "course-1",
+                        module_id: "module-1",
+                        title: "Portfolio",
+                        status: "PUBLISHED",
+                    }],
+            };
+        }
+        return { rows: [{ count: "1" }] };
+    });
+    const result = await service.listAssignments(learner, 1, 20, 0, {});
+    strict_1.default.equal(result.data.length, 1);
+    strict_1.default.ok(queries.some((query) => query.includes("c.status = 'PUBLISHED'")));
+    strict_1.default.ok(queries.some((query) => query.includes("cm.status = 'PUBLISHED'")));
+    strict_1.default.ok(queries.some((query) => query.includes("JOIN institutions i")));
+});
+(0, node_test_1.default)("learner assignment submissions reject blank work before touching the database", async () => {
+    const learner = {
+        ...user,
+        id: "student-1",
+        roles: [{ code: "STUDENT", name: "Student" }],
+    };
+    let queryCount = 0;
+    const { service } = serviceWith(async () => {
+        queryCount += 1;
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(service.submitAssignment("assignment-1", { submissionText: " \n\t " }, { context: { ...request.context, user: learner } }), common_1.BadRequestException);
+    strict_1.default.equal(queryCount, 0);
+});
+(0, node_test_1.default)("graded learner assignment submissions cannot be replaced", async () => {
+    const learner = {
+        ...user,
+        id: "student-1",
+        roles: [{ code: "STUDENT", name: "Student" }],
+    };
+    const assignment = {
+        id: "assignment-1",
+        tenant_id: learner.tenantId,
+        institution_id: "institution-1",
+        course_id: "course-1",
+        module_id: "module-1",
+        title: "Portfolio",
+        assessment_type: "ASSIGNMENT",
+        status: "PUBLISHED",
+        course_status: "PUBLISHED",
+        module_status: "PUBLISHED",
+        programme_status: "PUBLISHED",
+        institution_status: "ACTIVE",
+        total_marks: "100",
+        due_at: null,
+    };
+    let insertAttempted = false;
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT a.*"))
+            return { rows: [assignment] };
+        if (text.startsWith("SELECT id, tenant_id"))
+            return { rows: [{ id: "enrollment-1" }] };
+        if (text.startsWith("SELECT * FROM lms_assignment_submissions")) {
+            return { rows: [{ id: "submission-1", status: "GRADED", grade: 90 }] };
+        }
+        if (text.startsWith("INSERT INTO lms_assignment_submissions"))
+            insertAttempted = true;
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(service.submitAssignment("assignment-1", { submissionText: "New work" }, { context: { ...request.context, user: learner } }), common_1.ConflictException);
+    strict_1.default.equal(insertAttempted, false);
+});
 (0, node_test_1.default)("assignment grades cannot exceed the configured maximum", async () => {
     const { service } = serviceWith(async (text) => {
         if (text.startsWith("SELECT a.*"))
