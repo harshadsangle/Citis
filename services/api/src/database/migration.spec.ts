@@ -9,6 +9,7 @@ const relationshipMigration = readFileSync(resolve(process.cwd(), "../../package
 const progressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/005_lms_progress_tracking.sql"), "utf8");
 const assignmentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/006_lms_assignments.sql"), "utf8");
 const scopeMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/007_lms_scope_isolation.sql"), "utf8");
+const assessmentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/008_lms_assessment_engine.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -86,4 +87,17 @@ test("scope migration adds campus ancestry and composite integrity constraints",
   assert.match(scopeMigration, /lms_assignment_submissions_assignment_scope_fk/);
   assert.match(scopeMigration, /user_roles_campus_requires_institution_ck/);
   assert.match(scopeMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("assessment migration defines isolated questions, options, attempts, and immutable answers", () => {
+  for (const table of ["lms_assessment_questions", "lms_assessment_options", "lms_assessment_attempts", "lms_assessment_answers"]) {
+    assert.match(assessmentMigration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
+  }
+  assert.match(assessmentMigration, /question_type IN \('SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE', 'SHORT_TEXT', 'NUMERIC'\)/);
+  assert.match(assessmentMigration, /status IN \('IN_PROGRESS', 'SUBMITTED'\)/);
+  assert.match(assessmentMigration, /lms_assessment_questions_assessment_scope_fk/);
+  assert.match(assessmentMigration, /lms_assessment_answers_attempt_scope_fk/);
+  assert.match(assessmentMigration, /lms\.assessment_attempt\.create/);
+  assert.match(assessmentMigration, /lms\.assessment_option\.update/);
+  assert.match(assessmentMigration, /INSERT INTO schema_migrations \(version\)/);
 });

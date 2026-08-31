@@ -45,6 +45,10 @@ optional `details`, and the request ID in `meta`.
   `courses/:id/enrollments` and `courses/:id/instructor-assignments`, plus
   role-filtered candidate endpoints. These operations require a published
   course and preserve removed relationship history.
+- LMS assessment operations: authenticated, institution/campus-scoped endpoints
+  for `assessments`, question and option authoring, publish/archive actions,
+  learner attempt start/submit, and attempt results. Published learner payloads
+  omit correct answers.
 
 Use HTTP-only `citis_session` cookies for browser sessions. Bearer tokens are
 accepted by the API guard for non-browser clients, but browser code must not
@@ -73,12 +77,20 @@ in that institution, and are recorded as `CREATE` or `REMOVE` audit actions.
 - `POST /api/v1/progress/lessons/:lessonId/complete` records completion for
   the authenticated learner. Repeating the request is safe and does not create
   duplicate progress.
-- `POST /api/v1/progress/assessment-completions` records a completed assessment
-  attempt from the assessment result flow. The request accepts an assessment
-  ID, attempt ID, optional score, pass state, and completion timestamp.
+- `GET /api/v1/assessments` lists assessments visible in the authenticated
+  institution scope. Staff can author them with `POST /api/v1/assessments`,
+  add questions at `/assessments/:id/questions`, manage options below
+  `/assessment-questions/:id/options`, and publish/archive the assessment.
+- `POST /api/v1/assessments/:id/attempts` starts an attempt for an enrolled
+  active student. `POST /api/v1/assessment-attempts/:id/submit` accepts one
+  validated answer per active question. Scores, pass state, and
+  `lms_assessment_completions` are generated server-side; learner-supplied
+  score and pass fields are not accepted.
 
 Progress counts only published lessons, published assessments, and active
 enrollments. Lesson and assessment completion transitions are recorded in the
-shared audit log. The progress migration also seeds separate read and
-completion permissions; staff scope is checked server-side against the course
-institution and instructor allocation.
+shared audit log. Assessment attempts are isolated by tenant, institution,
+campus, course, module, and learner; assignment assessments continue to use the
+separate submission and grading endpoints. The progress migration also seeds
+separate read and completion permissions; staff scope is checked server-side
+against the course institution and instructor allocation.

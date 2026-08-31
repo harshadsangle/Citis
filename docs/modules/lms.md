@@ -21,16 +21,23 @@ the course institution can be selected, and relationship create/remove
 mutations are written to the shared audit log.
 
 Learner progress is derived from the published course structure. Completing a
-published lesson records an idempotent lesson completion, and an assessment
-completion result records the learner's attempt and pass state. Course and
-module summaries include completed lessons and assessments and expose
+published lesson records an idempotent lesson completion, and a server-scored
+assessment attempt records the learner's answers, score, and pass state.
+Course and module summaries include completed lessons and assessments and expose
 `NOT_STARTED`, `IN_PROGRESS`, or `COMPLETED` states. Learners can view only
 their own active enrollments; authorized institution staff can view enrolled
 learners only within their institution and assigned courses.
 
-The following intentionally remain future work: cohorts, batches, assessment
-authoring, assignments, certificates, learning analytics, and external
-providers.
+Assessment authoring supports practice quizzes, formative and summative checks,
+assignments, projects, vivas, and practicals. Questions support single choice,
+multiple choice, true/false, short text, and numeric answers. Correct options
+are never returned to learners, objective scoring happens on the server, an
+attempt limit is enforced, and submitted attempts cannot be edited or scored
+again. The existing assignment submission and instructor-grading flow remains
+the authoritative completion path for assignment work.
+
+The following intentionally remain future work: cohorts, batches, certificates,
+learning analytics, and external providers.
 
 Future LMS capabilities must continue to own their tables and expose module
 services; other modules may consume its domain events but may not query LMS
