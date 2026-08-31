@@ -5,3 +5,4 @@
 - [Assessment completion integrity](assessment-integrity.md) — only server-validated attempts create completion results; assignment outcomes stay on instructor grading.
 - [LMS portal session topology](lms-portal-session-topology.md) — role portals must share a cookie host; cross-app redirects need canonical or allowlisted origins.
 - [Explicit migration registration](explicit-migration-registration.md) — new SQL migrations must also be added to the API runner's ordered version list.
+- [LMS certificate lifecycle](lms-certificate-lifecycle.md) — issue only from validated, complete outcomes and keep public verification on a safe-field allowlist.
