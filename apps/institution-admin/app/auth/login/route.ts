@@ -11,7 +11,7 @@ function websiteOrigin(requestHeaders: Headers) {
   const protocol = requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim()
     || (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
   const origin = new URL(`${protocol}://${host}`);
-  origin.port = origin.hostname === "localhost" || origin.hostname === "127." || origin.hostname.startsWith("127.")
+  origin.port = origin.hostname === "localhost" || origin.hostname.startsWith("127.")
     ? "5000"
     : "80";
   return origin.origin;
