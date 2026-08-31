@@ -13,7 +13,7 @@ function websiteOrigin(requestHeaders: Headers) {
   const origin = new URL(`${protocol}://${host}`);
   origin.port = origin.hostname === "localhost" || origin.hostname.startsWith("127.")
     ? "5000"
-    : "80";
+    : "";
   return origin.origin;
 }
 
