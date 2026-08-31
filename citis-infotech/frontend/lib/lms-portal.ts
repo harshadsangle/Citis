@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-
-export type LmsPortal = "learner" | "institution";
+import type { LmsPortal } from "@/lib/lms-roles";
 
 const portalConfig: Record<LmsPortal, { environmentKey: string; localPort: number; externalPort: number }> = {
   learner: {
@@ -9,10 +8,15 @@ const portalConfig: Record<LmsPortal, { environmentKey: string; localPort: numbe
     localPort: 4103,
     externalPort: 3002,
   },
-  institution: {
+  admin: {
     environmentKey: "NEXT_PUBLIC_INSTITUTION_PORTAL_URL",
     localPort: 4101,
     externalPort: 3001,
+  },
+  instructor: {
+    environmentKey: "NEXT_PUBLIC_TEACHER_PORTAL_URL",
+    localPort: 4102,
+    externalPort: 3003,
   },
 };
 
@@ -28,9 +32,20 @@ function configuredOrigin(portal: LmsPortal) {
 }
 
 async function requestOrigin(portal: LmsPortal) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(`Missing canonical ${portalConfig[portal].environmentKey} configuration`);
+  }
   const requestHeaders = await headers();
   const forwardedHost = requestHeaders.get("x-forwarded-host")?.split(",")[0]?.trim();
-  const host = forwardedHost || requestHeaders.get("host") || "127.0.0.1:5000";
+  const requestedHost = forwardedHost || requestHeaders.get("host") || "";
+  const hostname = requestedHost ? new URL(`http://${requestedHost}`).hostname : "";
+  const allowedHosts = new Set([
+    "localhost",
+    "127.0.0.1",
+    process.env.REPLIT_DEV_DOMAIN,
+    ...(process.env.REPLIT_DOMAINS || "").split(","),
+  ].filter(Boolean));
+  const host = allowedHosts.has(hostname) ? requestedHost : "127.0.0.1:5000";
   const forwardedProto = requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim();
   const protocol = forwardedProto || (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
   const origin = new URL(`${protocol}://${host}`);
@@ -43,3 +58,5 @@ export async function redirectToLmsPortal(portal: LmsPortal) {
   const origin = configuredOrigin(portal) || (await requestOrigin(portal));
   redirect(`${origin}/`);
 }
+
+export type { LmsPortal } from "@/lib/lms-roles";

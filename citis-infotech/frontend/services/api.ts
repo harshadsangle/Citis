@@ -3,6 +3,7 @@ import type {
   AdminCareer,
   AdminJobApplication,
   ApiResponse,
+  AuthPrincipal,
   AuthResponse,
   Career,
   Contact,
@@ -10,7 +11,6 @@ import type {
   NewsletterSubscriber,
   PartnerApplication,
   PartnerInquiry,
-  User,
 } from "@/types";
 
 export const contactService = {
@@ -183,8 +183,8 @@ export const authService = {
     }),
   logout: (token?: string) =>
     apiFetch<void>("/auth/logout", { method: "POST", token, revalidate: false }),
-  me: (token: string) =>
-    apiFetch<ApiResponse<User>>("/auth/me", { token, revalidate: false }),
+  me: (token?: string) =>
+    apiFetch<ApiResponse<AuthPrincipal>>("/auth/me", { token, revalidate: false }),
 };
 
 export const searchService = {

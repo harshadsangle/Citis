@@ -3,3 +3,4 @@
 - [Apple badge assets](apple-badge-assets.md) — use the full-resolution Certiport Swift badge PNGs and preserve the official badge artwork in Apple previews.
 - [NestJS runtime decorators](nestjs-runtime-decorators.md) — use a TypeScript runner that preserves parameter metadata for constructor injection.
 - [Assessment completion integrity](assessment-integrity.md) — only server-validated attempts create completion results; assignment outcomes stay on instructor grading.
+- [LMS portal session topology](lms-portal-session-topology.md) — role portals must share a cookie host; cross-app redirects need canonical or allowlisted origins.

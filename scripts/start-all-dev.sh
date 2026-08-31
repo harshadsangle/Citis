@@ -16,6 +16,8 @@ npm run dev --prefix apps/institution-admin &
 pids+=("$!")
 npm run dev --prefix apps/student-portal &
 pids+=("$!")
+npm run dev --prefix apps/teacher-portal &
+pids+=("$!")
 npm run dev --prefix citis-infotech &
 pids+=("$!")
 

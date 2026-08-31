@@ -1,5 +1,6 @@
 import { generatePageMetadata } from "@/lib/seo";
 import { redirect } from "next/navigation";
+import { normalizeLmsPortal } from "@/lib/lms-roles";
 
 export const metadata = generatePageMetadata({
   title: "Learning Portal Sign In",
@@ -14,6 +15,7 @@ type LmsLoginPageProps = {
 
 export default async function LmsLoginPage({ searchParams }: LmsLoginPageProps) {
   const params = await searchParams;
-  const portal = params?.portal === "institution" ? "institution" : "learner";
-  redirect(`/auth/login?callbackUrl=${encodeURIComponent(`/lms?portal=${portal}`)}`);
+  const portal = normalizeLmsPortal(params?.portal);
+  if (!portal) redirect("/lms");
+  redirect(`/auth/login?portal=${portal}`);
 }

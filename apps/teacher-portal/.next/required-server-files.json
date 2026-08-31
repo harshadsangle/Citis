@@ -15,7 +15,7 @@
     "cleanDistDir": true,
     "assetPrefix": "",
     "cacheMaxMemorySize": 52428800,
-    "configOrigin": "../../next.config.ts",
+    "configOrigin": "next.config.ts",
     "useFileSystemPublicRoutes": true,
     "generateEtags": true,
     "pageExtensions": [
@@ -24,7 +24,7 @@
       "jsx",
       "js"
     ],
-    "poweredByHeader": false,
+    "poweredByHeader": true,
     "compress": true,
     "images": {
       "deviceSizes": [
@@ -54,37 +54,13 @@
       "disableStaticImages": false,
       "minimumCacheTTL": 60,
       "formats": [
-        "image/avif",
         "image/webp"
       ],
       "maximumResponseBody": 50000000,
       "dangerouslyAllowSVG": false,
       "contentSecurityPolicy": "script-src 'none'; frame-src 'none'; sandbox;",
       "contentDispositionType": "attachment",
-      "remotePatterns": [
-        {
-          "protocol": "http",
-          "hostname": "localhost",
-          "port": "5000",
-          "pathname": "/uploads/**"
-        },
-        {
-          "protocol": "http",
-          "hostname": "localhost",
-          "port": "1337",
-          "pathname": "/uploads/**"
-        },
-        {
-          "protocol": "https",
-          "hostname": "localhost",
-          "pathname": "/uploads/**"
-        },
-        {
-          "protocol": "https",
-          "hostname": "localhost",
-          "pathname": "/uploads/**"
-        }
-      ],
+      "remotePatterns": [],
       "unoptimized": false
     },
     "devIndicators": {
@@ -313,6 +289,20 @@
     "configFileName": "next.config.ts",
     "turbopack": {
       "root": "/home/runner/workspace"
+    },
+    "_originalRewrites": {
+      "beforeFiles": [],
+      "afterFiles": [
+        {
+          "source": "/api/v1",
+          "destination": "http://127.0.0.1:4000/api/v1"
+        },
+        {
+          "source": "/api/v1/:path*",
+          "destination": "http://127.0.0.1:4000/api/v1/:path*"
+        }
+      ],
+      "fallback": []
     }
   },
   "appDir": "/home/runner/workspace/apps/teacher-portal",

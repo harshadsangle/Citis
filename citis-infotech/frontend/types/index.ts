@@ -236,6 +236,17 @@ export interface User {
   createdAt?: string;
 }
 
+export interface AuthPrincipal {
+  id: ID;
+  tenantId: string;
+  email: string | null;
+  firstName: string;
+  lastName: string;
+  roles: Array<{ code: string; name: string }>;
+  permissions: string[];
+  scopes: Array<{ institutionId: string; campusId: string | null }>;
+}
+
 export interface AuthResponse {
   user: User;
   token?: string;
