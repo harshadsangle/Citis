@@ -32,6 +32,15 @@ BEGIN
     );
 END $$;
 
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_assessment_attempts_scope_unique') THEN
+    ALTER TABLE lms_assessment_attempts
+      ADD CONSTRAINT lms_assessment_attempts_scope_unique
+      UNIQUE (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, id);
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS lms_assessment_attempt_drafts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,

@@ -117,3 +117,11 @@ test("assessment grading permission migration backfills existing staff roles", (
   assert.match(gradingPermissionMigration, /lms\.assessment_attempt\.update/);
   assert.match(gradingPermissionMigration, /010_lms_assessment_grading_permission/);
 });
+
+test("assessment attempt stability migration snapshots content, enforces expiry, and stores drafts", () => {
+  assert.match(attemptStabilityMigration, /question_snapshot jsonb/);
+  assert.match(attemptStabilityMigration, /expires_at timestamptz/);
+  assert.match(attemptStabilityMigration, /CREATE TABLE IF NOT EXISTS lms_assessment_attempt_drafts/);
+  assert.match(attemptStabilityMigration, /status IN \('IN_PROGRESS', 'SUBMITTED', 'EXPIRED'\)/);
+  assert.match(attemptStabilityMigration, /INSERT INTO schema_migrations \(version\)/);
+});
