@@ -168,6 +168,15 @@ let LmsController = class LmsController {
     async archiveAssessmentQuestion(id, request) {
         return (0, response_1.successResponse)(await this.assessments.archiveQuestion(id, request), request);
     }
+    async createAssessmentOption(id, input, request) {
+        return (0, response_1.successResponse)(await this.assessments.createOption(id, input, request), request);
+    }
+    async updateAssessmentOption(id, input, request) {
+        return (0, response_1.successResponse)(await this.assessments.updateOption(id, input, request), request);
+    }
+    async archiveAssessmentOption(id, request) {
+        return (0, response_1.successResponse)(await this.assessments.archiveOption(id, request), request);
+    }
     async startAssessmentAttempt(id, request) {
         return (0, response_1.successResponse)(await this.assessments.startAttempt(id, request), request);
     }
@@ -649,6 +658,35 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", Promise)
 ], LmsController.prototype, "archiveAssessmentQuestion", null);
+__decorate([
+    (0, common_1.Post)("assessment-questions/:id/options"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_option.create"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.CreateAssessmentOptionDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "createAssessmentOption", null);
+__decorate([
+    (0, common_1.Patch)("assessment-options/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_option.update"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, lms_dto_1.UpdateAssessmentOptionDto, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "updateAssessmentOption", null);
+__decorate([
+    (0, common_1.Delete)("assessment-options/:id"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_option.archive"),
+    __param(0, (0, common_1.Param)("id")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], LmsController.prototype, "archiveAssessmentOption", null);
 __decorate([
     (0, common_1.Post)("assessments/:id/attempts"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.create"),

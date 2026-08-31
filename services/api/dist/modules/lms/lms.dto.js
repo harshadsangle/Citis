@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SubmitAssessmentAttemptDto = exports.AssessmentAnswerDto = exports.UpdateAssessmentQuestionDto = exports.CreateAssessmentQuestionDto = exports.CreateAssessmentOptionDto = exports.UpdateAssessmentDto = exports.CreateAssessmentDto = exports.LMS_QUESTION_TYPES = exports.LMS_ASSESSMENT_TYPES = exports.GradeAssignmentSubmissionDto = exports.SubmitAssignmentDto = exports.UpdateAssignmentDto = exports.CreateAssignmentDto = exports.AssignmentListQueryDto = exports.ASSIGNMENT_STATUSES = exports.CompleteAssessmentDto = exports.ProgressViewerQueryDto = exports.AssignInstructorDto = exports.EnrollLearnerDto = exports.CandidateListQueryDto = exports.RelationshipListQueryDto = exports.LMS_RELATIONSHIP_STATUSES = exports.UpdateLearningResourceDto = exports.CreateLearningResourceDto = exports.UpdateLessonDto = exports.CreateLessonDto = exports.UpdateCourseModuleDto = exports.CreateCourseModuleDto = exports.UpdateCourseDto = exports.CreateCourseDto = exports.UpdateProgrammeDto = exports.CreateProgrammeDto = exports.ContentListQueryDto = exports.LMS_RESOURCE_TYPES = exports.LMS_STATUSES = void 0;
+exports.SubmitAssessmentAttemptDto = exports.AssessmentAnswerDto = exports.UpdateAssessmentQuestionDto = exports.CreateAssessmentQuestionDto = exports.UpdateAssessmentOptionDto = exports.CreateAssessmentOptionDto = exports.UpdateAssessmentDto = exports.CreateAssessmentDto = exports.LMS_QUESTION_TYPES = exports.LMS_ASSESSMENT_TYPES = exports.GradeAssignmentSubmissionDto = exports.SubmitAssignmentDto = exports.UpdateAssignmentDto = exports.CreateAssignmentDto = exports.AssignmentListQueryDto = exports.ASSIGNMENT_STATUSES = exports.CompleteAssessmentDto = exports.ProgressViewerQueryDto = exports.AssignInstructorDto = exports.EnrollLearnerDto = exports.CandidateListQueryDto = exports.RelationshipListQueryDto = exports.LMS_RELATIONSHIP_STATUSES = exports.UpdateLearningResourceDto = exports.CreateLearningResourceDto = exports.UpdateLessonDto = exports.CreateLessonDto = exports.UpdateCourseModuleDto = exports.CreateCourseModuleDto = exports.UpdateCourseDto = exports.CreateCourseDto = exports.UpdateProgrammeDto = exports.CreateProgrammeDto = exports.ContentListQueryDto = exports.LMS_RESOURCE_TYPES = exports.LMS_STATUSES = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 exports.LMS_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"];
@@ -688,6 +688,29 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], CreateAssessmentOptionDto.prototype, "isCorrect", void 0);
+class UpdateAssessmentOptionDto {
+    value;
+    label;
+    isCorrect;
+}
+exports.UpdateAssessmentOptionDto = UpdateAssessmentOptionDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(1, 300),
+    __metadata("design:type", String)
+], UpdateAssessmentOptionDto.prototype, "value", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Length)(1, 300),
+    __metadata("design:type", String)
+], UpdateAssessmentOptionDto.prototype, "label", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateAssessmentOptionDto.prototype, "isCorrect", void 0);
 class CreateAssessmentQuestionDto {
     prompt;
     questionType;

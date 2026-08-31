@@ -146,6 +146,11 @@ export declare class CreateAssessmentOptionDto {
     label: string;
     isCorrect: boolean;
 }
+export declare class UpdateAssessmentOptionDto {
+    value?: string;
+    label?: string;
+    isCorrect?: boolean;
+}
 export declare class CreateAssessmentQuestionDto {
     prompt: string;
     questionType: string;

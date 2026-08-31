@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
-import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, ProgressViewerQueryDto, RelationshipListQueryDto, SubmitAssignmentDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 import { LmsService } from "./lms.service";
 import { AssessmentService } from "./assessment.service";
 import type { LmsUpload } from "./resource-storage.service";
@@ -46,10 +46,15 @@ export declare class LmsController {
     archiveAssessment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     assessmentQuestions(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     createAssessmentQuestion(id: string, input: CreateAssessmentQuestionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
-        options: import("./lms.dto").CreateAssessmentOptionDto[];
+        options: CreateAssessmentOptionDto[];
     }>>;
     updateAssessmentQuestion(id: string, input: UpdateAssessmentQuestionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     archiveAssessmentQuestion(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    createAssessmentOption(id: string, input: CreateAssessmentOptionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    updateAssessmentOption(id: string, input: UpdateAssessmentOptionDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
+    archiveAssessmentOption(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
+        status: string;
+    }>>;
     startAssessmentAttempt(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         assessment: {
             id: unknown;

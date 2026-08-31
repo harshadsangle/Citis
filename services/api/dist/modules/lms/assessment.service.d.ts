@@ -1,7 +1,7 @@
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { AuditService } from "../../common/audit.service";
 import { DatabaseService } from "../../database/database.service";
-import type { AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto } from "./lms.dto";
+import type { AssignmentListQueryDto, CreateAssessmentDto, CreateAssessmentQuestionDto, CreateAssessmentOptionDto, SubmitAssessmentAttemptDto, UpdateAssessmentDto, UpdateAssessmentQuestionDto, UpdateAssessmentOptionDto } from "./lms.dto";
 type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 export declare class AssessmentService {
     private readonly db;
@@ -38,6 +38,13 @@ export declare class AssessmentService {
     }>;
     updateQuestion(id: string, input: UpdateAssessmentQuestionDto, request: ContextRequest): Promise<Record<string, unknown>>;
     archiveQuestion(id: string, request: ContextRequest): Promise<Record<string, unknown>>;
+    private optionFor;
+    private allOptions;
+    createOption(questionId: string, input: CreateAssessmentOptionDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    updateOption(id: string, input: UpdateAssessmentOptionDto, request: ContextRequest): Promise<Record<string, unknown>>;
+    archiveOption(id: string, request: ContextRequest): Promise<{
+        status: string;
+    }>;
     private attemptFor;
     startAttempt(assessmentId: string, request: ContextRequest): Promise<{
         assessment: {
