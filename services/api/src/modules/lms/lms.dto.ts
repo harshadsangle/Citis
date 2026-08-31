@@ -267,6 +267,16 @@ export class ProgressViewerQueryDto {
   learnerId?: string;
 }
 
+export class CertificateListQueryDto {
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  learnerId?: string;
+}
+
 export const ASSIGNMENT_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 
 export class AssignmentListQueryDto {
