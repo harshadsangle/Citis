@@ -149,6 +149,17 @@ export class AssessmentService {
     return false;
   }
 
+  private async assertActiveEnrollmentForAttempt(attempt: Record<string, unknown>, user: AuthenticatedUser) {
+    const enrollment = await this.db.query(
+      `SELECT 1 FROM lms_enrollments
+       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
+         AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+       LIMIT 1`,
+      [user.tenantId, attempt.institution_id, attempt.course_id, user.id, attempt.campus_id ?? null],
+    );
+    if (!enrollment.rows[0]) throw new ForbiddenException("An active course enrollment is required.");
+  }
+
   private async auditMutation(request: ContextRequest, resource: string, action: string, row: Record<string, unknown>, before?: unknown) {
     await this.audit.record({
       tenantId: request.context.user!.tenantId,
@@ -217,6 +228,24 @@ export class AssessmentService {
       values.push(courseIds);
       clauses.push(`a.course_id = ANY($${values.length}::uuid[])`);
       clauses.push("a.status = 'PUBLISHED'");
+    }
+    clauses.push("a.assessment_type <> 'ASSIGNMENT'");
+    const isPlatform = isPlatformUser(user);
+    const isTeacher = user.roles.some((role) => role.code === "TEACHER");
+    const isAdministrator = user.roles.some((role) =>
+      ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].includes(role.code),
+    );
+    if (!courseIds && !isPlatform && isTeacher && !isAdministrator) {
+      values.push(user.id);
+      clauses.push(`EXISTS (
+        SELECT 1 FROM lms_instructor_assignments ia
+        WHERE ia.tenant_id = a.tenant_id
+          AND ia.institution_id = a.institution_id
+          AND ia.course_id = a.course_id
+          AND ia.campus_id IS NOT DISTINCT FROM a.campus_id
+          AND ia.instructor_id = $${values.length}
+          AND ia.status = 'ACTIVE'
+      )`);
     }
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT a.id, a.tenant_id, a.institution_id, a.campus_id, a.course_id, a.module_id, a.title,
@@ -387,6 +416,44 @@ export class AssessmentService {
       }
     }
     return [...questions.values()];
+  }
+
+  private snapshotQuestions(attempt: Record<string, unknown>, includeCorrect: boolean) {
+    const raw = attempt.question_snapshot;
+    const snapshot = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(snapshot) || snapshot.length === 0) return null;
+    return snapshot.map((question) => {
+      const options = Array.isArray(question.options)
+        ? question.options.map((option: Record<string, unknown>) => {
+          const result = { ...option };
+          if (!includeCorrect) delete result.is_correct;
+          return result;
+        })
+        : [];
+      return { ...question, options };
+    }) as Array<Record<string, unknown>>;
+  }
+
+  private async questionsForAttempt(executor: Queryable, attempt: Record<string, unknown>, user: AuthenticatedUser, includeCorrect: boolean) {
+    return this.snapshotQuestions(attempt, includeCorrect)
+      ?? this.questionRows(executor, String(attempt.assessment_id), user, includeCorrect);
+  }
+
+  private publicAttempt(attempt: Record<string, unknown>) {
+    const result = { ...attempt };
+    delete result.question_snapshot;
+    return result;
+  }
+
+  private async draftRows(executor: Queryable, attemptId: string, tenantId: string) {
+    const result = await executor.query<Record<string, unknown>>(
+      `SELECT question_id, answer_json
+       FROM lms_assessment_attempt_drafts
+       WHERE tenant_id = $1 AND attempt_id = $2
+       ORDER BY question_id`,
+      [tenantId, attemptId],
+    );
+    return result.rows;
   }
 
   async listQuestions(assessmentId: string, user: AuthenticatedUser) {
