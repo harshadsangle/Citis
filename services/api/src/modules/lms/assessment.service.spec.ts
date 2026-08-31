@@ -101,7 +101,7 @@ test("starting an assessment is idempotent while an attempt is in progress", asy
   };
   const service = new AssessmentService(db as never, { record: async () => undefined } as never);
 
-  const result = await service.startAttempt("assessment-1", request);
+  const result = await service.startAttempt("assessment-1", request) as unknown as { id: string; questions: Array<Record<string, unknown>> };
 
   assert.equal(result.id, "attempt-1");
   assert.equal(createAttempt, false);
@@ -130,7 +130,7 @@ test("attempt submission calculates the score server-side and writes a completio
   };
   const service = new AssessmentService(db as never, { record: async () => undefined } as never);
 
-  const result = await service.submitAttempt("attempt-1", { answers: [{ questionId: "q-1", answer: { value: "yes" } }] }, request);
+  const result = await service.submitAttempt("attempt-1", { answers: [{ questionId: "q-1", answer: { value: "yes" } }] }, request) as unknown as { score: number; results: Array<{ correct: boolean }> };
 
   assert.equal(result.score, 2);
   assert.equal(result.results[0].correct, true);

@@ -267,28 +267,6 @@ export class ProgressViewerQueryDto {
   learnerId?: string;
 }
 
-export class CompleteAssessmentDto {
-  @IsUUID()
-  assessmentId!: string;
-
-  @IsString()
-  @Length(1, 180)
-  attemptId!: string;
-
-  @IsOptional()
-  @IsNumber({ maxDecimalPlaces: 2 })
-  @Min(0)
-  score?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  passed?: boolean;
-
-  @IsOptional()
-  @IsDateString()
-  completedAt?: string;
-}
-
 export const ASSIGNMENT_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 
 export class AssignmentListQueryDto {
