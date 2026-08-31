@@ -85,6 +85,12 @@ WHERE m.resource_id = lr.id
 CREATE UNIQUE INDEX IF NOT EXISTS institutions_tenant_id_key
   ON institutions (tenant_id, id);
 
+CREATE UNIQUE INDEX IF NOT EXISTS users_tenant_id_key
+  ON users (tenant_id, id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS roles_tenant_id_key
+  ON roles (tenant_id, id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS campuses_tenant_institution_id_key
   ON campuses (tenant_id, institution_id, id);
 
