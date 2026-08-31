@@ -2,16 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-async function fetchAllPages<T>(path: string): Promise<T[]> {
-  const rows: T[] = [];
-  for (let page = 1; page <= 100; page += 1) {
-    const response = await fetch(`${path}${path.includes("?") ? "&" : "?"}page=${page}&pageSize=100`, { credentials: "include" });
-    const body = await response.json().catch(() => null) as { data?: T[]; meta?: { totalPages?: number }; error?: { message?: string } } | null;
-    if (!response.ok) throw new Error(body?.error?.message || "We couldn't load your learning progress.");
-    rows.push(...(body?.data || []));
-    if (!body?.meta?.totalPages || page >= body.meta.totalPages) break;
-  }
-  return rows;
+async function fetchDashboardList<T>(path: string): Promise<T[]> {
+  const response = await fetch(path, { credentials: "include" });
+  const body = await response.json().catch(() => null) as { data?: T[]; error?: { message?: string } } | null;
+  if (!response.ok) throw new Error(body?.error?.message || "We couldn't load your learning progress.");
+  return body?.data || [];
 }
 
 type Progress = {
@@ -156,10 +151,10 @@ export default function StudentPortalPage() {
         if (!response.ok) throw new Error(body?.error?.message || "We couldn't load your learning progress.");
         return body?.data || [];
       }),
-      fetchAllPages<Assignment>("/api/v1/assignments"),
-      fetchAllPages<Assessment>("/api/v1/assessments"),
-      fetchAllPages<AssessmentHistoryItem>("/api/v1/assessment-history"),
-      fetchAllPages<Certificate>("/api/v1/certificates"),
+      fetchDashboardList<Assignment>("/api/v1/assignments"),
+      fetchDashboardList<Assessment>("/api/v1/assessments"),
+      fetchDashboardList<AssessmentHistoryItem>("/api/v1/assessment-history"),
+      fetchDashboardList<Certificate>("/api/v1/certificates"),
     ])
       .then(async ([progressBody, assignmentBody, assessmentBody, historyBody, certificateBody]) => {
         if (!active) return;
@@ -215,7 +210,7 @@ export default function StudentPortalPage() {
   }
 
   async function loadAssessmentHistory() {
-    const response = await fetch("/api/v1/assessment-history?page=1&pageSize=100", { credentials: "include" });
+    const response = await fetch("/api/v1/assessment-history", { credentials: "include" });
     if (!response.ok) return;
     const body = await response.json() as { data: AssessmentHistoryItem[] };
     setAssessmentHistory(body.data || []);
