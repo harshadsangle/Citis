@@ -293,6 +293,13 @@ export class AssessmentService {
     if (status === "PUBLISHED" && (before.course_status !== "PUBLISHED" || before.module_status !== "PUBLISHED")) {
       throw new BadRequestException("Assessments can be published only inside published courses and modules.");
     }
+    if (status === "PUBLISHED") {
+      const questionCount = await this.db.query<{ count: string }>(
+        "SELECT count(*)::text AS count FROM lms_assessment_questions WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'ACTIVE'",
+        [user.tenantId, id],
+      );
+      if (Number(questionCount.rows[0]?.count ?? 0) === 0) throw new BadRequestException("Add at least one active question before publishing an assessment.");
+    }
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
         `UPDATE lms_assessments SET status = $3, updated_at = now()
@@ -569,6 +576,16 @@ export class AssessmentService {
     }
     return this.run(async () => this.db.transaction(async (client) => {
       await client.query("SELECT id FROM lms_assessments WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [assessment.id, user.tenantId]);
+      const existing = await client.query<Record<string, unknown>>(
+        `SELECT * FROM lms_assessment_attempts
+         WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3 AND status = 'IN_PROGRESS'
+         ORDER BY started_at DESC LIMIT 1`,
+        [user.tenantId, assessment.id, user.id],
+      );
+      if (existing.rows[0]) {
+        const questions = await this.questionRows(client, String(assessment.id), user, false);
+        return { ...existing.rows[0], assessment: { id: assessment.id, title: assessment.title, assessment_type: assessment.assessment_type, duration_minutes: assessment.duration_minutes, attempt_limit: assessment.attempt_limit }, questions };
+      }
       const count = await client.query<{ count: string }>(
         `SELECT count(*)::text AS count FROM lms_assessment_attempts
          WHERE tenant_id = $1 AND assessment_id = $2 AND learner_id = $3`,

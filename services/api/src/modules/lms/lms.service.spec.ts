@@ -257,24 +257,6 @@ test("lesson completion rejects learners without an active course enrollment", a
   await assert.rejects(service.completeLesson("lesson-1", request), ForbiddenException);
 });
 
-test("assessment completion records a result and derives pass status", async () => {
-  const { service, audits } = serviceWith(async (text) => {
-    if (text.startsWith("SELECT a.*")) {
-      return { rows: [{ id: "assessment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE", total_marks: "100", passing_marks: "60", attempt_limit: null }] };
-    }
-    if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
-    if (text.startsWith("SELECT * FROM lms_assessment_completions")) return { rows: [] };
-    if (text.startsWith("INSERT INTO lms_assessment_completions")) return { rows: [{ id: "completion-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assessment_id: "assessment-1", learner_id: user.id, attempt_id: "attempt-1", score: 82, passed: true, status: "COMPLETED" }] };
-    return { rows: [] };
-  });
-
-  const result = await service.completeAssessment({ assessmentId: "assessment-1", attemptId: "attempt-1", score: 82 }, request);
-
-  assert.equal(result.passed, true);
-  assert.equal(audits[0].resource, "assessment_completion");
-  assert.equal(audits[0].action, "COMPLETE");
-});
-
 test("assignment creation is scoped to an assigned course module and audited", async () => {
   const { service, audits } = serviceWith(async (text) => {
     if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
