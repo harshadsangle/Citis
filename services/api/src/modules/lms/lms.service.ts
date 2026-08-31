@@ -135,7 +135,7 @@ export class LmsService {
     const offsetParam = filter.values.length ? "$4" : "$3";
     const [rows, total] = await Promise.all([
       this.db.query(
-        `SELECT p.id, p.tenant_id, p.institution_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
+        `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
                 p.created_at, p.updated_at
          FROM programmes p JOIN institutions i ON i.id = p.institution_id
          WHERE p.tenant_id = $1${statusParam}
@@ -150,7 +150,7 @@ export class LmsService {
 
   async getProgramme(id: string, user: AuthenticatedUser) {
     const result = await this.db.query(
-      `SELECT p.id, p.tenant_id, p.institution_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
+      `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
               p.created_at, p.updated_at
        FROM programmes p JOIN institutions i ON i.id = p.institution_id
        WHERE p.id = $1 AND p.tenant_id = $2`,
@@ -185,7 +185,7 @@ export class LmsService {
         `UPDATE programmes
          SET name = COALESCE($3, name), description = COALESCE($4, description), updated_by = $2, updated_at = now()
          WHERE id = $1 AND tenant_id = $5
-         RETURNING id, tenant_id, institution_id, name, code, description, status, created_at, updated_at`,
+          RETURNING id, tenant_id, institution_id, campus_id, name, code, description, status, created_at, updated_at`,
         [id, request.context.user!.id, input.name?.trim() || null, input.description?.trim() || null, request.context.user!.tenantId],
       );
       if (!result.rows[0]) throw new NotFoundException("Programme not found.");
@@ -225,7 +225,7 @@ export class LmsService {
 
   async getCourse(id: string, user: AuthenticatedUser) {
     const result = await this.db.query(
-      `SELECT c.id, c.tenant_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
+      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
               c.created_at, c.updated_at
        FROM courses c JOIN programmes p ON p.id = c.programme_id
        WHERE c.id = $1 AND c.tenant_id = $2`,
@@ -775,7 +775,7 @@ export class LmsService {
     const relationshipColumn = roleCode === "STUDENT" ? "learner_id" : "instructor_id";
     const search = query.search?.trim() || "";
     const searchClause = search
-      ? " AND (u.first_name ILIKE $5 OR u.last_name ILIKE $5 OR concat_ws(' ', u.first_name, u.last_name) ILIKE $5 OR COALESCE(u.email, '') ILIKE $5)"
+      ? " AND (u.first_name ILIKE $6 OR u.last_name ILIKE $6 OR concat_ws(' ', u.first_name, u.last_name) ILIKE $6 OR COALESCE(u.email, '') ILIKE $6)"
       : "";
     const values: unknown[] = [user.tenantId, course.institution_id, course.id, roleCode, course.campus_id ?? null];
     if (search) values.push(`%${search}%`);
@@ -1372,7 +1372,7 @@ export class LmsService {
     const pageParam = values.length + 1;
     const [rows, total] = await Promise.all([
       this.db.query(
-        `SELECT a.id, a.tenant_id, a.institution_id, a.course_id, a.module_id, a.title,
+        `SELECT a.id, a.tenant_id, a.institution_id, a.campus_id, a.course_id, a.module_id, a.title,
                 a.description, a.instructions, a.due_at, a.total_marks AS max_marks, a.status,
                 a.created_at, a.updated_at, c.title AS course_title, cm.title AS module_title
          FROM lms_assessments a
@@ -1511,9 +1511,10 @@ export class LmsService {
     const assignment = await this.assignmentFor(id, user);
     await this.assertAssignmentViewer(assignment, user);
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT * FROM lms_assignment_submissions
-       WHERE tenant_id = $1 AND assignment_id = $2 AND learner_id = $3`,
-      [user.tenantId, id, user.id],
+        `SELECT * FROM lms_assignment_submissions
+        WHERE tenant_id = $1 AND assignment_id = $2 AND learner_id = $3
+          AND campus_id IS NOT DISTINCT FROM $4`,
+      [user.tenantId, id, user.id, assignment.campus_id ?? null],
     );
     return result.rows[0] ?? null;
   }
@@ -1526,9 +1527,10 @@ export class LmsService {
     }
     await this.activeEnrollment(String(assignment.course_id), user.id, user);
     const existingResult = await this.db.query<Record<string, unknown>>(
-      `SELECT * FROM lms_assignment_submissions
-       WHERE tenant_id = $1 AND assignment_id = $2 AND learner_id = $3`,
-      [user.tenantId, id, user.id],
+        `SELECT * FROM lms_assignment_submissions
+        WHERE tenant_id = $1 AND assignment_id = $2 AND learner_id = $3
+          AND campus_id IS NOT DISTINCT FROM $4`,
+      [user.tenantId, id, user.id, assignment.campus_id ?? null],
     );
     const before = existingResult.rows[0];
     if (before?.status === "GRADED") throw new ConflictException("A graded assignment cannot be resubmitted.");
