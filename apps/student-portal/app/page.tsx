@@ -127,6 +127,7 @@ export default function StudentPortalPage() {
   const [submissionText, setSubmissionText] = useState<Record<string, string>>({});
   const [submittingId, setSubmittingId] = useState("");
   const [submissionNotice, setSubmissionNotice] = useState("");
+  const [submissionError, setSubmissionError] = useState("");
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
   const [submissionValidation, setSubmissionValidation] = useState("");
   const [error, setError] = useState("");
@@ -267,6 +268,7 @@ export default function StudentPortalPage() {
     setSubmissionValidation("");
     setSubmittingId(assignment.id);
     setError("");
+    setSubmissionError("");
     setSubmissionNotice("");
     try {
       const response = await fetch(`/api/v1/assignments/${assignment.id}/submissions`, {
@@ -281,7 +283,7 @@ export default function StudentPortalPage() {
       setSubmissionText((current) => ({ ...current, [assignment.id]: "" }));
       setSubmissionNotice("Assignment submitted successfully.");
     } catch (reason: unknown) {
-      setError(reason instanceof Error ? reason.message : "We couldn't submit this assignment.");
+      setSubmissionError(reason instanceof Error ? reason.message : "We couldn't submit this assignment.");
     } finally {
       setSubmittingId("");
     }
@@ -438,6 +440,7 @@ export default function StudentPortalPage() {
               </div>
               {submissionNotice && <span style={{ color: "#0f766e", fontSize: 14, fontWeight: 700 }}>{submissionNotice}</span>}
             </div>
+            {submissionError && <div role="alert" style={{ background: "#fff8f5", border: "1px solid #f0c5b8", borderRadius: 12, color: "#ad5b4d", marginBottom: 16, padding: "12px 15px" }}>{submissionError}</div>}
             {assignments.length === 0 && <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>No published assignments are waiting for you.</div>}
             {activeAssignmentId && assignments.some((assignment) => assignment.id === activeAssignmentId) && (() => {
               const assignment = assignments.find((item) => item.id === activeAssignmentId)!;

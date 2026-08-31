@@ -1278,7 +1278,13 @@ export class LmsService {
 
   private async assertAssignmentViewer(assignment: Record<string, unknown>, user: AuthenticatedUser) {
     if (await this.hasAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id), assignment.campus_id as string | null)) return;
-    if (assignment.status !== "PUBLISHED" || assignment.course_status !== "PUBLISHED" || assignment.module_status !== "PUBLISHED") {
+    if (
+      assignment.status !== "PUBLISHED"
+      || assignment.course_status !== "PUBLISHED"
+      || assignment.module_status !== "PUBLISHED"
+      || assignment.programme_status === "ARCHIVED"
+      || assignment.institution_status !== "ACTIVE"
+    ) {
       throw new NotFoundException("Assignment not found.");
     }
     await this.activeEnrollment(String(assignment.course_id), user.id, user);
@@ -1291,7 +1297,16 @@ export class LmsService {
     if (query.courseId) {
       const course = await this.assignmentCourse(query.courseId, user);
       const staff = await this.hasAssignmentStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id as string | null);
-      if (!staff) await this.activeEnrollment(String(course.id), user.id, user);
+      if (!staff) {
+        await this.activeEnrollment(String(course.id), user.id, user);
+        clauses.push(
+          "a.status = 'PUBLISHED'",
+          "c.status = 'PUBLISHED'",
+          "cm.status = 'PUBLISHED'",
+          "p.status = 'PUBLISHED'",
+          "i.status = 'ACTIVE'",
+        );
+      }
       values.push(query.courseId);
       clauses.push(`a.course_id = $${values.length}`);
       if (!staff) clauses.push("a.status = 'PUBLISHED'");
@@ -1482,7 +1497,13 @@ export class LmsService {
     if (!submissionText) throw new BadRequestException("Submission text cannot be empty.");
     if (submissionText.length > 20000) throw new BadRequestException("Submission text cannot exceed 20,000 characters.");
     const assignment = await this.assignmentFor(id, user);
-    if (assignment.status !== "PUBLISHED" || assignment.course_status !== "PUBLISHED" || assignment.module_status !== "PUBLISHED") {
+    if (
+      assignment.status !== "PUBLISHED"
+      || assignment.course_status !== "PUBLISHED"
+      || assignment.module_status !== "PUBLISHED"
+      || assignment.programme_status === "ARCHIVED"
+      || assignment.institution_status !== "ACTIVE"
+    ) {
       throw new BadRequestException("Only published assignments in published courses can be submitted.");
     }
     await this.activeEnrollment(String(assignment.course_id), user.id, user);
