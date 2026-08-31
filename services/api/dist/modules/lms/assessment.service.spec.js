@@ -40,6 +40,8 @@ const request = {
     strict_1.default.deepEqual(score({ ...base, question_type: "NUMERIC", options: [{ value: "0", is_correct: true }] }, { answer: { value: "" } }), { correct: false, awardedMarks: 0 });
     strict_1.default.deepEqual(score({ ...base, question_type: "MULTIPLE_CHOICE", options: [{ value: "a", is_correct: true }, { value: "b", is_correct: true }] }, { answer: { value: ["a", "b"] } }), { correct: true, awardedMarks: 2 });
     strict_1.default.deepEqual(score({ ...base, question_type: "SINGLE_CHOICE" }, { answer: { value: "b" } }), { correct: false, awardedMarks: 0 });
+    strict_1.default.throws(() => score({ ...base, question_type: "SINGLE_CHOICE" }, { answer: { value: ["a"] } }), common_1.BadRequestException);
+    strict_1.default.throws(() => score({ ...base, question_type: "NUMERIC" }, { answer: { value: true } }), common_1.BadRequestException);
 });
 (0, node_test_1.default)("assessment authoring rejects invalid choice answer keys", () => {
     const service = serviceWith(async () => ({ rows: [] }));
@@ -97,6 +99,60 @@ const request = {
     const restricted = await unsupportedRoleService.listAssessments(unsupportedRole, 1, 25, 0, {});
     strict_1.default.deepEqual(restricted.data, []);
     strict_1.default.equal(unsupportedRoleQueries, 0);
+});
+(0, node_test_1.default)("question updates scope submitted-attempt checks to the current tenant", async () => {
+    let attemptCheck;
+    const administrator = {
+        ...learner,
+        id: "administrator-1",
+        roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
+        permissions: ["lms.assessment_question.update"],
+    };
+    const administratorRequest = { context: { ...request.context, user: administrator } };
+    const db = {
+        query: async (text, values) => {
+            if (text.startsWith("SELECT q.*")) {
+                return {
+                    rows: [{
+                            id: "question-1",
+                            tenant_id: administrator.tenantId,
+                            assessment_id: "assessment-1",
+                            assessment_institution_id: "institution-1",
+                            assessment_campus_id: "campus-1",
+                            question_type: "SHORT_TEXT",
+                        }],
+                };
+            }
+            if (text.startsWith("SELECT a.*")) {
+                return {
+                    rows: [{
+                            id: "assessment-1",
+                            tenant_id: administrator.tenantId,
+                            institution_id: "institution-1",
+                            campus_id: "campus-1",
+                            course_id: "course-1",
+                            status: "DRAFT",
+                        }],
+                };
+            }
+            if (text.includes("FROM user_roles"))
+                return { rows: [{ ok: 1 }] };
+            if (text.startsWith("SELECT 1 FROM lms_assessment_attempts")) {
+                attemptCheck = { text, values };
+                return { rows: [] };
+            }
+            return { rows: [] };
+        },
+        transaction: async (work) => work({
+            query: async (text) => text.startsWith("UPDATE lms_assessment_questions")
+                ? { rows: [{ id: "question-1", tenant_id: administrator.tenantId, prompt: "Updated" }] }
+                : { rows: [] },
+        }),
+    };
+    const service = new assessment_service_1.AssessmentService(db, { record: async () => undefined });
+    await service.updateQuestion("question-1", { prompt: "Updated" }, administratorRequest);
+    strict_1.default.match(attemptCheck?.text ?? "", /tenant_id = \$1 AND assessment_id = \$2/);
+    strict_1.default.deepEqual(attemptCheck?.values, [administrator.tenantId, "assessment-1"]);
 });
 (0, node_test_1.default)("assessment reads reject a different institution before returning data", async () => {
     const service = serviceWith(async (text) => {

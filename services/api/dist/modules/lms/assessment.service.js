@@ -796,6 +796,19 @@ let AssessmentService = class AssessmentService {
         const supplied = answer.answer?.value;
         if (supplied === undefined)
             throw new common_1.BadRequestException("Each answer must include a value.");
+        if (question.question_type === "MULTIPLE_CHOICE") {
+            if (!Array.isArray(supplied) || supplied.some((value) => typeof value !== "string")) {
+                throw new common_1.BadRequestException("Multiple-choice answers must be arrays of strings.");
+            }
+        }
+        else if (question.question_type === "NUMERIC") {
+            if (typeof supplied !== "string" && typeof supplied !== "number") {
+                throw new common_1.BadRequestException("Numeric answers must contain a valid number.");
+            }
+        }
+        else if (typeof supplied !== "string") {
+            throw new common_1.BadRequestException("This answer must contain a string value.");
+        }
         const normalized = normalizeAnswer(supplied);
         const correctValues = options.filter((option) => option.is_correct === true).map((option) => String(option.value));
         let correct = false;
@@ -805,9 +818,6 @@ let AssessmentService = class AssessmentService {
             correct = sameValues(normalized, correctValues);
         }
         else if (question.question_type === "NUMERIC") {
-            if (typeof supplied !== "string" && typeof supplied !== "number") {
-                throw new common_1.BadRequestException("Numeric answers must contain a valid number.");
-            }
             if (typeof supplied === "string" && supplied.trim() === "") {
                 return { correct: false, awardedMarks: 0 };
             }

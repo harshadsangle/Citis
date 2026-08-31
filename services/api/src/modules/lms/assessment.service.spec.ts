@@ -108,6 +108,62 @@ test("assessment listing honors status and denies unsupported roles", async () =
   assert.equal(unsupportedRoleQueries, 0);
 });
 
+test("question updates scope submitted-attempt checks to the current tenant", async () => {
+  let attemptCheck: { text: string; values?: unknown[] } | undefined;
+  const administrator: AuthenticatedUser = {
+    ...learner,
+    id: "administrator-1",
+    roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
+    permissions: ["lms.assessment_question.update"],
+  };
+  const administratorRequest = { context: { ...request.context, user: administrator } } as unknown as ContextRequest;
+  const db = {
+    query: async (text: string, values?: unknown[]) => {
+      if (text.startsWith("SELECT q.*")) {
+        return {
+          rows: [{
+            id: "question-1",
+            tenant_id: administrator.tenantId,
+            assessment_id: "assessment-1",
+            assessment_institution_id: "institution-1",
+            assessment_campus_id: "campus-1",
+            question_type: "SHORT_TEXT",
+          }],
+        };
+      }
+      if (text.startsWith("SELECT a.*")) {
+        return {
+          rows: [{
+            id: "assessment-1",
+            tenant_id: administrator.tenantId,
+            institution_id: "institution-1",
+            campus_id: "campus-1",
+            course_id: "course-1",
+            status: "DRAFT",
+          }],
+        };
+      }
+      if (text.includes("FROM user_roles")) return { rows: [{ ok: 1 }] };
+      if (text.startsWith("SELECT 1 FROM lms_assessment_attempts")) {
+        attemptCheck = { text, values };
+        return { rows: [] };
+      }
+      return { rows: [] };
+    },
+    transaction: async (work: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<unknown>) => work({
+      query: async (text: string) => text.startsWith("UPDATE lms_assessment_questions")
+        ? { rows: [{ id: "question-1", tenant_id: administrator.tenantId, prompt: "Updated" }] }
+        : { rows: [] },
+    }),
+  };
+  const service = new AssessmentService(db as never, { record: async () => undefined } as never);
+
+  await service.updateQuestion("question-1", { prompt: "Updated" }, administratorRequest);
+
+  assert.match(attemptCheck?.text ?? "", /tenant_id = \$1 AND assessment_id = \$2/);
+  assert.deepEqual(attemptCheck?.values, [administrator.tenantId, "assessment-1"]);
+});
+
 test("assessment reads reject a different institution before returning data", async () => {
   const service = serviceWith(async (text) => {
     if (text.startsWith("SELECT a.*")) {
