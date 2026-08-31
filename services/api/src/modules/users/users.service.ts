@@ -80,7 +80,7 @@ export class UsersService {
     const actor = request.context.user!;
     const userResult = await this.db.query<{ id: string; tenant_id: string }>(
       "SELECT id, tenant_id FROM users WHERE id = $1 AND tenant_id = $2",
-      [id, this.platform(actor) ? undefined : actor.tenantId],
+      [id, this.platform(actor) ? null : actor.tenantId],
     );
     if (!userResult.rows[0]) throw new NotFoundException("User not found.");
     const existingScopes = await this.db.query<{ institution_id: string | null; campus_id: string | null }>(

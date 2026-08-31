@@ -98,6 +98,7 @@ export class LmsService {
     await this.audit.record({
       tenantId: request.context.user!.tenantId,
       institutionId: (row.institution_id as string | null) ?? null,
+      campusId: (row.campus_id as string | null) ?? null,
       actorUserId: request.context.user!.id,
       requestId: request.context.requestId,
       module: "lms",
@@ -115,6 +116,7 @@ export class LmsService {
     await this.audit.record({
       tenantId: request.context.user!.tenantId,
       institutionId: (row.institution_id as string | null) ?? null,
+      campusId: (row.campus_id as string | null) ?? null,
       actorUserId: request.context.user!.id,
       requestId: request.context.requestId,
       module: "lms",

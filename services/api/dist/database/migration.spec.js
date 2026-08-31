@@ -12,6 +12,7 @@ const lmsMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(proces
 const relationshipMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/004_lms_enrollment_assignments.sql"), "utf8");
 const progressMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/005_lms_progress_tracking.sql"), "utf8");
 const assignmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/006_lms_assignments.sql"), "utf8");
+const scopeMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/007_lms_scope_isolation.sql"), "utf8");
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
     (0, node_test_1.default)(`migration defines ${table}`, () => {
         strict_1.default.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
@@ -68,5 +69,14 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(assignmentMigration, /status IN \('SUBMITTED', 'GRADED'\)/);
     strict_1.default.match(assignmentMigration, /lms\.assignment_submission\.update/);
     strict_1.default.match(assignmentMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+(0, node_test_1.default)("scope migration adds campus ancestry and composite integrity constraints", () => {
+    strict_1.default.match(scopeMigration, /ADD COLUMN IF NOT EXISTS campus_id uuid/);
+    strict_1.default.match(scopeMigration, /ADD COLUMN IF NOT EXISTS institution_id uuid/);
+    strict_1.default.match(scopeMigration, /user_roles_scope_campus_fk/);
+    strict_1.default.match(scopeMigration, /lms_enrollments_course_scope_fk/);
+    strict_1.default.match(scopeMigration, /lms_assignment_submissions_assignment_scope_fk/);
+    strict_1.default.match(scopeMigration, /user_roles_campus_requires_institution_ck/);
+    strict_1.default.match(scopeMigration, /INSERT INTO schema_migrations \(version\)/);
 });
 //# sourceMappingURL=migration.spec.js.map

@@ -77,6 +77,7 @@ let LmsService = class LmsService {
         await this.audit.record({
             tenantId: request.context.user.tenantId,
             institutionId: row.institution_id ?? null,
+            campusId: row.campus_id ?? null,
             actorUserId: request.context.user.id,
             requestId: request.context.requestId,
             module: "lms",
@@ -93,6 +94,7 @@ let LmsService = class LmsService {
         await this.audit.record({
             tenantId: request.context.user.tenantId,
             institutionId: row.institution_id ?? null,
+            campusId: row.campus_id ?? null,
             actorUserId: request.context.user.id,
             requestId: request.context.requestId,
             module: "lms",
@@ -218,7 +220,7 @@ let LmsService = class LmsService {
          SET title = COALESCE($3, title), description = COALESCE($4, description), thumbnail = COALESCE($5, thumbnail),
              updated_by = $2, updated_at = now()
          WHERE id = $1 AND tenant_id = $6
-         RETURNING id, tenant_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`, [id, request.context.user.id, input.title?.trim() || null, input.description?.trim() || null, input.thumbnail?.trim() || null, request.context.user.tenantId]);
+          RETURNING id, tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`, [id, request.context.user.id, input.title?.trim() || null, input.description?.trim() || null, input.thumbnail?.trim() || null, request.context.user.tenantId]);
             if (!result.rows[0])
                 throw new common_1.NotFoundException("Course not found.");
             await this.auditMutation(request, "course", "UPDATE", result.rows[0], before);
@@ -386,7 +388,7 @@ let LmsService = class LmsService {
         let committed = false;
         try {
             const managed = await this.db.transaction(async (client) => {
-                const previous = await client.query("SELECT storage_key FROM managed_files WHERE resource_id = $1 FOR UPDATE", [resource.id]);
+                const previous = await client.query("SELECT storage_key FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 FOR UPDATE", [resource.id, request.context.user.tenantId]);
                 previousStorageKey = previous.rows[0]?.storage_key ?? null;
                 const result = await client.query(`INSERT INTO managed_files
             (tenant_id, institution_id, campus_id, resource_id, kind, storage_key, original_filename, mime_type, byte_size, sha256, entrypoint, created_by)

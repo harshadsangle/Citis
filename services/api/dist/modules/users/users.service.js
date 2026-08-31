@@ -111,7 +111,7 @@ let UsersService = class UsersService {
     }
     async assignRole(id, input, request) {
         const actor = request.context.user;
-        const userResult = await this.db.query("SELECT id, tenant_id FROM users WHERE id = $1 AND tenant_id = $2", [id, this.platform(actor) ? undefined : actor.tenantId]);
+        const userResult = await this.db.query("SELECT id, tenant_id FROM users WHERE id = $1 AND tenant_id = $2", [id, this.platform(actor) ? null : actor.tenantId]);
         if (!userResult.rows[0])
             throw new common_1.NotFoundException("User not found.");
         const existingScopes = await this.db.query("SELECT institution_id, campus_id FROM user_roles WHERE user_id = $1 AND tenant_id = $2", [id, userResult.rows[0].tenant_id]);
