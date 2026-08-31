@@ -938,6 +938,17 @@ export class AssessmentService {
     const options = question.options as Array<Record<string, unknown>>;
     const supplied = (answer.answer as { value?: unknown })?.value;
     if (supplied === undefined) throw new BadRequestException("Each answer must include a value.");
+    if (question.question_type === "MULTIPLE_CHOICE") {
+      if (!Array.isArray(supplied) || supplied.some((value) => typeof value !== "string")) {
+        throw new BadRequestException("Multiple-choice answers must be arrays of strings.");
+      }
+    } else if (question.question_type === "NUMERIC") {
+      if (typeof supplied !== "string" && typeof supplied !== "number") {
+        throw new BadRequestException("Numeric answers must contain a valid number.");
+      }
+    } else if (typeof supplied !== "string") {
+      throw new BadRequestException("This answer must contain a string value.");
+    }
     const normalized = normalizeAnswer(supplied);
     const correctValues = options.filter((option) => option.is_correct === true).map((option) => String(option.value));
     let correct = false;
@@ -945,9 +956,6 @@ export class AssessmentService {
       if (!Array.isArray(normalized)) throw new BadRequestException("Multiple-choice answers must be arrays.");
       correct = sameValues(normalized, correctValues);
     } else if (question.question_type === "NUMERIC") {
-      if (typeof supplied !== "string" && typeof supplied !== "number") {
-        throw new BadRequestException("Numeric answers must contain a valid number.");
-      }
       if (typeof supplied === "string" && supplied.trim() === "") {
         return { correct: false, awardedMarks: 0 };
       }

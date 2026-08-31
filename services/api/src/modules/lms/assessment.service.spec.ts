@@ -42,6 +42,8 @@ test("assessment scoring supports single, multiple, numeric, and text answers", 
   assert.deepEqual(score({ ...base, question_type: "NUMERIC", options: [{ value: "0", is_correct: true }] }, { answer: { value: "" } }), { correct: false, awardedMarks: 0 });
   assert.deepEqual(score({ ...base, question_type: "MULTIPLE_CHOICE", options: [{ value: "a", is_correct: true }, { value: "b", is_correct: true }] }, { answer: { value: ["a", "b"] } }), { correct: true, awardedMarks: 2 });
   assert.deepEqual(score({ ...base, question_type: "SINGLE_CHOICE" }, { answer: { value: "b" } }), { correct: false, awardedMarks: 0 });
+  assert.throws(() => score({ ...base, question_type: "SINGLE_CHOICE" }, { answer: { value: ["a"] } }), BadRequestException);
+  assert.throws(() => score({ ...base, question_type: "NUMERIC" }, { answer: { value: true } }), BadRequestException);
 });
 
 test("assessment authoring rejects invalid choice answer keys", () => {
