@@ -8,6 +8,7 @@ const lmsMigration = readFileSync(resolve(process.cwd(), "../../packages/databas
 const relationshipMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/004_lms_enrollment_assignments.sql"), "utf8");
 const progressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/005_lms_progress_tracking.sql"), "utf8");
 const assignmentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/006_lms_assignments.sql"), "utf8");
+const scopeMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/007_lms_scope_isolation.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -73,4 +74,14 @@ test("assignment migration extends Blueprint assessments and defines isolated su
   assert.match(assignmentMigration, /status IN \('SUBMITTED', 'GRADED'\)/);
   assert.match(assignmentMigration, /lms\.assignment_submission\.update/);
   assert.match(assignmentMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("scope migration adds campus ancestry and composite integrity constraints", () => {
+  assert.match(scopeMigration, /ADD COLUMN IF NOT EXISTS campus_id uuid/);
+  assert.match(scopeMigration, /ADD COLUMN IF NOT EXISTS institution_id uuid/);
+  assert.match(scopeMigration, /user_roles_scope_campus_fk/);
+  assert.match(scopeMigration, /lms_enrollments_course_scope_fk/);
+  assert.match(scopeMigration, /lms_assignment_submissions_assignment_scope_fk/);
+  assert.match(scopeMigration, /user_roles_campus_requires_institution_ck/);
+  assert.match(scopeMigration, /INSERT INTO schema_migrations \(version\)/);
 });
