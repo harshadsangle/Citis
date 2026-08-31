@@ -98,6 +98,18 @@ type AssessmentHistoryItem = {
   grading_feedback?: string | null;
   submitted_at: string;
 };
+type Certificate = {
+  id: string;
+  certificate_number: string;
+  verification_id: string;
+  learner_name: string;
+  course_title: string;
+  course_code: string;
+  institution_name: string;
+  issue_date: string;
+  status: "ISSUED";
+  document_format: "svg";
+};
 
 const stateLabel: Record<Progress["state"], string> = {
   NOT_STARTED: "Not started",
@@ -118,6 +130,7 @@ export default function StudentPortalPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryItem[]>([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [activeAttempt, setActiveAttempt] = useState<AssessmentAttempt | null>(null);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [assessmentNotice, setAssessmentNotice] = useState("");
@@ -130,6 +143,8 @@ export default function StudentPortalPage() {
   const [submissionError, setSubmissionError] = useState("");
   const [activeAssignmentId, setActiveAssignmentId] = useState<string | null>(null);
   const [submissionValidation, setSubmissionValidation] = useState("");
+  const [certificateBusy, setCertificateBusy] = useState("");
+  const [certificateNotice, setCertificateNotice] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -144,13 +159,15 @@ export default function StudentPortalPage() {
       fetchAllPages<Assignment>("/api/v1/assignments"),
       fetchAllPages<Assessment>("/api/v1/assessments"),
       fetchAllPages<AssessmentHistoryItem>("/api/v1/assessment-history"),
+      fetchAllPages<Certificate>("/api/v1/certificates"),
     ])
-      .then(async ([progressBody, assignmentBody, assessmentBody, historyBody]) => {
+      .then(async ([progressBody, assignmentBody, assessmentBody, historyBody, certificateBody]) => {
         if (!active) return;
         setCourses(progressBody);
         setAssignments(assignmentBody);
         setAssessments(assessmentBody);
         setAssessmentHistory(historyBody);
+        setCertificates(certificateBody);
         const submissionEntries = await Promise.all(assignmentBody.map(async (assignment) => {
           const response = await fetch(`/api/v1/assignments/${assignment.id}/submission`, { credentials: "include" });
           if (!response.ok) return [assignment.id, null] as const;
@@ -169,6 +186,33 @@ export default function StudentPortalPage() {
       active = false;
     };
   }, []);
+
+  async function downloadCertificate(certificate: Certificate) {
+    setCertificateBusy(certificate.id);
+    setCertificateNotice("");
+    setError("");
+    try {
+      const response = await fetch(`/api/v1/certificates/${certificate.id}/download`, { credentials: "include" });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+        throw new Error(body?.error?.message || "We couldn't download your certificate.");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `citis-certificate-${certificate.certificate_number}.svg`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(url);
+      setCertificateNotice("Certificate download started.");
+    } catch (reason: unknown) {
+      setError(reason instanceof Error ? reason.message : "We couldn't download your certificate.");
+    } finally {
+      setCertificateBusy("");
+    }
+  }
 
   async function loadAssessmentHistory() {
     const response = await fetch("/api/v1/assessment-history?page=1&pageSize=100", { credentials: "include" });
@@ -375,6 +419,39 @@ export default function StudentPortalPage() {
                       {item.grading_status === "PENDING" ? "Awaiting instructor review" : `${item.score ?? "—"}/${item.max_score ?? "—"} · ${item.passed ? "Passed" : item.passed === false ? "Not passed" : "Graded"}`}
                       {item.grading_feedback && <p style={{ color: "#61718a", fontSize: 13, fontWeight: 400, lineHeight: 1.4, margin: "6px 0 0", maxWidth: 260 }}>{item.grading_feedback}</p>}
                     </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+        {!loading && !error && (
+          <section style={{ marginTop: 28 }}>
+            <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+              <div>
+                <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Recognition</p>
+                <h2 style={{ fontSize: 28, margin: "6px 0 0" }}>Your certificates</h2>
+              </div>
+              {certificateNotice && <span style={{ color: "#0f766e", fontSize: 14, fontWeight: 700 }}>{certificateNotice}</span>}
+            </div>
+            {certificates.length === 0 ? (
+              <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>
+                <strong style={{ color: "#12304a", display: "block", fontSize: 17, marginBottom: 7 }}>No certificates issued yet</strong>
+                <span>{courses.some((course) => course.state === "COMPLETED") ? "Your completion is being checked. Certificates are issued automatically when every published lesson and required assessment is complete." : "Complete all published lessons and required assessments in an enrolled course to receive a certificate automatically."}</span>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 16 }}>
+                {certificates.map((certificate) => (
+                  <article key={certificate.id} style={{ alignItems: "center", background: "white", border: "1px solid #b9d9d4", borderRadius: 20, boxShadow: "0 12px 30px rgba(18, 48, 74, 0.06)", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", padding: "21px 24px" }}>
+                    <div>
+                      <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>Certificate of achievement</p>
+                      <h3 style={{ fontSize: 21, margin: "7px 0 5px" }}>{certificate.course_title}</h3>
+                      <p style={{ color: "#61718a", fontSize: 14, margin: 0 }}>{certificate.course_code} · Issued {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(certificate.issue_date))}</p>
+                      <p style={{ color: "#71879a", fontSize: 13, margin: "7px 0 0" }}>Certificate number: <strong style={{ color: "#526f8c" }}>{certificate.certificate_number}</strong></p>
+                    </div>
+                    <button onClick={() => void downloadCertificate(certificate)} disabled={Boolean(certificateBusy)} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, padding: "11px 16px" }} type="button">
+                      {certificateBusy === certificate.id ? "Preparing…" : "Download certificate"}
+                    </button>
                   </article>
                 ))}
               </div>

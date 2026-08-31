@@ -25,6 +25,9 @@ CREATE INDEX IF NOT EXISTS lms_certificates_learner_idx
 CREATE INDEX IF NOT EXISTS lms_certificates_course_scope_idx
   ON lms_certificates (tenant_id, institution_id, campus_id, course_id, issue_date DESC);
 
+CREATE UNIQUE INDEX IF NOT EXISTS lms_enrollments_tenant_institution_course_id_key
+  ON lms_enrollments (tenant_id, institution_id, course_id, id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS lms_certificates_scope_id_key
   ON lms_certificates (tenant_id, institution_id, campus_id, course_id, id);
 

@@ -54,6 +54,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
           })}
         </div>
         <p className="mt-8 text-center text-sm text-muted-foreground">Not sure which portal to use? Contact your institution or programme team.</p>
+        <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
       </div>
     </section>
   );
