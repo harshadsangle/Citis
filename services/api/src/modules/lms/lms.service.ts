@@ -425,8 +425,8 @@ export class LmsService {
   async updateLearningResource(id: string, input: UpdateLearningResourceDto, request: ContextRequest) {
     const user = request.context.user!;
     const before = await this.getChild(id, "learning_resources", user);
-    const resourceType = (input.resourceType ?? before.resource_type) as string;
-    this.validateResource(resourceType, input.url ?? before.url, input.filePath ?? before.file_path);
+    const resourceType = (input.resourceType ?? String(before.resource_type ?? "")) as string;
+    this.validateResource(resourceType, input.url ?? (before.url as string | null | undefined), input.filePath ?? (before.file_path as string | null | undefined));
     return this.run(async () => {
       const result = await this.db.query(
         `UPDATE learning_resources
@@ -445,7 +445,7 @@ export class LmsService {
 
   private async resourceFor(id: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT lr.*, p.institution_id
+      `SELECT lr.*, p.institution_id, c.campus_id
        FROM learning_resources lr
        JOIN lessons l ON l.id = lr.lesson_id AND l.tenant_id = lr.tenant_id
        JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = lr.tenant_id
@@ -455,6 +455,7 @@ export class LmsService {
       [id, user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("Learning resource not found.");
+    assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
     return result.rows[0];
   }
 
@@ -491,17 +492,18 @@ export class LmsService {
         previousStorageKey = previous.rows[0]?.storage_key ?? null;
         const result = await client.query(
           `INSERT INTO managed_files
-            (tenant_id, institution_id, resource_id, kind, storage_key, original_filename, mime_type, byte_size, sha256, entrypoint, created_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            (tenant_id, institution_id, campus_id, resource_id, kind, storage_key, original_filename, mime_type, byte_size, sha256, entrypoint, created_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
            ON CONFLICT (resource_id) DO UPDATE SET
-             tenant_id = EXCLUDED.tenant_id, institution_id = EXCLUDED.institution_id, kind = EXCLUDED.kind,
+              tenant_id = EXCLUDED.tenant_id, institution_id = EXCLUDED.institution_id, campus_id = EXCLUDED.campus_id, kind = EXCLUDED.kind,
              storage_key = EXCLUDED.storage_key, original_filename = EXCLUDED.original_filename,
              mime_type = EXCLUDED.mime_type, byte_size = EXCLUDED.byte_size, sha256 = EXCLUDED.sha256,
              entrypoint = EXCLUDED.entrypoint, created_by = EXCLUDED.created_by, created_at = now()
-           RETURNING id, tenant_id, institution_id, resource_id, kind, storage_key, original_filename, mime_type, byte_size, sha256, entrypoint, created_at`,
+             RETURNING id, tenant_id, institution_id, campus_id, resource_id, kind, storage_key, original_filename, mime_type, byte_size, sha256, entrypoint, created_at`,
           [
             request.context.user!.tenantId,
             resource.institution_id,
+             resource.campus_id ?? null,
             resource.id,
             kind,
             stored.storageKey,
@@ -549,8 +551,8 @@ export class LmsService {
   async getManagedFile(id: string, request: ContextRequest) {
     const resource = await this.resourceFor(id, request.context.user!);
     const result = await this.db.query<Record<string, unknown>>(
-      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND kind = 'FILE'",
-      [id, request.context.user!.tenantId],
+      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND institution_id = $3 AND campus_id IS NOT DISTINCT FROM $4 AND kind = 'FILE'",
+      [id, request.context.user!.tenantId, resource.institution_id, resource.campus_id ?? null],
     );
     if (!result.rows[0]) throw new NotFoundException("No managed file is attached to this resource.");
     const managed = result.rows[0];
@@ -571,8 +573,8 @@ export class LmsService {
   async getScormLaunch(id: string, request: ContextRequest) {
     const resource = await this.resourceFor(id, request.context.user!);
     const result = await this.db.query<Record<string, unknown>>(
-      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND kind = 'SCORM'",
-      [id, request.context.user!.tenantId],
+      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND institution_id = $3 AND campus_id IS NOT DISTINCT FROM $4 AND kind = 'SCORM'",
+      [id, request.context.user!.tenantId, resource.institution_id, resource.campus_id ?? null],
     );
     if (!result.rows[0]) throw new NotFoundException("No SCORM package is attached to this resource.");
     await this.auditAccess(request, "learning_resource_scorm", "LAUNCH", resource, {
@@ -585,8 +587,8 @@ export class LmsService {
   async getScormAsset(id: string, assetPath: string, request: ContextRequest) {
     const resource = await this.resourceFor(id, request.context.user!);
     const result = await this.db.query<Record<string, unknown>>(
-      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND kind = 'SCORM'",
-      [id, request.context.user!.tenantId],
+      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND institution_id = $3 AND campus_id IS NOT DISTINCT FROM $4 AND kind = 'SCORM'",
+      [id, request.context.user!.tenantId, resource.institution_id, resource.campus_id ?? null],
     );
     if (!result.rows[0]) throw new NotFoundException("No SCORM package is attached to this resource.");
     let content: Buffer;
@@ -694,24 +696,26 @@ export class LmsService {
     if (RESOURCE_TYPES_WITH_FILE_OR_URL.includes(resourceType as LmsResourceType) && !url && !filePath) return;
   }
 
-  private async assertInstitutionAccess(user: AuthenticatedUser, institutionId: string) {
-    if (user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN")) return;
+  private async assertInstitutionAccess(user: AuthenticatedUser, institutionId: string, campusId?: string | null) {
+    assertScope(user, institutionId, campusId);
+    if (isPlatformUser(user)) return;
     const result = await this.db.query(
       `SELECT 1
        FROM user_roles ur
        JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
-       WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+        WHERE ur.user_id = $1 AND ur.tenant_id = $2 AND ur.institution_id = $3
+          AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
          AND r.status = 'ACTIVE'
          AND r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
        LIMIT 1`,
-      [user.id, user.tenantId, institutionId],
+       [user.id, user.tenantId, institutionId, campusId ?? null],
     );
     if (!result.rows[0]) throw new ForbiddenException("You are not authorized for this institution.");
   }
 
   private async relationshipCourse(courseId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT c.id, c.tenant_id, c.institution_id, c.title, c.code, c.status,
+      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
               p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
@@ -721,7 +725,7 @@ export class LmsService {
     );
     const course = result.rows[0];
     if (!course) throw new NotFoundException("Course not found in the current tenant.");
-    await this.assertInstitutionAccess(user, String(course.institution_id));
+     await this.assertInstitutionAccess(user, String(course.institution_id), course.campus_id as string | null);
     if (course.status !== "PUBLISHED") throw new BadRequestException("Enrollments and instructor assignments require a published course.");
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution or programme is not active.");
@@ -736,16 +740,18 @@ export class LmsService {
     return status || "ACTIVE";
   }
 
-  private async eligiblePerson(user: AuthenticatedUser, institutionId: string, personId: string, roleCode: "STUDENT" | "TEACHER") {
+  private async eligiblePerson(user: AuthenticatedUser, institutionId: string, campusId: string | null, personId: string, roleCode: "STUDENT" | "TEACHER") {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT u.id, u.tenant_id, u.first_name, u.last_name, u.email, u.mobile
        FROM users u
        JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
        JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
        WHERE u.id = $1 AND u.tenant_id = $2 AND u.status = 'ACTIVE'
-         AND ur.institution_id = $3 AND r.code = $4 AND r.status = 'ACTIVE'
+          AND ur.institution_id = $3
+          AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
+          AND r.code = $5 AND r.status = 'ACTIVE'
        LIMIT 1`,
-      [personId, user.tenantId, institutionId, roleCode],
+      [personId, user.tenantId, institutionId, campusId, roleCode],
     );
     if (!result.rows[0]) {
       throw new NotFoundException(roleCode === "STUDENT"
@@ -771,21 +777,23 @@ export class LmsService {
     const searchClause = search
       ? " AND (u.first_name ILIKE $5 OR u.last_name ILIKE $5 OR concat_ws(' ', u.first_name, u.last_name) ILIKE $5 OR COALESCE(u.email, '') ILIKE $5)"
       : "";
-    const values: unknown[] = [user.tenantId, course.institution_id, course.id, roleCode];
+    const values: unknown[] = [user.tenantId, course.institution_id, course.id, roleCode, course.campus_id ?? null];
     if (search) values.push(`%${search}%`);
     const limitParam = values.length + 1;
     const offsetParam = values.length + 2;
     const [rows, total] = await Promise.all([
       this.db.query(
-        `SELECT u.id, u.first_name, u.last_name, u.email, u.mobile
+       `SELECT u.id, u.first_name, u.last_name, u.email, u.mobile
          FROM users u
          JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-           AND ur.institution_id = $2 AND r.code = $4 AND r.status = 'ACTIVE'
+            AND ur.institution_id = $2 AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
+            AND r.code = $4 AND r.status = 'ACTIVE'
            AND NOT EXISTS (
              SELECT 1 FROM ${relationshipTable} x
-             WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
+              WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
+                AND x.campus_id IS NOT DISTINCT FROM $5
                AND x.${relationshipColumn} = u.id AND x.status = 'ACTIVE'
            )${searchClause}
          ORDER BY u.first_name ASC, u.last_name ASC, u.id ASC
@@ -793,15 +801,17 @@ export class LmsService {
         [...values, pageSize, offset],
       ),
       this.db.query<{ count: string }>(
-        `SELECT count(DISTINCT u.id)::text AS count
+         `SELECT count(DISTINCT u.id)::text AS count
          FROM users u
          JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-           AND ur.institution_id = $2 AND r.code = $4 AND r.status = 'ACTIVE'
+            AND ur.institution_id = $2 AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
+            AND r.code = $4 AND r.status = 'ACTIVE'
            AND NOT EXISTS (
              SELECT 1 FROM ${relationshipTable} x
-             WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
+              WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
+                AND x.campus_id IS NOT DISTINCT FROM $5
                AND x.${relationshipColumn} = u.id AND x.status = 'ACTIVE'
            )${searchClause}`,
         values,
@@ -833,21 +843,23 @@ export class LmsService {
     const personAlias = kind === "enrollment" ? "learner" : "instructor";
     const dateColumn = kind === "enrollment" ? "enrolled_at" : "assigned_at";
     const status = this.relationshipStatus(query.status);
-    const values: unknown[] = [user.tenantId, course.institution_id, course.id, status];
-    const select = `x.id, x.tenant_id, x.institution_id, x.course_id, x.${personColumn}, x.status,
+    const values: unknown[] = [user.tenantId, course.institution_id, course.id, status, course.campus_id ?? null];
+    const select = `x.id, x.tenant_id, x.institution_id, x.campus_id, x.course_id, x.${personColumn}, x.status,
                     x.${dateColumn}, x.removed_at, ${personAlias}.first_name AS ${personAlias}_first_name,
                     ${personAlias}.last_name AS ${personAlias}_last_name, ${personAlias}.email AS ${personAlias}_email`;
     const [rows, total] = await Promise.all([
       this.db.query(
         `SELECT ${select}
          FROM ${table} x JOIN users ${personAlias} ON ${personAlias}.id = x.${personColumn} AND ${personAlias}.tenant_id = x.tenant_id
-         WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4
+          WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4
+            AND x.campus_id IS NOT DISTINCT FROM $5
          ORDER BY x.${dateColumn} DESC, x.id DESC LIMIT $5 OFFSET $6`,
         [...values, pageSize, offset],
       ),
       this.db.query<{ count: string }>(
         `SELECT count(*)::text AS count FROM ${table} x
-         WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4`,
+          WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3 AND x.status = $4
+            AND x.campus_id IS NOT DISTINCT FROM $5`,
         values,
       ),
     ]);
@@ -879,13 +891,13 @@ export class LmsService {
   async enrollLearner(courseId: string, input: EnrollLearnerDto, request: ContextRequest) {
     const user = request.context.user!;
     const course = await this.relationshipCourse(courseId, user);
-    await this.eligiblePerson(user, String(course.institution_id), input.learnerId, "STUDENT");
+    await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.learnerId, "STUDENT");
     return this.runRelationship(async () => {
       const result = await this.db.query<Record<string, unknown>>(
-        `INSERT INTO lms_enrollments (tenant_id, institution_id, course_id, learner_id, enrolled_by)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, tenant_id, institution_id, course_id, learner_id, status, enrolled_by, enrolled_at, removed_at, created_at, updated_at`,
-        [user.tenantId, course.institution_id, course.id, input.learnerId, user.id],
+        `INSERT INTO lms_enrollments (tenant_id, institution_id, campus_id, course_id, learner_id, enrolled_by)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING id, tenant_id, institution_id, campus_id, course_id, learner_id, status, enrolled_by, enrolled_at, removed_at, created_at, updated_at`,
+        [user.tenantId, course.institution_id, course.campus_id ?? null, course.id, input.learnerId, user.id],
       );
       const row = result.rows[0];
       await this.auditMutation(request, "enrollment", "CREATE", row);
@@ -896,13 +908,13 @@ export class LmsService {
   async assignInstructor(courseId: string, input: AssignInstructorDto, request: ContextRequest) {
     const user = request.context.user!;
     const course = await this.relationshipCourse(courseId, user);
-    await this.eligiblePerson(user, String(course.institution_id), input.instructorId, "TEACHER");
+    await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.instructorId, "TEACHER");
     return this.runRelationship(async () => {
       const result = await this.db.query<Record<string, unknown>>(
-        `INSERT INTO lms_instructor_assignments (tenant_id, institution_id, course_id, instructor_id, assigned_by)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id, tenant_id, institution_id, course_id, instructor_id, status, assigned_by, assigned_at, removed_at, created_at, updated_at`,
-        [user.tenantId, course.institution_id, course.id, input.instructorId, user.id],
+        `INSERT INTO lms_instructor_assignments (tenant_id, institution_id, campus_id, course_id, instructor_id, assigned_by)
+          VALUES ($1, $2, $3, $4, $5, $6)
+          RETURNING id, tenant_id, institution_id, campus_id, course_id, instructor_id, status, assigned_by, assigned_at, removed_at, created_at, updated_at`,
+        [user.tenantId, course.institution_id, course.campus_id ?? null, course.id, input.instructorId, user.id],
       );
       const row = result.rows[0];
       await this.auditMutation(request, "instructor_assignment", "CREATE", row);
@@ -921,8 +933,9 @@ export class LmsService {
     const table = kind === "enrollment" ? "lms_enrollments" : "lms_instructor_assignments";
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT * FROM ${table}
-       WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND course_id = $4`,
-      [relationshipId, user.tenantId, course.institution_id, course.id],
+       WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND course_id = $4
+         AND campus_id IS NOT DISTINCT FROM $5`,
+      [relationshipId, user.tenantId, course.institution_id, course.id, course.campus_id ?? null],
     );
     const before = result.rows[0];
     if (!before) throw new NotFoundException("Course relationship not found.");
@@ -931,9 +944,10 @@ export class LmsService {
       const removed = await this.db.query<Record<string, unknown>>(
         `UPDATE ${table}
          SET status = 'REMOVED', removed_by = $2, removed_at = now(), updated_at = now()
-         WHERE id = $1 AND tenant_id = $3 AND institution_id = $4 AND course_id = $5 AND status = 'ACTIVE'
+          WHERE id = $1 AND tenant_id = $3 AND institution_id = $4 AND course_id = $5
+            AND campus_id IS NOT DISTINCT FROM $6 AND status = 'ACTIVE'
          RETURNING *`,
-        [relationshipId, user.id, user.tenantId, course.institution_id, course.id],
+         [relationshipId, user.id, user.tenantId, course.institution_id, course.id, course.campus_id ?? null],
       );
       if (!removed.rows[0]) throw new ConflictException("This course relationship has already been removed.");
       await this.auditMutation(request, kind, "REMOVE", removed.rows[0], before);

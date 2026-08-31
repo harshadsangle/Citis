@@ -58,9 +58,10 @@ export class CampusesService {
   }
 
   async update(id: string, input: UpdateCampusDto, request: ContextRequest) {
-    const tenantId = request.context.user!.tenantId;
-    const before = await this.get(id, tenantId);
-    assertScope(request.context.user!, before.institution_id);
+    const user = request.context.user!;
+    const tenantId = user.tenantId;
+    const before = await this.get(id, user);
+    assertScope(user, before.institution_id, id);
     const result = await this.db.query(
       `UPDATE campuses SET name = COALESCE($2, name), status = COALESCE($3, status), address = COALESCE($4, address),
          city = COALESCE($5, city), state = COALESCE($6, state), country = COALESCE($7, country),
