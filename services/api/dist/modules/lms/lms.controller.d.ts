@@ -26,7 +26,7 @@ export declare class LmsController {
     instructorAssignments(id: string, request: ContextRequest, query: RelationshipListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
     assignInstructor(id: string, input: AssignInstructorDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     removeInstructorAssignment(courseId: string, assignmentId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
-    assignments(request: ContextRequest, query: AssignmentListQueryDto): Promise<import("../../common/response").ApiSuccess<import("pg").QueryResultRow[]>>;
+    assignments(request: ContextRequest, query: AssignmentListQueryDto): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>[]>>;
     createAssignment(input: CreateAssignmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     assignment(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;
     updateAssignment(id: string, input: UpdateAssignmentDto, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;

@@ -231,7 +231,7 @@ export declare class LmsService {
     private assignmentFor;
     private assertAssignmentViewer;
     listAssignments(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssignmentListQueryDto): Promise<{
-        data: import("pg").QueryResultRow[];
+        data: Record<string, unknown>[];
         meta: {
             page: number;
             pageSize: number;

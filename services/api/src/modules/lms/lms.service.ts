@@ -424,7 +424,7 @@ export class LmsService {
 
   async updateLearningResource(id: string, input: UpdateLearningResourceDto, request: ContextRequest) {
     const user = request.context.user!;
-    const before = await this.getChild(id, "learning_resources", user);
+    const before = await this.getChild(id, "learning_resources", user) as Record<string, unknown>;
     const resourceType = (input.resourceType ?? String(before.resource_type ?? "")) as string;
     this.validateResource(resourceType, input.url ?? (before.url as string | null | undefined), input.filePath ?? (before.file_path as string | null | undefined));
     return this.run(async () => {
@@ -1489,7 +1489,7 @@ export class LmsService {
     const values = [user.tenantId, id, pageSize, offset];
     const [rows, total] = await Promise.all([
       this.db.query(
-        `SELECT s.id, s.tenant_id, s.institution_id, s.course_id, s.module_id, s.assignment_id,
+        `SELECT s.id, s.tenant_id, s.institution_id, s.campus_id, s.course_id, s.module_id, s.assignment_id,
                 s.learner_id, s.submission_text, s.attachment_url, s.is_late, s.status, s.grade,
                 s.feedback, s.submitted_at, s.graded_by, s.graded_at, s.created_at, s.updated_at,
                 u.first_name AS learner_first_name, u.last_name AS learner_last_name, u.email AS learner_email
@@ -1537,8 +1537,8 @@ export class LmsService {
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
         `INSERT INTO lms_assignment_submissions
-           (tenant_id, institution_id, course_id, module_id, assignment_id, learner_id, submission_text, attachment_url, is_late)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ($9::timestamptz IS NOT NULL AND now() > $9::timestamptz))
+           (tenant_id, institution_id, campus_id, course_id, module_id, assignment_id, learner_id, submission_text, attachment_url, is_late)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, ($10::timestamptz IS NOT NULL AND now() > $10::timestamptz))
          ON CONFLICT (tenant_id, assignment_id, learner_id)
          DO UPDATE SET submission_text = EXCLUDED.submission_text, attachment_url = EXCLUDED.attachment_url,
                        is_late = EXCLUDED.is_late, status = 'SUBMITTED', grade = NULL, feedback = NULL,
@@ -1547,6 +1547,7 @@ export class LmsService {
         [
           user.tenantId,
           assignment.institution_id,
+          assignment.campus_id ?? null,
           assignment.course_id,
           assignment.module_id,
           assignment.id,
@@ -1565,7 +1566,7 @@ export class LmsService {
   async gradeAssignmentSubmission(id: string, submissionId: string, input: GradeAssignmentSubmissionDto, request: ContextRequest) {
     const user = request.context.user!;
     const assignment = await this.assignmentFor(id, user);
-    await this.assertAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id));
+    await this.assertAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id), assignment.campus_id as string | null);
     if (input.grade > Number(assignment.total_marks)) throw new BadRequestException("Grade cannot exceed the assignment's maximum marks.");
     const submissionResult = await this.db.query<Record<string, unknown>>(
       `SELECT * FROM lms_assignment_submissions
@@ -1589,14 +1590,15 @@ export class LmsService {
       await this.auditMutation(request, "assignment_submission", "GRADE", row, before);
       const completion = await this.db.query<Record<string, unknown>>(
         `INSERT INTO lms_assessment_completions
-           (tenant_id, institution_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NULL, now())
+           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, now())
          ON CONFLICT (tenant_id, assessment_id, learner_id, attempt_id)
          DO UPDATE SET score = EXCLUDED.score, completed_at = now(), updated_at = now()
          RETURNING *`,
         [
           user.tenantId,
           assignment.institution_id,
+          assignment.campus_id ?? null,
           assignment.course_id,
           assignment.module_id,
           assignment.id,

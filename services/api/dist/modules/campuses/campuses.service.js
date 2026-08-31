@@ -56,9 +56,10 @@ let CampusesService = class CampusesService {
         return campus;
     }
     async update(id, input, request) {
-        const tenantId = request.context.user.tenantId;
-        const before = await this.get(id, tenantId);
-        (0, access_scope_1.assertScope)(request.context.user, before.institution_id);
+        const user = request.context.user;
+        const tenantId = user.tenantId;
+        const before = await this.get(id, user);
+        (0, access_scope_1.assertScope)(user, before.institution_id, id);
         const result = await this.db.query(`UPDATE campuses SET name = COALESCE($2, name), status = COALESCE($3, status), address = COALESCE($4, address),
          city = COALESCE($5, city), state = COALESCE($6, state), country = COALESCE($7, country),
          timezone = COALESCE($8, timezone), updated_by = $9, updated_at = now()

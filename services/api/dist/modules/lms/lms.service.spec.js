@@ -16,6 +16,7 @@ const user = {
     lastName: "User",
     roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
     permissions: ["lms.course.create", "lms.learning_resource.create", "lms.course.publish"],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
 };
 const request = {
     context: {
