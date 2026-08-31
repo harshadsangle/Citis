@@ -2,7 +2,7 @@ import { AuditService } from "../../common/audit.service";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, type LmsUpload } from "./resource-storage.service";
-import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CompleteAssessmentDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, RelationshipListQueryDto, SubmitAssignmentDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
+import type { ContentListQueryDto, CandidateListQueryDto, AssignInstructorDto, AssignmentListQueryDto, CreateCourseDto, CreateCourseModuleDto, CreateLearningResourceDto, CreateLessonDto, CreateProgrammeDto, CreateAssignmentDto, EnrollLearnerDto, GradeAssignmentSubmissionDto, RelationshipListQueryDto, SubmitAssignmentDto, UpdateAssignmentDto, UpdateCourseDto, UpdateCourseModuleDto, UpdateLearningResourceDto, UpdateLessonDto, UpdateProgrammeDto } from "./lms.dto";
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
 type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
@@ -223,7 +223,6 @@ export declare class LmsService {
         }[];
     }>;
     completeLesson(lessonId: string, request: ContextRequest): Promise<Record<string, unknown>>;
-    completeAssessment(input: CompleteAssessmentDto, request: ContextRequest): Promise<Record<string, unknown>>;
     private assignmentCourse;
     private hasAssignmentStaffAccess;
     private assertAssignmentStaffAccess;

@@ -13,6 +13,7 @@ const relationshipMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolv
 const progressMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/005_lms_progress_tracking.sql"), "utf8");
 const assignmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/006_lms_assignments.sql"), "utf8");
 const scopeMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/007_lms_scope_isolation.sql"), "utf8");
+const assessmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/008_lms_assessment_engine.sql"), "utf8");
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
     (0, node_test_1.default)(`migration defines ${table}`, () => {
         strict_1.default.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
@@ -80,5 +81,17 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(scopeMigration, /lms_assignment_submissions_assignment_scope_fk/);
     strict_1.default.match(scopeMigration, /user_roles_campus_requires_institution_ck/);
     strict_1.default.match(scopeMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+(0, node_test_1.default)("assessment migration defines isolated questions, options, attempts, and immutable answers", () => {
+    for (const table of ["lms_assessment_questions", "lms_assessment_options", "lms_assessment_attempts", "lms_assessment_answers"]) {
+        strict_1.default.match(assessmentMigration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
+    }
+    strict_1.default.match(assessmentMigration, /question_type IN \('SINGLE_CHOICE', 'MULTIPLE_CHOICE', 'TRUE_FALSE', 'SHORT_TEXT', 'NUMERIC'\)/);
+    strict_1.default.match(assessmentMigration, /status IN \('IN_PROGRESS', 'SUBMITTED'\)/);
+    strict_1.default.match(assessmentMigration, /lms_assessment_questions_assessment_scope_fk/);
+    strict_1.default.match(assessmentMigration, /lms_assessment_answers_attempt_scope_fk/);
+    strict_1.default.match(assessmentMigration, /lms\.assessment_attempt\.create/);
+    strict_1.default.match(assessmentMigration, /lms\.assessment_option\.update/);
+    strict_1.default.match(assessmentMigration, /INSERT INTO schema_migrations \(version\)/);
 });
 //# sourceMappingURL=migration.spec.js.map

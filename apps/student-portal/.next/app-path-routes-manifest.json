@@ -1,5 +1,5 @@
 {
-  "/auth/login/route": "/auth/login",
   "/_not-found/page": "/_not-found",
+  "/auth/login/route": "/auth/login",
   "/page": "/"
 }
