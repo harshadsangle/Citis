@@ -103,6 +103,8 @@ export default function AssessmentManager({ apiBase, courseId, courseLabel }: { 
 
   async function loadQuestions(id: string) {
     setSelectedId(id);
+    setReviewAttempts([]);
+    setActiveReview(null);
     setQuestionLoading(true);
     try {
       const payload = await request<{ success: true; data: Question[] }>(apiBase, `/assessments/${id}/questions`);

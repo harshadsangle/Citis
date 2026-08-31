@@ -740,7 +740,7 @@ __decorate([
 ], LmsController.prototype, "submitAssessmentAttempt", null);
 __decorate([
     (0, common_1.Patch)("assessment-attempts/:id/grade"),
-    (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.grade"),
+    (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.update"),
     __param(0, (0, common_1.Param)("id")),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),

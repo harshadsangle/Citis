@@ -15,6 +15,7 @@ const assignmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)
 const scopeMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/007_lms_scope_isolation.sql"), "utf8");
 const assessmentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/008_lms_assessment_engine.sql"), "utf8");
 const operationsMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/009_lms_assessment_operations.sql"), "utf8");
+const gradingPermissionMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/010_lms_assessment_grading_permission.sql"), "utf8");
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
     (0, node_test_1.default)(`migration defines ${table}`, () => {
         strict_1.default.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
@@ -99,7 +100,11 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grading_status/);
     strict_1.default.match(operationsMigration, /grading_status IN \('NOT_REQUIRED', 'PENDING', 'GRADED'\)/);
     strict_1.default.match(operationsMigration, /ADD COLUMN IF NOT EXISTS grader_id/);
-    strict_1.default.match(operationsMigration, /'lms\.assessment_attempt\.grade'/);
+    strict_1.default.match(operationsMigration, /lms\.assessment_attempt\.update/);
     strict_1.default.match(operationsMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+(0, node_test_1.default)("assessment grading permission migration backfills existing staff roles", () => {
+    strict_1.default.match(gradingPermissionMigration, /lms\.assessment_attempt\.update/);
+    strict_1.default.match(gradingPermissionMigration, /010_lms_assessment_grading_permission/);
 });
 //# sourceMappingURL=migration.spec.js.map
