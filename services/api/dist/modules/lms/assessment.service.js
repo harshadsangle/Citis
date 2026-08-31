@@ -77,7 +77,7 @@ let AssessmentService = class AssessmentService {
              AND EXISTS (
                SELECT 1 FROM lms_instructor_assignments ia
                WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
-                 AND ia.campus_id IS NOT DISTINCT FROM $5
+                  AND (ia.campus_id IS NULL OR ia.campus_id = $5)
                  AND ia.instructor_id = ur.user_id AND ia.status = 'ACTIVE'
              )
            )
@@ -214,6 +214,10 @@ let AssessmentService = class AssessmentService {
         const isPlatform = (0, access_scope_1.isPlatformUser)(user);
         const isTeacher = user.roles.some((role) => role.code === "TEACHER");
         const isAdministrator = user.roles.some((role) => ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].includes(role.code));
+        const isStudent = user.roles.some((role) => role.code === "STUDENT");
+        if (!courseIds && !isPlatform && !isTeacher && !isAdministrator && !isStudent) {
+            return { data: [], meta: { page, pageSize, total: 0, totalPages: 0 } };
+        }
         if (!courseIds && !isPlatform && isTeacher && !isAdministrator) {
             values.push(user.id);
             clauses.push(`EXISTS (
@@ -221,10 +225,14 @@ let AssessmentService = class AssessmentService {
         WHERE ia.tenant_id = a.tenant_id
           AND ia.institution_id = a.institution_id
           AND ia.course_id = a.course_id
-          AND ia.campus_id IS NOT DISTINCT FROM a.campus_id
+           AND (ia.campus_id IS NULL OR ia.campus_id = a.campus_id)
           AND ia.instructor_id = $${values.length}
           AND ia.status = 'ACTIVE'
       )`);
+        }
+        if (query.status) {
+            values.push(query.status);
+            clauses.push(`a.status = $${values.length}`);
         }
         const result = await this.db.query(`SELECT a.id, a.tenant_id, a.institution_id, a.campus_id, a.course_id, a.module_id, a.title,
               a.description, a.assessment_type, a.total_marks, a.passing_marks, a.duration_minutes,
@@ -314,6 +322,9 @@ let AssessmentService = class AssessmentService {
             throw new common_1.BadRequestException("Unsupported question type.");
         if (!options.length)
             throw new common_1.BadRequestException("Each question needs at least one answer option.");
+        if (options.some((option) => !option.value.trim() || !option.label.trim())) {
+            throw new common_1.BadRequestException("Question options must include a value and label.");
+        }
         const values = options.map((option) => option.value.trim());
         if (new Set(values).size !== values.length)
             throw new common_1.BadRequestException("Question option values must be unique.");
@@ -447,7 +458,7 @@ let AssessmentService = class AssessmentService {
         await this.assertStaff(assessment, user);
         if (assessment.status === "PUBLISHED")
             throw new common_1.ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
-        const attempts = await this.db.query("SELECT 1 FROM lms_assessment_attempts WHERE assessment_id = $1 AND status = 'SUBMITTED' LIMIT 1", [assessment.id]);
+        const attempts = await this.db.query("SELECT 1 FROM lms_assessment_attempts WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'SUBMITTED' LIMIT 1", [user.tenantId, assessment.id]);
         if (attempts.rows[0])
             throw new common_1.ConflictException("Questions cannot be edited after an attempt has been submitted.");
         if (input.options)
@@ -794,6 +805,12 @@ let AssessmentService = class AssessmentService {
             correct = sameValues(normalized, correctValues);
         }
         else if (question.question_type === "NUMERIC") {
+            if (typeof supplied !== "string" && typeof supplied !== "number") {
+                throw new common_1.BadRequestException("Numeric answers must contain a valid number.");
+            }
+            if (typeof supplied === "string" && supplied.trim() === "") {
+                return { correct: false, awardedMarks: 0 };
+            }
             const expected = Number(correctValues[0]);
             const actual = Number(normalized);
             if (!Number.isFinite(actual) || !Number.isFinite(expected))

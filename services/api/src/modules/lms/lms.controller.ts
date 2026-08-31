@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
@@ -261,79 +261,79 @@ export class LmsController {
 
   @Get("assessments/:id")
   @RequirePermission("lms.assessment.view")
-  async assessment(@Param("id") id: string, @Req() request: ContextRequest) {
+  async assessment(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.getAssessment(id, request.context.user!), request);
   }
 
   @Patch("assessments/:id")
   @RequirePermission("lms.assessment.update")
-  async updateAssessment(@Param("id") id: string, @Body() input: UpdateAssessmentDto, @Req() request: ContextRequest) {
+  async updateAssessment(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: UpdateAssessmentDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.updateAssessment(id, input, request), request);
   }
 
   @Post("assessments/:id/publish")
   @RequirePermission("lms.assessment.publish")
-  async publishAssessment(@Param("id") id: string, @Req() request: ContextRequest) {
+  async publishAssessment(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.changeAssessmentStatus(id, "PUBLISHED", request), request);
   }
 
   @Post("assessments/:id/archive")
   @RequirePermission("lms.assessment.archive")
-  async archiveAssessment(@Param("id") id: string, @Req() request: ContextRequest) {
+  async archiveAssessment(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.changeAssessmentStatus(id, "ARCHIVED", request), request);
   }
 
   @Get("assessments/:id/questions")
   @RequirePermission("lms.assessment_question.view")
-  async assessmentQuestions(@Param("id") id: string, @Req() request: ContextRequest) {
+  async assessmentQuestions(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.listQuestions(id, request.context.user!), request);
   }
 
   @Post("assessments/:id/questions")
   @RequirePermission("lms.assessment_question.create")
-  async createAssessmentQuestion(@Param("id") id: string, @Body() input: CreateAssessmentQuestionDto, @Req() request: ContextRequest) {
+  async createAssessmentQuestion(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: CreateAssessmentQuestionDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.createQuestion(id, input, request), request);
   }
 
   @Patch("assessment-questions/:id")
   @RequirePermission("lms.assessment_question.update")
-  async updateAssessmentQuestion(@Param("id") id: string, @Body() input: UpdateAssessmentQuestionDto, @Req() request: ContextRequest) {
+  async updateAssessmentQuestion(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: UpdateAssessmentQuestionDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.updateQuestion(id, input, request), request);
   }
 
   @Post("assessment-questions/:id/archive")
   @RequirePermission("lms.assessment_question.archive")
-  async archiveAssessmentQuestion(@Param("id") id: string, @Req() request: ContextRequest) {
+  async archiveAssessmentQuestion(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.archiveQuestion(id, request), request);
   }
 
   @Post("assessment-questions/:id/options")
   @RequirePermission("lms.assessment_option.create")
-  async createAssessmentOption(@Param("id") id: string, @Body() input: CreateAssessmentOptionDto, @Req() request: ContextRequest) {
+  async createAssessmentOption(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: CreateAssessmentOptionDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.createOption(id, input, request), request);
   }
 
   @Patch("assessment-options/:id")
   @RequirePermission("lms.assessment_option.update")
-  async updateAssessmentOption(@Param("id") id: string, @Body() input: UpdateAssessmentOptionDto, @Req() request: ContextRequest) {
+  async updateAssessmentOption(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: UpdateAssessmentOptionDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.updateOption(id, input, request), request);
   }
 
   @Delete("assessment-options/:id")
   @RequirePermission("lms.assessment_option.archive")
-  async archiveAssessmentOption(@Param("id") id: string, @Req() request: ContextRequest) {
+  async archiveAssessmentOption(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.archiveOption(id, request), request);
   }
 
   @Post("assessments/:id/attempts")
   @RequirePermission("lms.assessment_attempt.create")
-  async startAssessmentAttempt(@Param("id") id: string, @Req() request: ContextRequest) {
+  async startAssessmentAttempt(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.startAttempt(id, request), request);
   }
 
   @Get("assessments/:id/attempts")
   @RequirePermission("lms.assessment_attempt.view")
-  async assessmentAttempts(@Param("id") id: string, @Req() request: ContextRequest, @Query() query: AssessmentAttemptListQueryDto) {
+  async assessmentAttempts(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest, @Query() query: AssessmentAttemptListQueryDto) {
     const page = paginationFrom(request);
     const result = await this.assessments.listAttempts(id, request.context.user!, page.page, page.pageSize, page.offset, query);
     return paginatedResponse(result.data, result.meta, request);
@@ -341,25 +341,25 @@ export class LmsController {
 
   @Get("assessment-attempts/:id")
   @RequirePermission("lms.assessment_attempt.view")
-  async assessmentAttempt(@Param("id") id: string, @Req() request: ContextRequest) {
+  async assessmentAttempt(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.getAttempt(id, request.context.user!), request);
   }
 
   @Post("assessment-attempts/:id/submit")
   @RequirePermission("lms.assessment_attempt.update")
-  async submitAssessmentAttempt(@Param("id") id: string, @Body() input: SubmitAssessmentAttemptDto, @Req() request: ContextRequest) {
+  async submitAssessmentAttempt(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: SubmitAssessmentAttemptDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.submitAttempt(id, input, request), request);
   }
 
   @Patch("assessment-attempts/:id/draft")
   @RequirePermission("lms.assessment_attempt.update")
-  async saveAssessmentDraft(@Param("id") id: string, @Body() input: SaveAssessmentDraftDto, @Req() request: ContextRequest) {
+  async saveAssessmentDraft(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: SaveAssessmentDraftDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.saveDraft(id, input, request), request);
   }
 
   @Patch("assessment-attempts/:id/grade")
   @RequirePermission("lms.assessment_attempt.update")
-  async gradeAssessmentAttempt(@Param("id") id: string, @Body() input: GradeAssessmentAttemptDto, @Req() request: ContextRequest) {
+  async gradeAssessmentAttempt(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: GradeAssessmentAttemptDto, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.gradeAttempt(id, input, request), request);
   }
 

@@ -94,7 +94,7 @@ export class AssessmentService {
              AND EXISTS (
                SELECT 1 FROM lms_instructor_assignments ia
                WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
-                 AND ia.campus_id IS NOT DISTINCT FROM $5
+                  AND (ia.campus_id IS NULL OR ia.campus_id = $5)
                  AND ia.instructor_id = ur.user_id AND ia.status = 'ACTIVE'
              )
            )
@@ -263,7 +263,7 @@ export class AssessmentService {
         WHERE ia.tenant_id = a.tenant_id
           AND ia.institution_id = a.institution_id
           AND ia.course_id = a.course_id
-          AND ia.campus_id IS NOT DISTINCT FROM a.campus_id
+           AND (ia.campus_id IS NULL OR ia.campus_id = a.campus_id)
           AND ia.instructor_id = $${values.length}
           AND ia.status = 'ACTIVE'
       )`);

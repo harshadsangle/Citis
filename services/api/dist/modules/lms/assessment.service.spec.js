@@ -37,6 +37,7 @@ const request = {
     strict_1.default.deepEqual(score({ ...base, question_type: "SINGLE_CHOICE" }, { answer: { value: "a" } }), { correct: true, awardedMarks: 2 });
     strict_1.default.deepEqual(score({ ...base, question_type: "SHORT_TEXT" }, { answer: { value: "A" } }), { correct: true, awardedMarks: 2 });
     strict_1.default.deepEqual(score({ ...base, question_type: "NUMERIC", options: [{ value: "42", is_correct: true }] }, { answer: { value: "42" } }), { correct: true, awardedMarks: 2 });
+    strict_1.default.deepEqual(score({ ...base, question_type: "NUMERIC", options: [{ value: "0", is_correct: true }] }, { answer: { value: "" } }), { correct: false, awardedMarks: 0 });
     strict_1.default.deepEqual(score({ ...base, question_type: "MULTIPLE_CHOICE", options: [{ value: "a", is_correct: true }, { value: "b", is_correct: true }] }, { answer: { value: ["a", "b"] } }), { correct: true, awardedMarks: 2 });
     strict_1.default.deepEqual(score({ ...base, question_type: "SINGLE_CHOICE" }, { answer: { value: "b" } }), { correct: false, awardedMarks: 0 });
 });
@@ -51,6 +52,51 @@ const request = {
         { value: "yes", label: "Yes", isCorrect: true },
         { value: "no", label: "No", isCorrect: false },
     ]), common_1.BadRequestException);
+    strict_1.default.throws(() => validateOptions("SINGLE_CHOICE", [
+        { value: " ", label: "Blank value", isCorrect: true },
+        { value: "b", label: "B", isCorrect: false },
+    ]), common_1.BadRequestException);
+});
+(0, node_test_1.default)("assessment listing honors status and denies unsupported roles", async () => {
+    let listingQuery;
+    const administrator = {
+        ...learner,
+        id: "administrator-1",
+        roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
+        permissions: ["lms.assessment.view"],
+    };
+    const service = serviceWith(async (text, values) => {
+        if (text.startsWith("SELECT a.id")) {
+            listingQuery = { text, values };
+            return {
+                rows: [{
+                        id: "assessment-1",
+                        tenant_id: administrator.tenantId,
+                        institution_id: "institution-1",
+                        campus_id: "campus-1",
+                        status: "DRAFT",
+                    }],
+            };
+        }
+        return { rows: [] };
+    });
+    const result = await service.listAssessments(administrator, 1, 25, 0, { status: "DRAFT" });
+    strict_1.default.equal(result.data.length, 1);
+    strict_1.default.match(listingQuery?.text ?? "", /a\.status = \$2/);
+    strict_1.default.deepEqual(listingQuery?.values, [administrator.tenantId, "DRAFT"]);
+    let unsupportedRoleQueries = 0;
+    const unsupportedRoleService = serviceWith(async () => {
+        unsupportedRoleQueries += 1;
+        return { rows: [] };
+    });
+    const unsupportedRole = {
+        ...learner,
+        roles: [{ code: "REPORT_VIEWER", name: "Report Viewer" }],
+        permissions: ["lms.assessment.view"],
+    };
+    const restricted = await unsupportedRoleService.listAssessments(unsupportedRole, 1, 25, 0, {});
+    strict_1.default.deepEqual(restricted.data, []);
+    strict_1.default.equal(unsupportedRoleQueries, 0);
 });
 (0, node_test_1.default)("assessment reads reject a different institution before returning data", async () => {
     const service = serviceWith(async (text) => {

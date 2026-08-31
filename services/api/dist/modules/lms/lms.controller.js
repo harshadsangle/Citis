@@ -602,7 +602,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)("assessments/:id"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment.view"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -611,7 +611,7 @@ __decorate([
 __decorate([
     (0, common_1.Patch)("assessments/:id"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment.update"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -621,7 +621,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)("assessments/:id/publish"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment.publish"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -630,7 +630,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)("assessments/:id/archive"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment.archive"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -639,7 +639,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)("assessments/:id/questions"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_question.view"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -648,7 +648,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)("assessments/:id/questions"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_question.create"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -658,7 +658,7 @@ __decorate([
 __decorate([
     (0, common_1.Patch)("assessment-questions/:id"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_question.update"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -668,7 +668,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)("assessment-questions/:id/archive"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_question.archive"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -677,7 +677,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)("assessment-questions/:id/options"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_option.create"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -687,7 +687,7 @@ __decorate([
 __decorate([
     (0, common_1.Patch)("assessment-options/:id"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_option.update"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -697,7 +697,7 @@ __decorate([
 __decorate([
     (0, common_1.Delete)("assessment-options/:id"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_option.archive"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -706,7 +706,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)("assessments/:id/attempts"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.create"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -715,7 +715,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)("assessments/:id/attempts"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.view"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Query)()),
     __metadata("design:type", Function),
@@ -725,7 +725,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)("assessment-attempts/:id"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.view"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, Object]),
@@ -734,7 +734,7 @@ __decorate([
 __decorate([
     (0, common_1.Post)("assessment-attempts/:id/submit"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.update"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -744,7 +744,7 @@ __decorate([
 __decorate([
     (0, common_1.Patch)("assessment-attempts/:id/draft"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.update"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
@@ -754,7 +754,7 @@ __decorate([
 __decorate([
     (0, common_1.Patch)("assessment-attempts/:id/grade"),
     (0, permission_decorator_1.RequirePermission)("lms.assessment_attempt.update"),
-    __param(0, (0, common_1.Param)("id")),
+    __param(0, (0, common_1.Param)("id", new common_1.ParseUUIDPipe({ version: "4" }))),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
