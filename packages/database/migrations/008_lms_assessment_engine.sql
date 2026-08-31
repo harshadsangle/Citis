@@ -1,3 +1,6 @@
+ALTER TABLE lms_assessments
+  ADD COLUMN IF NOT EXISTS description text;
+
 CREATE TABLE IF NOT EXISTS lms_assessment_questions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
@@ -81,6 +84,13 @@ CREATE INDEX IF NOT EXISTS lms_assessment_attempts_learner_idx
   ON lms_assessment_attempts (tenant_id, institution_id, campus_id, learner_id, assessment_id, status);
 CREATE INDEX IF NOT EXISTS lms_assessment_answers_attempt_idx
   ON lms_assessment_answers (tenant_id, institution_id, campus_id, attempt_id, question_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS lms_assessments_scope_id_key
+  ON lms_assessments (tenant_id, institution_id, campus_id, course_id, module_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS lms_assessment_questions_scope_id_key
+  ON lms_assessment_questions (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, id);
+CREATE UNIQUE INDEX IF NOT EXISTS lms_assessment_attempts_scope_id_key
+  ON lms_assessment_attempts (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, id);
 
 CREATE UNIQUE INDEX IF NOT EXISTS courses_tenant_institution_id_campus_key
   ON courses (tenant_id, institution_id, id, campus_id);
