@@ -24,7 +24,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npm run dev --prefix citis-infotech"
+args = "bash scripts/start-all-dev.sh"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
