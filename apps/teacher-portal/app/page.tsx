@@ -191,7 +191,7 @@ export default function TeacherPortalPage() {
         details.flatMap((item) => item.submissions).forEach(({ submission }) => {
           next[submission.id] = {
             grade: submission.grade === null || submission.grade === undefined ? next[submission.id]?.grade || "" : String(submission.grade),
-            feedback: submission.feedback ?? next[submission.id]?.feedback || "",
+            feedback: submission.feedback ?? (next[submission.id]?.feedback || ""),
           };
         });
         return next;
