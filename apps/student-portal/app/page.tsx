@@ -195,7 +195,7 @@ export default function StudentPortalPage() {
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't submit this assessment.");
       setActiveAttempt(body.data);
       await loadAssessmentHistory();
-      setAssessmentNotice("Assessment submitted. Your result was calculated by the server.");
+      setAssessmentNotice(body.data.grading_status === "PENDING" ? "Assessment submitted. It is waiting for instructor review." : "Assessment submitted. Your result was calculated by the server.");
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "We couldn't submit this assessment.");
     } finally {
