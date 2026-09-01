@@ -111,6 +111,44 @@ const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
           },
         ],
       },
+      {
+        id: "animate-multiplatform-animation",
+        title: "Adobe Certified Professional in Multiplatform Animation Using Adobe Animate 2021 (v 21.x)",
+        description: "The official exam objectives cover the knowledge and applied skills needed to plan, set up, organize, create, modify, and publish multiplatform animation and interactive media projects in Animate.",
+        audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Animate, and can apply animation and interactive-media principles to routine tasks with limited assistance.",
+        details: [
+          { label: "Objective areas", value: "5 sections" },
+          { label: "Exam version", value: "2021 (v 21.x)" },
+          { label: "Credential", value: "Adobe Certified Professional" },
+        ],
+        objectiveAreas: [
+          {
+            number: "01",
+            title: "Working in the Animation Industry",
+            description: "Audience needs, communication, copyright, animation terminology, interactive media, typography, design, and animation principles.",
+          },
+          {
+            number: "02",
+            title: "Project Setup and Interface",
+            description: "Multimedia document settings, workspace, preferences, navigation, visual aids, imported assets, colors, swatches, gradients, and brushes.",
+          },
+          {
+            number: "03",
+            title: "Organization of Documents",
+            description: "Timeline layers, document structure, content over time, transparency, and masks.",
+          },
+          {
+            number: "04",
+            title: "Create and Modify Multimedia Elements",
+            description: "Vector tools, typography, selections, graphics, media, effects, styles, animation, interactivity, audio, and video.",
+          },
+          {
+            number: "05",
+            title: "Publishing Digital Media",
+            description: "Project checks, native Animate files, asset exports, and platform-specific publishing settings.",
+          },
+        ],
+      },
     ],
   },
   {
@@ -192,6 +230,44 @@ const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
             number: "05",
             title: "Publishing Digital Media",
             description: "Preparing and exporting digital images for web, print, video, and other formats.",
+          },
+        ],
+      },
+      {
+        id: "photoshop-visual-design",
+        title: "Adobe Certified Professional in Visual Design Using Adobe Photoshop",
+        description: "The official exam objectives cover the knowledge and applied skills needed to plan, set up, organize, create, modify, and publish visual designs and digital images in Photoshop.",
+        audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Photoshop, and can apply graphic design and image-editing principles to routine tasks with limited assistance.",
+        details: [
+          { label: "Objective areas", value: "5 sections" },
+          { label: "Exam versions", value: "2022 (23.x) and 2023 (24.x)" },
+          { label: "Credential", value: "Adobe Certified Professional" },
+        ],
+        objectiveAreas: [
+          {
+            number: "01",
+            title: "Working in the Design Industry",
+            description: "Purpose, audience needs, collaboration, copyright, digital-image terminology, color, typography, composition, and design principles.",
+          },
+          {
+            number: "02",
+            title: "Project Setup and Interface",
+            description: "Document settings, workspace, preferences, non-printing tools, imported assets, Camera Raw, colors, swatches, gradients, brushes, styles, and patterns.",
+          },
+          {
+            number: "03",
+            title: "Organizing Documents",
+            description: "Layer management, visibility, opacity, blending modes, masks, and destructive or nondestructive editing.",
+          },
+          {
+            number: "04",
+            title: "Creating and Modifying Visual Elements",
+            description: "Raster and vector tools, typography, selections, transformations, retouching, reconstruction, exposure, saturation, filters, and layer styles.",
+          },
+          {
+            number: "05",
+            title: "Publishing Digital Media",
+            description: "Image checks and exports for web, print, video, native PSD files, and other appropriate formats.",
           },
         ],
       },

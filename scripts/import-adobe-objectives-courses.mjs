@@ -238,6 +238,122 @@ const COURSE_DEFINITIONS = [
       },
     ],
   },
+  {
+    code: "ANIMATE-ACP",
+    title: "Adobe Certified Professional in Multiplatform Animation Using Adobe Animate 2021 (v 21.x)",
+    sourcePath: "attached_assets/AC_PRO_Exam_Objectives_Animate_0923_1788276570413.pdf",
+    resourceTitle: "Source PDF — Adobe Animate Exam Objectives (2021 v21.x)",
+    storageFilename: "adobe-animate-exam-objectives.pdf",
+    description:
+      "Adobe Certified Professional certification objectives for multiplatform animation using Adobe Animate.",
+    modules: [
+      {
+        title: "Working in the Animation Industry",
+        lessons: [
+          "1.1 Identify the purpose, audience, and audience needs for preparing content.",
+          "1.2 Communicate with colleagues and clients about design plans.",
+          "1.3 Determine the type of copyright, permissions, and licensing required to use specific content.",
+          "1.4 Demonstrate knowledge of key terminology related to animation and interactive media.",
+          "1.5 Demonstrate knowledge of basic design principles and best practices employed in industry.",
+          "1.6 Demonstrate knowledge of animation and interactive media principles.",
+        ],
+      },
+      {
+        title: "Project Setup and Interface",
+        lessons: [
+          "2.1 Create a document with the appropriate settings for multimedia projects.",
+          "2.2 Customize the application workspace and use visual aids for layout.",
+          "2.3 Import into and manage assets in a project.",
+          "2.4 Manage colors, swatches, gradients, and brushes.",
+        ],
+      },
+      {
+        title: "Organization of Documents",
+        lessons: [
+          "3.1 Use the Timeline panel to organize content in space and time.",
+          "3.2 Modify layer visibility using transparency and masks.",
+        ],
+      },
+      {
+        title: "Create and Modify Multimedia Elements",
+        lessons: [
+          "4.1 Use core tools and features to create and modify vector elements.",
+          "4.2 Add and manipulate text using appropriate settings.",
+          "4.3 Make, manage, and manipulate selections.",
+          "4.4 Use basic techniques to manipulate digital graphics and media within an animation.",
+          "4.5 Modify appearance of design elements using effects and graphic styles.",
+          "4.6 Create and modify animations.",
+          "4.7 Add interactive or dynamic content to a document.",
+          "4.8 Control and configure audio and video in a project.",
+        ],
+      },
+      {
+        title: "Publishing Digital Media",
+        lessons: [
+          "5.1 Prepare content for export to web, screen, and other platforms.",
+          "5.2 Export assets from an Animate document.",
+        ],
+      },
+    ],
+  },
+  {
+    code: "PHOTOSHOP-ACP",
+    title: "Adobe Certified Professional in Visual Design Using Adobe Photoshop",
+    sourcePath: "attached_assets/AC_PRO_Exam_Objectives_PS_0923_(3)_1788276581508.pdf",
+    resourceTitle: "Source PDF — Adobe Photoshop Exam Objectives (2022–2023)",
+    storageFilename: "adobe-photoshop-exam-objectives.pdf",
+    description:
+      "Adobe Certified Professional certification objectives for visual design using Adobe Photoshop.",
+    modules: [
+      {
+        title: "Working in the Design Industry",
+        lessons: [
+          "1.1 Identify the purpose, audience, and audience needs for preparing images.",
+          "1.2 Communicate with colleagues and clients about design plans.",
+          "1.3 Determine the type of copyright, permissions, and licensing required to use specific content.",
+          "1.4 Demonstrate knowledge of key terminology related to digital images.",
+          "1.5 Demonstrate knowledge of basic design principles and best practices employed in the design industry.",
+        ],
+      },
+      {
+        title: "Project Setup and Interface",
+        lessons: [
+          "2.1 Create a document with the appropriate settings for web, print, and video.",
+          "2.2 Navigate, organize, and customize the application workspace.",
+          "2.3 Use non-printing design tools in the interface to aid in design or workflow.",
+          "2.4 Import assets into a project.",
+          "2.5 Manage colors, swatches, and gradients.",
+          "2.6 Work with brushes, styles, and patterns.",
+        ],
+      },
+      {
+        title: "Organizing Documents",
+        lessons: [
+          "3.1 Use layers to manage design elements.",
+          "3.2 Modify layer visibility using opacity, blending modes, and masks.",
+          "3.3 Differentiate between and perform destructive or nondestructive editing to meet design requirements.",
+        ],
+      },
+      {
+        title: "Creating and Modifying Visual Elements",
+        lessons: [
+          "4.1 Use core tools and features to create visual elements.",
+          "4.2 Add and manipulate text using appropriate typographic settings.",
+          "4.3 Make, manage, and manipulate selections.",
+          "4.4 Transform digital graphics and media.",
+          "4.5 Use basic reconstructing and retouching techniques to manipulate digital graphics and media.",
+          "4.6 Modify the appearance of design elements by using filters and styles.",
+        ],
+      },
+      {
+        title: "Publishing Digital Media",
+        lessons: [
+          "5.1 Prepare images for export to web, print, and video.",
+          "5.2 Export or save digital images to various file formats.",
+        ],
+      },
+    ],
+  },
 ];
 
 function assertEnvironment() {
