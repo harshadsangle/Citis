@@ -16,7 +16,8 @@
     "build:api": "npm run build --workspace @citis/api",
     "test:foundation": "npm run test --workspace @citis/api",
     "db:init": "node scripts/init-lms-db.mjs",
-    "db:seed-courses": "node scripts/seed-lms-courses.mjs"
+    "db:seed-courses": "node scripts/seed-lms-courses.mjs",
+    "db:import-acrobat": "node scripts/import-acrobat-pro-course.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
