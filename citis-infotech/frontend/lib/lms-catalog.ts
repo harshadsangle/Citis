@@ -359,6 +359,151 @@ const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
   },
 ];
 
+const makeComptiaCourse = (config: {
+  id: string;
+  title: string;
+  examCode: string;
+  description: string;
+  domains: string[];
+}): LmsCourse => ({
+  id: config.id,
+  title: config.title,
+  description: config.description,
+  audience: "The target candidate is preparing for the named CompTIA certification and will use the official objective domains as a structured study path.",
+  details: [
+    { label: "Exam code", value: config.examCode },
+    { label: "Objective areas", value: `${config.domains.length} domains` },
+    { label: "Credential", value: "CompTIA certification" },
+  ],
+  objectiveAreas: config.domains.map((domain, index) => ({
+    number: String(index + 1).padStart(2, "0"),
+    title: domain.replace(/^\d+\.\d+\s+/, ""),
+    description: `Official ${domain.replace(/^\d+\.\d+\s+/, "").toLowerCase()} exam objectives.`,
+  })),
+});
+
+const COMPTIA_COURSES: LmsCourse[] = [
+  makeComptiaCourse({
+    id: "comptia-a-core-2-220-1102",
+    title: "CompTIA A+ Core 2 (220-1102)",
+    examCode: "220-1102",
+    description: "Official objective-led preparation for operating systems, security, software troubleshooting, and operational procedures.",
+    domains: ["1.0 Operating Systems", "2.0 Security", "3.0 Software Troubleshooting", "4.0 Operational Procedures"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-casp-cas-004",
+    title: "CompTIA Advanced Security Practitioner (CASP+) (CAS-004)",
+    examCode: "CAS-004",
+    description: "Official objective-led preparation for enterprise security architecture, operations, engineering, cryptography, governance, risk, and compliance.",
+    domains: ["1.0 Security Architecture", "2.0 Security Operations", "3.0 Security Engineering and Cryptography", "4.0 Governance, Risk, and Compliance"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-cloud-cv0-004",
+    title: "CompTIA Cloud+ (CV0-004)",
+    examCode: "CV0-004",
+    description: "Official objective-led preparation for cloud architecture, deployment, operations, security, DevOps, and troubleshooting.",
+    domains: ["1.0 Cloud Architecture", "2.0 Deployment", "3.0 Operations", "4.0 Security", "5.0 DevOps Fundamentals", "6.0 Troubleshooting"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-cloud-essentials-clo-002",
+    title: "CompTIA Cloud Essentials+ (CLO-002)",
+    examCode: "CLO-002",
+    description: "Official objective-led preparation for cloud concepts, business principles, management, technical operations, governance, risk, compliance, and security.",
+    domains: ["1.0 Cloud Concepts", "2.0 Business Principles of Cloud Environments", "3.0 Management and Technical Operations", "4.0 Governance, Risk, Compliance, and Security for the Cloud"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-cysa-cs0-003",
+    title: "CompTIA Cybersecurity Analyst (CySA+) (CS0-003)",
+    examCode: "CS0-003",
+    description: "Official objective-led preparation for security operations, vulnerability management, incident response, reporting, and communication.",
+    domains: ["1.0 Security Operations", "2.0 Vulnerability Management", "3.0 Incident Response and Management", "4.0 Reporting and Communication"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-data-da0-001",
+    title: "CompTIA Data+ (DA0-001)",
+    examCode: "DA0-001",
+    description: "Official objective-led preparation for data concepts, mining, analysis, visualization, governance, quality, and controls.",
+    domains: ["1.0 Data Concepts and Environments", "2.0 Data Mining", "3.0 Data Analysis", "4.0 Visualization", "5.0 Data Governance, Quality, and Controls"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-datasys-ds0-001",
+    title: "CompTIA DataSys+ (DS0-001)",
+    examCode: "DS0-001",
+    description: "Official objective-led preparation for database fundamentals, deployment, management, maintenance, security, and business continuity.",
+    domains: ["1.0 Database Fundamentals", "2.0 Database Deployment", "3.0 Database Management and Maintenance", "4.0 Data and Database Security", "5.0 Business Continuity"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-datax-dy0-001",
+    title: "CompTIA DataX (DY0-001)",
+    examCode: "DY0-001",
+    description: "Official objective-led preparation for mathematics, statistics, modeling, analysis, machine learning, operations, and specialized data science applications.",
+    domains: ["1.0 Mathematics and Statistics", "2.0 Modeling, Analysis, and Outcomes", "3.0 Machine Learning", "4.0 Operations and Processes", "5.0 Specialized Applications of Data Science"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-itf-fc0-u61",
+    title: "CompTIA IT Fundamentals (ITF+) (FC0-U61)",
+    examCode: "FC0-U61",
+    description: "Official objective-led preparation for IT concepts, infrastructure, applications, software development, databases, and security.",
+    domains: ["1.0 IT Concepts and Terminology", "2.0 Infrastructure", "3.0 Applications and Software", "4.0 Software Development", "5.0 Database Fundamentals", "6.0 Security"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-linux-xk0-005",
+    title: "CompTIA Linux+ (XK0-005)",
+    examCode: "XK0-005",
+    description: "Official objective-led preparation for system management, security, scripting, containers, automation, and troubleshooting.",
+    domains: ["1.0 System Management", "2.0 Security", "3.0 Scripting, Containers, and Automation", "4.0 Troubleshooting"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-network-n10-009",
+    title: "CompTIA Network+ (N10-009)",
+    examCode: "N10-009",
+    description: "Official objective-led preparation for networking concepts, implementation, operations, security, and troubleshooting.",
+    domains: ["1.0 Networking Concepts", "2.0 Network Implementation", "3.0 Network Operations", "4.0 Network Security", "5.0 Network Troubleshooting"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-pentest-pt0-002",
+    title: "CompTIA PenTest+ (PT0-002)",
+    examCode: "PT0-002",
+    description: "Official objective-led preparation for planning, reconnaissance, vulnerability scanning, attacks, exploits, reporting, tools, and code analysis.",
+    domains: ["1.0 Planning and Scoping", "2.0 Information Gathering and Vulnerability Scanning", "3.0 Attacks and Exploits", "4.0 Reporting and Communication", "5.0 Tools and Code Analysis"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-project-pk0-005",
+    title: "CompTIA Project+ (PK0-005)",
+    examCode: "PK0-005",
+    description: "Official objective-led preparation for project management concepts, life cycle phases, tools, documentation, IT, and governance.",
+    domains: ["1.0 Project Management Concepts", "2.0 Project Life Cycle Phases", "3.0 Tools and Documentation", "4.0 Basics of IT and Governance"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-security-sy0-601",
+    title: "CompTIA Security+ (SY0-601)",
+    examCode: "SY0-601",
+    description: "Official objective-led preparation for threats, architecture, implementation, operations, incident response, governance, risk, and compliance.",
+    domains: ["1.0 Threats, Attacks, and Vulnerabilities", "2.0 Architecture and Design", "3.0 Implementation", "4.0 Operations and Incident Response", "5.0 Governance, Risk, and Compliance"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-securityx-cas-005",
+    title: "CompTIA SecurityX (CAS-005)",
+    examCode: "CAS-005",
+    description: "Official objective-led preparation for governance, risk, compliance, security architecture, engineering, and security operations.",
+    domains: ["1.0 Governance, Risk and Compliance", "2.0 Security Architecture", "3.0 Security Engineering", "4.0 Security Operations"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-server-sk0-005",
+    title: "CompTIA Server+ (SK0-005)",
+    examCode: "SK0-005",
+    description: "Official objective-led preparation for server hardware, administration, security, disaster recovery, and troubleshooting.",
+    domains: ["1.0 Server Hardware Installation and Management", "2.0 Server Administration", "3.0 Security and Disaster Recovery", "4.0 Troubleshooting"],
+  }),
+  makeComptiaCourse({
+    id: "comptia-tech-fc0-u71",
+    title: "CompTIA Tech+ (FC0-U71)",
+    examCode: "FC0-U71",
+    description: "Official objective-led preparation for IT concepts, infrastructure, applications, software development, data, databases, and security.",
+    domains: ["1.0 IT Concepts and Terminology", "2.0 Infrastructure", "3.0 Applications and Software", "4.0 Software Development Concepts", "5.0 Data and Database Fundamentals", "6.0 Security"],
+  }),
+];
+
 export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
   {
     id: "adobe",
@@ -488,5 +633,12 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
         ],
       },
     ],
+  },
+  {
+    id: "comptia",
+    name: "CompTIA",
+    eyebrow: "CompTIA certification courses",
+    description: "Official objective-led preparation across CompTIA foundational, infrastructure, cloud, data, project, networking, Linux, and cybersecurity certifications.",
+    courses: COMPTIA_COURSES,
   },
 ];
