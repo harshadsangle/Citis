@@ -50,6 +50,49 @@ type Assignment = {
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
 };
 
+type CourseModule = {
+  id: string;
+  course_id: string;
+  title: string;
+  description?: string | null;
+  sequence: number;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+};
+
+type Lesson = {
+  id: string;
+  module_id: string;
+  title: string;
+  description?: string | null;
+  sequence: number;
+  estimated_duration?: number | null;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+};
+
+type LearningResource = {
+  id: string;
+  lesson_id: string;
+  resource_type: string;
+  title: string;
+  url?: string | null;
+  file_path?: string | null;
+  duration?: number | null;
+  sequence: number;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  managed_file_id?: string | null;
+  managed_file_name?: string | null;
+};
+
+type CourseModuleData = {
+  module: CourseModule;
+  lessons: Array<{ lesson: Lesson; resources: LearningResource[] }>;
+};
+
+type CourseStructure = {
+  modules: CourseModuleData[];
+  error?: string;
+};
+
 type Submission = {
   id: string;
   assignment_id: string;
@@ -68,6 +111,8 @@ type Submission = {
 
 type CourseData = {
   course: Course;
+  modules: CourseModuleData[];
+  structureError?: string;
   enrollments: Enrollment[];
   progress: Array<{ enrollment: Enrollment; progress: Progress | null }>;
   assignments: Assignment[];
@@ -101,6 +146,20 @@ async function list<T>(path: string): Promise<T[]> {
   return Array.isArray(rows) ? rows : [];
 }
 
+async function loadCourseStructure(courseId: string): Promise<CourseModuleData[]> {
+  const modules = await list<CourseModule>(`/course-modules?courseId=${encodeURIComponent(courseId)}`);
+  return Promise.all(modules.map(async (module) => {
+    const lessons = await list<Lesson>(`/lessons?moduleId=${encodeURIComponent(module.id)}`);
+    return {
+      module,
+      lessons: await Promise.all(lessons.map(async (lesson) => ({
+        lesson,
+        resources: await list<LearningResource>(`/learning-resources?lessonId=${encodeURIComponent(lesson.id)}`),
+      }))),
+    };
+  }));
+}
+
 function displayName(principal?: Principal) {
   return [
     principal?.firstName || principal?.first_name,
@@ -125,6 +184,12 @@ function formatDate(value?: string | null, withTime = false) {
 
 function statusLabel(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
+}
+
+function resourceHref(resource: LearningResource) {
+  if (resource.url) return resource.url;
+  if (resource.managed_file_id) return `/api/v1/learning-resources/${encodeURIComponent(resource.id)}/file`;
+  return null;
 }
 
 function ProgressBar({ percentage }: { percentage: number }) {
@@ -158,14 +223,18 @@ export default function TeacherPortalPage() {
     try {
       const [principal, courses] = await Promise.all([
         request<Principal>("/auth/me"),
-        list<Course>("/courses?page=1&pageSize=100"),
+        list<Course>("/courses"),
       ]);
       setName(displayName(principal));
 
       const details = await Promise.all(courses.map(async (course): Promise<CourseData> => {
-        const [enrollments, assignments] = await Promise.all([
-          list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE&page=1&pageSize=100`),
-          list<Assignment>(`/assignments?courseId=${encodeURIComponent(course.id)}&page=1&pageSize=100`),
+        const [enrollments, assignments, structure] = await Promise.all([
+          list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`),
+          list<Assignment>(`/assignments?courseId=${encodeURIComponent(course.id)}`),
+          loadCourseStructure(course.id).then((modules): CourseStructure => ({ modules })).catch((reason: unknown): CourseStructure => ({
+            modules: [],
+            error: reason instanceof Error ? reason.message : "Course content could not be loaded.",
+          })),
         ]);
         const progress = await Promise.all(enrollments.map(async (enrollment) => ({
           enrollment,
@@ -177,6 +246,8 @@ export default function TeacherPortalPage() {
         })));
         return {
           course,
+          modules: structure.modules,
+          structureError: "error" in structure ? structure.error : undefined,
           enrollments,
           progress,
           assignments,
@@ -276,6 +347,7 @@ export default function TeacherPortalPage() {
           <nav className="nav-list" aria-label="Instructor workspace">
             <a className="nav-item active" href="#overview"><span className="nav-icon">⌂</span>Overview</a>
             <a className="nav-item" href="#courses"><span className="nav-icon">▦</span>Assigned courses</a>
+             <a className="nav-item" href="#content"><span className="nav-icon">≡</span>Course content</a>
             <a className="nav-item" href="#learners"><span className="nav-icon">♙</span>Learners & progress</a>
             <a className="nav-item" href="#submissions"><span className="nav-icon">✓</span>Submissions <b>{pendingSubmissions.length}</b></a>
           </nav>
@@ -373,6 +445,44 @@ export default function TeacherPortalPage() {
                 </table>
               </div>}
             </section>
+
+             <section className="panel content-panel" id="content">
+               <div className="panel-heading detail-heading">
+                 <div><p className="eyebrow">Selected course</p><h2>Course content</h2><p className="panel-copy">{selected ? "Modules, lessons, and learning resources available for this assigned course." : "Select an assigned course to view its learning content."}</p></div>
+                 {selected && <span className="readonly-badge">View only</span>}
+               </div>
+               {loading && <div className="state"><div className="spinner" /><div><strong>Loading course content…</strong><p>Reading the modules, lessons, and resources for your assigned courses.</p></div></div>}
+               {!loading && !selected && <div className="state"><div className="state-icon">≡</div><div><strong>No course selected</strong><p>Assigned course content will appear here after you select a course.</p></div></div>}
+               {!loading && selected?.structureError && <div className="state"><div className="state-icon error-icon">!</div><div><strong>Course content is unavailable</strong><p>{selected.structureError}</p></div></div>}
+               {!loading && selected && !selected.structureError && selected.modules.length === 0 && <div className="state"><div className="state-icon">+</div><div><strong>No modules available</strong><p>This assigned course does not have any modules or lessons to display yet.</p></div></div>}
+               {!loading && selected && !selected.structureError && selected.modules.length > 0 && <div className="module-list">
+                 {selected.modules.map(({ module, lessons }) => (
+                   <article className="module-card" key={module.id}>
+                     <div className="module-heading">
+                       <div className="module-number">{String(module.sequence).padStart(2, "0")}</div>
+                       <div className="module-title"><strong>{module.title}</strong><small>{module.description || `${lessons.length} lesson${lessons.length === 1 ? "" : "s"}`}</small></div>
+                       <StatusPill status={module.status} />
+                     </div>
+                     {lessons.length === 0 && <div className="nested-state">No lessons in this module.</div>}
+                     {lessons.length > 0 && <div className="lesson-list">
+                       {lessons.map(({ lesson, resources }) => (
+                         <div className="lesson-row" key={lesson.id}>
+                           <div className="lesson-title"><span className="lesson-icon">L</span><span><strong>{lesson.title}</strong><small>{lesson.description || `${resources.length} learning resource${resources.length === 1 ? "" : "s"}`}{lesson.estimated_duration ? ` · ${lesson.estimated_duration} min` : ""}</small></span></div>
+                           <StatusPill status={lesson.status} />
+                           {resources.length > 0 && <div className="resource-list">
+                             {resources.map((resource) => {
+                               const href = resourceHref(resource);
+                               return <div className="resource-row" key={resource.id}><span className="resource-icon">↗</span><span><strong>{resource.title}</strong><small>{statusLabel(resource.resource_type)}{resource.duration ? ` · ${resource.duration} min` : ""}{resource.managed_file_name ? ` · ${resource.managed_file_name}` : ""}</small></span>{href ? <a href={href} target="_blank" rel="noreferrer">Open</a> : <span className="muted">No link</span>}</div>;
+                             })}
+                           </div>}
+                           {resources.length === 0 && <div className="nested-state lesson-empty">No learning resources attached.</div>}
+                         </div>
+                       ))}
+                     </div>}
+                   </article>
+                 ))}
+               </div>}
+             </section>
 
             <section className="panel assignment-panel" id="assignments">
               <div className="panel-heading detail-heading">
@@ -515,17 +625,45 @@ export default function TeacherPortalPage() {
         .action-spark { color: #55b5a8; font-size: 21px; }
         .scope-note { display: flex; align-items: center; gap: 6px; margin: 2px 24px 20px; color: #8699ac; font-size: 9px; }
         .scope-note span { color: #2eae8b; font-size: 12px; }
-        .detail-panel, .assignment-panel, .submissions-panel { margin-top: 22px; scroll-margin-top: 20px; }
+         .detail-panel, .content-panel, .assignment-panel, .submissions-panel { margin-top: 22px; scroll-margin-top: 20px; }
         .detail-heading { align-items: center; }
         .course-actions { display: flex; align-items: center; gap: 12px; }
+         .readonly-badge { padding: 6px 9px; border: 1px solid #cfe8e4; border-radius: 6px; color: #358b83; background: #eefaf8; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
         .state { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 190px; padding: 30px; color: #70849a; }
         .state.compact { min-height: 145px; justify-content: flex-start; }
         .state strong { display: block; color: #244669; font-size: 12px; }
         .state p { max-width: 390px; margin-top: 7px; font-size: 10px; line-height: 1.6; }
         .state-icon { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; border-radius: 50%; color: #197d83; background: #e5f7f4; font-size: 17px; font-weight: 800; }
         .success-icon { color: #299674; background: #e5f7f0; }
+         .error-icon { color: #bd5f5f; background: #fff0f0; }
         .spinner { width: 24px; height: 24px; border: 3px solid #d9ebe9; border-top-color: #45b9ae; border-radius: 50%; animation: spin .8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+         .module-list { display: grid; gap: 12px; padding: 17px 24px 24px; }
+         .module-card { overflow: hidden; border: 1px solid #e2ebf2; border-radius: 9px; background: #fcfeff; }
+         .module-heading { display: flex; align-items: center; gap: 11px; padding: 14px 16px; border-bottom: 1px solid #edf1f6; background: #fbfdff; }
+         .module-number { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; border-radius: 8px; color: #347e9d; background: #e8f4fb; font-size: 10px; font-weight: 800; }
+         .module-title { min-width: 0; flex: 1; }
+         .module-title strong, .module-title small { display: block; }
+         .module-title strong { overflow: hidden; color: #1b426c; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+         .module-title small { overflow: hidden; margin-top: 4px; color: #92a2b1; font-size: 9px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
+         .lesson-list { padding: 4px 16px 8px 58px; }
+         .lesson-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 15px; padding: 12px 0; border-bottom: 1px solid #edf1f6; }
+         .lesson-row:last-child { border-bottom: 0; }
+         .lesson-title { display: flex; align-items: flex-start; gap: 9px; min-width: 0; }
+         .lesson-icon, .resource-icon { display: grid; place-items: center; flex: 0 0 25px; width: 25px; height: 25px; border-radius: 6px; color: #8b6b37; background: #fff2de; font-size: 9px; font-weight: 800; }
+         .lesson-title strong, .lesson-title small, .resource-row strong, .resource-row small { display: block; }
+         .lesson-title strong { overflow: hidden; color: #315575; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+         .lesson-title small { margin-top: 4px; color: #95a5b4; font-size: 9px; line-height: 1.45; }
+         .resource-list { grid-column: 1 / -1; display: grid; gap: 5px; margin: 2px 0 0 34px; padding: 8px 0 0 11px; border-left: 2px solid #e5f1ef; }
+         .resource-row { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 6px 0; }
+         .resource-icon { flex-basis: 22px; width: 22px; height: 22px; color: #438e82; background: #e7f7f3; }
+         .resource-row > span:nth-child(2) { min-width: 0; flex: 1; }
+         .resource-row strong { overflow: hidden; color: #52708b; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+         .resource-row small { margin-top: 3px; color: #a0adb9; font-size: 8px; }
+         .resource-row a { color: #0874a4; font-size: 9px; font-weight: 800; text-decoration: none; }
+         .resource-row a:hover { text-decoration: underline; }
+         .nested-state { color: #a0adb9; font-size: 9px; }
+         .lesson-empty { grid-column: 1 / -1; margin: 1px 0 0 34px; }
         .table-wrap { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th, td { padding: 13px 18px; border-top: 1px solid #edf1f6; color: #71859a; font-size: 10px; vertical-align: middle; }
