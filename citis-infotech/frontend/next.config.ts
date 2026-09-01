@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // The public site is a nested app with its own install, while the repository
+  // root also has React dependencies for the portal apps. Keep every client
+  // hook consumer on this app's single React runtime in dev and production.
+  turbopack: {
+    root: resolve(__dirname),
+    resolveAlias: {
+      react: resolve(__dirname, "node_modules/react"),
+      "react-dom": resolve(__dirname, "node_modules/react-dom"),
+    },
+  },
   images: {
     // Serve the existing local assets directly. This avoids browser-specific
     // failures when the image optimizer negotiates AVIF on localhost.
@@ -19,9 +29,6 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: apiHost, pathname: "/uploads/**" },
       { protocol: "https", hostname: strapiHost, pathname: "/uploads/**" },
     ],
-  },
-  turbopack: {
-    root: resolve(__dirname),
   },
   async rewrites() {
     return [
