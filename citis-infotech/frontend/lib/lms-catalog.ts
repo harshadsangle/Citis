@@ -65,6 +65,44 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
           },
         ],
       },
+      {
+        id: "after-effects-visual-effects-motion-graphics",
+        title: "Adobe Certified Professional in Visual Effects and Motion Graphics Using Adobe After Effects 2021 (v 18.x)",
+        description: "The official exam objectives cover the knowledge and applied skills needed to plan, set up, organize, create, modify, and publish visual effects and motion graphics projects in After Effects.",
+        audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with After Effects, and can apply video composition and motion graphics principles to routine production tasks with limited assistance.",
+        details: [
+          { label: "Objective areas", value: "5 sections" },
+          { label: "Target experience", value: "Approximately 150 hours" },
+          { label: "Credential", value: "Adobe Certified Professional" },
+        ],
+        objectiveAreas: [
+          {
+            number: "01",
+            title: "Working in the Visual Effects and Motion Graphics Industry",
+            description: "Audience, delivery, communication, intellectual property, digital media, animation, compositing, and design principles.",
+          },
+          {
+            number: "02",
+            title: "Project Setup and Interface",
+            description: "Projects, compositions, workspaces, preferences, timeline tools, guides, grids, markers, and imported assets.",
+          },
+          {
+            number: "03",
+            title: "Organizing Projects",
+            description: "Timeline layers, complex compositions, visibility, opacity, blending modes, track mattes, and masks.",
+          },
+          {
+            number: "04",
+            title: "Creating and Modifying Visual Elements",
+            description: "Core tools, text, footage, transformations, video, effects, 3D space, composites, and keyframes.",
+          },
+          {
+            number: "05",
+            title: "Publishing Digital Media",
+            description: "Composition checks, archiving, frame exports, composition exports, codecs, formats, and delivery targets.",
+          },
+        ],
+      },
     ],
   },
 ];
