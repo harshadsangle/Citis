@@ -93,6 +93,12 @@ type CourseStructure = {
   error?: string;
 };
 
+type ProgressRow = {
+  enrollment: Enrollment;
+  progress: Progress | null;
+  error?: string;
+};
+
 type Submission = {
   id: string;
   assignment_id: string;
@@ -114,7 +120,8 @@ type CourseData = {
   modules: CourseModuleData[];
   structureError?: string;
   enrollments: Enrollment[];
-  progress: Array<{ enrollment: Enrollment; progress: Progress | null }>;
+  progress: ProgressRow[];
+  rosterError?: string;
   assignments: Assignment[];
   submissions: Array<{ assignment: Assignment; submission: Submission }>;
 };
@@ -144,6 +151,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 async function list<T>(path: string): Promise<T[]> {
   const rows = await request<T[]>(path);
   return Array.isArray(rows) ? rows : [];
+}
+
+function errorMessage(reason: unknown, fallback: string) {
+  return reason instanceof Error ? reason.message : fallback;
 }
 
 async function loadCourseStructure(courseId: string): Promise<CourseModuleData[]> {
@@ -228,18 +239,31 @@ export default function TeacherPortalPage() {
       setName(displayName(principal));
 
       const details = await Promise.all(courses.map(async (course): Promise<CourseData> => {
-        const [enrollments, assignments, structure] = await Promise.all([
-          list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`),
+        const [enrollmentResult, assignments, structure] = await Promise.all([
+          list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`)
+            .then((data) => ({ data, error: undefined }))
+            .catch((reason: unknown) => ({ data: [], error: errorMessage(reason, "The learner roster could not be loaded.") })),
           list<Assignment>(`/assignments?courseId=${encodeURIComponent(course.id)}`),
           loadCourseStructure(course.id).then((modules): CourseStructure => ({ modules })).catch((reason: unknown): CourseStructure => ({
             modules: [],
-            error: reason instanceof Error ? reason.message : "Course content could not be loaded.",
+            error: errorMessage(reason, "Course content could not be loaded."),
           })),
         ]);
-        const progress = await Promise.all(enrollments.map(async (enrollment) => ({
-          enrollment,
-          progress: await request<Progress>(`/progress/courses/${encodeURIComponent(course.id)}?learnerId=${encodeURIComponent(enrollment.learner_id)}`).catch(() => null),
-        })));
+        const enrollments = enrollmentResult.data;
+        const progress = await Promise.all(enrollments.map(async (enrollment): Promise<ProgressRow> => {
+          try {
+            return {
+              enrollment,
+              progress: await request<Progress>(`/progress/courses/${encodeURIComponent(course.id)}?learnerId=${encodeURIComponent(enrollment.learner_id)}`),
+            };
+          } catch (reason) {
+            return {
+              enrollment,
+              progress: null,
+              error: errorMessage(reason, "Progress could not be loaded."),
+            };
+          }
+        }));
         const submissionGroups = await Promise.all(assignments.map(async (assignment) => ({
           assignment,
           submissions: await list<Submission>(`/assignments/${encodeURIComponent(assignment.id)}/submissions?page=1&pageSize=100`),
@@ -249,6 +273,7 @@ export default function TeacherPortalPage() {
           modules: structure.modules,
           structureError: "error" in structure ? structure.error : undefined,
           enrollments,
+          rosterError: enrollmentResult.error,
           progress,
           assignments,
           submissions: submissionGroups.flatMap(({ assignment, submissions }) => submissions.map((submission) => ({ assignment, submission }))),
@@ -280,6 +305,7 @@ export default function TeacherPortalPage() {
   }, []);
 
   const selected = courseData.find((item) => item.course.id === selectedCourseId) || courseData[0];
+  const selectedProgressErrors = selected?.progress.filter(({ error }) => Boolean(error)) || [];
   const pendingSubmissions = useMemo(
     () => courseData.flatMap((item) => item.submissions
       .filter(({ submission }) => submission.status === "SUBMITTED")
@@ -425,21 +451,24 @@ export default function TeacherPortalPage() {
 
             <section className="panel detail-panel" id="learners">
               <div className="panel-heading detail-heading">
-                <div><p className="eyebrow">Selected course</p><h2>{selected?.course.title || "Learner progress"}</h2><p className="panel-copy">{selected ? `${selected.course.code} · ${selected.enrollments.length} active learners` : "Select an assigned course to view its roster and progress."}</p></div>
-                {selected && <div className="course-actions"><StatusPill status={selected.course.status} /><button className="secondary-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing}>Sync data</button></div>}
+                 <div><p className="eyebrow">Selected course</p><h2>{selected?.course.title || "Learner roster & progress"}</h2><p className="panel-copy">{selected ? `${selected.course.code} · ${selected.enrollments.length} active learners` : "Select an assigned course to view its roster and progress."}</p></div>
+                 {selected && <div className="course-actions"><StatusPill status={selected.course.status} /><button className="secondary-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing} aria-label={`Refresh roster for ${selected.course.title}`}><span className={refreshing ? "spin" : ""}>↻</span>{refreshing ? "Refreshing…" : "Refresh roster"}</button></div>}
               </div>
+               {refreshing && selected && <div className="inline-state loading-state" role="status"><span className="mini-spinner" />Refreshing enrolled learners and progress…</div>}
               {!selected && !loading && <div className="state"><div className="state-icon">♙</div><div><strong>No learner roster to show</strong><p>Assigned course enrollments and progress will appear here.</p></div></div>}
-              {selected && selected.enrollments.length === 0 && <div className="state"><div className="state-icon">—</div><div><strong>No active learners yet</strong><p>There are no active enrollments in this assigned course.</p></div></div>}
-              {selected && selected.enrollments.length > 0 && <div className="table-wrap">
+               {selected?.rosterError && <div className="inline-alert error" role="alert"><div><strong>Unable to load the learner roster</strong><span>{selected.rosterError}</span></div><button className="text-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing}>Retry</button></div>}
+               {selected && !selected.rosterError && selected.enrollments.length === 0 && <div className="state"><div className="state-icon">—</div><div><strong>No active learners yet</strong><p>There are no active enrollments in this assigned course.</p></div></div>}
+               {selected && !selected.rosterError && selectedProgressErrors.length > 0 && <div className="inline-alert warning" role="status"><div><strong>Some progress data is unavailable</strong><span>{selectedProgressErrors.length} learner{selectedProgressErrors.length === 1 ? "" : "s"} could not be loaded. Refresh to try again.</span></div><button className="text-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing}>Retry</button></div>}
+               {selected && !selected.rosterError && selected.enrollments.length > 0 && <div className="table-wrap">
                 <table>
-                  <thead><tr><th>Learner</th><th>Course progress</th><th>Lessons</th><th>Assessments</th><th>State</th></tr></thead>
-                  <tbody>{selected.progress.map(({ enrollment, progress }) => (
+                   <thead><tr><th>Learner</th><th>Completion</th><th>Lessons completed</th><th>Assessment progress</th><th>State</th></tr></thead>
+                   <tbody>{selected.progress.map(({ enrollment, progress, error: progressError }) => (
                     <tr key={enrollment.id}>
                       <td><div className="learner-cell"><span className="learner-avatar">{learnerName(enrollment).slice(0, 1).toUpperCase()}</span><span><strong>{learnerName(enrollment)}</strong><small>{enrollment.learner_email || "Active enrollment"}</small></span></div></td>
-                      <td className="progress-cell">{progress ? <><div><ProgressBar percentage={progress.percentage} /><strong>{progress.percentage}%</strong></div><small>Updated from completed course activity</small></> : <span className="muted">Progress unavailable</span>}</td>
-                      <td>{progress ? `${progress.lessons.completed}/${progress.lessons.total}` : "—"}</td>
-                      <td>{progress ? `${progress.assessments.completed}/${progress.assessments.total}` : "—"}</td>
-                      <td>{progress ? <StatusPill status={progress.state} /> : <StatusPill status="NOT_STARTED" />}</td>
+                       <td className="progress-cell">{progress ? <><div><ProgressBar percentage={progress.percentage} /><strong>{progress.percentage}%</strong></div><small>Course completion</small></> : <span className="muted progress-error" title={progressError}>Progress unavailable</span>}</td>
+                       <td>{progress ? <><strong className="table-value">{progress.lessons.completed}/{progress.lessons.total}</strong><small>completed</small></> : "—"}</td>
+                       <td>{progress ? <><strong className="table-value">{progress.assessments.completed}/{progress.assessments.total}</strong><small>completed</small></> : "—"}</td>
+                       <td>{progress ? <StatusPill status={progress.state} /> : <StatusPill status="NOT_STARTED" />}</td>
                     </tr>
                   ))}</tbody>
                 </table>
@@ -638,6 +667,15 @@ export default function TeacherPortalPage() {
          .error-icon { color: #bd5f5f; background: #fff0f0; }
         .spinner { width: 24px; height: 24px; border: 3px solid #d9ebe9; border-top-color: #45b9ae; border-radius: 50%; animation: spin .8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+         .inline-state, .inline-alert { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 16px 24px 0; padding: 11px 13px; border-radius: 8px; font-size: 10px; }
+         .loading-state { color: #5d8494; border: 1px solid #dcefeb; background: #f5fcfb; }
+         .mini-spinner { width: 14px; height: 14px; flex: 0 0 14px; border: 2px solid #cde9e4; border-top-color: #39a999; border-radius: 50%; animation: spin .8s linear infinite; }
+         .inline-alert > div { display: grid; gap: 4px; min-width: 0; }
+         .inline-alert strong { color: #315575; font-size: 10px; }
+         .inline-alert span { color: #8293a5; line-height: 1.45; }
+         .inline-alert.error { color: #9d605c; border: 1px solid #f2d8d0; background: #fff6f3; }
+         .inline-alert.warning { border: 1px solid #f0e4d3; background: #fffaf3; }
+         .inline-alert .text-button { flex: 0 0 auto; }
          .module-list { display: grid; gap: 12px; padding: 17px 24px 24px; }
          .module-card { overflow: hidden; border: 1px solid #e2ebf2; border-radius: 9px; background: #fcfeff; }
          .module-heading { display: flex; align-items: center; gap: 11px; padding: 14px 16px; border-bottom: 1px solid #edf1f6; background: #fbfdff; }
@@ -671,6 +709,7 @@ export default function TeacherPortalPage() {
         td strong, td small { display: block; }
         td strong { color: #1b426c; font-size: 10px; }
         td small { margin-top: 4px; color: #99a8b6; font-size: 9px; }
+         .table-value { margin: 0; }
         .learner-cell { display: flex; align-items: center; gap: 9px; min-width: 170px; }
         .learner-avatar { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border-radius: 50%; color: #277b8a; background: #e3f3f3; font-size: 10px; font-weight: 800; }
         .progress-cell { min-width: 175px; }
@@ -678,7 +717,8 @@ export default function TeacherPortalPage() {
         .progress-cell .progress-track { flex: 1; }
         .progress-cell > div > strong { flex: 0 0 35px; color: #2b9b7e; font-size: 10px; }
         .progress-cell small { margin-top: 6px; }
-        .muted { color: #a2afbd; font-size: 9px; }
+         .muted { color: #a2afbd; font-size: 9px; }
+         .progress-error { color: #b36e63; }
         .assignment-list { padding: 7px 0; }
         .assignment-row { display: grid; grid-template-columns: minmax(220px, 1.4fr) minmax(130px, .8fr) auto; align-items: center; gap: 18px; padding: 14px 24px; border-bottom: 1px solid #edf1f6; }
         .assignment-row:last-child { border-bottom: 0; }
@@ -734,6 +774,7 @@ export default function TeacherPortalPage() {
           .course-row, .action-row { padding-right: 15px; padding-left: 15px; }
           .detail-heading { align-items: flex-start; flex-direction: column; }
           .course-actions { width: 100%; justify-content: space-between; }
+           .inline-state, .inline-alert { margin-right: 15px; margin-left: 15px; }
           th, td { padding-right: 12px; padding-left: 12px; }
           .assignment-row { grid-template-columns: 1fr auto; gap: 9px 12px; padding: 14px 15px; }
           .assignment-meta { justify-items: end; }
