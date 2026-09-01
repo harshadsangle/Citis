@@ -15,7 +15,7 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
+const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
   {
     id: "adobe-document-creation-management",
     name: "Document Creation & Management",
@@ -280,5 +280,15 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
         ],
       },
     ],
+  },
+];
+
+export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
+  {
+    id: "adobe",
+    name: "Adobe",
+    eyebrow: "Adobe certification courses",
+    description: "Official objective-led preparation across Adobe document creation, motion graphics, design, publication, content, web, and marketing applications.",
+    courses: ADOBE_COURSE_GROUPS.flatMap((category) => category.courses),
   },
 ];
