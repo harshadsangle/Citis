@@ -103,6 +103,158 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
           },
         ],
       },
+      {
+        id: "indesign-print-digital-media-publication",
+        title: "Adobe Certified Professional in Print & Digital Media Publication Using Adobe InDesign 2021 (v 16.x)",
+        description: "The official exam objectives cover the knowledge and applied skills needed to plan, create, organize, modify, and publish print and digital media publications in InDesign.",
+        audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with InDesign, and can apply publication design and production principles to routine tasks with limited assistance.",
+        details: [
+          { label: "Objective areas", value: "5 sections" },
+          { label: "Target experience", value: "Approximately 150 hours" },
+          { label: "Credential", value: "Adobe Certified Professional" },
+        ],
+        objectiveAreas: [
+          {
+            number: "01",
+            title: "Working in the Design Industry",
+            description: "Purpose, audience needs, collaboration, copyright, publication terminology, and design principles.",
+          },
+          {
+            number: "02",
+            title: "Project Setup and Interface",
+            description: "Document settings, workspace, non-printing tools, assets, colors, swatches, gradients, and styles.",
+          },
+          {
+            number: "03",
+            title: "Organizing Documents",
+            description: "Layers, pages, spreads, alternate layouts, and master pages.",
+          },
+          {
+            number: "04",
+            title: "Creating and Modifying Document Elements",
+            description: "Frames, typography, selections, graphics, effects, interactive content, and tables.",
+          },
+          {
+            number: "05",
+            title: "Publishing Documents",
+            description: "Preparing and exporting publications for web, print, and other digital devices.",
+          },
+        ],
+      },
+      {
+        id: "illustrator-graphic-design-illustration",
+        title: "Adobe Certified Professional in Graphic Design and Illustration Using Adobe Illustrator",
+        description: "The official exam objectives cover the knowledge and applied skills needed to plan, create, organize, modify, and publish graphic designs and illustrations in Illustrator.",
+        audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Illustrator, and can apply graphic design and illustration principles to routine tasks with limited assistance.",
+        details: [
+          { label: "Objective areas", value: "5 sections" },
+          { label: "Exam versions", value: "2022 (26.x) and 2023 (27.x)" },
+          { label: "Credential", value: "Adobe Certified Professional" },
+        ],
+        objectiveAreas: [
+          {
+            number: "01",
+            title: "Working in the Design Industry",
+            description: "Purpose, audience needs, collaboration, copyright, digital-graphics terminology, and design principles.",
+          },
+          {
+            number: "02",
+            title: "Project Setup and Interface",
+            description: "Document settings, workspace, non-printing tools, assets, colors, swatches, brushes, symbols, styles, and patterns.",
+          },
+          {
+            number: "03",
+            title: "Organizing Documents",
+            description: "Layers, opacity, and masks for managing visual elements.",
+          },
+          {
+            number: "04",
+            title: "Creating and Modifying Visual Elements",
+            description: "Core tools, typography, selections, transformations, reconstruction, editing, effects, and graphic styles.",
+          },
+          {
+            number: "05",
+            title: "Publishing Digital Media",
+            description: "Preparing and exporting digital images for web, print, video, and other formats.",
+          },
+        ],
+      },
+      {
+        id: "express-content-creation-marketing",
+        title: "Adobe Certified Professional in Content Creation and Marketing Using Adobe Express",
+        description: "The official exam objectives cover the knowledge and applied skills needed to plan, create, manage, share, and publish content and marketing materials in Adobe Express.",
+        audience: "The target candidate is a professional or student with approximately 150 hours of instruction and hands-on experience using Adobe Express for content creation, communication, and digital marketing.",
+        details: [
+          { label: "Objective areas", value: "5 sections" },
+          { label: "Exam format", value: "50-minute exam" },
+          { label: "Credential", value: "Adobe Certified Professional" },
+        ],
+        objectiveAreas: [
+          {
+            number: "01",
+            title: "Digital Marketing Principles",
+            description: "Promotion, target marketing, branding, content strategy, optimization, distribution, and social media promotion.",
+          },
+          {
+            number: "02",
+            title: "Design Principles",
+            description: "Visual design, design processes, accessibility, and ethical asset use.",
+          },
+          {
+            number: "03",
+            title: "Content Creation and Modification",
+            description: "Graphics, publications, video, audio, animation, webpages, text, templates, files, and audience reach.",
+          },
+          {
+            number: "04",
+            title: "Content Management",
+            description: "Asset libraries, file organization, templates, and multi-platform content.",
+          },
+          {
+            number: "05",
+            title: "Sharing and Publishing",
+            description: "Collaboration, publishing, scheduling, and exporting content in appropriate formats.",
+          },
+        ],
+      },
+      {
+        id: "dreamweaver-web-authoring",
+        title: "Adobe Certified Professional in Web Authoring Using Adobe Dreamweaver 2021 (v 21.x)",
+        description: "The official exam objectives cover the knowledge and applied skills needed to plan, set up, organize, code, modify, and publish websites in Dreamweaver.",
+        audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Dreamweaver, and can apply web design and development principles to routine tasks with limited assistance.",
+        details: [
+          { label: "Objective areas", value: "5 sections" },
+          { label: "Target experience", value: "Approximately 150 hours" },
+          { label: "Credential", value: "Adobe Certified Professional" },
+        ],
+        objectiveAreas: [
+          {
+            number: "01",
+            title: "Working in the Web Industry",
+            description: "Purpose, audience needs, collaboration, permissions, web technologies, and design principles.",
+          },
+          {
+            number: "02",
+            title: "Project Setup and Interface",
+            description: "Sites, workspace, non-visible workflow tools, and project assets.",
+          },
+          {
+            number: "03",
+            title: "Organizing Content on a Page",
+            description: "Page structure, responsive design, adaptive design, and multi-device layouts.",
+          },
+          {
+            number: "04",
+            title: "Working with Code to Create and Modify Content",
+            description: "HTML, tables, semantic elements, CSS, forms, and JavaScript interactivity.",
+          },
+          {
+            number: "05",
+            title: "Publishing Digital Media",
+            description: "Testing, publishing preparation, saving pages, and publishing a live website.",
+          },
+        ],
+      },
     ],
   },
 ];
