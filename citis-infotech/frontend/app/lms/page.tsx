@@ -63,8 +63,8 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
       <div className="container-site">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold tracking-[0.2em] text-primary uppercase">Course catalogue</p>
-          <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Start with one focused course.</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">Explore the first course in the CITIS learning catalogue. More categories and courses can be added here as the learning experience grows.</p>
+          <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Explore focused certification paths.</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">Browse objective-led Adobe certification courses across document creation, motion graphics, design, publication, content, web, and marketing.</p>
         </div>
 
         <div className="mx-auto mt-10 max-w-5xl space-y-4">

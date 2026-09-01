@@ -17,10 +17,10 @@ export type LmsCourseCategory = {
 
 export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
   {
-    id: "adobe-certified-professional",
-    name: "Adobe Certified Professional",
-    eyebrow: "Featured course category",
-    description: "Official objective-led preparation for Adobe Creative Cloud application proficiency and digital media careers.",
+    id: "adobe-document-creation-management",
+    name: "Document Creation & Management",
+    eyebrow: "Adobe Certified Professional",
+    description: "Official objective-led preparation for document creation, management, editing, review, protection, and export.",
     courses: [
       {
         id: "acrobat-pro-document-creation-management",
@@ -65,6 +65,14 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: "adobe-motion-graphics-visual-effects",
+    name: "Motion Graphics & Visual Effects",
+    eyebrow: "Adobe Certified Professional",
+    description: "Official objective-led preparation for visual effects, animation, compositing, and motion graphics production.",
+    courses: [
       {
         id: "after-effects-visual-effects-motion-graphics",
         title: "Adobe Certified Professional in Visual Effects and Motion Graphics Using Adobe After Effects 2021 (v 18.x)",
@@ -103,6 +111,14 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: "adobe-design-publication",
+    name: "Design & Publication",
+    eyebrow: "Adobe Certified Professional",
+    description: "Official objective-led preparation for graphic design, illustration, and print and digital media publication.",
+    courses: [
       {
         id: "indesign-print-digital-media-publication",
         title: "Adobe Certified Professional in Print & Digital Media Publication Using Adobe InDesign 2021 (v 16.x)",
@@ -179,6 +195,14 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
           },
         ],
       },
+    ],
+  },
+  {
+    id: "adobe-content-web-marketing",
+    name: "Content, Web & Marketing",
+    eyebrow: "Adobe Certified Professional",
+    description: "Official objective-led preparation for content creation, digital marketing, web authoring, and publishing.",
+    courses: [
       {
         id: "express-content-creation-marketing",
         title: "Adobe Certified Professional in Content Creation and Marketing Using Adobe Express",
