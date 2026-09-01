@@ -61,6 +61,103 @@ type AssignmentEditor = {
   maxMarks: string;
 };
 
+type Assessment = {
+  id: string;
+  course_id: string;
+  module_id: string;
+  title: string;
+  description?: string | null;
+  module_title?: string | null;
+  assessment_type: string;
+  total_marks?: number | null;
+  passing_marks?: number | null;
+  duration_minutes?: number | null;
+  attempt_limit?: number | null;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+};
+
+type AssessmentOption = {
+  id?: string;
+  value: string;
+  label: string;
+  is_correct?: boolean;
+  isCorrect?: boolean;
+  sequence?: number;
+};
+
+type AssessmentQuestion = {
+  id: string;
+  assessment_id: string;
+  prompt: string;
+  question_type: string;
+  marks: number;
+  sequence: number;
+  status: "ACTIVE" | "ARCHIVED";
+  options: AssessmentOption[];
+};
+
+type AssessmentAttempt = {
+  id: string;
+  assessment_id: string;
+  learner_id: string;
+  learner_first_name?: string;
+  learner_last_name?: string;
+  learner_email?: string | null;
+  attempt_number: number;
+  status: "SUBMITTED";
+  score?: number | null;
+  max_score?: number | null;
+  passed?: boolean | null;
+  grading_status: "NOT_REQUIRED" | "PENDING" | "GRADED";
+  grader_id?: string | null;
+  graded_at?: string | null;
+  grading_feedback?: string | null;
+  started_at?: string;
+  submitted_at: string;
+  assessment_title?: string;
+  assessment_type?: string;
+};
+
+type AssessmentAnswer = {
+  question_id: string;
+  answer_json: unknown;
+  is_correct?: boolean | null;
+  awarded_marks: number;
+};
+
+type AssessmentAttemptDetail = AssessmentAttempt & {
+  questions: AssessmentQuestion[];
+  answers: AssessmentAnswer[];
+};
+
+type AssessmentEditor = {
+  id?: string;
+  moduleId: string;
+  moduleTitle?: string;
+  title: string;
+  description: string;
+  assessmentType: string;
+  totalMarks: string;
+  passingMarks: string;
+  durationMinutes: string;
+  attemptLimit: string;
+};
+
+type QuestionEditor = {
+  assessmentId: string;
+  id?: string;
+  prompt: string;
+  questionType: string;
+  marks: string;
+  sequence: string;
+  options: AssessmentOption[];
+};
+
+type AttemptGradeDraft = {
+  feedback: string;
+  grades: Record<string, string>;
+};
+
 type CourseModule = {
   id: string;
   course_id: string;
@@ -135,6 +232,9 @@ type CourseData = {
   rosterError?: string;
   assignments: Assignment[];
   submissions: Array<{ assignment: Assignment; submission: Submission }>;
+  assessments: Assessment[];
+  assessmentAttempts: Array<{ assessment: Assessment; attempt: AssessmentAttempt }>;
+  assessmentError?: string;
 };
 
 type ApiEnvelope<T> = {
@@ -189,7 +289,7 @@ function displayName(principal?: Principal) {
   ].filter(Boolean).join(" ") || "Instructor";
 }
 
-function learnerName(learner: Enrollment | Submission) {
+function learnerName(learner: Enrollment | Submission | AssessmentAttempt) {
   return [
     learner.learner_first_name,
     learner.learner_last_name,
@@ -225,6 +325,66 @@ function assignmentEditorFrom(assignment: Assignment): AssignmentEditor {
   };
 }
 
+function assessmentEditorFrom(assessment: Assessment): AssessmentEditor {
+  return {
+    id: assessment.id,
+    moduleId: assessment.module_id,
+    moduleTitle: assessment.module_title || "Current course module",
+    title: assessment.title,
+    description: assessment.description || "",
+    assessmentType: assessment.assessment_type,
+    totalMarks: assessment.total_marks === null || assessment.total_marks === undefined ? "" : String(assessment.total_marks),
+    passingMarks: assessment.passing_marks === null || assessment.passing_marks === undefined ? "" : String(assessment.passing_marks),
+    durationMinutes: assessment.duration_minutes === null || assessment.duration_minutes === undefined ? "" : String(assessment.duration_minutes),
+    attemptLimit: assessment.attempt_limit === null || assessment.attempt_limit === undefined ? "" : String(assessment.attempt_limit),
+  };
+}
+
+function defaultQuestionOptions(questionType: string): AssessmentOption[] {
+  if (questionType === "TRUE_FALSE") {
+    return [
+      { value: "true", label: "True", isCorrect: true },
+      { value: "false", label: "False", isCorrect: false },
+    ];
+  }
+  if (questionType === "SHORT_TEXT" || questionType === "NUMERIC") {
+    return [{ value: "", label: "Correct answer", isCorrect: true }];
+  }
+  return [
+    { value: "option-a", label: "Option A", isCorrect: true },
+    { value: "option-b", label: "Option B", isCorrect: false },
+  ];
+}
+
+function questionEditorFrom(question: AssessmentQuestion): QuestionEditor {
+  return {
+    assessmentId: question.assessment_id,
+    id: question.id,
+    prompt: question.prompt,
+    questionType: question.question_type,
+    marks: String(question.marks),
+    sequence: String(question.sequence),
+    options: question.options.map((option) => ({
+      id: option.id,
+      value: option.value,
+      label: option.label,
+      isCorrect: option.is_correct ?? option.isCorrect ?? false,
+      sequence: option.sequence,
+    })),
+  };
+}
+
+function answerText(value: unknown): string {
+  if (value && typeof value === "object" && "value" in value) {
+    const answer = (value as { value?: unknown }).value;
+    return Array.isArray(answer) ? answer.join(", ") : String(answer ?? "No answer");
+  }
+  return typeof value === "string" ? value : JSON.stringify(value) || "No answer";
+}
+
+const assessmentTypes = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "PROJECT", "VIVA", "PRACTICAL"];
+const questionTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"];
+
 function statusLabel(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 }
@@ -259,6 +419,16 @@ export default function TeacherPortalPage() {
   const [assignmentEditor, setAssignmentEditor] = useState<AssignmentEditor | null>(null);
   const [archiveCandidate, setArchiveCandidate] = useState<Assignment | null>(null);
   const [expandedAssignmentId, setExpandedAssignmentId] = useState("");
+  const [assessmentEditor, setAssessmentEditor] = useState<AssessmentEditor | null>(null);
+  const [assessmentArchiveCandidate, setAssessmentArchiveCandidate] = useState<Assessment | null>(null);
+  const [questionArchiveCandidate, setQuestionArchiveCandidate] = useState<AssessmentQuestion | null>(null);
+  const [questionEditor, setQuestionEditor] = useState<QuestionEditor | null>(null);
+  const [expandedAssessmentId, setExpandedAssessmentId] = useState("");
+  const [assessmentDetails, setAssessmentDetails] = useState<Record<string, AssessmentAttemptDetail>>({});
+  const [assessmentQuestions, setAssessmentQuestions] = useState<Record<string, AssessmentQuestion[]>>({});
+  const [assessmentQuestionLoading, setAssessmentQuestionLoading] = useState("");
+  const [attemptGradeDrafts, setAttemptGradeDrafts] = useState<Record<string, AttemptGradeDraft>>({});
+  const [assessmentDetailLoading, setAssessmentDetailLoading] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -274,11 +444,14 @@ export default function TeacherPortalPage() {
       setName(displayName(principal));
 
       const details = await Promise.all(courses.map(async (course): Promise<CourseData> => {
-        const [enrollmentResult, assignments, structure] = await Promise.all([
+        const [enrollmentResult, assignments, assessmentResult, structure] = await Promise.all([
           list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`)
             .then((data) => ({ data, error: undefined }))
             .catch((reason: unknown) => ({ data: [], error: errorMessage(reason, "The learner roster could not be loaded.") })),
           list<Assignment>(`/assignments?courseId=${encodeURIComponent(course.id)}`),
+          list<Assessment>(`/assessments?courseId=${encodeURIComponent(course.id)}`)
+            .then((data) => ({ data, error: undefined }))
+            .catch((reason: unknown) => ({ data: [], error: errorMessage(reason, "Assessments could not be loaded.") })),
           loadCourseStructure(course.id).then((modules): CourseStructure => ({ modules })).catch((reason: unknown): CourseStructure => ({
             modules: [],
             error: errorMessage(reason, "Course content could not be loaded."),
@@ -303,6 +476,10 @@ export default function TeacherPortalPage() {
           assignment,
           submissions: await list<Submission>(`/assignments/${encodeURIComponent(assignment.id)}/submissions?page=1&pageSize=100`),
         })));
+        const assessmentAttemptGroups = await Promise.all(assessmentResult.data.map(async (assessment) => ({
+          assessment,
+          attempts: await list<AssessmentAttempt>(`/assessments/${encodeURIComponent(assessment.id)}/attempts`).catch(() => []),
+        })));
         return {
           course,
           modules: structure.modules,
@@ -312,6 +489,9 @@ export default function TeacherPortalPage() {
           progress,
           assignments,
           submissions: submissionGroups.flatMap(({ assignment, submissions }) => submissions.map((submission) => ({ assignment, submission }))),
+          assessments: assessmentResult.data,
+          assessmentAttempts: assessmentAttemptGroups.flatMap(({ assessment, attempts }) => attempts.map((attempt) => ({ assessment, attempt }))),
+          assessmentError: assessmentResult.error,
         };
       }));
 
@@ -347,6 +527,13 @@ export default function TeacherPortalPage() {
       .map((entry) => ({ ...entry, course: item.course }))),
     [courseData],
   );
+  const pendingAssessmentAttempts = useMemo(
+    () => courseData.flatMap((item) => item.assessmentAttempts
+      .filter(({ attempt }) => attempt.grading_status === "PENDING")
+      .map((entry) => ({ ...entry, course: item.course }))),
+    [courseData],
+  );
+  const selectedAssessmentAttempts = selected?.assessmentAttempts || [];
   const learnerTotal = courseData.reduce((total, item) => total + item.enrollments.length, 0);
   const progressRows = courseData.flatMap((item) => item.progress);
   const progressValues = progressRows.map(({ progress }) => progress?.percentage).filter((value): value is number => typeof value === "number");
@@ -466,6 +653,329 @@ export default function TeacherPortalPage() {
     }
   }
 
+  function openAssessmentEditor(assessment?: Assessment) {
+    if (assessment) {
+      setAssessmentEditor(assessmentEditorFrom(assessment));
+      return;
+    }
+    setAssessmentEditor({
+      moduleId: selected?.modules[0]?.module.id || "",
+      moduleTitle: selected?.modules[0]?.module.title,
+      title: "",
+      description: "",
+      assessmentType: "PROJECT",
+      totalMarks: "",
+      passingMarks: "",
+      durationMinutes: "",
+      attemptLimit: "",
+    });
+  }
+
+  async function saveAssessment() {
+    if (!selected || !assessmentEditor) return;
+    const title = assessmentEditor.title.trim();
+    const totalMarks = assessmentEditor.totalMarks.trim() ? Number(assessmentEditor.totalMarks) : undefined;
+    const passingMarks = assessmentEditor.passingMarks.trim() ? Number(assessmentEditor.passingMarks) : undefined;
+    const durationMinutes = assessmentEditor.durationMinutes.trim() ? Number(assessmentEditor.durationMinutes) : undefined;
+    const attemptLimit = assessmentEditor.attemptLimit.trim() ? Number(assessmentEditor.attemptLimit) : undefined;
+    const validNumber = (value: number | undefined) => value === undefined || Number.isFinite(value);
+    if (!title || title.length < 2) {
+      setError("Add an assessment title.");
+      return;
+    }
+    if (!assessmentEditor.id && !assessmentEditor.moduleId) {
+      setError("Select a course module for this assessment.");
+      return;
+    }
+    if (!validNumber(totalMarks) || (totalMarks !== undefined && (totalMarks < 0 || totalMarks > 100000))) {
+      setError("Enter total marks between 0 and 100,000.");
+      return;
+    }
+    if (!validNumber(passingMarks) || (passingMarks !== undefined && (passingMarks < 0 || passingMarks > (totalMarks ?? 100000)))) {
+      setError("Passing marks cannot exceed total marks.");
+      return;
+    }
+    if (!validNumber(durationMinutes) || (durationMinutes !== undefined && (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440))) {
+      setError("Duration must be a whole number of minutes between 1 and 1,440.");
+      return;
+    }
+    if (!validNumber(attemptLimit) || (attemptLimit !== undefined && (!Number.isInteger(attemptLimit) || attemptLimit < 1 || attemptLimit > 100))) {
+      setError("Attempt limit must be a whole number between 1 and 100.");
+      return;
+    }
+    setBusyAction(`save-assessment:${assessmentEditor.id || "new"}`);
+    setError("");
+    setNotice("");
+    try {
+      if (assessmentEditor.id) {
+        await request(`/assessments/${encodeURIComponent(assessmentEditor.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            title,
+            description: assessmentEditor.description.trim() || undefined,
+            totalMarks,
+            passingMarks,
+            durationMinutes,
+            attemptLimit,
+          }),
+        });
+        setNotice(`${title} was updated.`);
+      } else {
+        await request("/assessments", {
+          method: "POST",
+          body: JSON.stringify({
+            courseId: selected.course.id,
+            moduleId: assessmentEditor.moduleId,
+            title,
+            description: assessmentEditor.description.trim() || undefined,
+            assessmentType: assessmentEditor.assessmentType,
+            totalMarks,
+            passingMarks,
+            durationMinutes,
+            attemptLimit,
+          }),
+        });
+        setNotice(`${title} was saved as a draft.`);
+      }
+      setAssessmentEditor(null);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assessment could not be saved."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function publishAssessment(assessment: Assessment) {
+    setBusyAction(`publish-assessment:${assessment.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assessments/${encodeURIComponent(assessment.id)}/publish`, { method: "POST" });
+      setNotice(`${assessment.title} is now available to learners.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assessment could not be published."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function archiveAssessment(assessment: Assessment) {
+    setBusyAction(`archive-assessment:${assessment.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assessments/${encodeURIComponent(assessment.id)}/archive`, { method: "POST" });
+      setAssessmentArchiveCandidate(null);
+      setNotice(`${assessment.title} was archived.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assessment could not be archived."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  function openQuestionEditor(assessment: Assessment, question?: AssessmentQuestion) {
+    if (question) {
+      setQuestionEditor(questionEditorFrom(question));
+      return;
+    }
+    const currentQuestions = assessmentQuestions[assessment.id] || [];
+    setQuestionEditor({
+      assessmentId: assessment.id,
+      prompt: "",
+      questionType: "SINGLE_CHOICE",
+      marks: "10",
+      sequence: String(currentQuestions.length + 1),
+      options: defaultQuestionOptions("SINGLE_CHOICE"),
+    });
+  }
+
+  async function loadAssessmentQuestions(assessment: Assessment) {
+    if (assessmentQuestions[assessment.id]) return;
+    setAssessmentQuestionLoading(assessment.id);
+    try {
+      const questions = await list<AssessmentQuestion>(`/assessments/${encodeURIComponent(assessment.id)}/questions`);
+      setAssessmentQuestions((current) => ({ ...current, [assessment.id]: questions }));
+    } catch (reason) {
+      setError(errorMessage(reason, "The assessment questions could not be loaded."));
+    } finally {
+      setAssessmentQuestionLoading("");
+    }
+  }
+
+  function updateQuestionType(questionType: string) {
+    setQuestionEditor((current) => current ? {
+      ...current,
+      questionType,
+      options: defaultQuestionOptions(questionType),
+    } : current);
+  }
+
+  function toggleOptionCorrect(index: number) {
+    setQuestionEditor((current) => {
+      if (!current) return current;
+      const single = current.questionType === "SINGLE_CHOICE" || current.questionType === "TRUE_FALSE" || current.questionType === "SHORT_TEXT" || current.questionType === "NUMERIC";
+      return {
+        ...current,
+        options: current.options.map((option, optionIndex) => ({
+          ...option,
+          isCorrect: single ? optionIndex === index : optionIndex === index ? !Boolean(option.isCorrect ?? option.is_correct) : Boolean(option.isCorrect ?? option.is_correct),
+        })),
+      };
+    });
+  }
+
+  function updateQuestionOption(index: number, field: "value" | "label", value: string) {
+    setQuestionEditor((current) => current ? {
+      ...current,
+      options: current.options.map((option, optionIndex) => optionIndex === index ? { ...option, [field]: value } : option),
+    } : current);
+  }
+
+  function addQuestionOption() {
+    setQuestionEditor((current) => current ? {
+      ...current,
+      options: [...current.options, { value: `option-${current.options.length + 1}`, label: `Option ${String.fromCharCode(65 + current.options.length)}`, isCorrect: false }],
+    } : current);
+  }
+
+  function removeQuestionOption(index: number) {
+    setQuestionEditor((current) => current && current.options.length > 1 ? {
+      ...current,
+      options: current.options.filter((_, optionIndex) => optionIndex !== index),
+    } : current);
+  }
+
+  async function saveQuestion() {
+    if (!questionEditor) return;
+    const prompt = questionEditor.prompt.trim();
+    const marks = Number(questionEditor.marks);
+    const sequence = Number(questionEditor.sequence);
+    const options = questionEditor.options.map((option) => ({
+      value: option.value.trim(),
+      label: option.label.trim(),
+      isCorrect: Boolean(option.isCorrect ?? option.is_correct),
+    }));
+    if (prompt.length < 2) {
+      setError("Add a question prompt.");
+      return;
+    }
+    if (!Number.isFinite(marks) || marks < 0.01 || marks > 100000) {
+      setError("Enter question marks between 0.01 and 100,000.");
+      return;
+    }
+    if (!Number.isInteger(sequence) || sequence < 1) {
+      setError("Question sequence must be a positive whole number.");
+      return;
+    }
+    if (options.some((option) => !option.value || !option.label)) {
+      setError("Every answer option needs a value and label.");
+      return;
+    }
+    if (new Set(options.map((option) => option.value)).size !== options.length) {
+      setError("Answer option values must be unique.");
+      return;
+    }
+    setBusyAction(`save-question:${questionEditor.id || "new"}`);
+    setError("");
+    setNotice("");
+    try {
+      const body = { prompt, marks, sequence, ...(questionEditor.id ? { options } : { questionType: questionEditor.questionType, options }) };
+      if (questionEditor.id) {
+        await request(`/assessment-questions/${encodeURIComponent(questionEditor.id)}`, { method: "PATCH", body: JSON.stringify(body) });
+      } else {
+        await request(`/assessments/${encodeURIComponent(questionEditor.assessmentId)}/questions`, { method: "POST", body: JSON.stringify(body) });
+      }
+      const assessmentId = questionEditor.assessmentId;
+      setQuestionEditor(null);
+      setAssessmentQuestions((current) => {
+        const next = { ...current };
+        delete next[assessmentId];
+        return next;
+      });
+      setNotice(questionEditor.id ? "Question and options updated." : "Question added to the assessment.");
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The question could not be saved."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function archiveQuestion(question: AssessmentQuestion) {
+    setBusyAction(`archive-question:${question.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assessment-questions/${encodeURIComponent(question.id)}/archive`, { method: "POST" });
+      setQuestionArchiveCandidate(null);
+      setAssessmentQuestions((current) => {
+        const next = { ...current };
+        delete next[question.assessment_id];
+        return next;
+      });
+      setNotice("The question was archived.");
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The question could not be archived."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function loadAttemptDetail(attempt: AssessmentAttempt) {
+    if (assessmentDetails[attempt.id]) return;
+    setAssessmentDetailLoading(attempt.id);
+    setError("");
+    try {
+      const detail = await request<AssessmentAttemptDetail>(`/assessment-attempts/${encodeURIComponent(attempt.id)}`);
+      setAssessmentDetails((current) => ({ ...current, [attempt.id]: detail }));
+      setAttemptGradeDrafts((current) => ({
+        ...current,
+        [attempt.id]: {
+          feedback: detail.grading_feedback || "",
+          grades: Object.fromEntries(detail.questions.map((question) => {
+            const answer = detail.answers.find((item) => item.question_id === question.id);
+            return [question.id, answer?.awarded_marks === null || answer?.awarded_marks === undefined ? "0" : String(answer.awarded_marks)];
+          })),
+        },
+      }));
+    } catch (reason) {
+      setError(errorMessage(reason, "The submitted attempt could not be loaded."));
+    } finally {
+      setAssessmentDetailLoading("");
+    }
+  }
+
+  async function gradeAttempt(attempt: AssessmentAttempt) {
+    const detail = assessmentDetails[attempt.id];
+    const draft = attemptGradeDrafts[attempt.id];
+    if (!detail || !draft) return;
+    const grades = detail.questions.map((question) => ({ questionId: question.id, awardedMarks: Number(draft.grades[question.id]) }));
+    if (grades.some((grade) => !Number.isFinite(grade.awardedMarks) || grade.awardedMarks < 0 || grade.awardedMarks > Number(detail.questions.find((question) => question.id === grade.questionId)?.marks))) {
+      setError("Each question grade must be within its configured marks.");
+      return;
+    }
+    setBusyAction(`grade-attempt:${attempt.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assessment-attempts/${encodeURIComponent(attempt.id)}/grade`, {
+        method: "PATCH",
+        body: JSON.stringify({ grades, feedback: draft.feedback.trim() || undefined }),
+      });
+      setNotice(`${learnerName(attempt)}'s ${attempt.assessment_title || "assessment"} attempt was graded.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assessment attempt could not be graded."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
   async function gradeSubmission(assignment: Assignment, submission: Submission) {
     const draft = gradeDrafts[submission.id];
     const grade = Number(draft?.grade);
@@ -504,6 +1014,7 @@ export default function TeacherPortalPage() {
             <a className="nav-item" href="#courses"><span className="nav-icon">▦</span>Assigned courses</a>
              <a className="nav-item" href="#content"><span className="nav-icon">≡</span>Course content</a>
             <a className="nav-item" href="#learners"><span className="nav-icon">♙</span>Learners & progress</a>
+             <a className="nav-item" href="#assessments"><span className="nav-icon">◇</span>Assessments <b>{pendingAssessmentAttempts.length}</b></a>
             <a className="nav-item" href="#submissions"><span className="nav-icon">✓</span>Submissions <b>{pendingSubmissions.length}</b></a>
           </nav>
           <div className="sidebar-foot">
@@ -537,7 +1048,7 @@ export default function TeacherPortalPage() {
               <article className="metric-card"><span className="metric-label">Assigned courses</span><strong>{loading ? "—" : courseData.length}</strong><span className="metric-foot">Courses in your teaching scope</span></article>
               <article className="metric-card"><span className="metric-label">Enrolled learners</span><strong>{loading ? "—" : learnerTotal}</strong><span className="metric-foot">Active course enrollments</span></article>
               <article className="metric-card accent"><span className="metric-label">Average progress</span><strong>{loading ? "—" : `${averageProgress}%`}</strong><span className="metric-foot">Across learners with progress data</span></article>
-              <article className="metric-card warm"><span className="metric-label">Pending submissions</span><strong>{loading ? "—" : pendingSubmissions.length}</strong><span className="metric-foot">Learner work awaiting review</span></article>
+               <article className="metric-card warm"><span className="metric-label">Pending review</span><strong>{loading ? "—" : pendingSubmissions.length + pendingAssessmentAttempts.length}</strong><span className="metric-foot">Assignments and assessments awaiting review</span></article>
             </section>
 
             <section className="two-column" id="courses">
@@ -572,6 +1083,9 @@ export default function TeacherPortalPage() {
                   </button>
                   <button className="action-row" type="button" onClick={() => document.getElementById("assignments")?.scrollIntoView({ behavior: "smooth", block: "start" })} disabled={!selected}>
                     <span className="action-icon content">▦</span><span><strong>Manage course work</strong><small>{selected ? `${selected.assignments.length} assignment${selected.assignments.length === 1 ? "" : "s"} in this course` : "Select an assigned course first"}</small></span><b>→</b>
+                  </button>
+                  <button className="action-row" type="button" onClick={() => document.getElementById("assessments")?.scrollIntoView({ behavior: "smooth", block: "start" })} disabled={!selected}>
+                    <span className="action-icon assessment">◇</span><span><strong>Open assessment studio</strong><small>{selected ? `${selected.assessments.length} assessment${selected.assessments.length === 1 ? "" : "s"} · ${selected.assessmentAttempts.filter(({ attempt }) => attempt.grading_status === "PENDING").length} awaiting grade` : "Select an assigned course first"}</small></span><b>→</b>
                   </button>
                 </div>
                 <div className="scope-note"><span>●</span> Data is limited to courses assigned to your instructor account.</div>
@@ -673,6 +1187,66 @@ export default function TeacherPortalPage() {
                      <div className="assignment-footer"><button className="submission-toggle" type="button" onClick={() => setExpandedAssignmentId(expanded ? "" : assignment.id)}>{expanded ? "Hide submissions" : "View submissions"} <span>{assignmentSubmissions.length}</span></button>{pendingCount > 0 && <button className="text-button strong" type="button" onClick={() => selectCourse(selected.course.id, true)}>{pendingCount} to review</button>}</div>
                      {archiveCandidate?.id === assignment.id && <div className="confirm-bar" role="alert"><div><strong>Archive this assignment?</strong><span>Learners will no longer be able to submit new work.</span></div><div><button className="secondary-button small-button" type="button" onClick={() => setArchiveCandidate(null)}>Cancel</button><button className="archive-button" type="button" onClick={() => void archiveAssignment(assignment)} disabled={busyAction === `archive:${assignment.id}`}>{busyAction === `archive:${assignment.id}` ? "Archiving…" : "Confirm archive"}</button></div></div>}
                      {expanded && <div className="assignment-submissions">{assignmentSubmissions.length === 0 && <div className="nested-state">No learner submissions yet.</div>}{assignmentSubmissions.map(({ submission }) => <div className="submission-detail" key={submission.id}><div className="submission-detail-heading"><div className="learner-cell"><span className="learner-avatar">{learnerName(submission).slice(0, 1).toUpperCase()}</span><span><strong>{learnerName(submission)}</strong><small>{submission.learner_email || "Learner"} · Submitted {formatDate(submission.submitted_at, true)}{submission.is_late ? " · Late" : ""}</small></span></div><StatusPill status={submission.status} /></div><p>{submission.submission_text}</p>{submission.attachment_url && <a href={submission.attachment_url} target="_blank" rel="noreferrer">Open learner attachment ↗</a>}{submission.grade !== null && submission.grade !== undefined && <div className="graded-summary"><strong>{submission.grade}/{assignment.max_marks}</strong>{submission.feedback && <span>{submission.feedback}</span>}</div>}{submission.status === "SUBMITTED" && <button className="text-button strong" type="button" onClick={() => selectCourse(selected.course.id, true)}>Review and grade below ↓</button>}</div>)}</div>}
+                   </article>;
+                 })}
+               </div>}
+             </section>
+
+             <section className="panel assessment-panel" id="assessments">
+               <div className="panel-heading detail-heading">
+                 <div><p className="eyebrow">Evaluation studio</p><h2>Assessment workspace</h2><p className="panel-copy">{selected ? "Author assessments, manage question options, and review submitted attempts for this assigned course." : "Select a course to manage assessments."}</p></div>
+                 {selected && <div className="assessment-heading-actions"><span className="count-badge">{selected.assessments.length}</span><button className="primary-button small-button" type="button" onClick={() => openAssessmentEditor()} disabled={loading || selected.modules.length === 0}>+ New assessment</button></div>}
+               </div>
+               {selected?.assessmentError && <div className="inline-alert error" role="alert"><div><strong>Assessments are unavailable</strong><span>{selected.assessmentError}</span></div><button className="text-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing}>Retry</button></div>}
+               {selected && selected.modules.length === 0 && !selected.structureError && <div className="workspace-note"><span>!</span> Add a course module before creating an assessment.</div>}
+               {loading && <div className="state"><div className="spinner" /><div><strong>Loading assessments…</strong><p>Reading assessment settings, questions, and submitted-attempt summaries for your assigned courses.</p></div></div>}
+               {assessmentEditor && selected && <form className="assessment-editor" onSubmit={(event) => { event.preventDefault(); void saveAssessment(); }}>
+                 <div className="editor-heading"><div><p className="eyebrow">{assessmentEditor.id ? "Edit assessment" : "New assessment"}</p><h3>{assessmentEditor.id ? "Update assessment settings" : "Create a draft assessment"}</h3></div><button className="icon-button" type="button" onClick={() => setAssessmentEditor(null)} aria-label="Close assessment editor">×</button></div>
+                 <div className="form-grid assessment-form-grid">
+                   <label>Title<input value={assessmentEditor.title} onChange={(event) => setAssessmentEditor((current) => current && { ...current, title: event.target.value })} placeholder="e.g. Portfolio review" maxLength={180} required /></label>
+                   <label>Assessment type{assessmentEditor.id ? <span className="readonly-field">{statusLabel(assessmentEditor.assessmentType)}</span> : <select value={assessmentEditor.assessmentType} onChange={(event) => setAssessmentEditor((current) => current && { ...current, assessmentType: event.target.value })}>{assessmentTypes.map((type) => <option value={type} key={type}>{statusLabel(type)}</option>)}</select>}</label>
+                   <label>Course module{assessmentEditor.id ? <span className="readonly-field">{assessmentEditor.moduleTitle}</span> : <select value={assessmentEditor.moduleId} onChange={(event) => setAssessmentEditor((current) => current && { ...current, moduleId: event.target.value, moduleTitle: selected.modules.find(({ module }) => module.id === event.target.value)?.module.title })} required><option value="" disabled>Select a module</option>{selected.modules.map(({ module }) => <option value={module.id} key={module.id}>{module.title}</option>)}</select>}</label>
+                   <label>Total marks <span className="optional-label">(optional)</span><input type="number" value={assessmentEditor.totalMarks} onChange={(event) => setAssessmentEditor((current) => current && { ...current, totalMarks: event.target.value })} min="0" max="100000" step="0.01" placeholder="Sum of questions" /></label>
+                   <label>Passing marks <span className="optional-label">(optional)</span><input type="number" value={assessmentEditor.passingMarks} onChange={(event) => setAssessmentEditor((current) => current && { ...current, passingMarks: event.target.value })} min="0" max="100000" step="0.01" placeholder="Required score" /></label>
+                   <label>Duration <span className="optional-label">(minutes)</span><input type="number" value={assessmentEditor.durationMinutes} onChange={(event) => setAssessmentEditor((current) => current && { ...current, durationMinutes: event.target.value })} min="1" max="1440" step="1" placeholder="Optional" /></label>
+                   <label>Attempt limit <span className="optional-label">(optional)</span><input type="number" value={assessmentEditor.attemptLimit} onChange={(event) => setAssessmentEditor((current) => current && { ...current, attemptLimit: event.target.value })} min="1" max="100" step="1" placeholder="Unlimited" /></label>
+                   <label className="full-field">Description <span className="optional-label">(optional)</span><textarea value={assessmentEditor.description} onChange={(event) => setAssessmentEditor((current) => current && { ...current, description: event.target.value })} placeholder="Give learners a concise overview." maxLength={4000} rows={2} /></label>
+                 </div>
+                 <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setAssessmentEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-assessment:${assessmentEditor.id || "new"}`}>{busyAction === `save-assessment:${assessmentEditor.id || "new"}` ? "Saving…" : assessmentEditor.id ? "Save changes" : "Save draft"}</button></div>
+               </form>}
+               {!loading && !selected && <div className="state compact"><div className="state-icon">◇</div><div><strong>No course selected</strong><p>Select an assigned course to manage assessments.</p></div></div>}
+               {selected && !assessmentEditor && selected.assessments.length === 0 && <div className="state compact"><div className="state-icon">+</div><div><strong>No assessments in this course</strong><p>Create a draft assessment, then add questions before publishing it.</p></div></div>}
+               {selected && selected.assessments.length > 0 && <div className="assessment-list">
+                 {selected.assessments.map((assessment) => {
+                   const questions = assessmentQuestions[assessment.id] || [];
+                   const attempts = selectedAssessmentAttempts.filter(({ assessment: item }) => item.id === assessment.id).map(({ attempt }) => attempt);
+                   const expanded = expandedAssessmentId === assessment.id;
+                   const questionEditorForAssessment = questionEditor?.assessmentId === assessment.id;
+                   return <article className="assessment-card" key={assessment.id}>
+                     <div className="assessment-card-main">
+                       <div className="assessment-title"><span className="assessment-icon">◇</span><span><strong>{assessment.title}</strong><small>{assessment.module_title || "Course module"} · {statusLabel(assessment.assessment_type)}{assessment.total_marks !== null && assessment.total_marks !== undefined ? ` · ${assessment.total_marks} marks` : " · Marks from questions"}</small></span></div>
+                       <div className="assessment-meta"><StatusPill status={assessment.status} /><small>{attempts.length} submitted attempt{attempts.length === 1 ? "" : "s"}</small>{assessment.passing_marks !== null && assessment.passing_marks !== undefined && <small>Pass: {assessment.passing_marks}</small>}</div>
+                       <div className="assessment-actions">{assessment.status !== "ARCHIVED" && <button className="text-button" type="button" onClick={() => openAssessmentEditor(assessment)}>Edit</button>}{assessment.status === "DRAFT" && <button className="text-button" type="button" onClick={() => void publishAssessment(assessment)} disabled={busyAction === `publish-assessment:${assessment.id}`}>{busyAction === `publish-assessment:${assessment.id}` ? "Publishing…" : "Publish"}</button>}{assessment.status !== "ARCHIVED" && <button className="text-button danger-text" type="button" onClick={() => setAssessmentArchiveCandidate(assessment)}>Archive</button>}</div>
+                     </div>
+                     <div className="assessment-description">{assessment.description || "Add questions and publish this assessment when it is ready for learners."}</div>
+                     <div className="assessment-footer"><button className="submission-toggle" type="button" onClick={() => { setExpandedAssessmentId(expanded ? "" : assessment.id); if (!expanded) void loadAssessmentQuestions(assessment); }}>{expanded ? "Hide assessment details" : "Open assessment details"} <span>{questions.length} Q</span></button>{attempts.length > 0 && <span className="assessment-attempt-summary">{attempts.filter((attempt) => attempt.grading_status === "PENDING").length} awaiting manual grade</span>}</div>
+                     {assessmentArchiveCandidate?.id === assessment.id && <div className="confirm-bar" role="alert"><div><strong>Archive this assessment?</strong><span>It will no longer be available for new learner attempts.</span></div><div><button className="secondary-button small-button" type="button" onClick={() => setAssessmentArchiveCandidate(null)}>Cancel</button><button className="archive-button" type="button" onClick={() => void archiveAssessment(assessment)} disabled={busyAction === `archive-assessment:${assessment.id}`}>{busyAction === `archive-assessment:${assessment.id}` ? "Archiving…" : "Confirm archive"}</button></div></div>}
+                     {expanded && <div className="assessment-details">
+                       <div className="assessment-detail-columns">
+                         <div className="question-bank">
+                           <div className="subsection-heading"><div><p className="eyebrow">Question bank</p><h3>{questions.length} question{questions.length === 1 ? "" : "s"}</h3></div>{assessment.status === "DRAFT" && <button className="secondary-button small-button" type="button" onClick={() => openQuestionEditor(assessment)}>+ Add question</button>}</div>
+                           {assessmentQuestionLoading === assessment.id && <div className="nested-state loading-inline"><span className="mini-spinner" />Loading questions…</div>}
+                           {assessmentQuestionLoading !== assessment.id && questions.length === 0 && <div className="nested-state">No active questions yet. Add at least one before publishing.</div>}
+                           {questions.map((question) => <div className="question-card" key={question.id}><div className="question-heading"><div className="question-number">{String(question.sequence).padStart(2, "0")}</div><div><strong>{question.prompt}</strong><small>{statusLabel(question.question_type)} · {question.marks} marks</small></div><div className="question-actions">{assessment.status === "DRAFT" && <><button className="text-button" type="button" onClick={() => openQuestionEditor(assessment, question)}>Edit</button><button className="text-button danger-text" type="button" onClick={() => setQuestionArchiveCandidate(question)}>Archive</button></>}</div></div>{question.options.length > 0 && <div className="option-list">{question.options.map((option) => <div className="option-row" key={option.id || option.value}><span className={`option-marker ${(option.is_correct ?? option.isCorrect) ? "correct" : ""}`}>{(option.is_correct ?? option.isCorrect) ? "✓" : "○"}</span><span>{option.label}</span>{(option.is_correct ?? option.isCorrect) && <em>Correct</em>}</div>)}</div>}{questionArchiveCandidate?.id === question.id && <div className="question-confirm"><span>Archive this question?</span><button className="text-button" type="button" onClick={() => setQuestionArchiveCandidate(null)}>Cancel</button><button className="text-button danger-text" type="button" onClick={() => void archiveQuestion(question)} disabled={busyAction === `archive-question:${question.id}`}>{busyAction === `archive-question:${question.id}` ? "Archiving…" : "Confirm"}</button></div>}</div>)}
+                           {questionEditorForAssessment && <form className="question-editor" onSubmit={(event) => { event.preventDefault(); void saveQuestion(); }}><div className="editor-heading"><div><p className="eyebrow">{questionEditor.id ? "Edit question" : "New question"}</p><h3>{questionEditor.id ? "Update prompt and options" : "Add a question"}</h3></div><button className="icon-button" type="button" onClick={() => setQuestionEditor(null)} aria-label="Close question editor">×</button></div><div className="form-grid"><label className="full-field">Prompt<textarea value={questionEditor.prompt} onChange={(event) => setQuestionEditor((current) => current && { ...current, prompt: event.target.value })} maxLength={2000} rows={3} required /></label><label>Question type{questionEditor.id ? <span className="readonly-field">{statusLabel(questionEditor.questionType)}</span> : <select value={questionEditor.questionType} onChange={(event) => updateQuestionType(event.target.value)}>{questionTypes.map((type) => <option value={type} key={type}>{statusLabel(type)}</option>)}</select>}</label><label>Marks<input type="number" value={questionEditor.marks} onChange={(event) => setQuestionEditor((current) => current && { ...current, marks: event.target.value })} min="0.01" max="100000" step="0.01" required /></label><label>Sequence<input type="number" value={questionEditor.sequence} onChange={(event) => setQuestionEditor((current) => current && { ...current, sequence: event.target.value })} min="1" step="1" required /></label></div><div className="options-editor"><div className="subsection-heading"><div><p className="eyebrow">Answer options</p><h4>Mark the correct answer</h4></div>{!["TRUE_FALSE", "SHORT_TEXT", "NUMERIC"].includes(questionEditor.questionType) && <button className="text-button strong" type="button" onClick={addQuestionOption}>+ Add option</button>}</div>{questionEditor.options.map((option, index) => <div className="option-edit-row" key={`${option.id || "new"}-${index}`}><button className={`correct-toggle ${Boolean(option.isCorrect ?? option.is_correct) ? "selected" : ""}`} type="button" onClick={() => toggleOptionCorrect(index)} aria-label={`Mark option ${index + 1} correct`}>{Boolean(option.isCorrect ?? option.is_correct) ? "✓" : "○"}</button><input value={option.value} onChange={(event) => updateQuestionOption(index, "value", event.target.value)} placeholder="Stored value" maxLength={300} required /><input value={option.label} onChange={(event) => updateQuestionOption(index, "label", event.target.value)} placeholder="Learner-facing label" maxLength={300} required /><button className="icon-button compact-icon" type="button" onClick={() => removeQuestionOption(index)} disabled={questionEditor.options.length <= (["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"].includes(questionEditor.questionType) ? 2 : 1)} aria-label="Remove option">×</button></div>)}</div><div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setQuestionEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-question:${questionEditor.id || "new"}`}>{busyAction === `save-question:${questionEditor.id || "new"}` ? "Saving…" : questionEditor.id ? "Save question" : "Add question"}</button></div></form>}
+                         </div>
+                         <div className="attempt-bank">
+                           <div className="subsection-heading"><div><p className="eyebrow">Submitted attempts</p><h3>{attempts.length} attempt{attempts.length === 1 ? "" : "s"}</h3></div><span className="attempts-caption">Newest first</span></div>
+                           {attempts.length === 0 && <div className="nested-state">No submitted attempts for this assessment yet.</div>}
+                           {attempts.map((attempt) => { const detail = assessmentDetails[attempt.id]; const draft = attemptGradeDrafts[attempt.id]; const manual = ["PROJECT", "VIVA", "PRACTICAL"].includes(assessment.assessment_type); const attemptExpanded = Boolean(detail); return <div className="attempt-card" key={attempt.id}><div className="attempt-heading"><div className="learner-cell"><span className="learner-avatar">{learnerName(attempt).slice(0, 1).toUpperCase()}</span><span><strong>{learnerName(attempt)}</strong><small>{attempt.learner_email || "Learner"} · Attempt {attempt.attempt_number} · {formatDate(attempt.submitted_at, true)}</small></span></div><div className="attempt-result"><StatusPill status={attempt.grading_status} />{attempt.score !== null && attempt.score !== undefined && <strong>{attempt.score}/{attempt.max_score ?? "—"}</strong>}{attempt.passed !== null && attempt.passed !== undefined && <span className={`outcome-badge ${attempt.passed ? "passed" : "not-passed"}`}>{attempt.passed ? "Passed" : "Not passed"}</span>}</div></div><div className="attempt-footer">{attempt.grading_feedback && <span className="attempt-feedback">{attempt.grading_feedback}</span>}<button className="text-button strong" type="button" onClick={() => { if (attemptExpanded) { setAssessmentDetails((current) => { const next = { ...current }; delete next[attempt.id]; return next; }); } else void loadAttemptDetail(attempt); }}>{assessmentDetailLoading === attempt.id ? "Loading…" : attemptExpanded ? "Hide answers" : manual && attempt.grading_status === "PENDING" ? "Review and grade" : "View answers"}</button></div>{detail && <div className="attempt-detail">{detail.questions.map((question) => { const answer = detail.answers.find((item) => item.question_id === question.id); const grade = draft?.grades[question.id] ?? String(answer?.awarded_marks ?? 0); return <div className="attempt-question" key={question.id}><div><strong>{question.prompt}</strong><small>Answer: {answerText(answer?.answer_json)} · Max {question.marks}</small></div>{manual && attempt.grading_status === "PENDING" && draft ? <input aria-label={`Marks for ${question.prompt}`} type="number" min="0" max={question.marks} step="0.01" value={grade} onChange={(event) => setAttemptGradeDrafts((current) => ({ ...current, [attempt.id]: { ...draft, grades: { ...draft.grades, [question.id]: event.target.value } } }))} /> : <span className="awarded-mark">{answer?.awarded_marks ?? 0}/{question.marks}</span>}</div>})}{manual && attempt.grading_status === "PENDING" && draft && <div className="attempt-grade-form"><label>Overall feedback<textarea value={draft.feedback} onChange={(event) => setAttemptGradeDrafts((current) => ({ ...current, [attempt.id]: { ...draft, feedback: event.target.value } }))} maxLength={10000} rows={3} placeholder="Share feedback with the learner." /></label><button className="primary-button small-button" type="button" onClick={() => void gradeAttempt(attempt)} disabled={busyAction === `grade-attempt:${attempt.id}`}>{busyAction === `grade-attempt:${attempt.id}` ? "Saving grade…" : "Save grade & feedback"}</button></div>}</div>}</div>; })}
+                         </div>
+                       </div>
+                     </div>}
                    </article>;
                  })}
                </div>}
@@ -938,6 +1512,72 @@ export default function TeacherPortalPage() {
         .grade-bar input { width: 100%; min-height: 35px; padding: 0 9px; border: 1px solid #dbe6ef; border-radius: 6px; outline: 0; color: #244669; background: #fbfdff; font-size: 10px; }
         .grade-bar input:focus { border-color: #71c5bd; box-shadow: 0 0 0 3px #71c5bd1c; }
         .feedback-field { flex: 1; }
+         .assessment-heading-actions { display: flex; align-items: center; gap: 10px; }
+         .assessment-list { display: grid; gap: 12px; padding: 17px 24px 24px; }
+         .assessment-card { overflow: hidden; border: 1px solid #e2ebf2; border-radius: 10px; background: #fcfeff; }
+         .assessment-card-main { display: grid; grid-template-columns: minmax(240px, 1.3fr) minmax(135px, .75fr) auto; align-items: center; gap: 18px; padding: 16px 17px 12px; }
+         .assessment-title { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+         .assessment-icon { display: grid; place-items: center; flex: 0 0 31px; width: 31px; height: 31px; border-radius: 8px; color: #267c90; background: #e3f4f4; font-size: 14px; font-weight: 800; }
+         .assessment-title strong, .assessment-title small, .assessment-meta small { display: block; }
+         .assessment-title strong { overflow: hidden; color: #1b426c; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+         .assessment-title small { margin-top: 4px; color: #95a5b4; font-size: 9px; }
+         .assessment-meta { display: grid; gap: 5px; }
+         .assessment-meta small { color: #8b9baa; font-size: 9px; }
+         .assessment-actions { display: flex; justify-content: flex-end; gap: 10px; }
+         .assessment-description { display: -webkit-box; overflow: hidden; margin: 0 17px; color: #71859a; font-size: 10px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+         .assessment-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 11px 17px; border-top: 1px solid #edf1f6; background: #fff; }
+         .assessment-attempt-summary, .attempts-caption { color: #9a7a50; font-size: 9px; font-weight: 700; }
+         .assessment-details { padding: 16px 17px 18px; border-top: 1px solid #edf1f6; background: #f8fbfd; }
+         .assessment-detail-columns { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(340px, .95fr); gap: 18px; }
+         .subsection-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 11px; }
+         .subsection-heading h3, .subsection-heading h4 { margin-top: 5px; color: #244669; font-size: 13px; letter-spacing: -.02em; }
+         .subsection-heading h4 { font-size: 11px; }
+         .question-bank, .attempt-bank { min-width: 0; }
+         .question-card, .attempt-card { overflow: hidden; margin-top: 9px; border: 1px solid #e2ebf2; border-radius: 8px; background: #fff; }
+         .question-heading { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: flex-start; gap: 9px; padding: 11px 12px; }
+         .question-number { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 6px; color: #287a88; background: #e4f5f3; font-size: 9px; font-weight: 800; }
+         .question-heading strong, .question-heading small { display: block; }
+         .question-heading strong { color: #315575; font-size: 10px; line-height: 1.45; }
+         .question-heading small { margin-top: 4px; color: #99a8b6; font-size: 8px; }
+         .question-actions { display: flex; gap: 9px; }
+         .option-list { display: grid; gap: 5px; padding: 0 12px 12px 49px; }
+         .option-row { display: flex; align-items: center; gap: 7px; color: #688099; font-size: 9px; }
+         .option-row em { margin-left: auto; color: #2b9b7e; font-size: 8px; font-style: normal; font-weight: 800; text-transform: uppercase; }
+         .option-marker { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; color: #a5b2bd; background: #f0f4f7; font-size: 9px; }
+         .option-marker.correct { color: #267f71; background: #ddf5ee; }
+         .question-confirm { display: flex; align-items: center; justify-content: flex-end; gap: 10px; padding: 8px 12px; border-top: 1px solid #f1e5e2; color: #96635c; background: #fff8f6; font-size: 9px; }
+         .question-confirm span { margin-right: auto; }
+         .question-editor { margin-top: 11px; padding: 14px; border: 1px solid #cfe8e4; border-radius: 8px; background: #fbfffe; }
+         .question-editor .editor-heading { margin-bottom: 12px; }
+         .options-editor { margin-top: 14px; padding-top: 13px; border-top: 1px solid #e2efed; }
+         .option-edit-row { display: grid; grid-template-columns: 25px minmax(90px, .65fr) minmax(130px, 1fr) 27px; align-items: center; gap: 7px; margin-top: 7px; }
+         .option-edit-row input { min-height: 32px; padding: 0 8px; border: 1px solid #d8e6ec; border-radius: 6px; outline: 0; color: #244669; background: #fff; font-size: 9px; }
+         .option-edit-row input:focus { border-color: #71c5bd; box-shadow: 0 0 0 3px #71c5bd1c; }
+         .correct-toggle { width: 23px; height: 23px; padding: 0; border: 1px solid #d8e6ec; border-radius: 50%; color: #9aabb8; background: #fff; font-size: 11px; }
+         .correct-toggle.selected { border-color: #79cabe; color: #218775; background: #e3f8f2; }
+         .compact-icon { width: 27px; height: 27px; font-size: 14px; }
+         .attempt-bank { min-width: 0; }
+         .attempt-card { padding: 12px; }
+         .attempt-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+         .attempt-result { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 7px; }
+         .attempt-result > strong { color: #2b9b7e; font-size: 10px; }
+         .outcome-badge { padding: 4px 6px; border-radius: 5px; font-size: 8px; font-weight: 800; }
+         .outcome-badge.passed { color: #267f71; background: #e0f7ef; }
+         .outcome-badge.not-passed { color: #ad6c62; background: #fff0ed; }
+         .attempt-footer { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin: 10px 0 0 39px; }
+         .attempt-feedback { color: #7b8e9e; font-size: 9px; line-height: 1.45; }
+         .attempt-detail { margin-top: 11px; padding-top: 9px; border-top: 1px solid #edf1f6; }
+         .attempt-question { display: grid; grid-template-columns: minmax(0, 1fr) 75px; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f3f6; }
+         .attempt-question strong, .attempt-question small { display: block; }
+         .attempt-question strong { color: #526f8c; font-size: 9px; line-height: 1.4; }
+         .attempt-question small { margin-top: 4px; color: #99a8b6; font-size: 8px; line-height: 1.4; }
+         .attempt-question input { width: 75px; min-height: 31px; padding: 0 7px; border: 1px solid #d8e6ec; border-radius: 6px; outline: 0; color: #244669; background: #fff; font-size: 9px; }
+         .awarded-mark { color: #2b9b7e; font-size: 9px; font-weight: 800; text-align: right; }
+         .attempt-grade-form { display: grid; gap: 9px; margin-top: 10px; }
+         .attempt-grade-form label { display: grid; gap: 6px; color: #607a91; font-size: 9px; font-weight: 800; }
+         .attempt-grade-form textarea { width: 100%; resize: vertical; padding: 8px 9px; border: 1px solid #d8e6ec; border-radius: 6px; outline: 0; color: #244669; background: #fff; font-size: 9px; line-height: 1.45; }
+         .attempt-grade-form .primary-button { justify-self: end; }
+         .loading-inline { display: flex; align-items: center; gap: 7px; }
         @media (max-width: 1100px) {
           .sidebar { width: 218px; flex-basis: 218px; }
           .content { padding-right: 3.5%; padding-left: 3.5%; }
@@ -966,6 +1606,24 @@ export default function TeacherPortalPage() {
           .course-actions { width: 100%; justify-content: space-between; }
            .inline-state, .inline-alert { margin-right: 15px; margin-left: 15px; }
           th, td { padding-right: 12px; padding-left: 12px; }
+           .assessment-heading-actions { width: 100%; justify-content: space-between; }
+           .assessment-heading-actions .small-button { width: auto; }
+           .assessment-list { padding: 14px 15px 18px; }
+           .assessment-card-main { grid-template-columns: 1fr auto; gap: 9px 12px; padding: 14px 12px 11px; }
+           .assessment-meta { justify-items: end; }
+           .assessment-actions { grid-column: 1 / -1; justify-content: flex-start; padding-left: 41px; }
+           .assessment-footer { align-items: flex-start; flex-direction: column; gap: 8px; padding: 10px 12px; }
+           .assessment-details { padding: 14px 12px 16px; }
+           .assessment-detail-columns { grid-template-columns: 1fr; gap: 20px; }
+           .question-heading { grid-template-columns: 28px minmax(0, 1fr); }
+           .question-actions { grid-column: 2; justify-content: flex-start; }
+           .option-list { padding-left: 42px; }
+           .option-edit-row { grid-template-columns: 25px minmax(0, 1fr) 27px; }
+           .option-edit-row input:nth-of-type(2) { grid-column: 2 / -1; }
+           .attempt-heading { align-items: flex-start; flex-direction: column; }
+           .attempt-result { justify-content: flex-start; padding-left: 39px; }
+           .attempt-footer { margin-left: 0; }
+           .attempt-grade-form .primary-button { justify-self: stretch; }
           .assignment-row { grid-template-columns: 1fr auto; gap: 9px 12px; padding: 14px 15px; }
           .assignment-meta { justify-items: end; }
           .assignment-actions { grid-column: 1 / -1; justify-content: flex-start; padding-left: 41px; }
