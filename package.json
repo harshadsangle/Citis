@@ -19,7 +19,8 @@
     "db:seed-courses": "node scripts/seed-lms-courses.mjs",
     "db:import-acrobat": "node scripts/import-acrobat-pro-course.mjs",
     "db:import-after-effects": "node scripts/import-adobe-after-effects-course.mjs",
-    "db:import-adobe-courses": "node scripts/import-adobe-objectives-courses.mjs"
+    "db:import-adobe-courses": "node scripts/import-adobe-objectives-courses.mjs",
+    "db:import-autodesk-courses": "node scripts/import-autodesk-objectives-courses.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
