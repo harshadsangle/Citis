@@ -1,9 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Award, BookOpenCheck, ChevronDown, Clock3, FileText, GraduationCap, Layers3, ShieldCheck } from "lucide-react";
 import { generatePageMetadata } from "@/lib/seo";
 import { redirectToLmsPortal } from "@/lib/lms-portal";
 import { LMS_PORTALS, normalizeLmsPortal, type LmsPortal } from "@/lib/lms-roles";
-import { LMS_COURSE_CATEGORIES, normalizeLmsCourseProvider } from "@/lib/lms-catalog";
+import { LMS_COURSE_CATEGORIES, normalizeLmsCourseProvider, type LmsCourseProvider } from "@/lib/lms-catalog";
 
 export const metadata = generatePageMetadata({
   title: "Learning Portal",
@@ -15,6 +16,21 @@ export const metadata = generatePageMetadata({
 type LmsEntryPageProps = {
   searchParams?: Promise<{ portal?: string; provider?: string }>;
 };
+
+const PROVIDER_LOGOS: Record<LmsCourseProvider, { src: string; alt: string; sizes: string }> = {
+  adobe: { src: "/images/adobe.png", alt: "Adobe logo", sizes: "120px" },
+  comptia: { src: "/images/comptia-authorized-partner.jpg", alt: "CompTIA logo", sizes: "56px" },
+  autodesk: { src: "/images/autodesk-logo.svg", alt: "Autodesk logo", sizes: "112px" },
+};
+
+function ProviderLogo({ provider }: { provider: LmsCourseProvider }) {
+  const logo = PROVIDER_LOGOS[provider];
+  return (
+    <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white px-2 shadow-sm ring-1 ring-border/60 sm:size-16">
+      <Image src={logo.src} alt={logo.alt} width={128} height={64} sizes={logo.sizes} className="max-h-12 max-w-full w-auto object-contain" />
+    </span>
+  );
+}
 
 export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) {
   const params = await searchParams;
@@ -78,10 +94,13 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
         </div>
 
         <div className="mx-auto mt-10 max-w-5xl space-y-4">
-          {courseCategories.map((category) => (
+          {courseCategories.map((category) => {
+            const providerLogo = normalizeLmsCourseProvider(category.id);
+            if (!providerLogo) return null;
+            return (
             <details key={category.id} className="lms-category surface overflow-hidden rounded-3xl" open>
               <summary className="lms-category-summary flex items-center gap-4 p-5 sm:gap-6 sm:p-7">
-                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary sm:size-14"><Award className="size-6 sm:size-7" /></span>
+                <ProviderLogo provider={providerLogo} />
                 <span className="min-w-0 flex-1">
                   <span className="block text-xs font-bold tracking-[0.16em] text-primary uppercase">{category.eyebrow}</span>
                   <span className="mt-1 block font-heading text-xl font-semibold text-foreground sm:text-2xl">{category.name}</span>
@@ -153,7 +172,8 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
                 </div>
               </div>
             </details>
-          ))}
+            );
+          })}
         </div>
       </div>
       </section>
