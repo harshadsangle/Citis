@@ -50,6 +50,17 @@ type Assignment = {
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
 };
 
+type AssignmentEditor = {
+  id?: string;
+  moduleId: string;
+  moduleTitle?: string;
+  title: string;
+  description: string;
+  instructions: string;
+  dueAt: string;
+  maxMarks: string;
+};
+
 type CourseModule = {
   id: string;
   course_id: string;
@@ -193,6 +204,27 @@ function formatDate(value?: string | null, withTime = false) {
   }).format(new Date(value));
 }
 
+function formatDateTimeLocal(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+function assignmentEditorFrom(assignment: Assignment): AssignmentEditor {
+  return {
+    id: assignment.id,
+    moduleId: assignment.module_id,
+      moduleTitle: assignment.module_title || "Current course module",
+    title: assignment.title,
+    description: assignment.description || "",
+    instructions: assignment.instructions,
+    dueAt: formatDateTimeLocal(assignment.due_at),
+    maxMarks: String(assignment.max_marks),
+  };
+}
+
 function statusLabel(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
 }
@@ -224,6 +256,9 @@ export default function TeacherPortalPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyAction, setBusyAction] = useState("");
+  const [assignmentEditor, setAssignmentEditor] = useState<AssignmentEditor | null>(null);
+  const [archiveCandidate, setArchiveCandidate] = useState<Assignment | null>(null);
+  const [expandedAssignmentId, setExpandedAssignmentId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -322,6 +357,84 @@ export default function TeacherPortalPage() {
     if (scrollToSubmissions) window.setTimeout(() => document.getElementById("submissions")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
+  function openAssignmentEditor(assignment?: Assignment) {
+    if (assignment) {
+      setAssignmentEditor(assignmentEditorFrom(assignment));
+      return;
+    }
+    setAssignmentEditor({
+      moduleId: selected?.modules[0]?.module.id || "",
+      moduleTitle: selected?.modules[0]?.module.title,
+      title: "",
+      description: "",
+      instructions: "",
+      dueAt: "",
+      maxMarks: "100",
+    });
+  }
+
+  async function saveAssignment() {
+    if (!selected || !assignmentEditor) return;
+    const title = assignmentEditor.title.trim();
+    const instructions = assignmentEditor.instructions.trim();
+    const maxMarks = Number(assignmentEditor.maxMarks);
+    if (!title || title.length < 2) {
+      setError("Add an assignment title.");
+      return;
+    }
+    if (!assignmentEditor.id && !assignmentEditor.moduleId) {
+      setError("Select a course module for this assignment.");
+      return;
+    }
+    if (!instructions || instructions.length < 2) {
+      setError("Add instructions for the learner.");
+      return;
+    }
+    if (!Number.isFinite(maxMarks) || maxMarks < 0.01 || maxMarks > 100000) {
+      setError("Enter maximum marks between 0.01 and 100,000.");
+      return;
+    }
+    setBusyAction(`save-assignment:${assignmentEditor.id || "new"}`);
+    setError("");
+    setNotice("");
+    try {
+      const dueAt = assignmentEditor.dueAt ? new Date(assignmentEditor.dueAt).toISOString() : undefined;
+      if (assignmentEditor.id) {
+        await request(`/assignments/${encodeURIComponent(assignmentEditor.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            title,
+            description: assignmentEditor.description.trim() || undefined,
+            instructions,
+            dueAt,
+            maxMarks,
+          }),
+        });
+        setNotice(`${title} was updated.`);
+      } else {
+        await request("/assignments", {
+          method: "POST",
+          body: JSON.stringify({
+            courseId: selected.course.id,
+            moduleId: assignmentEditor.moduleId,
+            title,
+            description: assignmentEditor.description.trim() || undefined,
+            instructions,
+            dueAt,
+            maxMarks,
+          }),
+        });
+        setNotice(`${title} was saved as a draft.`);
+      }
+      setAssignmentEditor(null);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assignment could not be saved."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
   async function publishAssignment(assignment: Assignment) {
     setBusyAction(`publish:${assignment.id}`);
     setError("");
@@ -332,6 +445,22 @@ export default function TeacherPortalPage() {
       await loadDashboard(true);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The assignment could not be published.");
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function archiveAssignment(assignment: Assignment) {
+    setBusyAction(`archive:${assignment.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assignments/${encodeURIComponent(assignment.id)}/archive`, { method: "POST" });
+      setArchiveCandidate(null);
+      setNotice(`${assignment.title} was archived.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assignment could not be archived."));
     } finally {
       setBusyAction("");
     }
@@ -513,20 +642,41 @@ export default function TeacherPortalPage() {
                </div>}
              </section>
 
-            <section className="panel assignment-panel" id="assignments">
-              <div className="panel-heading detail-heading">
-                <div><p className="eyebrow">Course delivery</p><h2>Assignments</h2><p className="panel-copy">{selected ? "Publish learner work and jump into submissions without leaving the course view." : "Select a course to manage assignments."}</p></div>
-                {selected && <span className="count-badge">{selected.assignments.length}</span>}
-              </div>
-              {selected && selected.assignments.length === 0 && <div className="state compact"><div className="state-icon">+</div><div><strong>No assignments in this course</strong><p>Assignment authoring is available through the course management workflow.</p></div></div>}
-              {selected && selected.assignments.length > 0 && <div className="assignment-list">
-                {selected.assignments.map((assignment) => {
-                  const submissionCount = selected.submissions.filter(({ submission }) => submission.assignment_id === assignment.id).length;
-                  const pendingCount = selected.submissions.filter(({ submission }) => submission.assignment_id === assignment.id && submission.status === "SUBMITTED").length;
-                  return <div className="assignment-row" key={assignment.id}><div className="assignment-title"><span className="assignment-icon">A</span><span><strong>{assignment.title}</strong><small>{assignment.module_title || "Course module"} · {assignment.max_marks} marks · {assignment.due_at ? `Due ${formatDate(assignment.due_at)}` : "No due date"}</small></span></div><div className="assignment-meta"><StatusPill status={assignment.status} /><small>{submissionCount} submitted</small></div><div className="assignment-actions">{assignment.status === "DRAFT" && <button className="text-button" type="button" onClick={() => void publishAssignment(assignment)} disabled={busyAction === `publish:${assignment.id}`}>{busyAction === `publish:${assignment.id}` ? "Publishing…" : "Publish"}</button>}{pendingCount > 0 && <button className="text-button strong" type="button" onClick={() => selectCourse(selected.course.id, true)}>{pendingCount} to review</button>}</div></div>;
-                })}
-              </div>}
-            </section>
+             <section className="panel assignment-panel" id="assignments">
+               <div className="panel-heading detail-heading">
+                 <div><p className="eyebrow">Course delivery</p><h2>Assignment workspace</h2><p className="panel-copy">{selected ? "Create learner work, control its lifecycle, and review submissions without leaving the course view." : "Select a course to manage assignments."}</p></div>
+                 {selected && <div className="assignment-heading-actions"><span className="count-badge">{selected.assignments.length}</span><button className="primary-button small-button" type="button" onClick={() => openAssignmentEditor()} disabled={loading || selected.modules.length === 0}>+ New assignment</button></div>}
+               </div>
+               {selected && selected.modules.length === 0 && !selected.structureError && <div className="workspace-note"><span>!</span> Add a course module before creating an assignment.</div>}
+               {assignmentEditor && selected && <form className="assignment-editor" onSubmit={(event) => { event.preventDefault(); void saveAssignment(); }}>
+                 <div className="editor-heading"><div><p className="eyebrow">{assignmentEditor.id ? "Edit assignment" : "New assignment"}</p><h3>{assignmentEditor.id ? "Update learner work" : "Create a draft assignment"}</h3></div><button className="icon-button" type="button" onClick={() => setAssignmentEditor(null)} aria-label="Close assignment editor">×</button></div>
+                 <div className="form-grid">
+                   <label>Title<input value={assignmentEditor.title} onChange={(event) => setAssignmentEditor((current) => current && { ...current, title: event.target.value })} placeholder="e.g. Build a responsive landing page" maxLength={180} required /></label>
+                   <label>Maximum marks<input type="number" value={assignmentEditor.maxMarks} onChange={(event) => setAssignmentEditor((current) => current && { ...current, maxMarks: event.target.value })} min="0.01" max="100000" step="0.01" required /></label>
+                   <label>Course module{assignmentEditor.id ? <span className="readonly-field">{assignmentEditor.moduleTitle}</span> : <select value={assignmentEditor.moduleId} onChange={(event) => setAssignmentEditor((current) => current && { ...current, moduleId: event.target.value, moduleTitle: selected.modules.find(({ module }) => module.id === event.target.value)?.module.title })} required><option value="" disabled>Select a module</option>{selected.modules.map(({ module }) => <option value={module.id} key={module.id}>{module.title}</option>)}</select>}</label>
+                   <label>Due date <span className="optional-label">(optional)</span><input type="datetime-local" value={assignmentEditor.dueAt} onChange={(event) => setAssignmentEditor((current) => current && { ...current, dueAt: event.target.value })} /></label>
+                   <label className="full-field">Description <span className="optional-label">(optional)</span><textarea value={assignmentEditor.description} onChange={(event) => setAssignmentEditor((current) => current && { ...current, description: event.target.value })} placeholder="Give learners a concise overview." maxLength={4000} rows={2} /></label>
+                   <label className="full-field">Instructions<textarea value={assignmentEditor.instructions} onChange={(event) => setAssignmentEditor((current) => current && { ...current, instructions: event.target.value })} placeholder="Explain the work learners need to submit." maxLength={12000} rows={5} required /></label>
+                 </div>
+                 <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setAssignmentEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-assignment:${assignmentEditor.id || "new"}`}>{busyAction === `save-assignment:${assignmentEditor.id || "new"}` ? "Saving…" : assignmentEditor.id ? "Save changes" : "Save draft"}</button></div>
+               </form>}
+               {!loading && !selected && <div className="state compact"><div className="state-icon">A</div><div><strong>No course selected</strong><p>Select an assigned course to manage its assignments.</p></div></div>}
+               {selected && !assignmentEditor && selected.assignments.length === 0 && <div className="state compact"><div className="state-icon">+</div><div><strong>No assignments in this course</strong><p>Create a draft assignment to start collecting learner work.</p></div></div>}
+               {selected && selected.assignments.length > 0 && <div className="assignment-list">
+                 {selected.assignments.map((assignment) => {
+                   const assignmentSubmissions = selected.submissions.filter(({ submission }) => submission.assignment_id === assignment.id);
+                   const pendingCount = assignmentSubmissions.filter(({ submission }) => submission.status === "SUBMITTED").length;
+                   const expanded = expandedAssignmentId === assignment.id;
+                   return <article className="assignment-card" key={assignment.id}>
+                     <div className="assignment-card-main"><div className="assignment-title"><span className="assignment-icon">A</span><span><strong>{assignment.title}</strong><small>{assignment.module_title || "Course module"} · {assignment.max_marks} marks · {assignment.due_at ? `Due ${formatDate(assignment.due_at)}` : "No due date"}</small></span></div><div className="assignment-meta"><StatusPill status={assignment.status} /><small>{assignmentSubmissions.length} submission{assignmentSubmissions.length === 1 ? "" : "s"}</small></div><div className="assignment-actions">{assignment.status !== "ARCHIVED" && <button className="text-button" type="button" onClick={() => openAssignmentEditor(assignment)}>Edit</button>}{assignment.status === "DRAFT" && <button className="text-button" type="button" onClick={() => void publishAssignment(assignment)} disabled={busyAction === `publish:${assignment.id}`}>{busyAction === `publish:${assignment.id}` ? "Publishing…" : "Publish"}</button>}{assignment.status !== "ARCHIVED" && <button className="text-button danger-text" type="button" onClick={() => setArchiveCandidate(assignment)} disabled={busyAction === `archive:${assignment.id}`}>Archive</button>}</div></div>
+                     <div className="assignment-description">{assignment.description || assignment.instructions}</div>
+                     <div className="assignment-footer"><button className="submission-toggle" type="button" onClick={() => setExpandedAssignmentId(expanded ? "" : assignment.id)}>{expanded ? "Hide submissions" : "View submissions"} <span>{assignmentSubmissions.length}</span></button>{pendingCount > 0 && <button className="text-button strong" type="button" onClick={() => selectCourse(selected.course.id, true)}>{pendingCount} to review</button>}</div>
+                     {archiveCandidate?.id === assignment.id && <div className="confirm-bar" role="alert"><div><strong>Archive this assignment?</strong><span>Learners will no longer be able to submit new work.</span></div><div><button className="secondary-button small-button" type="button" onClick={() => setArchiveCandidate(null)}>Cancel</button><button className="archive-button" type="button" onClick={() => void archiveAssignment(assignment)} disabled={busyAction === `archive:${assignment.id}`}>{busyAction === `archive:${assignment.id}` ? "Archiving…" : "Confirm archive"}</button></div></div>}
+                     {expanded && <div className="assignment-submissions">{assignmentSubmissions.length === 0 && <div className="nested-state">No learner submissions yet.</div>}{assignmentSubmissions.map(({ submission }) => <div className="submission-detail" key={submission.id}><div className="submission-detail-heading"><div className="learner-cell"><span className="learner-avatar">{learnerName(submission).slice(0, 1).toUpperCase()}</span><span><strong>{learnerName(submission)}</strong><small>{submission.learner_email || "Learner"} · Submitted {formatDate(submission.submitted_at, true)}{submission.is_late ? " · Late" : ""}</small></span></div><StatusPill status={submission.status} /></div><p>{submission.submission_text}</p>{submission.attachment_url && <a href={submission.attachment_url} target="_blank" rel="noreferrer">Open learner attachment ↗</a>}{submission.grade !== null && submission.grade !== undefined && <div className="graded-summary"><strong>{submission.grade}/{assignment.max_marks}</strong>{submission.feedback && <span>{submission.feedback}</span>}</div>}{submission.status === "SUBMITTED" && <button className="text-button strong" type="button" onClick={() => selectCourse(selected.course.id, true)}>Review and grade below ↓</button>}</div>)}</div>}
+                   </article>;
+                 })}
+               </div>}
+             </section>
 
             <section className="panel submissions-panel" id="submissions">
               <div className="panel-heading detail-heading"><div><p className="eyebrow">Review queue</p><h2>Pending submissions</h2><p className="panel-copy">Read learner work, leave feedback, and record a grade against the assignment maximum.</p></div><span className="count-badge warm-badge">{pendingSubmissions.length}</span></div>
@@ -719,9 +869,11 @@ export default function TeacherPortalPage() {
         .progress-cell small { margin-top: 6px; }
          .muted { color: #a2afbd; font-size: 9px; }
          .progress-error { color: #b36e63; }
-        .assignment-list { padding: 7px 0; }
-        .assignment-row { display: grid; grid-template-columns: minmax(220px, 1.4fr) minmax(130px, .8fr) auto; align-items: center; gap: 18px; padding: 14px 24px; border-bottom: 1px solid #edf1f6; }
-        .assignment-row:last-child { border-bottom: 0; }
+         .assignment-heading-actions { display: flex; align-items: center; gap: 10px; }
+         .assignment-list { display: grid; gap: 12px; padding: 17px 24px 24px; }
+         .assignment-card { overflow: hidden; border: 1px solid #e2ebf2; border-radius: 10px; background: #fcfeff; }
+         .assignment-card-main { display: grid; grid-template-columns: minmax(240px, 1.4fr) minmax(125px, .7fr) auto; align-items: center; gap: 18px; padding: 16px 17px 12px; }
+         .assignment-card .assignment-title { align-items: flex-start; }
         .assignment-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
         .assignment-icon { display: grid; place-items: center; flex: 0 0 31px; width: 31px; height: 31px; border-radius: 8px; color: #8b6b37; background: #fff1dd; font-size: 11px; font-weight: 800; }
         .assignment-title strong, .assignment-title small, .assignment-meta small { display: block; }
@@ -733,6 +885,44 @@ export default function TeacherPortalPage() {
         .text-button { padding: 4px 0; border: 0; color: #5680a4; background: transparent; font-size: 10px; font-weight: 800; white-space: nowrap; }
         .text-button:hover:not(:disabled) { color: #0c669b; }
         .text-button.strong { color: #258d7a; }
+         .danger-text { color: #b56e67; }
+         .assignment-description { display: -webkit-box; overflow: hidden; margin: 0 17px; color: #71859a; font-size: 10px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+         .assignment-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 11px 17px; border-top: 1px solid #edf1f6; background: #fff; }
+         .submission-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; color: #52708b; background: transparent; font-size: 10px; font-weight: 800; }
+         .submission-toggle span { display: inline-grid; place-items: center; min-width: 19px; height: 19px; border-radius: 6px; color: #267d76; background: #e7f7f3; font-size: 9px; }
+         .workspace-note { display: flex; align-items: center; gap: 8px; margin: 16px 24px 0; padding: 10px 12px; border: 1px solid #f0e4d3; border-radius: 7px; color: #9b7746; background: #fffaf3; font-size: 10px; }
+         .workspace-note span { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; color: #fff; background: #c8964c; font-size: 10px; font-weight: 800; }
+         .assignment-editor { margin: 17px 24px 0; padding: 18px; border: 1px solid #cfe8e4; border-radius: 10px; background: linear-gradient(145deg, #fbfffe, #f5fbfc); }
+         .editor-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 17px; }
+         .editor-heading h3 { margin-top: 6px; color: #18385e; font-size: 15px; letter-spacing: -.02em; }
+         .icon-button { width: 28px; height: 28px; padding: 0; border: 1px solid #d9e9ed; border-radius: 7px; color: #6f8799; background: #fff; font-size: 17px; line-height: 1; }
+         .icon-button:hover { border-color: #abcfc9; color: #1c6873; }
+         .form-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(150px, .6fr); gap: 13px 15px; }
+         .form-grid label { display: grid; gap: 6px; color: #607a91; font-size: 9px; font-weight: 800; }
+         .form-grid input, .form-grid select, .form-grid textarea { width: 100%; padding: 10px 11px; border: 1px solid #d8e6ec; border-radius: 7px; outline: 0; color: #244669; background: #fff; font-size: 10px; font-weight: 500; }
+         .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { border-color: #71c5bd; box-shadow: 0 0 0 3px #71c5bd1c; }
+         .form-grid textarea { resize: vertical; line-height: 1.5; }
+         .full-field { grid-column: 1 / -1; }
+         .optional-label { color: #a5b1bb; font-weight: 500; }
+         .readonly-field { display: flex; align-items: center; min-height: 36px; padding: 0 11px; border: 1px solid #d8e6ec; border-radius: 7px; color: #71859a; background: #f4f8fa; font-size: 10px; font-weight: 500; }
+         .editor-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 16px; padding-top: 15px; border-top: 1px solid #e2efed; }
+         .confirm-bar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin: 0 17px 13px; padding: 11px 12px; border: 1px solid #f1d5cf; border-radius: 7px; background: #fff5f2; }
+         .confirm-bar > div:first-child { display: grid; gap: 4px; }
+         .confirm-bar strong { color: #8f514d; font-size: 10px; }
+         .confirm-bar span { color: #aa7d78; font-size: 9px; }
+         .confirm-bar > div:last-child { display: flex; align-items: center; gap: 9px; }
+         .archive-button { min-height: 34px; padding: 0 11px; border: 0; border-radius: 7px; color: #fff; background: #bf756c; font-size: 10px; font-weight: 800; white-space: nowrap; }
+         .archive-button:hover:not(:disabled) { background: #aa625a; }
+         .assignment-submissions { padding: 4px 17px 14px; border-top: 1px solid #edf1f6; background: #fbfdff; }
+         .submission-detail { padding: 13px 0; border-bottom: 1px solid #edf1f6; }
+         .submission-detail:last-child { border-bottom: 0; }
+         .submission-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+         .submission-detail > p { max-height: 85px; overflow: auto; margin: 10px 0 0 39px; color: #526f8c; font-size: 10px; line-height: 1.55; white-space: pre-wrap; }
+         .submission-detail > a { display: inline-block; margin: 8px 0 0 39px; color: #0874a4; font-size: 9px; font-weight: 800; text-decoration: none; }
+         .submission-detail > a:hover { text-decoration: underline; }
+         .graded-summary { display: flex; align-items: flex-start; gap: 9px; margin: 10px 0 0 39px; padding: 8px 10px; border-radius: 6px; color: #617c8c; background: #eef9f6; font-size: 9px; line-height: 1.45; }
+         .graded-summary strong { flex: 0 0 auto; color: #258d7a; font-size: 10px; }
+         .graded-summary span { white-space: pre-wrap; }
         .submission-list { display: grid; gap: 14px; padding: 17px 24px 24px; }
         .submission-card { overflow: hidden; border: 1px solid #e4ebf3; border-radius: 9px; background: #fcfeff; }
         .submission-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 17px; border-bottom: 1px solid #edf1f6; }
