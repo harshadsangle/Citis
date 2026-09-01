@@ -1081,7 +1081,18 @@ export class LmsService {
                    SELECT 1 FROM lms_assessment_completions ac
                    WHERE ac.tenant_id = $2 AND ac.course_id = $1 AND ac.module_id = cm.id
                      AND ac.assessment_id = a.id AND ac.learner_id = $3 AND ac.status = 'COMPLETED'
-                 )) AS assessment_completed
+                  )) AS assessment_completed,
+               (SELECT COALESCE(json_agg(
+                 json_build_object(
+                   'id', l.id,
+                   'title', l.title,
+                   'description', l.description,
+                   'sequence', l.sequence,
+                   'estimatedDuration', l.estimated_duration
+                 ) ORDER BY l.sequence ASC, l.id ASC
+               ), '[]'::json)
+                FROM lessons l
+                WHERE l.tenant_id = $2 AND l.module_id = cm.id AND l.status = 'PUBLISHED') AS lesson_items
        FROM course_modules cm
        WHERE cm.tenant_id = $2 AND cm.course_id = $1 AND cm.status = 'PUBLISHED'
        ORDER BY cm.sequence ASC, cm.id ASC`,
@@ -1095,6 +1106,18 @@ export class LmsService {
       const assessmentCompleted = Number(row.assessment_completed ?? 0);
       const total = lessonTotal + assessmentTotal;
       const completed = lessonCompleted + assessmentCompleted;
+      const lessonItems = Array.isArray(row.lesson_items)
+        ? row.lesson_items.map((item) => {
+          const lesson = item as Record<string, unknown>;
+          return {
+            id: String(lesson.id),
+            title: String(lesson.title),
+            description: lesson.description as string | null,
+            sequence: Number(lesson.sequence),
+            estimatedDuration: lesson.estimatedDuration == null ? null : Number(lesson.estimatedDuration),
+          };
+        })
+        : [];
       return {
         id: row.module_id,
         title: row.module_title,
@@ -1103,6 +1126,7 @@ export class LmsService {
         percentage: progressPercentage(completed, total),
         lessons: { completed: lessonCompleted, total: lessonTotal },
         assessments: { completed: assessmentCompleted, total: assessmentTotal },
+        lessonItems,
       };
     });
     const lessons = modules.reduce((summary, module) => ({

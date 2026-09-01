@@ -23,6 +23,13 @@ type Progress = {
     percentage: number;
     lessons: { completed: number; total: number };
     assessments: { completed: number; total: number };
+    lessonItems: Array<{
+      id: string;
+      title: string;
+      description?: string | null;
+      sequence: number;
+      estimatedDuration?: number | null;
+    }>;
   }>;
 };
 
@@ -378,17 +385,49 @@ export default function StudentPortalPage() {
                 </div>
                 {progress.modules.length > 0 && (
                   <div style={{ borderTop: "1px solid #e8eef3", display: "grid", gap: 16, marginTop: 24, paddingTop: 22 }}>
-                    <h3 style={{ fontSize: 16, margin: 0 }}>Module progress</h3>
+                    <details open style={{ border: "1px solid #d8e2eb", borderRadius: 14, overflow: "hidden" }}>
+                      <summary style={{ alignItems: "center", cursor: "pointer", display: "flex", gap: 12, justifyContent: "space-between", listStyle: "none", padding: "16px 18px" }}>
+                        <span>
+                          <strong style={{ display: "block", fontSize: 16 }}>Open course outline</strong>
+                          <span style={{ color: "#61718a", display: "block", fontSize: 13, marginTop: 4 }}>{progress.modules.length} modules · {progress.lessons.total} lessons</span>
+                        </span>
+                        <span aria-hidden="true" style={{ color: "#0f766e", fontSize: 22 }}>⌄</span>
+                      </summary>
+                      <div style={{ borderTop: "1px solid #e8eef3", display: "grid", gap: 10, padding: 12 }}>
                     {progress.modules.map((module) => (
-                      <div key={module.id}>
-                        <div style={{ alignItems: "center", display: "flex", gap: 12, justifyContent: "space-between", marginBottom: 7 }}>
+                      <details key={module.id} style={{ background: "#f8fbfd", border: "1px solid #e1e9ef", borderRadius: 12 }}>
+                        <summary style={{ alignItems: "center", cursor: "pointer", display: "flex", gap: 12, justifyContent: "space-between", listStyle: "none", padding: "13px 15px" }}>
                           <span style={{ fontWeight: 700 }}>{module.sequence}. {module.title}</span>
-                          <span style={{ color: "#61718a", fontSize: 13 }}>{module.percentage}% · {stateLabel[module.state]}</span>
+                          <span style={{ color: "#61718a", fontSize: 13, whiteSpace: "nowrap" }}>{module.lessons.total} lessons</span>
+                        </summary>
+                        <div style={{ borderTop: "1px solid #e1e9ef", padding: "12px 15px 0" }}>
+                          <div style={{ alignItems: "center", color: "#61718a", display: "flex", fontSize: 13, justifyContent: "space-between", marginBottom: 7 }}>
+                            <span>Module progress</span>
+                            <span>{module.percentage}% · {stateLabel[module.state]}</span>
+                          </div>
+                          <ProgressBar percentage={module.percentage} />
+                          <p style={{ color: "#71879a", fontSize: 13, margin: "7px 0 0" }}>{module.lessons.completed}/{module.lessons.total} lessons · {module.assessments.completed}/{module.assessments.total} assessments</p>
                         </div>
-                        <ProgressBar percentage={module.percentage} />
-                        <p style={{ color: "#71879a", fontSize: 13, margin: "7px 0 0" }}>{module.lessons.completed}/{module.lessons.total} lessons · {module.assessments.completed}/{module.assessments.total} assessments</p>
-                      </div>
+                        <div style={{ borderTop: "1px solid #e1e9ef", display: "grid", gap: 9, padding: "10px 12px 12px" }}>
+                          {module.lessonItems.map((lesson) => (
+                            <details key={lesson.id} style={{ background: "white", border: "1px solid #e6edf3", borderRadius: 10 }}>
+                              <summary style={{ alignItems: "center", cursor: "pointer", display: "flex", gap: 10, justifyContent: "space-between", listStyle: "none", padding: "11px 13px" }}>
+                                <span><span style={{ color: "#6b8194", fontSize: 12, marginRight: 8 }}>{lesson.sequence}</span><strong>{lesson.title}</strong></span>
+                                <span style={{ color: "#0f766e", fontSize: 12, whiteSpace: "nowrap" }}>Not started</span>
+                              </summary>
+                              {lesson.description && (
+                                <div style={{ borderTop: "1px solid #eef2f5", color: "#61718a", fontSize: 14, lineHeight: 1.55, padding: "10px 13px 12px" }}>
+                                  <p style={{ margin: 0 }}>{lesson.description}</p>
+                                  {lesson.estimatedDuration != null && <span style={{ display: "block", fontSize: 12, marginTop: 8 }}>Estimated duration: {lesson.estimatedDuration} minutes</span>}
+                                </div>
+                              )}
+                            </details>
+                          ))}
+                        </div>
+                      </details>
                     ))}
+                      </div>
+                    </details>
                   </div>
                 )}
               </article>
