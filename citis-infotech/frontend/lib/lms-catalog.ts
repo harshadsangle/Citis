@@ -15,6 +15,12 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
+export type LmsCourseProvider = "adobe" | "autodesk" | "comptia";
+
+export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
+  return value === "adobe" || value === "autodesk" || value === "comptia" ? value : undefined;
+}
+
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
   {
     id: "adobe-document-creation-management",

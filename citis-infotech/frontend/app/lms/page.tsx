@@ -3,7 +3,7 @@ import { ArrowRight, Award, BookOpenCheck, ChevronDown, Clock3, FileText, Gradua
 import { generatePageMetadata } from "@/lib/seo";
 import { redirectToLmsPortal } from "@/lib/lms-portal";
 import { LMS_PORTALS, normalizeLmsPortal, type LmsPortal } from "@/lib/lms-roles";
-import { LMS_COURSE_CATEGORIES } from "@/lib/lms-catalog";
+import { LMS_COURSE_CATEGORIES, normalizeLmsCourseProvider } from "@/lib/lms-catalog";
 
 export const metadata = generatePageMetadata({
   title: "Learning Portal",
@@ -13,13 +13,17 @@ export const metadata = generatePageMetadata({
 });
 
 type LmsEntryPageProps = {
-  searchParams?: Promise<{ portal?: string }>;
+  searchParams?: Promise<{ portal?: string; provider?: string }>;
 };
 
 export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) {
   const params = await searchParams;
   const portal = normalizeLmsPortal(params?.portal);
   if (portal) await redirectToLmsPortal(portal);
+  const provider = normalizeLmsCourseProvider(params?.provider);
+  const courseCategories = provider
+    ? LMS_COURSE_CATEGORIES.filter((category) => category.id === provider)
+    : LMS_COURSE_CATEGORIES;
 
   const icons: Record<LmsPortal, typeof ShieldCheck> = {
     admin: ShieldCheck,
@@ -63,12 +67,18 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
       <div className="container-site">
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-bold tracking-[0.2em] text-primary uppercase">Course catalogue</p>
-          <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Explore focused certification paths.</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">Browse objective-led Adobe, Autodesk, and CompTIA certification courses across creative, CAD, architecture, design, content, web, marketing, IT, cloud, data, project, networking, and cybersecurity paths.</p>
+          <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
+            {provider ? `Explore ${courseCategories[0]?.name} certification courses.` : "Explore focused certification paths."}
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
+            {provider
+              ? courseCategories[0]?.description
+              : "Browse objective-led Adobe, Autodesk, and CompTIA certification courses across creative, CAD, architecture, design, content, web, marketing, IT, cloud, data, project, networking, and cybersecurity paths."}
+          </p>
         </div>
 
         <div className="mx-auto mt-10 max-w-5xl space-y-4">
-          {LMS_COURSE_CATEGORIES.map((category) => (
+          {courseCategories.map((category) => (
             <details key={category.id} className="lms-category surface overflow-hidden rounded-3xl" open>
               <summary className="lms-category-summary flex items-center gap-4 p-5 sm:gap-6 sm:p-7">
                 <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary sm:size-14"><Award className="size-6 sm:size-7" /></span>

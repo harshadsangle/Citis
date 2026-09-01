@@ -50,9 +50,15 @@ export const NAV_LINKS = [
 const globalCertificationItems = [
   {
     title: "Adobe Certified Professional",
-    href: "/engagements/global-certifications",
+    href: "/lms?provider=adobe",
     description: "10 Adobe Creative Cloud certifications.",
     icon: Sparkles,
+  },
+  {
+    title: "CompTIA",
+    href: "/lms?provider=comptia",
+    description: "IT, cloud, data, project, networking, Linux and cybersecurity certifications.",
+    icon: ShieldCheck,
   },
   {
     title: "Apple",
@@ -62,7 +68,7 @@ const globalCertificationItems = [
   },
   {
     title: "Autodesk",
-    href: "/engagements/global-certifications/autodesk",
+    href: "/lms?provider=autodesk",
     description: "Design, CAD and 3D workflows.",
     icon: Wrench,
   },
