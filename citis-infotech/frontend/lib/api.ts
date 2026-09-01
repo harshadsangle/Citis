@@ -62,11 +62,12 @@ async function request<T>(baseUrl: string, path: string, options: FetchOptions =
   });
 
   if (!response.ok) {
+    const body = await response.text();
     let details: unknown;
     try {
-      details = await response.json();
+      details = JSON.parse(body);
     } catch {
-      details = await response.text();
+      details = body;
     }
     throw new ApiError(
       (details as { message?: string })?.message ?? `Request failed with status ${response.status}`,
