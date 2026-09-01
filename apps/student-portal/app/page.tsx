@@ -10,7 +10,7 @@ async function fetchDashboardList<T>(path: string): Promise<T[]> {
 }
 
 type Progress = {
-  course: { id: string; title: string; code: string; description?: string | null };
+  course: { id: string; title: string; code: string; description?: string | null; programme_name?: string | null };
   state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
   percentage: number;
   lessons: { completed: number; total: number };
@@ -35,6 +35,7 @@ type Progress = {
 
 type Assignment = {
   id: string;
+  course_id: string;
   title: string;
   instructions: string;
   description?: string | null;
@@ -56,6 +57,7 @@ type Submission = {
 };
 type Assessment = {
   id: string;
+  course_id: string;
   title: string;
   description?: string | null;
   assessment_type: string;
@@ -87,6 +89,7 @@ type AssessmentAttempt = {
 };
 type AssessmentHistoryItem = {
   attempt_id: string;
+  course_id: string;
   title: string;
   assessment_type: string;
   course_title: string;
@@ -102,6 +105,7 @@ type AssessmentHistoryItem = {
 };
 type Certificate = {
   id: string;
+  course_id: string;
   certificate_number: string;
   verification_id: string;
   learner_name: string;
@@ -118,6 +122,24 @@ const stateLabel: Record<Progress["state"], string> = {
   IN_PROGRESS: "In progress",
   COMPLETED: "Completed",
 };
+
+type LmsCourseProvider = "adobe" | "autodesk" | "comptia";
+
+function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
+  return value === "adobe" || value === "autodesk" || value === "comptia" ? value : null;
+}
+
+function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
+  const name = value?.trim().toLowerCase() || "";
+  if (name.includes("adobe")) return "adobe";
+  if (name.includes("autodesk")) return "autodesk";
+  if (name.includes("comptia")) return "comptia";
+  return null;
+}
+
+function providerLabel(provider: LmsCourseProvider | null) {
+  return provider ? provider.charAt(0).toUpperCase() + provider.slice(1) : "CITIS";
+}
 
 function ProgressBar({ percentage }: { percentage: number }) {
   return (
@@ -147,10 +169,18 @@ export default function StudentPortalPage() {
   const [submissionValidation, setSubmissionValidation] = useState("");
   const [certificateBusy, setCertificateBusy] = useState("");
   const [certificateNotice, setCertificateNotice] = useState("");
+  const [provider, setProvider] = useState<LmsCourseProvider | null>(null);
+  const [providerReady, setProviderReady] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setProvider(normalizeLmsCourseProvider(new URLSearchParams(window.location.search).get("provider")));
+    setProviderReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!providerReady) return;
     let active = true;
     Promise.all([
       fetch("/api/v1/progress", { credentials: "include" }).then(async (response) => {
@@ -165,12 +195,21 @@ export default function StudentPortalPage() {
     ])
       .then(async ([progressBody, assignmentBody, assessmentBody, historyBody, certificateBody]) => {
         if (!active) return;
-        setCourses(progressBody);
-        setAssignments(assignmentBody);
-        setAssessments(assessmentBody);
-        setAssessmentHistory(historyBody);
-        setCertificates(certificateBody);
-        const submissionEntries = await Promise.all(assignmentBody.map(async (assignment) => {
+        const visibleProgress = provider
+          ? progressBody.filter((progress) => providerForProgrammeName(progress.course.programme_name) === provider)
+          : progressBody;
+        const visibleCourseIds = new Set(visibleProgress.map((progress) => progress.course.id));
+        const isVisibleCourse = (courseId: string) => !provider || visibleCourseIds.has(courseId);
+        const visibleAssignments = assignmentBody.filter((assignment) => isVisibleCourse(assignment.course_id));
+        const visibleAssessments = assessmentBody.filter((assessment) => isVisibleCourse(assessment.course_id));
+        const visibleHistory = historyBody.filter((item) => isVisibleCourse(item.course_id));
+        const visibleCertificates = certificateBody.filter((certificate) => isVisibleCourse(certificate.course_id));
+        setCourses(visibleProgress);
+        setAssignments(visibleAssignments);
+        setAssessments(visibleAssessments);
+        setAssessmentHistory(visibleHistory);
+        setCertificates(visibleCertificates);
+        const submissionEntries = await Promise.all(visibleAssignments.map(async (assignment) => {
           const response = await fetch(`/api/v1/assignments/${assignment.id}/submission`, { credentials: "include" });
           if (!response.ok) return [assignment.id, null] as const;
           const body = await response.json() as { data: Submission | null };
@@ -187,7 +226,7 @@ export default function StudentPortalPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [provider, providerReady]);
 
   async function downloadCertificate(certificate: Certificate) {
     setCertificateBusy(certificate.id);
@@ -345,7 +384,7 @@ export default function StudentPortalPage() {
         <p style={{ color: "#0f766e", fontSize: 13, fontWeight: 700, letterSpacing: "0.16em", margin: 0, textTransform: "uppercase" }}>CITIS learning portal</p>
         <header style={{ alignItems: "end", display: "flex", gap: 24, justifyContent: "space-between", margin: "12px 0 32px" }}>
           <div>
-            <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", letterSpacing: "-0.04em", margin: 0 }}>Your learning progress</h1>
+            <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", letterSpacing: "-0.04em", margin: 0 }}>{provider ? `${providerLabel(provider)} learning progress` : "Your learning progress"}</h1>
             <p style={{ color: "#61718a", fontSize: 17, lineHeight: 1.6, margin: "12px 0 0", maxWidth: 620 }}>See how far you have progressed across your enrolled CITIS courses. Lesson and assessment completion updates this view automatically.</p>
           </div>
           <div style={{ background: "#fff4c2", borderRadius: 16, color: "#795b00", fontSize: 14, padding: "14px 18px", whiteSpace: "nowrap" }}>Progress dashboard</div>

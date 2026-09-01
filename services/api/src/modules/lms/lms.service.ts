@@ -990,7 +990,7 @@ export class LmsService {
   private async progressCourse(courseId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.description, c.status,
-              p.status AS programme_status, i.status AS institution_status
+              p.name AS programme_name, p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
        JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
@@ -1146,6 +1146,7 @@ export class LmsService {
         title: course.title,
         code: course.code,
         description: course.description,
+        programme_name: course.programme_name,
         status: course.status,
       },
       learnerId,

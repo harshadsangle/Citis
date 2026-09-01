@@ -268,6 +268,20 @@ function errorMessage(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
 }
 
+type LmsCourseProvider = "adobe" | "autodesk" | "comptia";
+
+function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
+  return value === "adobe" || value === "autodesk" || value === "comptia" ? value : null;
+}
+
+function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
+  const name = value?.trim().toLowerCase() || "";
+  if (name.includes("adobe")) return "adobe";
+  if (name.includes("autodesk")) return "autodesk";
+  if (name.includes("comptia")) return "comptia";
+  return null;
+}
+
 async function loadCourseStructure(courseId: string): Promise<CourseModuleData[]> {
   const modules = await list<CourseModule>(`/course-modules?courseId=${encodeURIComponent(courseId)}`);
   return Promise.all(modules.map(async (module) => {
@@ -443,7 +457,11 @@ export default function TeacherPortalPage() {
       ]);
       setName(displayName(principal));
 
-      const details = await Promise.all(courses.map(async (course): Promise<CourseData> => {
+      const selectedProvider = normalizeLmsCourseProvider(new URLSearchParams(window.location.search).get("provider"));
+      const visibleCourses = selectedProvider
+        ? courses.filter((course) => providerForProgrammeName(course.programme_name) === selectedProvider)
+        : courses;
+      const details = await Promise.all(visibleCourses.map(async (course): Promise<CourseData> => {
         const [enrollmentResult, assignments, assessmentResult, structure] = await Promise.all([
           list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`)
             .then((data) => ({ data, error: undefined }))

@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { LmsPortal } from "@/lib/lms-roles";
+import type { LmsCourseProvider } from "@/lib/lms-catalog";
 
 const portalConfig: Record<LmsPortal, { environmentKey: string; localPort: number; externalPort: number }> = {
   learner: {
@@ -54,9 +55,11 @@ async function requestOrigin(portal: LmsPortal) {
   return origin.origin;
 }
 
-export async function redirectToLmsPortal(portal: LmsPortal) {
+export async function redirectToLmsPortal(portal: LmsPortal, provider?: LmsCourseProvider) {
   const origin = configuredOrigin(portal) || (await requestOrigin(portal));
-  redirect(`${origin}/`);
+  const destination = new URL(`${origin}/`);
+  if (provider) destination.searchParams.set("provider", provider);
+  redirect(destination.toString());
 }
 
 export type { LmsPortal } from "@/lib/lms-roles";

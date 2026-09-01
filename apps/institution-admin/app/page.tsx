@@ -16,6 +16,7 @@ type ContentRecord = {
   name?: string;
   title?: string;
   code?: string;
+  programme_name?: string | null;
   description?: string | null;
   status: Status;
   sequence?: number;
@@ -34,6 +35,20 @@ type TrailNode = { kind: Kind; id: string; label: string };
 type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: number } } };
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1").replace(/\/$/, "");
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
+
+type LmsCourseProvider = "adobe" | "autodesk" | "comptia";
+
+function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
+  return value === "adobe" || value === "autodesk" || value === "comptia" ? value : null;
+}
+
+function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
+  const name = value?.trim().toLowerCase() || "";
+  if (name.includes("adobe")) return "adobe";
+  if (name.includes("autodesk")) return "autodesk";
+  if (name.includes("comptia")) return "comptia";
+  return null;
+}
 
 const sections: Array<{ kind: Kind; label: string; shortLabel: string; icon: string }> = [
   { kind: "programmes", label: "Programmes", shortLabel: "Programmes", icon: "P" },
@@ -167,6 +182,9 @@ export default function InstitutionAdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+  const [provider] = useState<LmsCourseProvider | null>(() => normalizeLmsCourseProvider(
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("provider"),
+  ));
 
   const currentSection = relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
@@ -179,10 +197,15 @@ export default function InstitutionAdminPage() {
         : activeKind === "learning-resources"
           ? ids.lessonId
           : "";
-  const visibleRecords = records;
-  const publishedCount = records.filter((record) => record.status === "PUBLISHED").length;
-  const draftCount = records.filter((record) => record.status === "DRAFT").length;
-  const archivedCount = records.filter((record) => record.status === "ARCHIVED").length;
+  const visibleRecords = records.filter((record) => {
+    if (!provider) return true;
+    if (activeKind !== "programmes" && activeKind !== "courses") return true;
+    const programmeName = activeKind === "programmes" ? record.name : record.programme_name;
+    return providerForProgrammeName(programmeName) === provider;
+  });
+  const publishedCount = visibleRecords.filter((record) => record.status === "PUBLISHED").length;
+  const draftCount = visibleRecords.filter((record) => record.status === "DRAFT").length;
+  const archivedCount = visibleRecords.filter((record) => record.status === "ARCHIVED").length;
 
   const canLoad = activeKind === "programmes" || Boolean(activeParentId);
 

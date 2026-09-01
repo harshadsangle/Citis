@@ -34,9 +34,10 @@ function ProviderLogo({ provider }: { provider: LmsCourseProvider }) {
 
 export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) {
   const params = await searchParams;
-  const portal = normalizeLmsPortal(params?.portal);
-  if (portal) await redirectToLmsPortal(portal);
   const provider = normalizeLmsCourseProvider(params?.provider);
+  const portal = normalizeLmsPortal(params?.portal);
+  if (portal) await redirectToLmsPortal(portal, provider);
+  const providerQuery = provider ? `&provider=${provider}` : "";
   const courseCategories = provider
     ? LMS_COURSE_CATEGORIES.filter((category) => category.id === provider)
     : LMS_COURSE_CATEGORIES;
@@ -67,7 +68,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
                 <p className="mt-7 text-xs font-bold tracking-[0.14em] text-primary uppercase">{portalOption.eyebrow}</p>
                 <h2 className="mt-3 font-heading text-2xl font-semibold">{portalOption.label}</h2>
                 <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{portalOption.description}</p>
-                <Link href={`/lms/login?portal=${key}`} className="mt-7 inline-flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition group-hover:bg-primary/90">
+                <Link href={`/lms/login?portal=${key}${providerQuery}`} className="mt-7 inline-flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition group-hover:bg-primary/90">
                   Continue as {key === "admin" ? "administrator" : key}
                   <ArrowRight className="size-4" />
                 </Link>
@@ -125,7 +126,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
                           <h3 className="mt-4 font-heading text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">{course.title}</h3>
                           <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">{course.description}</p>
                         </div>
-                        <Link href="/lms/login?portal=learner" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                        <Link href={`/lms/login?portal=learner${providerQuery}`} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
                           Continue to learner portal
                           <ArrowRight className="size-4" />
                         </Link>

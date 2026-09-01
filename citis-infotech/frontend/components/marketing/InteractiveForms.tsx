@@ -17,6 +17,7 @@ import { applyJobSchema, loginSchema, partnerSchema, type ApplyJobInput, type Lo
 import { authService } from "@/services/api";
 import { CAREERS_EMAIL, SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 import { canAccessLmsPortal, firstAvailableLmsPortal, LMS_PORTALS, type LmsPortal } from "@/lib/lms-roles";
+import type { LmsCourseProvider } from "@/lib/lms-catalog";
 
 const message = (text?: string) => text && <p className="mt-1.5 text-xs text-destructive">{text}</p>;
 
@@ -128,7 +129,7 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   );
 }
 
-export function LoginForm({ portal = "learner" }: { portal?: LmsPortal }) {
+export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal; provider?: LmsCourseProvider }) {
   const [show, setShow] = useState(false);
   const [serverError, setServerError] = useState("");
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
@@ -142,7 +143,7 @@ export function LoginForm({ portal = "learner" }: { portal?: LmsPortal }) {
         const availableCopy = availablePortal ? ` This account belongs in the ${LMS_PORTALS[availablePortal].label}.` : "";
         throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
       }
-      window.location.assign(`/lms?portal=${portal}`);
+       window.location.assign(`/lms?portal=${portal}${provider ? `&provider=${provider}` : ""}`);
     } catch (error) { setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again."); }
   };
   return (
