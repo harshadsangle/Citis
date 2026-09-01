@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, GraduationCap, ShieldCheck } from "lucide-react";
+import { ArrowRight, Award, BookOpenCheck, ChevronDown, Clock3, FileText, GraduationCap, Layers3, ShieldCheck } from "lucide-react";
 import { generatePageMetadata } from "@/lib/seo";
 import { redirectToLmsPortal } from "@/lib/lms-portal";
 import { LMS_PORTALS, normalizeLmsPortal, type LmsPortal } from "@/lib/lms-roles";
+import { LMS_COURSE_CATEGORIES } from "@/lib/lms-catalog";
 
 export const metadata = generatePageMetadata({
   title: "Learning Portal",
@@ -27,7 +28,8 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
   };
 
   return (
-    <section className="relative isolate overflow-hidden py-16 sm:py-24">
+    <>
+      <section className="relative isolate overflow-hidden py-16 sm:py-24">
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(145deg,#f7fbff_0%,#edf5ff_55%,#fff8e8_100%)] dark:bg-[linear-gradient(145deg,#071526_0%,#10233e_60%,#241b0d_100%)]" />
       <div className="container-site">
         <div className="mx-auto max-w-3xl text-center">
@@ -56,6 +58,95 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
         <p className="mt-8 text-center text-sm text-muted-foreground">Not sure which portal to use? Contact your institution or programme team.</p>
         <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
       </div>
-    </section>
+      </section>
+      <section id="course-catalogue" className="border-t border-border/70 bg-white/55 py-16 dark:bg-slate-950/20 sm:py-24">
+      <div className="container-site">
+        <div className="mx-auto max-w-3xl text-center">
+          <p className="text-xs font-bold tracking-[0.2em] text-primary uppercase">Course catalogue</p>
+          <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">Start with one focused course.</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">Explore the first course in the CITIS learning catalogue. More categories and courses can be added here as the learning experience grows.</p>
+        </div>
+
+        <div className="mx-auto mt-10 max-w-5xl space-y-4">
+          {LMS_COURSE_CATEGORIES.map((category) => (
+            <details key={category.id} className="lms-category surface overflow-hidden rounded-3xl" open>
+              <summary className="lms-category-summary flex items-center gap-4 p-5 sm:gap-6 sm:p-7">
+                <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary sm:size-14"><Award className="size-6 sm:size-7" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-bold tracking-[0.16em] text-primary uppercase">{category.eyebrow}</span>
+                  <span className="mt-1 block font-heading text-xl font-semibold text-foreground sm:text-2xl">{category.name}</span>
+                  <span className="mt-2 hidden max-w-2xl text-sm leading-6 text-muted-foreground sm:block">{category.description}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-3 text-right text-xs font-bold tracking-[0.08em] text-muted-foreground uppercase">
+                  <span className="hidden sm:block">{category.courses.length} course{category.courses.length === 1 ? "" : "s"}</span>
+                  <ChevronDown className="lms-category-chevron size-5 text-primary" />
+                </span>
+              </summary>
+
+              <div className="border-t border-border/70 bg-[linear-gradient(145deg,rgba(247,251,255,.85),rgba(255,255,255,.95))] p-4 dark:bg-slate-900/30 sm:p-7">
+                <div className="grid gap-5">
+                  {category.courses.map((course) => (
+                    <article key={course.id} className="lms-course-card rounded-2xl border border-border/80 bg-white p-5 shadow-sm dark:bg-slate-950/40 sm:p-7">
+                      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0 max-w-3xl">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold tracking-[0.1em] text-primary uppercase"><FileText className="size-3.5" /> Official exam objectives</span>
+                            <span className="inline-flex items-center rounded-full bg-accent/60 px-3 py-1 text-[11px] font-bold tracking-[0.1em] text-accent-foreground uppercase">Featured course</span>
+                          </div>
+                          <h3 className="mt-4 font-heading text-2xl font-semibold leading-tight tracking-tight text-foreground sm:text-3xl">{course.title}</h3>
+                          <p className="mt-4 text-sm leading-7 text-muted-foreground sm:text-base">{course.description}</p>
+                        </div>
+                        <Link href="/lms/login?portal=learner" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                          Continue to learner portal
+                          <ArrowRight className="size-4" />
+                        </Link>
+                      </div>
+
+                      <div className="mt-6 grid gap-3 border-y border-border/70 py-5 sm:grid-cols-3">
+                        {course.details.map((detail, index) => {
+                          const Icon = index === 0 ? Clock3 : index === 1 ? Layers3 : Award;
+                          return (
+                            <div key={detail.label} className="flex items-center gap-3">
+                              <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-primary"><Icon className="size-4" /></span>
+                              <span>
+                                <span className="block text-xs font-semibold text-muted-foreground">{detail.label}</span>
+                                <span className="mt-0.5 block text-sm font-semibold text-foreground">{detail.value}</span>
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="grid gap-6 lg:grid-cols-[minmax(0,.82fr)_minmax(0,1.18fr)] lg:gap-10">
+                        <div>
+                          <p className="text-xs font-bold tracking-[0.16em] text-primary uppercase">Target candidate</p>
+                          <p className="mt-3 text-sm leading-7 text-muted-foreground">{course.audience}</p>
+                          <p className="mt-4 text-xs leading-5 text-muted-foreground">Access is provided through your institution or programme team.</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold tracking-[0.16em] text-primary uppercase">What the objectives cover</p>
+                          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                            {course.objectiveAreas.map((area) => (
+                              <div key={area.number} className="lms-objective flex gap-3 rounded-xl border border-border/70 bg-background/75 p-3.5">
+                                <span className="text-xs font-bold tracking-[0.08em] text-primary">{area.number}</span>
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-semibold leading-5 text-foreground">{area.title}</span>
+                                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">{area.description}</span>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
+      </div>
+      </section>
+    </>
   );
 }
