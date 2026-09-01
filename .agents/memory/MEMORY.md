@@ -9,3 +9,4 @@
 - [Nested Next React runtime](nested-next-react-runtime.md) — the standalone public app must keep hook libraries and the renderer on one local React runtime.
 - [Next dev/build collision](next-dev-build-collision.md) — never run a production build concurrently with the managed workflow sharing a `.next` directory.
 - [CompTIA objective imports](comptia-objective-imports.md) — ignore repeated TOC markers and nested examples when mapping official PDF objectives to LMS lessons.
+- [LMS authentication diagnosis](lms-auth-diagnosis.md) — verify login, session lookup, portal entry, and dashboard requests separately before changing auth logic.
