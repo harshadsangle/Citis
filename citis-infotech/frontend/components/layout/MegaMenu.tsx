@@ -19,7 +19,7 @@ function CertificationMegaPanel({
   onNavigate?: () => void;
 }) {
   return (
-    <div className="w-[min(640px,calc(100vw-2rem))] rounded-xl border border-[#0F4C81]/15 bg-white p-3 shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
+    <div className="mega-menu w-[min(640px,calc(100vw-2rem))] rounded-2xl border border-primary/15 bg-card p-3 shadow-[0_18px_50px_rgba(18,75,115,0.16)]">
       <p className="px-3 pt-2 pb-2 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
         Certification Courses
       </p>
@@ -33,8 +33,8 @@ function CertificationMegaPanel({
                 role="menuitem"
                 href={course.href}
                 onClick={onNavigate}
-                className={cn(
-                      "group flex min-h-12 items-center gap-2.5 rounded-lg px-3 py-2 transition-colors",
+                   className={cn(
+                       "group flex min-h-12 items-center gap-2.5 rounded-xl px-3 py-2 transition-colors",
                   courseActive
                     ? "bg-[#0F4C81] text-white"
                     : "text-[#0b1524] hover:bg-[#0F4C81]/08 hover:text-[#0F4C81]",
@@ -179,7 +179,7 @@ function MenuPanel({
   onNavigate?: () => void;
 }) {
   return (
-    <div className="max-h-[calc(100vh-6rem)] w-[min(380px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-[#0F4C81]/15 bg-white p-3 shadow-[0_18px_50px_rgba(15,76,129,0.16)]">
+    <div className="mega-menu max-h-[calc(100vh-6rem)] w-[min(380px,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-primary/15 bg-card p-3 shadow-[0_18px_50px_rgba(18,75,115,0.16)]">
       <p className="px-3 pt-2 pb-2 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">{title}</p>
       <MenuItems items={items} pathname={pathname} onNavigate={onNavigate} />
     </div>
@@ -202,7 +202,7 @@ export function MegaMenu({
     <div
       role="menu"
       className={cn(
-        "max-h-[calc(100vh-6rem)] min-w-[280px] overflow-visible rounded-xl border border-[#0F4C81]/15 bg-white p-2 shadow-[0_18px_50px_rgba(15,76,129,0.16)]",
+        "mega-menu max-h-[calc(100vh-6rem)] min-w-[280px] overflow-visible rounded-2xl border border-primary/15 bg-card p-2 shadow-[0_18px_50px_rgba(18,75,115,0.16)]",
         className,
       )}
     >

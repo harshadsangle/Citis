@@ -1288,8 +1288,7 @@ export default function TeacherPortalPage() {
       </div>
 
       <style jsx global>{`
-        @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
-        :root { font-family: "Manrope", Arial, sans-serif; color: #173450; background: #f6f9fd; font-synthesis: none; }
+         :root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #173450; background: #f6f9fd; font-synthesis: none; }
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
         body { margin: 0; min-width: 320px; }
@@ -1663,6 +1662,48 @@ export default function TeacherPortalPage() {
           .course-side { grid-column: 2; justify-items: start; display: flex; align-items: center; flex-wrap: wrap; }
           .course-mark { width: 31px; height: 31px; }
         }
+         /* Daily teaching workspace visual refresh */
+         .portal-shell { background: radial-gradient(circle at 8% 0%, #5ca6b11c, transparent 25%), radial-gradient(circle at 96% 8%, #ef7d3c16, transparent 23%), #f4f8fb; }
+         .sidebar { background: linear-gradient(165deg, #082f50 0%, #0d4d72 62%, #0b3c60 100%); box-shadow: 16px 0 42px #0a345414; }
+         .brand-mark { color: #0a3655; background: #ef9360; box-shadow: 0 7px 18px #ef7d3c44; }
+         .nav-item { border-radius: 11px; transition: background-color .18s ease, transform .18s ease; }
+         .nav-item:hover { transform: translateX(2px); }
+         .nav-item.active { box-shadow: inset 3px 0 #ef9360; }
+         .nav-item.active .nav-icon { color: #efb08b; }
+         .topbar { background: #fbfdfe; border-bottom-color: #d3e1e8; }
+         .content { padding-top: 52px; }
+         .eyebrow { color: #bf6731; }
+         h1, .panel-heading h2 { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; }
+         h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
+         .intro, .panel-copy { color: #607a8c; }
+         .primary-button { color: #fffaf4; background: #ef7d3c; box-shadow: 0 9px 20px #ef7d3c35; border-radius: 11px; }
+         .primary-button:hover:not(:disabled) { background: #d96b2e; }
+         .secondary-button { border-color: #c6d8e1; background: #fbfdfe; border-radius: 11px; }
+         .metrics { gap: 15px; }
+         .metric-card, .panel { border-color: #d3e1e8; border-radius: 15px; box-shadow: 0 12px 30px #124b7310; }
+         .metric-card { background: #fbfdfe; }
+         .metric-card.accent { border-color: #bfe0d8; background: linear-gradient(145deg, #fbfdfe, #eef9f5); }
+         .metric-card.warm { border-color: #f0d8c8; background: linear-gradient(145deg, #fbfdfe, #fff5ed); }
+         .metric-card strong { color: #123f60; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; font-size: 29px; }
+         .metric-card.accent strong { color: #278a76; }
+         .metric-card.warm strong { color: #c56c32; }
+         .panel-heading { padding: 25px 26px 21px; background: #fbfdfe; }
+         .course-row, .action-row { padding-top: 15px; padding-bottom: 15px; }
+         .course-row:hover, .course-row.selected { background: #f1f7f9; }
+         .course-row.selected { box-shadow: inset 3px 0 #ef7d3c; }
+         .course-mark, .action-icon.content { color: #bd6530; background: #fff0e7; }
+         .progress-fill { background: linear-gradient(90deg, #278a76, #5ca6b1); }
+         .status-pill { border: 1px solid transparent; }
+         .status-pill.published, .status-pill.completed, .status-pill.graded { border-color: #bfe0d8; }
+         .status-pill.draft, .status-pill.pending { border-color: #f0d8c8; }
+         .module-card, .assignment-card, .assessment-card, .submission-card { border-color: #d3e1e8; border-radius: 13px; background: #fbfdfe; }
+         .module-heading, .assignment-footer, .assessment-footer { background: #f4f8fb; }
+         .state-icon { background: #e5f2f3; color: #267e89; }
+         .form-grid input, .form-grid select, .form-grid textarea, .grade-bar input, .attempt-grade-form textarea { border-color: #c4d5df; border-radius: 9px; background: #fbfdfe; }
+         .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus, .grade-bar input:focus, .attempt-grade-form textarea:focus { border-color: #5ca6b1; box-shadow: 0 0 0 3px #5ca6b126; }
+         @media (prefers-reduced-motion: reduce) {
+           *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+         }
       `}</style>
     </main>
   );

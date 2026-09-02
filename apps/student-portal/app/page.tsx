@@ -381,7 +381,7 @@ export default function StudentPortalPage() {
   }
 
   return (
-    <main style={{ background: "#f5f8fb", color: "#12304a", fontFamily: "Arial, sans-serif", minHeight: "100vh", padding: "48px 24px" }}>
+    <main className="student-shell" style={{ background: "#f5f8fb", color: "#12304a", fontFamily: "Arial, sans-serif", minHeight: "100vh", padding: "48px 24px" }}>
       <div style={{ margin: "0 auto", maxWidth: 1040 }}>
         <p style={{ color: "#0f766e", fontSize: 13, fontWeight: 700, letterSpacing: "0.16em", margin: 0, textTransform: "uppercase" }}>CITIS learning portal</p>
         <header style={{ alignItems: "end", display: "flex", gap: 24, justifyContent: "space-between", margin: "12px 0 32px" }}>

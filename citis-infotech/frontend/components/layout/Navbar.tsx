@@ -120,8 +120,8 @@ export function Navbar() {
     <header className={cn(
       "sticky top-0 z-50 h-[var(--header-height)] border-b transition-all duration-300",
       scrolled
-        ? "border-border/70 bg-background/85 shadow-[0_10px_40px_rgba(15,76,129,0.08)] backdrop-blur-2xl"
-        : "border-transparent bg-background/70 backdrop-blur-xl",
+        ? "border-primary/10 bg-background/90 shadow-[0_10px_40px_rgba(18,75,115,0.1)] backdrop-blur-2xl"
+        : "border-transparent bg-background/75 backdrop-blur-xl",
     )}>
       <div className="container-site flex h-full items-center justify-between">
         <Brand />
@@ -132,7 +132,7 @@ export function Navbar() {
               ? pathname === item.href || pathname.startsWith(`${item.href}/`)
               : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const linkClass = cn(
-              "relative flex h-10 items-center gap-1 rounded-full px-3.5 text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary",
+              "relative flex h-10 items-center gap-1 rounded-xl px-3.5 text-sm font-semibold transition-colors hover:bg-primary/5 hover:text-primary",
               active && "bg-primary/10 text-primary",
               openMenu === menu && menu && "bg-primary/10 text-primary",
             );
@@ -182,7 +182,7 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <HeaderSocialLinks className="hidden sm:flex lg:hidden" />
           <HeaderSocialLinks className="hidden lg:flex" />
-          <Button asChild className="hidden rounded-full xl:inline-flex" variant="accent">
+          <Button asChild className="hidden rounded-xl xl:inline-flex" variant="accent">
               <Link href="/lms">Skills Excellence Centre <ArrowRight /></Link>
           </Button>
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => setMobileOpen((value) => !value)}>
@@ -192,7 +192,7 @@ export function Navbar() {
       </div>
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="absolute inset-x-0 top-full max-h-[calc(100vh-var(--header-height))] overflow-y-auto border-b border-border bg-background shadow-xl lg:hidden">
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="absolute inset-x-0 top-full max-h-[calc(100vh-var(--header-height))] overflow-y-auto border-b border-primary/10 bg-background/95 shadow-xl backdrop-blur-xl lg:hidden">
             <nav className="container-site flex flex-col gap-1 py-5" aria-label="Mobile navigation">
               {NAV_LINKS.map((item) => {
                 const menu = "megaMenu" in item ? item.megaMenu : undefined;
@@ -222,7 +222,7 @@ export function Navbar() {
                 );
               })}
               <HeaderSocialLinks className="mt-3 justify-center border-t border-border pt-4" />
-               <Button asChild variant="accent" className="mt-4 rounded-full"><Link href="/lms">Skills Excellence Centre <ArrowRight /></Link></Button>
+                <Button asChild variant="accent" className="mt-4 rounded-xl"><Link href="/lms">Skills Excellence Centre <ArrowRight /></Link></Button>
             </nav>
           </motion.div>
         )}

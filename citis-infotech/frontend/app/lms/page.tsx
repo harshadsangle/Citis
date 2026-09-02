@@ -52,12 +52,12 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
 
   return (
     <>
-      <section className="relative isolate overflow-hidden py-16 sm:py-24">
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(145deg,#f7fbff_0%,#edf5ff_55%,#fff8e8_100%)] dark:bg-[linear-gradient(145deg,#071526_0%,#10233e_60%,#241b0d_100%)]" />
+      <section className="relative isolate overflow-hidden border-b border-primary/10 py-16 sm:py-24">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_14%,rgba(92,166,177,.18),transparent_30%),radial-gradient(circle_at_90%_80%,rgba(239,125,60,.13),transparent_26%),linear-gradient(145deg,#f7fbfd_0%,#edf5f8_55%,#fff7ed_100%)] dark:bg-[linear-gradient(145deg,#071526_0%,#10233e_60%,#241b0d_100%)]" />
       <div className="container-site">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-bold tracking-[0.2em] text-primary uppercase">CITIS learning management system</p>
-          <h1 className="mt-5 font-heading text-4xl font-semibold tracking-tight sm:text-5xl">Choose your learning portal</h1>
+          <p className="section-eyebrow"><span className="h-px w-8 bg-accent" />CITIS learning management system</p>
+          <h1 className="mt-5 font-heading text-4xl font-semibold tracking-tight sm:text-6xl">Learning with a clear next step.</h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground">Select the option that matches your role. Your account permissions are checked securely after sign-in.</p>
         </div>
         <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
@@ -65,8 +65,9 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
             const portalOption = LMS_PORTALS[key];
             const Icon = icons[key];
             return (
-              <article key={key} className="surface group flex min-h-72 flex-col rounded-3xl p-7 transition duration-200 hover:-translate-y-1 hover:shadow-xl sm:p-8">
-                <span className="grid size-12 place-items-center rounded-2xl bg-primary/10 text-primary"><Icon className="size-6" /></span>
+              <article key={key} className="surface group relative flex min-h-72 flex-col overflow-hidden rounded-[1.6rem] p-7 transition duration-200 hover:-translate-y-1 hover:shadow-xl sm:p-8">
+                <span className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-secondary/10" aria-hidden="true" />
+                <span className="relative grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[0_10px_25px_rgba(18,75,115,.2)]"><Icon className="size-6" /></span>
                 <p className="mt-7 text-xs font-bold tracking-[0.14em] text-primary uppercase">{portalOption.eyebrow}</p>
                 <h2 className="mt-3 font-heading text-2xl font-semibold">{portalOption.label}</h2>
                 <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{portalOption.description}</p>
@@ -82,10 +83,10 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
         <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
       </div>
       </section>
-      <section id="course-catalogue" className="border-t border-border/70 bg-white/55 py-16 dark:bg-slate-950/20 sm:py-24">
+      <section id="course-catalogue" className="border-t border-border/70 bg-background py-16 dark:bg-slate-950/20 sm:py-24">
       <div className="container-site">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-bold tracking-[0.2em] text-primary uppercase">Course catalogue</p>
+          <p className="section-eyebrow"><span className="h-px w-8 bg-accent" />Course catalogue</p>
           <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
             {provider ? `Explore ${courseCategories[0]?.name} certification courses.` : "Explore focused certification paths."}
           </h2>

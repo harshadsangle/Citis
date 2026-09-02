@@ -1,6 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
-
-:root { font-family: "Manrope", Arial, sans-serif; color: #172b4d; background: #f6f9fd; font-synthesis: none; }
+:root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #172b4d; background: #f6f9fd; font-synthesis: none; }
 * { box-sizing: border-box; }
 body { margin: 0; min-width: 320px; }
 button, input, select, textarea { font: inherit; }
@@ -220,4 +218,59 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
   .breadcrumb-bar { font-size: 10px; }
   .crumb { padding-right: 2px; padding-left: 2px; font-size: 10px; }
   .modal { padding: 23px 19px; }
+}
+
+/* Shared CITIS workspace finish: confident navy, warm signal colour, quiet surfaces. */
+:root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #102f49; background: #f4f8fb; }
+body { background: #f4f8fb; }
+.admin-shell { background: radial-gradient(circle at 82% 0%, #5ca6b117, transparent 27%), #f4f8fb; }
+.sidebar { background: linear-gradient(165deg, #082f50 0%, #0d4d72 62%, #0b3c60 100%); box-shadow: 14px 0 38px #0a345414; }
+.brand-mark, .avatar { color: #0a3655; background: #ef9360; box-shadow: 0 7px 18px #ef7d3c35; }
+.brand small { color: #9dbbd0; }
+.sidebar-label { color: #91b2ca; }
+.nav-link { border-radius: 11px; min-height: 42px; transition: background-color .18s ease, transform .18s ease; }
+.nav-link:hover { transform: translateX(2px); }
+.nav-link.active { box-shadow: inset 3px 0 #ef9360; }
+.nav-link.active .nav-icon { color: #efb08b; }
+.topbar { background: #fbfdfe; border-bottom-color: #d3e1e8; }
+.environment-pill { color: #607a8c; }
+.help-link, .crumb:hover, .crumb.current { color: #155d88; }
+.workspace-content { padding-top: 52px; }
+.eyebrow { color: #bf6731; }
+h1, .panel-toolbar h2, .relationship-heading h2, .modal h2 { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; }
+h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
+.page-heading p, .panel-subtitle { color: #607a8c; }
+.primary-button { color: #fffaf4; background: #ef7d3c; border-radius: 11px; box-shadow: 0 9px 20px #ef7d3c35; min-height: 44px; }
+.primary-button:hover { background: #d96b2e; }
+.secondary-button { color: #155d88; border-color: #c6d8e1; border-radius: 11px; background: #fbfdfe; min-height: 42px; }
+.metric-grid { gap: 15px; }
+.metric-card, .content-panel, .relationship-panel { border-color: #d3e1e8; border-radius: 15px; box-shadow: 0 12px 30px #124b7310; background: #fbfdfe; }
+.metric-card strong { color: #123f60; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; font-size: 29px; }
+.metric-card .green-text { color: #278a76; }
+.metric-card .amber-text { color: #c56c32; }
+.metric-card .metric-foot { color: #7d95a5; }
+.panel-toolbar { padding: 25px 26px 21px; background: #fbfdfe; }
+.record-row { min-height: 82px; }
+.record-row:hover { background: #f1f7f9; }
+.record-avatar { color: #bd6530; background: #fff0e7; }
+.record-title { color: #174c6e; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; }
+.status-badge { border: 1px solid transparent; padding: 6px 9px; }
+.status-badge.published { border-color: #bfe0d8; }
+.status-badge.draft { border-color: #f0d8c8; }
+.state-box { min-height: 300px; }
+.modal-backdrop { background: #082f508f; backdrop-filter: blur(6px); }
+.modal { border-color: #c9dce4; border-radius: 18px; box-shadow: 0 28px 80px #082f5035; }
+.modal input, .modal textarea, .modal select, .relationship-controls input, .relationship-controls select { border-color: #c4d5df; border-radius: 9px; background: #fbfdfe; min-height: 40px; }
+.modal input:focus, .modal textarea:focus, .modal select:focus, .relationship-controls input:focus, .relationship-controls select:focus { border-color: #5ca6b1; box-shadow: 0 0 0 3px #5ca6b126; }
+.toast { border-color: #bfe0d8; border-radius: 12px; color: #216f64; background: #eaf7f2; }
+
+@media (max-width: 780px) {
+  .sidebar { padding: 16px 18px 12px; }
+  .sidebar > .primary-nav:last-of-type .nav-link { min-height: 40px; }
+  .workspace-content { padding-top: 32px; }
+  .metric-card { min-height: 104px; }
+  .record-row { min-height: 118px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

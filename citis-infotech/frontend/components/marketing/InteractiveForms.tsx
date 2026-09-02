@@ -147,12 +147,12 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
     } catch (error) { setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again."); }
   };
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-      <div><Label htmlFor="login-email">Email</Label><Input id="login-email" className="mt-2" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} />{message(errors.email?.message)}</div>
-      <div><div className="flex justify-between"><Label htmlFor="login-password">Password</Label><Link href="/auth/forgot-password" className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link></div><div className="relative mt-2"><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="pr-11" {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message)}</div>
-      <Controller name="remember" control={control} render={({ field }) => <div className="flex items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="font-normal">Keep me signed in</Label></div>} />
-      {serverError && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
-      <Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Sign in"}</Button>
+    <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
+      <div><Label htmlFor="login-email">Email</Label><Input id="login-email" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} />{message(errors.email?.message)}</div>
+      <div><div className="flex justify-between"><Label htmlFor="login-password">Password</Label><Link href="/auth/forgot-password" className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link></div><div className="relative mt-2"><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="min-h-12 rounded-xl bg-background/70 px-4 pr-12" {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="absolute top-1/2 right-3 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-primary" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message)}</div>
+      <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="font-normal">Keep me signed in</Label></div>} />
+      {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+      <Button className="h-12 w-full rounded-xl text-sm shadow-[0_12px_25px_rgba(239,125,60,.2)]" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Sign in"}</Button>
     </form>
   );
 }

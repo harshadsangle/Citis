@@ -3,28 +3,28 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --primary: #4c7898;
-  --primary-foreground: #ffffff;
-  --secondary: #78a4cb;
-  --secondary-foreground: #17364b;
-  --accent: #f9e8a2;
-  --accent-foreground: #29455b;
-  --success: #22c55e;
-  --background: #f7fbfc;
-  --foreground: #1e3d54;
-  --card: #ffffff;
-  --card-foreground: #1e3d54;
-  --popover: #ffffff;
-  --popover-foreground: #1e3d54;
-  --muted: #edf7f9;
-  --muted-foreground: #58768a;
-  --border: #cfe3ea;
-  --input: #b4e1eb;
-  --ring: #78a4cb;
-  --destructive: #dc2626;
-  --destructive-foreground: #ffffff;
-  --radius: 0.75rem;
-  --header-height: 4.5rem;
+  --primary: #124b73;
+  --primary-foreground: #f7fbfd;
+  --secondary: #5ca6b1;
+  --secondary-foreground: #0b354e;
+  --accent: #ef7d3c;
+  --accent-foreground: #fffaf4;
+  --success: #278a76;
+  --background: #f4f8fb;
+  --foreground: #102f49;
+  --card: #fbfdfe;
+  --card-foreground: #102f49;
+  --popover: #fbfdfe;
+  --popover-foreground: #102f49;
+  --muted: #e9f1f5;
+  --muted-foreground: #5d7488;
+  --border: #d3e1e8;
+  --input: #c4d5df;
+  --ring: #e4773d;
+  --destructive: #b94f4b;
+  --destructive-foreground: #fff8f6;
+  --radius: 0.9rem;
+  --header-height: 4.75rem;
 }
 
 
@@ -49,8 +49,8 @@
   --color-ring: var(--ring);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --font-sans: var(--font-manrope);
-  --font-heading: var(--font-manrope);
+  --font-sans: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif;
+  --font-heading: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif;
   --radius-sm: calc(var(--radius) - 0.25rem);
   --radius-md: calc(var(--radius) - 0.125rem);
   --radius-lg: var(--radius);
@@ -106,7 +106,7 @@ body {
   min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+  font-family: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif;
   font-size: 0.9375rem;
   line-height: 1.55;
   text-rendering: optimizeLegibility;
@@ -118,7 +118,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+  font-family: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif;
   font-weight: 700;
   letter-spacing: -0.025em;
   line-height: 1.15;
@@ -165,11 +165,11 @@ button, a, input, textarea, select {
 @utility surface {
   background-color: color-mix(in srgb, var(--card) 92%, transparent);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 2px rgb(30 61 84 / 0.04), 0 14px 34px rgb(78 120 152 / 0.08);
+  box-shadow: 0 1px 2px rgb(16 47 73 / 0.04), 0 18px 44px rgb(26 81 112 / 0.09);
 }
 
 @utility brand-gradient {
-  background-image: linear-gradient(135deg, #4c7898 0%, #78a4cb 55%, #f9e8a2 160%);
+  background-image: linear-gradient(138deg, #0b3658 0%, #125b83 56%, #e8793c 155%);
 }
 
 @utility text-gradient {
@@ -431,5 +431,86 @@ html.high-contrast textarea:focus-visible {
   .lms-course-chevron,
   .lms-course-card {
     transition: none;
+  }
+}
+
+/* CITIS LMS presentation layer: quiet confidence, clear next actions. */
+.lms-category,
+.lms-course-card,
+.surface {
+  border-color: color-mix(in srgb, var(--primary) 14%, var(--border));
+}
+
+.lms-category {
+  background: color-mix(in srgb, var(--card) 96%, var(--secondary) 4%);
+  box-shadow: 0 12px 32px rgb(18 75 115 / 0.06);
+}
+
+.lms-category-summary {
+  min-height: 104px;
+  transition: background-color 180ms ease;
+}
+
+.lms-category-summary:hover {
+  background: color-mix(in srgb, var(--secondary) 7%, transparent);
+}
+
+.lms-category-summary > span:nth-child(2) > span:first-child,
+.lms-category-summary > span:nth-child(2) > span:nth-child(2) {
+  letter-spacing: -0.02em;
+}
+
+.lms-course-card {
+  box-shadow: 0 4px 16px rgb(18 75 115 / 0.04);
+}
+
+.lms-course-summary {
+  min-height: 62px;
+}
+
+.lms-objective {
+  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.lms-objective:hover {
+  border-color: color-mix(in srgb, var(--secondary) 55%, var(--border));
+  background: color-mix(in srgb, var(--secondary) 6%, var(--background));
+  transform: translateY(-1px);
+}
+
+.auth-shell {
+  background:
+    radial-gradient(circle at 8% 12%, rgb(92 166 177 / 0.15), transparent 30%),
+    radial-gradient(circle at 90% 82%, rgb(239 125 60 / 0.13), transparent 31%),
+    var(--background);
+}
+
+.auth-panel {
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border));
+  box-shadow: 0 26px 75px rgb(18 75 115 / 0.12);
+}
+
+.auth-brand-panel {
+  position: relative;
+  background-image:
+    radial-gradient(circle at 84% 16%, rgb(239 125 60 / 0.35), transparent 25%),
+    linear-gradient(145deg, #0a3454, #125b83 65%, #0d456a);
+}
+
+.auth-brand-panel::after {
+  position: absolute;
+  right: -10%;
+  bottom: -30%;
+  width: 70%;
+  height: 70%;
+  border: 1px solid rgb(255 255 255 / 0.18);
+  border-radius: 50%;
+  content: "";
+  transform: rotate(-18deg);
+}
+
+@media (max-width: 639px) {
+  .lms-category-summary {
+    min-height: 88px;
   }
 }
