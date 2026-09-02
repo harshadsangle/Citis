@@ -244,6 +244,20 @@ function ProgressBar({ percentage }: { percentage: number }) {
   );
 }
 
+function answerHasValue(value?: string | string[]) {
+  return Array.isArray(value) ? value.length > 0 : Boolean(value?.trim());
+}
+
+function assessmentTypeLabel(value: string) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function answerDisplay(question: AssessmentQuestion, value?: string | string[]) {
+  if (!answerHasValue(value)) return "No response";
+  const values = Array.isArray(value) ? value : [value];
+  return values.map((item) => question.options.find((option) => option.value === item)?.label || item).join(", ");
+}
+
 function CourseCard({
   progress,
   expanded,
@@ -537,11 +551,6 @@ function CourseCatalogue({
   const activeCourses = courses.filter((course) => course.state === "IN_PROGRESS").length;
   const totalModules = courses.reduce((total, course) => total + course.modules.length, 0);
 
-  function openCourse(courseId: string) {
-    setExpandedCourseId(courseId);
-    window.setTimeout(() => document.getElementById(`course-outline-${courseId}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
-  }
-
   if (learningCourseId) {
     const learningCourse = courses.find((course) => course.course.id === learningCourseId);
     if (learningCourse) return <CourseLearningView progress={learningCourse} provider={provider} onBack={() => setLearningCourseId(null)} onCompleteLesson={onCompleteLesson} />;
@@ -593,6 +602,7 @@ export default function StudentPortalPage() {
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryItem[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [activeAttempt, setActiveAttempt] = useState<AssessmentAttempt | null>(null);
+  const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [assessmentNotice, setAssessmentNotice] = useState("");
   const [assessmentBusy, setAssessmentBusy] = useState("");
@@ -725,6 +735,7 @@ export default function StudentPortalPage() {
       const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't start this assessment.");
       setActiveAttempt(body.data);
+      setActiveQuestionIndex(0);
       setAnswers(Object.fromEntries((body.data.draft_answers || []).map((draft) => [draft.question_id, draft.answer_json.value ?? ""])));
       setRemainingSeconds(body.data.expires_at ? Math.max(0, Math.ceil((new Date(body.data.expires_at).getTime() - Date.now()) / 1000)) : null);
     } catch (reason: unknown) {
@@ -886,26 +897,34 @@ export default function StudentPortalPage() {
         )}
         {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} onCompleteLesson={completeLesson} />}
         {!loading && !error && (
-          <section style={{ marginTop: 28 }}>
-            <div style={{ marginBottom: 14 }}>
-              <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Your record</p>
-              <h2 style={{ fontSize: 28, margin: "6px 0 0" }}>Assessment history</h2>
+          <section className="assessment-history-section">
+            <div className="portal-section-heading">
+              <div>
+                <p className="portal-eyebrow">Your record</p>
+                <h2>Assessment history</h2>
+              </div>
+              <span className="section-heading-note">{assessmentHistory.length} {assessmentHistory.length === 1 ? "attempt" : "attempts"}</span>
             </div>
-            {assessmentHistory.length === 0 ? <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>Your submitted assessment results will appear here.</div> : (
-              <div style={{ display: "grid", gap: 12 }}>
-                {assessmentHistory.map((item) => (
-                  <article key={item.attempt_id} style={{ alignItems: "center", background: "white", border: "1px solid #d8e2eb", borderRadius: 16, display: "flex", gap: 16, justifyContent: "space-between", padding: "17px 20px" }}>
-                    <div>
-                      <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{item.course_code} · {item.module_title}</p>
-                      <h3 style={{ fontSize: 19, margin: "6px 0 4px" }}>{item.title}</h3>
-                      <span style={{ color: "#61718a", fontSize: 13 }}>Attempt {item.attempt_number} · {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(item.submitted_at))}</span>
-                    </div>
-                    <div style={{ color: item.grading_status === "PENDING" ? "#a06b22" : item.passed === false ? "#ad5b4d" : "#0f766e", fontSize: 14, fontWeight: 700, textAlign: "right" }}>
-                      {item.grading_status === "PENDING" ? "Awaiting instructor review" : `${item.score ?? "—"}/${item.max_score ?? "—"} · ${item.passed ? "Passed" : item.passed === false ? "Not passed" : "Graded"}`}
-                      {item.grading_feedback && <p style={{ color: "#61718a", fontSize: 13, fontWeight: 400, lineHeight: 1.4, margin: "6px 0 0", maxWidth: 260 }}>{item.grading_feedback}</p>}
-                    </div>
-                  </article>
-                ))}
+            {assessmentHistory.length === 0 ? <div className="assessment-empty-state">Your submitted assessment results will appear here.</div> : (
+              <div className="assessment-history-list">
+                {assessmentHistory.map((item) => {
+                  const statusClass = item.grading_status === "PENDING" ? "is-pending" : item.passed === false ? "is-failed" : "is-passed";
+                  return (
+                    <article className="assessment-history-card" key={item.attempt_id}>
+                      <div className="assessment-history-icon" aria-hidden="true">✓</div>
+                      <div className="assessment-history-copy">
+                        <p className="assessment-history-context">{item.course_code} <span>·</span> {item.module_title}</p>
+                        <h3>{item.title}</h3>
+                        <span>Attempt {item.attempt_number} <span aria-hidden="true">·</span> {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(item.submitted_at))}</span>
+                        {item.grading_feedback && <p className="assessment-history-feedback">{item.grading_feedback}</p>}
+                      </div>
+                      <div className={`assessment-history-result ${statusClass}`}>
+                        <strong>{item.grading_status === "PENDING" ? "Review pending" : `${item.score ?? "—"}/${item.max_score ?? "—"}`}</strong>
+                        <span>{item.grading_status === "PENDING" ? "Awaiting instructor review" : item.passed ? "Passed" : item.passed === false ? "Not passed" : "Graded"}</span>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
           </section>
@@ -944,51 +963,115 @@ export default function StudentPortalPage() {
           </section>
         )}
         {!loading && !error && (
-          <section style={{ marginTop: 28 }}>
-            <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+          <section className="assessment-section">
+            <div className="portal-section-heading">
               <div>
-                <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Knowledge checks</p>
-                <h2 style={{ fontSize: 28, margin: "6px 0 0" }}>Assessments</h2>
+                <p className="portal-eyebrow">Knowledge checks</p>
+                <h2>Assessments</h2>
               </div>
-              {assessmentNotice && <span style={{ color: "#0f766e", fontSize: 14, fontWeight: 700 }}>{assessmentNotice}</span>}
+              {assessmentNotice && <span className="assessment-notice">{assessmentNotice}</span>}
             </div>
-            {activeAttempt ? (
-              <article style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, padding: "24px 26px" }}>
-                <div style={{ alignItems: "start", display: "flex", justifyContent: "space-between", gap: 18 }}>
-                  <div><p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>Attempt in progress</p><h3 style={{ fontSize: 24, margin: "7px 0" }}>{activeAttempt.assessment.title}</h3></div>
-                   {activeAttempt.status === "SUBMITTED" && <strong style={{ color: activeAttempt.grading_status === "PENDING" ? "#a06b22" : activeAttempt.passed === false ? "#ad5b4d" : "#0f766e", fontSize: 22 }}>{activeAttempt.grading_status === "PENDING" ? "Awaiting instructor review" : `${activeAttempt.score}/${activeAttempt.max_score} ${activeAttempt.passed === null ? "" : activeAttempt.passed ? "· Passed" : "· Not passed"}`}</strong>}
-                </div>
-                <div style={{ display: "grid", gap: 18, marginTop: 22 }}>
-                  {activeAttempt.questions.map((question, index) => {
-                    const selected = answers[question.id];
-                    const result = activeAttempt.results?.find((item) => item.questionId === question.id);
-                    return <div key={question.id} style={{ borderTop: index ? "1px solid #e8eef3" : 0, paddingTop: index ? 18 : 0 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}><strong>{index + 1}. {question.prompt}</strong><span style={{ color: "#61718a", fontSize: 13 }}>{question.marks} marks</span></div>
-                      {question.question_type === "SHORT_TEXT" || question.question_type === "NUMERIC" ? (
-                        <input disabled={activeAttempt.status === "SUBMITTED"} value={typeof selected === "string" ? selected : ""} onChange={(event) => setAnswer(question, event.target.value)} placeholder={question.question_type === "NUMERIC" ? "Enter a number" : "Write your answer"} style={{ border: "1px solid #d8e2eb", borderRadius: 9, color: "#12304a", font: "inherit", marginTop: 10, padding: 11, width: "100%" }} />
-                      ) : (
-                        <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-                          {question.options.map((option) => <label key={option.id} style={{ alignItems: "center", color: "#526f8c", display: "flex", gap: 9 }}><input disabled={activeAttempt.status === "SUBMITTED"} type={question.question_type === "MULTIPLE_CHOICE" ? "checkbox" : "radio"} name={question.id} checked={Array.isArray(selected) ? selected.includes(option.value) : selected === option.value} onChange={(event) => setAnswer(question, option.value, event.target.checked)} />{option.label}</label>)}
+            {activeAttempt ? (() => {
+              const questions = activeAttempt.questions;
+              const currentQuestion = questions[activeQuestionIndex] || questions[0];
+              const context = assessments.find((assessment) => assessment.id === activeAttempt.assessment.id);
+              const course = context ? courses.find((item) => item.course.id === context.course_id) : undefined;
+              const answeredCount = questions.filter((question) => answerHasValue(answers[question.id])).length;
+              const questionProgress = questions.length ? Math.round(((activeQuestionIndex + 1) / questions.length) * 100) : 0;
+              const isResult = activeAttempt.status === "SUBMITTED" || activeAttempt.status === "EXPIRED";
+              const resultTone = activeAttempt.status === "EXPIRED" ? "is-expired" : activeAttempt.grading_status === "PENDING" ? "is-pending" : activeAttempt.passed === false ? "is-failed" : "is-passed";
+              return (
+                <div className="assessment-workspace">
+                  <header className="assessment-header">
+                    <div className="assessment-header-main">
+                      <button className="assessment-back-button" onClick={() => { setActiveAttempt(null); setActiveQuestionIndex(0); }} type="button">← Back to assessments</button>
+                      <div className="assessment-header-copy">
+                        <div className="assessment-header-kicker"><span>{assessmentTypeLabel(activeAttempt.assessment.assessment_type)}</span><span>{activeAttempt.status === "IN_PROGRESS" ? "Attempt in progress" : "Attempt complete"}</span></div>
+                        <h3>{activeAttempt.assessment.title}</h3>
+                        <p>{course?.course.title || "CITIS learning portal"} {context?.module_title && <><span aria-hidden="true">·</span> {context.module_title}</>}</p>
+                      </div>
+                    </div>
+                    <div className={`assessment-status-card ${resultTone}`}>
+                      <span>{activeAttempt.status === "IN_PROGRESS" ? "Time remaining" : activeAttempt.status === "EXPIRED" ? "Attempt status" : "Assessment result"}</span>
+                      <strong>{activeAttempt.status === "IN_PROGRESS" ? (remainingSeconds === null ? "No time limit" : `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")}`) : activeAttempt.status === "EXPIRED" ? "Expired" : activeAttempt.grading_status === "PENDING" ? "Review pending" : `${activeAttempt.score ?? "—"}/${activeAttempt.max_score ?? "—"}`}</strong>
+                      <small>{activeAttempt.status === "IN_PROGRESS" ? "Save your progress as you go" : activeAttempt.grading_status === "PENDING" ? "Awaiting instructor review" : activeAttempt.passed ? "Passed" : activeAttempt.passed === false ? "Not passed" : "Graded"}</small>
+                    </div>
+                  </header>
+
+                  {isResult ? (
+                    <div className="assessment-result-screen">
+                      <div className={`assessment-result-hero ${resultTone}`}>
+                        <div className="assessment-result-icon" aria-hidden="true">{activeAttempt.status === "EXPIRED" ? "!" : activeAttempt.grading_status === "PENDING" ? "…" : activeAttempt.passed ? "✓" : "↺"}</div>
+                        <div>
+                          <span className="assessment-result-kicker">Assessment result</span>
+                          <h4>{activeAttempt.status === "EXPIRED" ? "This attempt has expired" : activeAttempt.grading_status === "PENDING" ? "Your answers are with your instructor" : activeAttempt.passed ? "Great work — you passed" : "Keep going — review and try again"}</h4>
+                          <p>{activeAttempt.status === "EXPIRED" ? "This attempt can no longer be submitted." : activeAttempt.grading_status === "PENDING" ? "Your final score will appear here after the instructor completes the review." : "Your result has been calculated by the server."}</p>
                         </div>
-                      )}
-                       {result && <span style={{ color: result.correct === null ? "#a06b22" : result.correct ? "#0f766e" : "#ad5b4d", display: "inline-block", fontSize: 13, fontWeight: 700, marginTop: 8 }}>{result.correct === null ? "Awaiting instructor review" : result.correct ? "Correct" : "Review this answer"} · {result.awardedMarks} marks</span>}
-                    </div>;
-                  })}
+                        {activeAttempt.status === "SUBMITTED" && activeAttempt.grading_status !== "PENDING" && <div className="assessment-result-score"><strong>{activeAttempt.score ?? "—"}</strong><span>of {activeAttempt.max_score ?? "—"} marks</span></div>}
+                      </div>
+                      {assessmentNotice && <div className="assessment-alert" role="status">{assessmentNotice}</div>}
+                      <div className="assessment-review-heading"><div><span className="assessment-result-kicker">Answer review</span><h4>Question feedback</h4></div><span>{questions.length} {questions.length === 1 ? "question" : "questions"}</span></div>
+                      <div className="assessment-review-list">
+                        {questions.map((question, index) => {
+                          const selected = answers[question.id];
+                          const result = activeAttempt.results?.find((item) => item.questionId === question.id);
+                          const reviewClass = result?.correct === true ? "is-correct" : result?.correct === false ? "is-incorrect" : "is-pending";
+                          return (
+                            <article className={`assessment-review-item ${reviewClass}`} key={question.id}>
+                              <div className="assessment-review-number">{String(index + 1).padStart(2, "0")}</div>
+                              <div className="assessment-review-copy"><h5>{question.prompt}</h5><p><strong>Your response:</strong> {answerDisplay(question, selected)}</p></div>
+                              <div className="assessment-review-mark"><strong>{result ? `${result.awardedMarks}/${question.marks}` : "—"}</strong><span>{result?.correct === true ? "Correct" : result?.correct === false ? "Review" : "Pending"}</span></div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                      <button className="assessment-secondary-button assessment-result-back" onClick={() => { setActiveAttempt(null); setActiveQuestionIndex(0); }} type="button">Back to assessments</button>
+                    </div>
+                  ) : (
+                    <div className="assessment-take-layout">
+                      <aside className="assessment-progress-panel">
+                        <div className="assessment-progress-heading"><div><span>Progress</span><strong>{activeQuestionIndex + 1} <small>of {questions.length}</small></strong></div><span>{answeredCount} answered</span></div>
+                        <div className="assessment-progress-track"><div style={{ width: `${questionProgress}%` }} /></div>
+                        <div className="assessment-question-map" aria-label="Question navigation">
+                          {questions.map((question, index) => <button className={`${index === activeQuestionIndex ? "is-current" : ""} ${answerHasValue(answers[question.id]) ? "is-answered" : ""}`} key={question.id} onClick={() => setActiveQuestionIndex(index)} aria-label={`Go to question ${index + 1}`} type="button">{index + 1}</button>)}
+                        </div>
+                        <div className="assessment-progress-tip"><span aria-hidden="true">✦</span><p>Your answers save automatically while you work.</p></div>
+                      </aside>
+                      <div className="assessment-question-area">
+                        <div className="assessment-question-topline"><span>Question {activeQuestionIndex + 1} of {questions.length}</span><span>{currentQuestion.marks} {currentQuestion.marks === 1 ? "mark" : "marks"}</span></div>
+                        <article className="assessment-question-card">
+                          <div className="assessment-question-heading"><span className="assessment-question-number">{String(activeQuestionIndex + 1).padStart(2, "0")}</span><div><span className="assessment-question-type">{currentQuestion.question_type === "MULTIPLE_CHOICE" ? "Select all that apply" : currentQuestion.question_type === "SINGLE_CHOICE" || currentQuestion.question_type === "TRUE_FALSE" ? "Select one answer" : "Write your answer"}</span><h4>{currentQuestion.prompt}</h4></div></div>
+                          {currentQuestion.question_type === "SHORT_TEXT" || currentQuestion.question_type === "NUMERIC" ? (
+                            <div className="assessment-text-answer"><label htmlFor={`assessment-answer-${currentQuestion.id}`}>{currentQuestion.question_type === "NUMERIC" ? "Enter a number" : "Write your response"}</label><input id={`assessment-answer-${currentQuestion.id}`} disabled={activeAttempt.status !== "IN_PROGRESS"} value={typeof answers[currentQuestion.id] === "string" ? answers[currentQuestion.id] as string : ""} onChange={(event) => setAnswer(currentQuestion, event.target.value)} placeholder={currentQuestion.question_type === "NUMERIC" ? "e.g. 85" : "Type your answer here…"} /></div>
+                          ) : (
+                            <div className="assessment-options">
+                              {currentQuestion.options.map((option) => {
+                                const selected = Array.isArray(answers[currentQuestion.id]) ? (answers[currentQuestion.id] as string[]).includes(option.value) : answers[currentQuestion.id] === option.value;
+                                return <label className={`assessment-option ${selected ? "is-selected" : ""}`} key={option.id}><input disabled={activeAttempt.status !== "IN_PROGRESS"} type={currentQuestion.question_type === "MULTIPLE_CHOICE" ? "checkbox" : "radio"} name={currentQuestion.id} checked={selected} onChange={(event) => setAnswer(currentQuestion, option.value, event.target.checked)} /><span className="assessment-option-control" aria-hidden="true">{selected ? "✓" : ""}</span><span className="assessment-option-label">{option.label}</span></label>;
+                              })}
+                            </div>
+                          )}
+                        </article>
+                        {assessmentNotice && <div className="assessment-alert" role="status">{assessmentNotice}</div>}
+                        <div className="assessment-navigation">
+                          <button className="assessment-secondary-button" disabled={activeQuestionIndex === 0} onClick={() => setActiveQuestionIndex((index) => Math.max(0, index - 1))} type="button">← <span>Previous</span></button>
+                          <div><span>{answeredCount} of {questions.length} answered</span>{activeQuestionIndex === questions.length - 1 ? <button className="assessment-primary-button" onClick={() => void submitAssessment()} disabled={assessmentBusy === activeAttempt.id || remainingSeconds === 0} type="button">{assessmentBusy === activeAttempt.id ? "Submitting…" : "Submit assessment"} <span aria-hidden="true">✓</span></button> : <button className="assessment-primary-button" onClick={() => setActiveQuestionIndex((index) => Math.min(questions.length - 1, index + 1))} type="button">Next question <span aria-hidden="true">→</span></button>}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                {activeAttempt.status === "IN_PROGRESS" && <div style={{ alignItems: "center", display: "flex", gap: 14, marginTop: 22 }}>
-                  <strong style={{ color: remainingSeconds !== null && remainingSeconds < 60 ? "#ad5b4d" : "#61718a" }}>
-                    {remainingSeconds === null ? "No time limit" : `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, "0")} remaining`}
-                  </strong>
-                  <button onClick={() => void submitAssessment()} disabled={assessmentBusy === activeAttempt.id || remainingSeconds === 0} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, padding: "11px 16px" }} type="button">{assessmentBusy === activeAttempt.id ? "Submitting…" : "Submit assessment"}</button>
-                </div>}
-                {(activeAttempt.status === "SUBMITTED" || activeAttempt.status === "EXPIRED") && <button onClick={() => setActiveAttempt(null)} style={{ background: "transparent", border: "1px solid #c9d7e2", borderRadius: 9, color: "#12304a", cursor: "pointer", fontWeight: 700, marginTop: 22, padding: "10px 14px" }} type="button">Back to assessments</button>}
-              </article>
-            ) : assessments.length === 0 ? <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>No published assessments are waiting for you.</div> : (
-              <div style={{ display: "grid", gap: 16 }}>
-                {assessments.map((assessment) => <article key={assessment.id} style={{ alignItems: "center", background: "white", border: "1px solid #d8e2eb", borderRadius: 16, display: "flex", gap: 16, justifyContent: "space-between", padding: "18px 20px" }}>
-                  <div><p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{assessment.module_title} · {assessment.assessment_type.replaceAll("_", " ")}</p><h3 style={{ fontSize: 20, margin: "6px 0" }}>{assessment.title}</h3><span style={{ color: "#61718a", fontSize: 14 }}>{assessment.total_marks ?? "—"} marks · {assessment.attempt_limit ? `${assessment.attempt_limit} attempt${assessment.attempt_limit === 1 ? "" : "s"}` : "Attempts allowed"}</span></div>
-                  <button onClick={() => void startAssessment(assessment)} disabled={Boolean(assessmentBusy)} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, padding: "11px 16px" }} type="button">{assessmentBusy === assessment.id ? "Starting…" : "Start assessment"}</button>
-                </article>)}
+              );
+            })() : assessments.length === 0 ? <div className="assessment-empty-state">No published assessments are waiting for you.</div> : (
+              <div className="assessment-list">
+                {assessments.map((assessment) => {
+                  const course = courses.find((item) => item.course.id === assessment.course_id);
+                  return <article className="assessment-list-card" key={assessment.id}>
+                    <div className="assessment-list-icon" aria-hidden="true">✦</div>
+                    <div className="assessment-list-copy"><div className="assessment-list-context"><span>{assessmentTypeLabel(assessment.assessment_type)}</span><span>{assessment.module_title || course?.course.title || "CITIS course"}</span></div><h3>{assessment.title}</h3><p>{assessment.description || "Check your understanding and keep your learning momentum moving."}</p><div className="assessment-list-meta"><span><strong>{assessment.total_marks ?? "—"}</strong> marks</span><span><strong>{assessment.attempt_limit ?? "∞"}</strong> attempts</span></div></div>
+                    <button className="assessment-primary-button" onClick={() => void startAssessment(assessment)} disabled={Boolean(assessmentBusy)} type="button">{assessmentBusy === assessment.id ? "Starting…" : "Start assessment"} <span aria-hidden="true">→</span></button>
+                  </article>;
+                })}
               </div>
             )}
           </section>
