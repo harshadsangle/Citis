@@ -96,7 +96,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
   letter-spacing: -.075em !important; line-height: .98 !important; margin: 17px 0 19px !important;
 }
 .portal-hero h1 em { color: #267d76; font-style: normal; }
-.portal-hero-copy > p { color: #5f7890; font-size: 17px; line-height: 1.7; margin: 0; max-width: 620px; }
+.portal-hero-copy > p { color: #5f7890; font-size: 17px; line-height: 1.55; margin: 0; max-width: 620px; }
 .student-shell .portal-hero-card {
   align-self: end; background: linear-gradient(145deg, #123f60 0%, #1b6577 100%) !important;
   border: 0 !important; border-radius: 24px !important; box-shadow: 0 20px 40px rgb(18 63 96 / .18) !important;
@@ -120,7 +120,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .course-catalogue { margin-top: 10px; scroll-margin-top: 20px; }
 .catalogue-heading { align-items: end; display: flex; gap: 24px; justify-content: space-between; }
 .catalogue-heading h2 { color: #0a3454 !important; font-size: clamp(30px, 4vw, 43px) !important; letter-spacing: -.06em; margin: 10px 0 8px !important; }
-.catalogue-heading p { color: #668399; line-height: 1.6; margin: 0; max-width: 620px; }
+.catalogue-heading p { color: #668399; line-height: 1.5; margin: 0; max-width: 620px; }
 .catalogue-total {
   align-items: flex-end; background: #fff; border: 1px solid #d3e1e8; border-radius: 18px; display: flex;
   flex-direction: column; min-width: 145px; padding: 16px 18px;
@@ -214,7 +214,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .course-detail-close { background: #edf4f5 !important; border: 0 !important; border-radius: 50% !important; color: #267d76 !important; font-size: 22px !important; height: 31px; min-height: 31px !important; padding: 0 !important; width: 31px; }
 .course-detail-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 21px; }
 .course-detail-section { background: #f7fafb; border: 1px solid #e1ecef; border-radius: 13px; padding: 16px; }
-.course-detail-section p { color: #5f7890; font-size: 13px; line-height: 1.6; margin: 9px 0 0; }
+.course-detail-section p { color: #5f7890; font-size: 13px; line-height: 1.5; margin: 9px 0 0; }
 .course-detail-overview { grid-column: 1 / -1; }
 .course-detail-intro { color: #7790a2 !important; font-size: 12px !important; margin-bottom: 7px !important; }
 .course-bullet-list { display: grid; gap: 8px; list-style: none; margin: 12px 0 0; padding: 0; }
@@ -268,7 +268,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .learning-course-heading-topline { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; }
 .learning-course-code { color: #8aa0b0; display: block; font-size: 10px; font-weight: 800; letter-spacing: .12em; margin-top: 17px; text-transform: uppercase; }
 .learning-course-heading h2 { color: #0a3454 !important; font-size: clamp(28px, 4vw, 46px) !important; letter-spacing: -.065em; line-height: 1.05; margin: 8px 0 10px !important; }
-.learning-course-heading p { color: #5f7890; font-size: 14px; line-height: 1.6; margin: 0; max-width: 690px; }
+.learning-course-heading p { color: #5f7890; font-size: 14px; line-height: 1.5; margin: 0; max-width: 690px; }
 .learning-header-progress { background: #fff; border: 1px solid #d3e4e6; border-radius: 17px; padding: 17px; }
 .learning-header-progress-topline, .learning-header-progress-bottomline { align-items: center; display: flex; justify-content: space-between; }
 .learning-header-progress-topline { color: #668399; font-size: 11px; font-weight: 800; }
@@ -315,9 +315,9 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 }
 .lesson-article-kicker { color: #a4603d; font-size: 11px; font-weight: 850; letter-spacing: .15em; text-transform: uppercase; }
 .lesson-article h3 { color: #0a3454 !important; font-size: clamp(30px, 5vw, 52px) !important; letter-spacing: -.07em; line-height: 1.04; margin: 14px 0 13px !important; }
-.lesson-lede { color: #4f7189; font-size: 17px; line-height: 1.7; margin: 0; max-width: 720px; }
+.lesson-lede { color: #4f7189; font-size: 17px; line-height: 1.55; margin: 0; max-width: 720px; }
 .lesson-content-card { background: #f5f9fa; border-left: 3px solid #5ca6b1; border-radius: 0 15px 15px 0; margin-top: 30px; padding: 21px 23px; }
-.lesson-content-card p { color: #5f7890; font-size: 14px; line-height: 1.8; margin: 10px 0 0; }
+.lesson-content-card p { color: #5f7890; font-size: 14px; line-height: 1.6; margin: 10px 0 0; }
 .lesson-content-card p + p { margin-top: 13px; }
 .lesson-completion-card { align-items: center; background: #fffaf2; border: 1px solid #f1d8b8; border-radius: 15px; display: flex; gap: 13px; margin-top: 23px; padding: 15px 16px; }
 .lesson-completion-card.is-completed { background: #eff9f5; border-color: #c5e5dc; }
@@ -490,6 +490,14 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .assessment-list-context span + span::before { color: #c0ced3; content: "/"; margin-right: 7px; }
 .assessment-list-copy h3 { color: #123f60 !important; font-size: 19px !important; letter-spacing: -.035em; margin: 7px 0 5px !important; }
 .assessment-list-copy p { color: #668399; font-size: 12px; line-height: 1.5; margin: 0; max-width: 690px; }
+
+/* Keep portal copy compact at every breakpoint while preserving section spacing. */
+.student-shell { line-height: 1.45; }
+.student-shell p { line-height: 1.5; }
+.student-shell li { line-height: 1.4; }
+.student-shell h1, .student-shell h2, .student-shell h3, .student-shell h4, .student-shell h5, .student-shell h6 { line-height: 1.1; }
+.student-shell .portal-hero h1 { line-height: .98 !important; }
+.student-shell .lesson-article h3 { line-height: 1.04 !important; }
 .assessment-list-meta { display: flex; gap: 13px; margin-top: 11px; }
 .assessment-list-meta span { color: #8aa0b0; font-size: 10px; font-weight: 800; }
 .assessment-list-meta strong { color: #267d76; font-size: 12px; margin-right: 3px; }

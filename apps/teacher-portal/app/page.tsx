@@ -1313,7 +1313,8 @@ export default function TeacherPortalPage() {
          :root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #173450; background: #f6f9fd; font-synthesis: none; }
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
-        body { margin: 0; min-width: 320px; }
+        body { margin: 0; min-width: 320px; line-height: 1.45; }
+        h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
         button, input { font: inherit; }
         button { cursor: pointer; }
         button:disabled { cursor: not-allowed; opacity: .52; }
@@ -1350,7 +1351,7 @@ export default function TeacherPortalPage() {
         .eyebrow { margin: 0; color: #3e8b9a; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
         h1, h2, p { margin: 0; }
         h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-spacing: -.045em; }
-        .intro { max-width: 620px; margin-top: 10px; color: #71829a; font-size: 13px; line-height: 1.7; }
+        .intro { max-width: 620px; margin-top: 10px; color: #71829a; font-size: 13px; line-height: 1.5; }
         .primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 41px; padding: 0 17px; border: 1px solid transparent; border-radius: 8px; font-size: 12px; font-weight: 800; transition: .18s ease; }
         .primary-button { color: #07335c; background: #78dcd0; box-shadow: 0 8px 18px #78dcd044; }
         .primary-button:hover:not(:disabled) { background: #65d0c3; transform: translateY(-1px); }
@@ -1380,7 +1381,7 @@ export default function TeacherPortalPage() {
         .panel { overflow: hidden; border: 1px solid #e1e9f2; border-radius: 11px; background: #fff; box-shadow: 0 8px 26px #1a4c770d; }
         .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 22px 24px 19px; border-bottom: 1px solid #edf1f6; }
         .panel-heading h2 { margin-top: 7px; color: #18385e; font-size: 17px; letter-spacing: -.03em; }
-        .panel-copy { margin-top: 7px; color: #8293a5; font-size: 11px; line-height: 1.6; }
+        .panel-copy { margin-top: 7px; color: #8293a5; font-size: 11px; line-height: 1.5; }
         .count-badge { display: grid; place-items: center; min-width: 31px; height: 31px; padding: 0 9px; border-radius: 9px; color: #238877; background: #eaf9f5; font-size: 12px; font-weight: 800; }
         .warm-badge { color: #ad7835; background: #fff4e1; }
         .course-list { padding: 7px 0; }
@@ -1426,7 +1427,7 @@ export default function TeacherPortalPage() {
         .state { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 190px; padding: 30px; color: #70849a; }
         .state.compact { min-height: 145px; justify-content: flex-start; }
         .state strong { display: block; color: #244669; font-size: 12px; }
-        .state p { max-width: 390px; margin-top: 7px; font-size: 10px; line-height: 1.6; }
+        .state p { max-width: 390px; margin-top: 7px; font-size: 10px; line-height: 1.5; }
         .state-icon { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; border-radius: 50%; color: #197d83; background: #e5f7f4; font-size: 17px; font-weight: 800; }
         .success-icon { color: #299674; background: #e5f7f0; }
          .error-icon { color: #bd5f5f; background: #fff0f0; }
@@ -1501,7 +1502,7 @@ export default function TeacherPortalPage() {
         .text-button:hover:not(:disabled) { color: #0c669b; }
         .text-button.strong { color: #258d7a; }
          .danger-text { color: #b56e67; }
-         .assignment-description { display: -webkit-box; overflow: hidden; margin: 0 17px; color: #71859a; font-size: 10px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+          .assignment-description { display: -webkit-box; overflow: hidden; margin: 0 17px; color: #71859a; font-size: 10px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
          .assignment-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 11px 17px; border-top: 1px solid #edf1f6; background: #fff; }
          .submission-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 0; border: 0; color: #52708b; background: transparent; font-size: 10px; font-weight: 800; }
          .submission-toggle span { display: inline-grid; place-items: center; min-width: 19px; height: 19px; border-radius: 6px; color: #267d76; background: #e7f7f3; font-size: 9px; }
@@ -1532,7 +1533,7 @@ export default function TeacherPortalPage() {
          .submission-detail { padding: 13px 0; border-bottom: 1px solid #edf1f6; }
          .submission-detail:last-child { border-bottom: 0; }
          .submission-detail-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-         .submission-detail > p { max-height: 85px; overflow: auto; margin: 10px 0 0 39px; color: #526f8c; font-size: 10px; line-height: 1.55; white-space: pre-wrap; }
+          .submission-detail > p { max-height: 85px; overflow: auto; margin: 10px 0 0 39px; color: #526f8c; font-size: 10px; line-height: 1.5; white-space: pre-wrap; }
          .submission-detail > a { display: inline-block; margin: 8px 0 0 39px; color: #0874a4; font-size: 9px; font-weight: 800; text-decoration: none; }
          .submission-detail > a:hover { text-decoration: underline; }
          .graded-summary { display: flex; align-items: flex-start; gap: 9px; margin: 10px 0 0 39px; padding: 8px 10px; border-radius: 6px; color: #617c8c; background: #eef9f6; font-size: 9px; line-height: 1.45; }
@@ -1546,7 +1547,7 @@ export default function TeacherPortalPage() {
         .submission-course strong { color: #315575; font-size: 11px; }
         .submission-course small { margin-top: 4px; color: #92a2b1; font-size: 9px; }
         .submission-body { padding: 15px 17px; }
-        .submission-body p { max-height: 100px; overflow: auto; color: #526f8c; font-size: 11px; line-height: 1.6; white-space: pre-wrap; }
+        .submission-body p { max-height: 100px; overflow: auto; color: #526f8c; font-size: 11px; line-height: 1.5; white-space: pre-wrap; }
         .submission-body a { display: inline-block; margin-top: 9px; color: #0874a4; font-size: 10px; font-weight: 800; text-decoration: none; }
         .grade-bar { display: flex; align-items: flex-end; gap: 10px; padding: 13px 17px 16px; border-top: 1px solid #edf1f6; background: #fff; }
         .grade-bar label { display: grid; gap: 6px; min-width: 110px; color: #71859a; font-size: 9px; font-weight: 800; }
@@ -1565,7 +1566,7 @@ export default function TeacherPortalPage() {
          .assessment-meta { display: grid; gap: 5px; }
          .assessment-meta small { color: #8b9baa; font-size: 9px; }
          .assessment-actions { display: flex; justify-content: flex-end; gap: 10px; }
-         .assessment-description { display: -webkit-box; overflow: hidden; margin: 0 17px; color: #71859a; font-size: 10px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+          .assessment-description { display: -webkit-box; overflow: hidden; margin: 0 17px; color: #71859a; font-size: 10px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
          .assessment-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 11px 17px; border-top: 1px solid #edf1f6; background: #fff; }
          .assessment-attempt-summary, .attempts-caption { color: #9a7a50; font-size: 9px; font-weight: 700; }
          .assessment-details { padding: 16px 17px 18px; border-top: 1px solid #edf1f6; background: #f8fbfd; }
@@ -1769,7 +1770,7 @@ export default function TeacherPortalPage() {
           .assignment-list, .assessment-list, .submission-list { padding-top: 19px; }
           .assignment-card-main, .assessment-card-main { padding: 18px 18px 13px; }
           .assignment-title strong, .assessment-title strong { font-size: 12px; }
-          .assignment-description, .assessment-description { color: #607a8c; font-size: 11px; line-height: 1.65; }
+          .assignment-description, .assessment-description { color: #607a8c; font-size: 11px; line-height: 1.5; }
           .assignment-footer, .assessment-footer { padding: 12px 18px; }
           .submission-card { border-radius: 14px; }
           .submission-heading { padding: 18px; }

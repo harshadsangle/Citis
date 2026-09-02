@@ -333,6 +333,64 @@ button, a, input, textarea, select {
   }
 }
 
+/* Compact, readable type scale shared by every marketing and LMS view. */
+body {
+  line-height: 1.45;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  line-height: 1.1;
+}
+
+p,
+li,
+dd,
+dt,
+blockquote {
+  line-height: 1.5;
+}
+
+.leading-tight {
+  line-height: 1.15;
+}
+
+.leading-snug {
+  line-height: 1.2;
+}
+
+.leading-relaxed {
+  line-height: 1.5;
+}
+
+.leading-loose {
+  line-height: 1.65;
+}
+
+.leading-6 {
+  line-height: 1.4;
+}
+
+.leading-7 {
+  line-height: 1.5;
+}
+
+.leading-8 {
+  line-height: 1.6;
+}
+
+.leading-9 {
+  line-height: 1.65;
+}
+
+.leading-10 {
+  line-height: 1.7;
+}
+
 /* High-contrast accessibility mode (local toggle, no external a11y service) */
 html.high-contrast {
   --background: #ffffff;

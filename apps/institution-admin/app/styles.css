@@ -39,7 +39,7 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .eyebrow { color: #3e8b9a; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
 h1, h2, p { margin: 0; }
 h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-spacing: -.04em; }
-.page-heading p { max-width: 580px; margin-top: 10px; color: #71829a; font-size: 13px; line-height: 1.7; }
+.page-heading p { max-width: 580px; margin-top: 10px; color: #71829a; font-size: 13px; line-height: 1.5; }
 .primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 41px; padding: 0 17px; border: 1px solid transparent; border-radius: 8px; font-size: 12px; font-weight: 800; transition: .18s ease; }
 .primary-button { color: #07335c; background: #78dcd0; box-shadow: 0 8px 18px #78dcd044; }
 .primary-button:hover { background: #65d0c3; transform: translateY(-1px); }
@@ -92,7 +92,7 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 .order-controls button:hover:not(:disabled) { border-color: #9bcac6; color: #157f87; background: #f1fffc; }
 .state-box { display: flex; align-items: center; justify-content: center; gap: 15px; min-height: 275px; padding: 30px; color: #70849a; text-align: left; }
 .state-box strong { display: block; color: #244669; font-size: 13px; }
-.state-box p { max-width: 380px; margin-top: 7px; font-size: 11px; line-height: 1.6; }
+.state-box p { max-width: 380px; margin-top: 7px; font-size: 11px; line-height: 1.5; }
 .state-box a, .text-button { display: inline-block; margin-top: 10px; padding: 0; border: 0; color: #0874a4; background: transparent; font-size: 11px; font-weight: 800; text-decoration: none; }
 .state-symbol { display: grid; place-items: center; flex: 0 0 32px; width: 32px; height: 32px; border-radius: 50%; color: #c87562; background: #fff0ec; font-size: 17px; font-weight: 800; }
 .state-symbol.soft { color: #197d83; background: #e5f7f4; }
@@ -106,7 +106,7 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 .modal-heading { display: flex; justify-content: space-between; gap: 20px; }
 .modal h2 { margin-top: 7px; color: #14375f; font-size: 21px; letter-spacing: -.035em; }
 .close-button { align-self: flex-start; width: 28px; height: 28px; border: 0; color: #7590a8; background: #f2f6fa; border-radius: 7px; font-size: 20px; line-height: 1; }
-.modal-intro { margin: 11px 0 21px; color: #8193a6; font-size: 10px; line-height: 1.6; }
+.modal-intro { margin: 11px 0 21px; color: #8193a6; font-size: 10px; line-height: 1.5; }
 .modal-intro span { color: #d57d6a; }
 .modal form { display: grid; gap: 15px; }
 .modal label { display: grid; gap: 7px; color: #506c88; font-size: 10px; font-weight: 800; }
@@ -121,7 +121,7 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 .relationship-panel { min-height: 360px; overflow: hidden; border: 1px solid #e1e9f2; border-radius: 11px; background: #fff; box-shadow: 0 8px 26px #1a4c770d; }
 .relationship-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding: 25px 26px 22px; border-bottom: 1px solid #edf1f6; }
 .relationship-heading h2 { margin-top: 7px; color: #18385e; font-size: 19px; letter-spacing: -.03em; }
-.relationship-heading p { max-width: 650px; margin-top: 8px; color: #8293a5; font-size: 11px; line-height: 1.6; }
+.relationship-heading p { max-width: 650px; margin-top: 8px; color: #8293a5; font-size: 11px; line-height: 1.5; }
 .relationship-heading p strong { color: #4d6986; }
 .relationship-count { display: grid; flex: 0 0 70px; place-items: center; width: 70px; height: 70px; border: 1px solid #dcefe9; border-radius: 12px; color: #399988; background: #f1fcf9; }
 .relationship-count strong { font-size: 22px; letter-spacing: -.04em; }
@@ -274,3 +274,14 @@ h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Keep admin copy compact enough for scanning without changing panel spacing. */
+body { line-height: 1.45; }
+h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
+.page-heading p,
+.state-box p,
+.modal-intro,
+.relationship-heading p,
+.relationship-empty p,
+.relationship-alert p,
+.submission-copy { line-height: 1.5; }
