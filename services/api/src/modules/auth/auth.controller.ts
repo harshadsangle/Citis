@@ -25,7 +25,6 @@ export class AuthController {
   }
 
   @Post("logout")
-  @UseGuards(AuthGuard)
   @HttpCode(200)
   async logout(@Req() request: ContextRequest, @Res({ passthrough: true }) response: Response) {
     const token = AuthGuard.tokenFrom(request);

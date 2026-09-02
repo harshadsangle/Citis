@@ -184,6 +184,7 @@ export default function InstitutionAdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const [provider] = useState<LmsCourseProvider | null>(() => normalizeLmsCourseProvider(
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("provider"),
   ));
@@ -266,6 +267,22 @@ export default function InstitutionAdminPage() {
     if (kind === "programmes") {
       setTrail([]);
       setIds({ programmeId: "", courseId: "", moduleId: "", lessonId: "" });
+    }
+  }
+
+  async function logout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/v1/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+    } catch {
+      // Continue to the login screen even if the network is already down.
+    } finally {
+      window.location.assign("/auth/login");
     }
   }
 
@@ -530,6 +547,7 @@ export default function InstitutionAdminPage() {
             <span className="environment-pill"><span className="online-dot" /> Connected workspace</span>
             <button className="icon-button" type="button" aria-label="Notifications">♢<span className="notification-dot" /></button>
             <a className="help-link" href="/auth/login">Need help?</a>
+            <button className="help-link" type="button" onClick={() => void logout()} disabled={loggingOut}>{loggingOut ? "Signing out…" : "Sign out"}</button>
           </div>
         </header>
 

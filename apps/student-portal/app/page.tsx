@@ -175,6 +175,7 @@ export default function StudentPortalPage() {
   const [providerReady, setProviderReady] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     setProvider(normalizeLmsCourseProvider(new URLSearchParams(window.location.search).get("provider")));
@@ -229,6 +230,22 @@ export default function StudentPortalPage() {
       active = false;
     };
   }, [provider, providerReady]);
+
+  async function logout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/v1/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+    } catch {
+      // Continue to the login screen even if the network is already down.
+    } finally {
+      window.location.assign("/auth/login");
+    }
+  }
 
   async function downloadCertificate(certificate: Certificate) {
     setCertificateBusy(certificate.id);
@@ -389,7 +406,12 @@ export default function StudentPortalPage() {
             <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", letterSpacing: "-0.04em", margin: 0 }}>{provider ? `${providerLabel(provider)} learning progress` : "Your learning progress"}</h1>
             <p style={{ color: "#61718a", fontSize: 17, lineHeight: 1.6, margin: "12px 0 0", maxWidth: 620 }}>See how far you have progressed across your enrolled CITIS courses. Lesson and assessment completion updates this view automatically.</p>
           </div>
-          <div style={{ background: "#fff4c2", borderRadius: 16, color: "#795b00", fontSize: 14, padding: "14px 18px", whiteSpace: "nowrap" }}>Progress dashboard</div>
+           <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
+             <div style={{ background: "#fff4c2", borderRadius: 16, color: "#795b00", fontSize: 14, padding: "14px 18px", whiteSpace: "nowrap" }}>Progress dashboard</div>
+             <button onClick={() => void logout()} disabled={loggingOut} style={{ background: "white", border: "1px solid #c9d7e2", borderRadius: 12, color: "#12304a", cursor: loggingOut ? "wait" : "pointer", font: "inherit", fontSize: 14, fontWeight: 700, padding: "13px 16px" }} type="button">
+               {loggingOut ? "Signing out…" : "Sign out"}
+             </button>
+           </div>
         </header>
 
         {loading && <section style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, padding: 28 }}>Loading your courses…</section>}

@@ -137,13 +137,20 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
     setServerError("");
     try {
       await authService.login(values.email, values.password);
-      const response = await authService.me();
-      if (!canAccessLmsPortal(response.data, portal)) {
-        const availablePortal = firstAvailableLmsPortal(response.data);
-        const availableCopy = availablePortal ? ` This account belongs in the ${LMS_PORTALS[availablePortal].label}.` : "";
-        throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
+      try {
+        const response = await authService.me();
+        if (!canAccessLmsPortal(response.data, portal)) {
+          const availablePortal = firstAvailableLmsPortal(response.data);
+          const availableCopy = availablePortal ? ` This account belongs in the ${LMS_PORTALS[availablePortal].label}.` : "";
+          throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
+        }
+        window.location.assign(`/lms?portal=${portal}${provider ? `&provider=${provider}` : ""}`);
+      } catch (error) {
+        // Do not leave a valid session behind when role validation or the
+        // follow-up session check fails.
+        await authService.logout().catch(() => undefined);
+        throw error;
       }
-       window.location.assign(`/lms?portal=${portal}${provider ? `&provider=${provider}` : ""}`);
     } catch (error) { setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again."); }
   };
   return (

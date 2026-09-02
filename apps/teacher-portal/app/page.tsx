@@ -447,6 +447,7 @@ export default function TeacherPortalPage() {
   const [assessmentDetailLoading, setAssessmentDetailLoading] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
 
   async function loadDashboard(showRefresh = false) {
     if (showRefresh) setRefreshing(true);
@@ -532,6 +533,22 @@ export default function TeacherPortalPage() {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  }
+
+  async function logout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/v1/auth/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+    } catch {
+      // Continue to the login screen even if the network is already down.
+    } finally {
+      window.location.assign("/auth/login");
     }
   }
 
@@ -1046,7 +1063,7 @@ export default function TeacherPortalPage() {
         <section className="workspace">
           <header className="topbar">
             <div className="mobile-brand"><div className="brand-mark">C</div><strong>CITIS Teaching</strong></div>
-            <div className="topbar-right"><span className="live-label"><i />Secure workspace</span><button className="help-link" type="button" onClick={() => setNotice("Need help? Contact your institution administrator.")}>Help</button></div>
+            <div className="topbar-right"><span className="live-label"><i />Secure workspace</span><button className="help-link" type="button" onClick={() => setNotice("Need help? Contact your institution administrator.")}>Help</button><button className="help-link" type="button" onClick={() => void logout()} disabled={loggingOut}>{loggingOut ? "Signing out…" : "Sign out"}</button></div>
           </header>
 
           <div className="content">
