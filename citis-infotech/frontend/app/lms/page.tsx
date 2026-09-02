@@ -99,7 +99,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
             const providerLogo = normalizeLmsCourseProvider(category.id);
             if (!providerLogo) return null;
             return (
-            <details key={category.id} className="lms-category surface overflow-hidden rounded-3xl" open>
+            <details key={category.id} className="lms-category surface overflow-hidden rounded-3xl">
               <summary className="lms-category-summary flex items-center gap-4 p-5 sm:gap-6 sm:p-7">
                 <ProviderLogo provider={providerLogo} />
                 <span className="min-w-0 flex-1">
