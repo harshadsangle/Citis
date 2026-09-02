@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ArrowRight, BriefcaseBusiness, CheckCircle2, ChevronDown, GraduationCap, Layers3 } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, ChevronDown, GraduationCap, Layers3 } from "lucide-react";
+import { DOCX_COURSE_DETAILS, type DocxCourseDetails } from "@/lib/professional-course-details";
 import { PROFESSIONAL_PROGRAMS, SPECIALIZATIONS, type LmsProfessionalOffering } from "@/lib/professional-programs";
 
-function DisplayList({ items }: { items: string[] }) {
+function DisplayList({ items }: { items: readonly string[] }) {
   return (
     <span className="flex flex-wrap gap-x-2 gap-y-1">
       {items.map((item, index) => (
@@ -15,7 +16,21 @@ function DisplayList({ items }: { items: string[] }) {
   );
 }
 
+function DetailBlock({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="font-semibold text-foreground">{label}</p>
+      <div className="mt-1.5">{children}</div>
+    </div>
+  );
+}
+
 function OfferingCard({ offering }: { offering: LmsProfessionalOffering }) {
+  const details: DocxCourseDetails | undefined = DOCX_COURSE_DETAILS[offering.id];
+  if (!details) {
+    throw new Error(`Missing DOCX course details for ${offering.id}`);
+  }
+
   return (
     <details id={offering.id} className="group scroll-mt-28 rounded-3xl border border-border/80 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
       <summary className="flex cursor-pointer list-none items-start gap-4 px-5 py-5 sm:px-7 sm:py-6 [&::-webkit-details-marker]:hidden">
@@ -25,33 +40,38 @@ function OfferingCard({ offering }: { offering: LmsProfessionalOffering }) {
         <span className="min-w-0 flex-1">
           <span className="block text-[11px] font-bold tracking-[0.16em] text-primary uppercase">{offering.type}</span>
           <span className="mt-1 block font-heading text-lg font-semibold leading-7 text-foreground sm:text-xl">{offering.title}</span>
-          <span className="mt-3 block text-sm font-semibold text-muted-foreground">270 Hours <span className="px-1 text-primary/50">|</span> 18 Credits <span className="px-1 text-primary/50">|</span> 6 Modules</span>
+            <span className="mt-3 block text-sm font-semibold text-muted-foreground">{details.modules}</span>
         </span>
         <ChevronDown className="mt-2 size-5 shrink-0 text-primary transition-transform group-open:rotate-180" />
       </summary>
 
       <div className="border-t border-border/70 px-5 py-6 sm:px-7 sm:py-7">
         <div className="space-y-5 text-sm leading-7 text-muted-foreground">
-          <div>
-            <p className="font-semibold text-foreground">Build expertise in:</p>
-            <p className="mt-1.5"><DisplayList items={offering.buildExpertise} /></p>
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">You will learn:</p>
-            <p className="mt-1.5"><DisplayList items={offering.youWillLearn} /></p>
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">Industry Opportunities:</p>
-            <p className="mt-1.5"><DisplayList items={offering.industryOpportunities} /></p>
-          </div>
-          <div>
-            <p className="font-semibold text-foreground">Career Pathways:</p>
-            <p className="mt-1.5"><DisplayList items={offering.careerPathways} /></p>
-          </div>
-          <div className="flex items-start gap-2 border-t border-border/70 pt-5">
-            <CheckCircle2 className="mt-1 size-4 shrink-0 text-primary" />
-            <p><span className="font-semibold text-foreground">Capstone:</span> {offering.capstone}</p>
-          </div>
+          <DetailBlock label="Overview">
+            <p>{details.overview}</p>
+          </DetailBlock>
+          <DetailBlock label="Objectives">
+            <DisplayList items={details.objectives} />
+          </DetailBlock>
+          {details.outcomes && details.outcomes.length > 0 && (
+            <DetailBlock label="Outcomes">
+              <DisplayList items={details.outcomes} />
+            </DetailBlock>
+          )}
+          <DetailBlock label="Modules">
+            <p>{details.modules}</p>
+          </DetailBlock>
+          <DetailBlock label="Industry Opportunities">
+            <DisplayList items={details.industryOpportunities} />
+          </DetailBlock>
+          <DetailBlock label="Job Roles">
+            <DisplayList items={details.jobRoles} />
+          </DetailBlock>
+          {details.certificationAlignment && (
+            <DetailBlock label="Certification Alignment">
+              <p>{details.certificationAlignment}</p>
+            </DetailBlock>
+          )}
         </div>
         <Link href="/lms/login?portal=learner" className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline">
           Continue to learner portal
