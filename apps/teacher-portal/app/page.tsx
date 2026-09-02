@@ -1067,25 +1067,29 @@ export default function TeacherPortalPage() {
           </header>
 
           <div className="content">
-            <header className="page-heading" id="overview">
-              <div>
+             <header className="page-heading" id="overview">
+               <div className="page-heading-copy">
                 <p className="eyebrow">Daily teaching workspace</p>
                 <h1>Good morning, {name.split(" ")[0]}.</h1>
                 <p className="intro">Keep your assigned courses moving, check learner progress, and clear the review queue from one secure view.</p>
+                 <div className="heading-identity"><span className="heading-avatar">{name.slice(0, 1).toUpperCase()}</span><span><strong>{name}</strong><small>Instructor · Teaching workspace</small></span></div>
               </div>
-              <button className="primary-button" type="button" onClick={() => void loadDashboard(true)} disabled={loading || refreshing}>
-                <span className={refreshing ? "spin" : ""}>↻</span>{refreshing ? "Refreshing…" : "Refresh workspace"}
-              </button>
+               <div className="heading-actions">
+                 <button className="secondary-button heading-quick-action" type="button" onClick={() => document.getElementById("submissions")?.scrollIntoView({ behavior: "smooth", block: "start" })} disabled={pendingSubmissions.length === 0}><span>✓</span>Review queue <b>{pendingSubmissions.length}</b></button>
+                 <button className="primary-button" type="button" onClick={() => void loadDashboard(true)} disabled={loading || refreshing}>
+                   <span className={refreshing ? "spin" : ""}>↻</span>{refreshing ? "Refreshing…" : "Refresh workspace"}
+                 </button>
+               </div>
             </header>
 
             {error && <div className="alert error" role="alert"><strong>We couldn’t complete that action</strong><span>{error}</span><button type="button" onClick={() => setError("")} aria-label="Dismiss error">×</button></div>}
             {notice && <div className="alert success" role="status"><strong>Workspace updated</strong><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
 
-            <section className="metrics" aria-label="Teaching summary">
-              <article className="metric-card"><span className="metric-label">Assigned courses</span><strong>{loading ? "—" : courseData.length}</strong><span className="metric-foot">Courses in your teaching scope</span></article>
-              <article className="metric-card"><span className="metric-label">Enrolled learners</span><strong>{loading ? "—" : learnerTotal}</strong><span className="metric-foot">Active course enrollments</span></article>
-              <article className="metric-card accent"><span className="metric-label">Average progress</span><strong>{loading ? "—" : `${averageProgress}%`}</strong><span className="metric-foot">Across learners with progress data</span></article>
-               <article className="metric-card warm"><span className="metric-label">Pending review</span><strong>{loading ? "—" : pendingSubmissions.length + pendingAssessmentAttempts.length}</strong><span className="metric-foot">Assignments and assessments awaiting review</span></article>
+             <section className="metrics" aria-label="Teaching summary">
+               <article className="metric-card"><span className="metric-card-icon">▦</span><div><span className="metric-label">Assigned courses</span><strong>{loading ? "—" : courseData.length}</strong><span className="metric-foot">Courses in your teaching scope</span></div></article>
+               <article className="metric-card"><span className="metric-card-icon learners">♙</span><div><span className="metric-label">Total learners</span><strong>{loading ? "—" : learnerTotal}</strong><span className="metric-foot">Active course enrollments</span></div></article>
+               <article className="metric-card accent"><span className="metric-card-icon">◔</span><div><span className="metric-label">Course progress</span><strong>{loading ? "—" : `${averageProgress}%`}</strong><span className="metric-foot">Average across learner progress</span></div></article>
+                <article className="metric-card warm"><span className="metric-card-icon">!</span><div><span className="metric-label">Pending reviews</span><strong>{loading ? "—" : pendingSubmissions.length + pendingAssessmentAttempts.length}</strong><span className="metric-foot">Assignments and assessments awaiting review</span></div></article>
             </section>
 
             <section className="two-column" id="courses">
@@ -1102,7 +1106,7 @@ export default function TeacherPortalPage() {
                       <button className={`course-row ${selected?.course.id === item.course.id ? "selected" : ""}`} key={item.course.id} type="button" onClick={() => selectCourse(item.course.id)}>
                         <span className="course-mark">{item.course.code.slice(0, 2)}</span>
                         <span className="course-main"><strong>{item.course.title}</strong><small>{item.course.code} · {item.course.programme_name || "Assigned course"}</small><ProgressBar percentage={average} /></span>
-                        <span className="course-side"><StatusPill status={item.course.status} /><small>{item.enrollments.length} learners</small>{pending > 0 && <em>{pending} to review</em>}</span>
+                        <span className="course-side"><StatusPill status={item.course.status} /><small>{item.enrollments.length} learners</small><em className={pending > 0 ? "needs-review" : ""}>{pending > 0 ? `${pending} to review` : "No pending review"}</em></span>
                       </button>
                     );
                   })}
@@ -1140,7 +1144,8 @@ export default function TeacherPortalPage() {
                {selected && !selected.rosterError && selected.enrollments.length === 0 && <div className="state"><div className="state-icon">—</div><div><strong>No active learners yet</strong><p>There are no active enrollments in this assigned course.</p></div></div>}
                {selected && !selected.rosterError && selectedProgressErrors.length > 0 && <div className="inline-alert warning" role="status"><div><strong>Some progress data is unavailable</strong><span>{selectedProgressErrors.length} learner{selectedProgressErrors.length === 1 ? "" : "s"} could not be loaded. Refresh to try again.</span></div><button className="text-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing}>Retry</button></div>}
                {selected && !selected.rosterError && selected.enrollments.length > 0 && <div className="table-wrap">
-                <table>
+                 <table>
+                    <caption className="table-caption">{selected ? `Learner activity in ${selected.course.title}` : "Learner activity"}</caption>
                    <thead><tr><th>Learner</th><th>Completion</th><th>Lessons completed</th><th>Assessment progress</th><th>State</th></tr></thead>
                    <tbody>{selected.progress.map(({ enrollment, progress, error: progressError }) => (
                     <tr key={enrollment.id}>
@@ -1718,6 +1723,81 @@ export default function TeacherPortalPage() {
          .state-icon { background: #e5f2f3; color: #267e89; }
          .form-grid input, .form-grid select, .form-grid textarea, .grade-bar input, .attempt-grade-form textarea { border-color: #c4d5df; border-radius: 9px; background: #fbfdfe; }
          .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus, .grade-bar input:focus, .attempt-grade-form textarea:focus { border-color: #5ca6b1; box-shadow: 0 0 0 3px #5ca6b126; }
+          .page-heading { align-items: flex-start; padding: 4px 0 5px; }
+          .page-heading-copy { min-width: 0; }
+          .page-heading h1 { margin-top: 10px; }
+          .heading-identity { display: flex; align-items: center; gap: 9px; margin-top: 18px; }
+          .heading-avatar { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: #fff; background: #267d76; font-size: 10px; font-weight: 850; }
+          .heading-identity strong, .heading-identity small { display: block; }
+          .heading-identity strong { color: #315575; font-size: 11px; }
+          .heading-identity small { margin-top: 3px; color: #8aa0b0; font-size: 9px; }
+          .heading-actions { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
+          .heading-quick-action { gap: 7px; }
+          .heading-quick-action > span { color: #267d76; font-size: 14px; }
+          .heading-quick-action b { display: grid; place-items: center; min-width: 19px; height: 19px; padding: 0 4px; border-radius: 7px; color: #a4603d; background: #fff0e7; font-size: 9px; }
+          .metric-card { display: flex; align-items: flex-start; gap: 12px; min-height: 123px; padding: 18px; }
+          .metric-card-icon { display: grid; place-items: center; flex: 0 0 34px; width: 34px; height: 34px; border-radius: 10px; color: #267d76; background: #e8f3f2; font-size: 16px; font-weight: 850; }
+          .metric-card-icon.learners { color: #347e9d; background: #e8f4fb; }
+          .metric-card.accent .metric-card-icon { color: #2b9b7e; background: #dff3ec; }
+          .metric-card.warm .metric-card-icon { color: #bd6530; background: #fff0e7; }
+          .metric-card > div { min-width: 0; }
+          .metric-label { padding-top: 2px; }
+          .metric-card strong { margin-top: 9px; font-size: 31px; }
+          .panel, .metric-card { transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+          .panel:hover { border-color: #bfd9dc; box-shadow: 0 16px 36px #124b7317; }
+          .panel-heading { align-items: center; }
+          .panel-heading h2 { font-size: 20px; }
+          .course-panel, .actions-panel { min-height: 100%; }
+          .course-row { min-height: 78px; }
+          .course-row:hover { transform: translateX(2px); }
+          .course-row.selected { background: #edf7f6; }
+          .course-main .progress-track { height: 8px; }
+          .course-side em { color: #7b9a9a; }
+          .course-side em.needs-review { color: #bd8138; }
+          .action-row { min-height: 70px; }
+          .action-row:hover:not(:disabled) { transform: translateX(2px); }
+          .detail-panel, .content-panel, .assignment-panel, .assessment-panel, .submissions-panel { border-radius: 17px; }
+          .table-caption { padding: 15px 24px 12px; color: #8aa0b0; font-size: 10px; font-weight: 750; text-align: left; caption-side: top; }
+          table { border-top: 1px solid #edf1f6; }
+          th { background: #f7fafb; }
+          tr { transition: background-color .18s ease; }
+          tbody tr:hover { background: #f3f9f9; }
+          .learner-avatar { box-shadow: 0 0 0 4px #f1f7f7; }
+          .module-card, .assignment-card, .assessment-card, .submission-card { box-shadow: 0 5px 16px #124b7308; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+          .module-card:hover, .assignment-card:hover, .assessment-card:hover, .submission-card:hover { border-color: #a9ccd0; box-shadow: 0 10px 24px #124b7312; transform: translateY(-1px); }
+          .module-heading { padding: 17px 18px; }
+          .assignment-list, .assessment-list, .submission-list { padding-top: 19px; }
+          .assignment-card-main, .assessment-card-main { padding: 18px 18px 13px; }
+          .assignment-title strong, .assessment-title strong { font-size: 12px; }
+          .assignment-description, .assessment-description { color: #607a8c; font-size: 11px; line-height: 1.65; }
+          .assignment-footer, .assessment-footer { padding: 12px 18px; }
+          .submission-card { border-radius: 14px; }
+          .submission-heading { padding: 18px; }
+          .submission-body { padding: 17px 18px; }
+          .grade-bar { padding: 14px 18px 18px; }
+          .assessment-card-main { background: #fbfdfe; }
+          .assessment-details { background: #f4f8fb; }
+          .question-card, .attempt-card { border-radius: 11px; }
+          .question-heading { padding: 13px; }
+          .question-number { background: #e8f3f2; color: #267d76; }
+          .attempt-card { box-shadow: none; }
+          .state { padding: 38px 26px; }
+          .state-icon { box-shadow: 0 0 0 5px #f2f8f8; }
+          @media (max-width: 780px) {
+            .page-heading { gap: 17px; }
+            .heading-actions { width: 100%; }
+            .heading-actions > button { flex: 1; }
+            .heading-quick-action { min-width: 0; }
+            .metric-card { min-height: 112px; }
+            .table-caption { padding-right: 15px; padding-left: 15px; }
+          }
+          @media (max-width: 430px) {
+            .heading-actions { align-items: stretch; flex-direction: column; }
+            .heading-actions > button { width: 100%; }
+            .metric-card { gap: 9px; padding: 13px; }
+            .metric-card-icon { flex-basis: 29px; width: 29px; height: 29px; font-size: 13px; }
+            .metric-card strong { font-size: 25px; }
+          }
          @media (prefers-reduced-motion: reduce) {
            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
          }
