@@ -60,7 +60,7 @@ function MenuItems({
         const isCertificationItem = variant === "certification";
         return (
           <li
-            key={item.href}
+            key={`${item.title}-${item.href}`}
             role="none"
             className="relative"
             onMouseEnter={(event) => {
