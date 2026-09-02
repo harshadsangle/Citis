@@ -372,11 +372,149 @@ function CourseCard({
   );
 }
 
-function CourseCatalogue({ courses, provider }: { courses: Progress[]; provider: LmsCourseProvider | null }) {
+function firstLessonId(progress: Progress) {
+  const firstIncompleteModule = progress.modules.find((module) => module.state !== "COMPLETED" && module.lessonItems.length > 0);
+  return firstIncompleteModule?.lessonItems[0]?.id || progress.modules[0]?.lessonItems[0]?.id || "";
+}
+
+function CourseLearningView({
+  progress,
+  provider,
+  onBack,
+  onCompleteLesson,
+}: {
+  progress: Progress;
+  provider: LmsCourseProvider | null;
+  onBack: () => void;
+  onCompleteLesson: (courseId: string, lessonId: string) => Promise<void>;
+}) {
+  const allLessons = progress.modules.flatMap((module) => module.lessonItems.map((lesson) => ({ lesson, module })));
+  const [activeLessonId, setActiveLessonId] = useState(() => firstLessonId(progress));
+  const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(() => new Set(
+    progress.modules.flatMap((module) => module.lessonItems.slice(0, module.lessons.completed).map((lesson) => lesson.id)),
+  ));
+  const [busyLessonId, setBusyLessonId] = useState("");
+  const [lessonError, setLessonError] = useState("");
+  const activeIndex = Math.max(0, allLessons.findIndex((item) => item.lesson.id === activeLessonId));
+  const activeItem = allLessons[activeIndex] || allLessons[0];
+  const completedCount = allLessons.filter(({ lesson, module }) => completedLessonIds.has(lesson.id) || module.state === "COMPLETED" || module.lessonItems.indexOf(lesson) < module.lessons.completed).length;
+  const completionPercent = progress.percentage;
+
+  if (!activeItem) {
+    return (
+      <section className="learning-page">
+        <button className="learning-back-button" type="button" onClick={onBack}>← Back to courses</button>
+        <div className="portal-state-card"><span className="portal-empty-icon">○</span><h2>No lessons are available yet</h2><p>Your course roadmap will appear here once lessons are published.</p></div>
+      </section>
+    );
+  }
+
+  const { lesson: activeLesson, module: activeModule } = activeItem;
+  const previous = allLessons[activeIndex - 1];
+  const next = allLessons[activeIndex + 1];
+  const isCompleted = completedLessonIds.has(activeLesson.id) || activeModule.state === "COMPLETED" || activeModule.lessonItems.indexOf(activeLesson) < activeModule.lessons.completed;
+  const category = categoryForCourse(progress.course.programme_name);
+
+  async function completeCurrentLesson() {
+    if (isCompleted || busyLessonId) return;
+    setBusyLessonId(activeLesson.id);
+    setLessonError("");
+    try {
+      await onCompleteLesson(progress.course.id, activeLesson.id);
+      setCompletedLessonIds((current) => new Set(current).add(activeLesson.id));
+    } catch (reason: unknown) {
+      setLessonError(reason instanceof Error ? reason.message : "We couldn’t mark this lesson complete.");
+    } finally {
+      setBusyLessonId("");
+    }
+  }
+
+  function selectLesson(lessonId: string) {
+    setActiveLessonId(lessonId);
+    setLessonError("");
+    window.setTimeout(() => document.getElementById("lesson-content")?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+  }
+
+  return (
+    <section className="learning-page" aria-labelledby="learning-course-title">
+      <button className="learning-back-button" type="button" onClick={onBack}>← Back to all courses</button>
+      <header className="learning-course-header">
+        <div className="learning-course-heading">
+          <div className="learning-course-heading-topline"><span className={`catalogue-category category-${category.toLowerCase().replaceAll(" ", "-")}`}>{category}</span><span className={`course-state course-state-${progress.state.toLowerCase()}`}>{stateLabel[progress.state]}</span></div>
+          <span className="learning-course-code">{progress.course.code} {provider && `· ${providerLabel(provider)}`}</span>
+          <h2 id="learning-course-title">{progress.course.title}</h2>
+          <p>{shortCourseDescription(parseCourseNarrative(progress.course.description), progress.course.description)}</p>
+        </div>
+        <div className="learning-header-progress">
+          <div className="learning-header-progress-topline"><span>Course progress</span><strong>{completionPercent}%</strong></div>
+          <ProgressBar percentage={completionPercent} />
+          <div className="learning-header-progress-bottomline"><span>{completedCount} of {progress.lessons.total} lessons complete</span><strong>{progress.modules.length} modules</strong></div>
+        </div>
+      </header>
+      <div className="learning-layout">
+        <aside className="learning-roadmap" aria-label="Course roadmap">
+          <div className="learning-roadmap-heading"><div><span className="course-detail-label">Your roadmap</span><h3>Course content</h3></div><span>{progress.modules.length} modules</span></div>
+          <div className="learning-roadmap-progress"><div><span>Overall progress</span><strong>{completionPercent}%</strong></div><ProgressBar percentage={completionPercent} /></div>
+          <div className="learning-module-list">
+            {progress.modules.map((courseModule) => (
+              <div className={`learning-module ${courseModule.id === activeModule.id ? "is-current" : ""}`} key={courseModule.id}>
+                <div className="learning-module-heading"><span className="learning-module-number">{String(courseModule.sequence).padStart(2, "0")}</span><span><strong>{courseModule.title}</strong><small>{courseModule.lessons.completed}/{courseModule.lessons.total} lessons</small></span></div>
+                <div className="learning-lesson-list">
+                  {courseModule.lessonItems.map((courseLesson) => {
+                    const lessonCompleted = completedLessonIds.has(courseLesson.id) || courseModule.state === "COMPLETED" || courseModule.lessonItems.indexOf(courseLesson) < courseModule.lessons.completed;
+                    return (
+                      <button className={`learning-lesson-item ${courseLesson.id === activeLesson.id ? "is-current" : ""} ${lessonCompleted ? "is-completed" : ""}`} key={courseLesson.id} type="button" onClick={() => selectLesson(courseLesson.id)}>
+                        <span className="learning-lesson-marker" aria-hidden="true">{lessonCompleted ? "✓" : courseLesson.id === activeLesson.id ? "•" : "○"}</span>
+                        <span><strong>{courseLesson.title}</strong>{courseLesson.estimatedDuration != null && <small>{courseLesson.estimatedDuration} min</small>}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </aside>
+        <main className="learning-content" id="lesson-content">
+          <div className="learning-content-meta"><span>Module {String(activeModule.sequence).padStart(2, "0")}</span><span>Lesson {String(activeLesson.sequence).padStart(2, "0")}</span>{activeLesson.estimatedDuration != null && <span>{activeLesson.estimatedDuration} min read</span>}</div>
+          <article className="lesson-article">
+            <div className="lesson-article-kicker">{isCompleted ? "Completed lesson" : "Now learning"}</div>
+            <h3>{activeLesson.title}</h3>
+            <p className="lesson-lede">{activeLesson.description || "Work through this lesson to build the next part of your CITIS learning pathway."}</p>
+            <div className="lesson-content-card">
+              <span className="course-detail-label">Lesson overview</span>
+              {(activeLesson.description || "This lesson is part of your guided CITIS course roadmap.").split(/\r?\n+/).filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+            </div>
+            <div className={`lesson-completion-card ${isCompleted ? "is-completed" : ""}`}>
+              <span className="lesson-completion-icon" aria-hidden="true">{isCompleted ? "✓" : "○"}</span>
+              <div><strong>{isCompleted ? "Lesson complete" : "Ready to mark this lesson complete?"}</strong><p>{isCompleted ? "Your progress is saved. Continue to the next lesson when you’re ready." : "Mark this lesson complete after you have finished reviewing the content."}</p></div>
+              {!isCompleted && <button className="course-primary-button" type="button" onClick={() => void completeCurrentLesson()} disabled={busyLessonId === activeLesson.id}>{busyLessonId === activeLesson.id ? "Saving…" : "Mark as complete"}</button>}
+            </div>
+            {lessonError && <div className="lesson-error" role="alert">{lessonError}</div>}
+          </article>
+          <nav className="lesson-navigation" aria-label="Lesson navigation">
+            <button type="button" onClick={() => previous && selectLesson(previous.lesson.id)} disabled={!previous}><span>← Previous lesson</span><strong>{previous?.lesson.title || "Start of course"}</strong></button>
+            <button type="button" onClick={() => next && selectLesson(next.lesson.id)} disabled={!next}><span>Next lesson →</span><strong>{next?.lesson.title || "Course complete"}</strong></button>
+          </nav>
+        </main>
+      </div>
+    </section>
+  );
+}
+
+function CourseCatalogue({
+  courses,
+  provider,
+  onCompleteLesson,
+}: {
+  courses: Progress[];
+  provider: LmsCourseProvider | null;
+  onCompleteLesson: (courseId: string, lessonId: string) => Promise<void>;
+}) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<CatalogueFilter>("all");
   const [sort, setSort] = useState<CatalogueSort>("recommended");
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const [learningCourseId, setLearningCourseId] = useState<string | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
 
   const visibleCourses = courses
@@ -402,6 +540,11 @@ function CourseCatalogue({ courses, provider }: { courses: Progress[]; provider:
   function openCourse(courseId: string) {
     setExpandedCourseId(courseId);
     window.setTimeout(() => document.getElementById(`course-outline-${courseId}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+  }
+
+  if (learningCourseId) {
+    const learningCourse = courses.find((course) => course.course.id === learningCourseId);
+    if (learningCourse) return <CourseLearningView progress={learningCourse} provider={provider} onBack={() => setLearningCourseId(null)} onCompleteLesson={onCompleteLesson} />;
   }
 
   return (
@@ -436,7 +579,7 @@ function CourseCatalogue({ courses, provider }: { courses: Progress[]; provider:
         <div className="catalogue-empty"><span>⌕</span><h3>No courses match those filters</h3><p>Try a different keyword or clear the category filter to see your full learning library.</p><button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Show all courses</button></div>
       ) : (
         <div className="course-card-grid">
-          {visibleCourses.map((progress) => <CourseCard key={progress.course.id} progress={progress} expanded={expandedCourseId === progress.course.id} onToggle={() => setExpandedCourseId((current) => current === progress.course.id ? null : progress.course.id)} onContinue={() => openCourse(progress.course.id)} />)}
+          {visibleCourses.map((progress) => <CourseCard key={progress.course.id} progress={progress} expanded={expandedCourseId === progress.course.id} onToggle={() => setExpandedCourseId((current) => current === progress.course.id ? null : progress.course.id)} onContinue={() => setLearningCourseId(progress.course.id)} />)}
         </div>
       )}
     </section>
@@ -685,6 +828,22 @@ export default function StudentPortalPage() {
     }
   }
 
+  async function completeLesson(courseId: string, lessonId: string) {
+    const response = await fetch(`/api/v1/progress/lessons/${lessonId}/complete`, {
+      method: "POST",
+      credentials: "include",
+      headers: { Accept: "application/json" },
+    });
+    const body = await response.json().catch(() => null) as { error?: { message?: string } } | null;
+    if (!response.ok) throw new Error(body?.error?.message || "We couldn’t mark this lesson complete.");
+
+    const progressResponse = await fetch(`/api/v1/progress/courses/${courseId}`, { credentials: "include" });
+    if (progressResponse.ok) {
+      const progressBody = await progressResponse.json() as { data?: Progress };
+      if (progressBody.data) setCourses((current) => current.map((course) => course.course.id === courseId ? progressBody.data! : course));
+    }
+  }
+
   function dueLabel(value?: string | null) {
     return value ? `Due ${new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(value))}` : "No due date";
   }
@@ -725,7 +884,7 @@ export default function StudentPortalPage() {
             <p>Your institution’s learning team will show your courses here after you are enrolled.</p>
           </section>
         )}
-        {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} />}
+        {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} onCompleteLesson={completeLesson} />}
         {!loading && !error && (
           <section style={{ marginTop: 28 }}>
             <div style={{ marginBottom: 14 }}>
