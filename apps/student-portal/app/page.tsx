@@ -143,11 +143,303 @@ function providerLabel(provider: LmsCourseProvider | null) {
   return provider ? provider.charAt(0).toUpperCase() + provider.slice(1) : "CITIS";
 }
 
+type CatalogueCategory = "Career Pathway" | "Specializations" | "Certificate Programs" | "Global Certifications";
+type CatalogueFilter = "all" | CatalogueCategory;
+type CatalogueSort = "recommended" | "title" | "progress" | "modules";
+
+const catalogueCategories: Array<{ value: CatalogueFilter; label: string }> = [
+  { value: "all", label: "All courses" },
+  { value: "Career Pathway", label: "Career pathways" },
+  { value: "Specializations", label: "Specializations" },
+  { value: "Certificate Programs", label: "Certificates" },
+  { value: "Global Certifications", label: "Global certifications" },
+];
+
+function categoryForCourse(programmeName?: string | null): CatalogueCategory {
+  const name = programmeName?.toLowerCase() || "";
+  if (name.includes("career pathway")) return "Career Pathway";
+  if (name.includes("specialization")) return "Specializations";
+  if (name.includes("certificate")) return "Certificate Programs";
+  return "Global Certifications";
+}
+
+type CourseNarrative = {
+  overview: string;
+  objectives: string[];
+  objectiveIntro: string;
+  outcomes: string[];
+  outcomeIntro: string;
+  industry: string;
+  roles: string[];
+  certification: string;
+  section: string;
+  group: string;
+  freeform: string;
+};
+
+function parseCourseNarrative(description?: string | null): CourseNarrative {
+  const narrative: CourseNarrative = {
+    overview: "",
+    objectives: [],
+    objectiveIntro: "",
+    outcomes: [],
+    outcomeIntro: "",
+    industry: "",
+    roles: [],
+    certification: "",
+    section: "",
+    group: "",
+    freeform: "",
+  };
+  const sections: Record<string, string[]> = {};
+  const labels = new Set(["Overview", "Course Objectives", "Course Outcomes", "Key Content", "Industry Opportunity", "Job Roles Mapping"]);
+  let activeSection = "";
+
+  for (const rawLine of (description || "").split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (labels.has(line)) {
+      activeSection = line;
+      sections[activeSection] = [];
+    } else if (line.startsWith("Section ")) {
+      narrative.section = line;
+    } else if (line.startsWith("Program group:")) {
+      narrative.group = line.replace(/^Program group:\s*/, "");
+    } else if (line.startsWith("Aligned to ")) {
+      narrative.certification = line;
+    } else if (activeSection) {
+      sections[activeSection].push(line);
+    } else if (!narrative.freeform) {
+      narrative.freeform = line;
+    } else {
+      narrative.freeform += ` ${line}`;
+    }
+  }
+
+  narrative.overview = (sections.Overview || []).join(" ");
+  narrative.industry = (sections["Industry Opportunity"] || []).join(" ");
+  narrative.objectives = sections["Course Objectives"] || [];
+  narrative.outcomes = sections["Course Outcomes"] || [];
+  narrative.roles = sections["Job Roles Mapping"] || [];
+  if (narrative.objectives[0]?.endsWith(":")) narrative.objectiveIntro = narrative.objectives.shift() || "";
+  if (narrative.outcomes[0]?.endsWith(":")) narrative.outcomeIntro = narrative.outcomes.shift() || "";
+  return narrative;
+}
+
+function shortCourseDescription(narrative: CourseNarrative, fallback?: string | null) {
+  const source = narrative.overview || narrative.freeform || narrative.certification || fallback || "A CITIS course designed around practical, career-ready learning.";
+  const firstSentence = source.match(/^(.+?[.!?])(?:\s|$)/)?.[1] || source;
+  return firstSentence.length > 190 ? `${firstSentence.slice(0, 187).trimEnd()}…` : firstSentence;
+}
+
+function sortRank(state: Progress["state"]) {
+  return state === "IN_PROGRESS" ? 0 : state === "NOT_STARTED" ? 1 : 2;
+}
+
 function ProgressBar({ percentage }: { percentage: number }) {
   return (
-    <div aria-label={`${percentage}% complete`} style={{ background: "#e6edf3", borderRadius: 999, height: 10, overflow: "hidden" }}>
+    <div className="progress-track" aria-label={`${percentage}% complete`} style={{ background: "#e6edf3", borderRadius: 999, height: 10, overflow: "hidden" }}>
       <div style={{ background: "#0f766e", borderRadius: 999, height: "100%", transition: "width 240ms ease", width: `${percentage}%` }} />
     </div>
+  );
+}
+
+function CourseCard({
+  progress,
+  expanded,
+  onToggle,
+  onContinue,
+}: {
+  progress: Progress;
+  expanded: boolean;
+  onToggle: () => void;
+  onContinue: () => void;
+}) {
+  const category = categoryForCourse(progress.course.programme_name);
+  const narrative = parseCourseNarrative(progress.course.description);
+  const categoryClass = category.toLowerCase().replaceAll(" ", "-");
+  const actionLabel = progress.state === "NOT_STARTED" ? "Start learning" : "Continue learning";
+  const objectiveItems = narrative.objectives.length ? narrative.objectives : ["Explore the course outline and build practical capability at your own pace."];
+  const outcomeItems = narrative.outcomes.length ? narrative.outcomes : ["Work through the published modules and lessons in this course."];
+
+  return (
+    <article className={`catalogue-course-card ${expanded ? "is-expanded" : ""}`} id={`course-card-${progress.course.id}`}>
+      <div className={`course-card-art course-card-art-${categoryClass}`}>
+        <span className="course-card-art-kicker">{category === "Career Pathway" ? "IILP" : category === "Global Certifications" ? "CITIS" : "PATHWAY"}</span>
+        <span className="course-card-art-number">{String(progress.modules.length).padStart(2, "0")}</span>
+        <span className="course-card-art-grid" aria-hidden="true" />
+      </div>
+      <div className="course-card-body">
+        <div className="course-card-topline">
+          <span className={`catalogue-category category-${categoryClass}`}>{category}</span>
+          <span className={`course-state course-state-${progress.state.toLowerCase()}`}>{stateLabel[progress.state]}</span>
+        </div>
+        <p className="course-code">{progress.course.code}</p>
+        <h3>{progress.course.title}</h3>
+        <p className="course-short-description">{shortCourseDescription(narrative, progress.course.description)}</p>
+        <div className="course-card-meta">
+          <span><strong>{progress.modules.length}</strong> modules</span>
+          <span><strong>{progress.lessons.total}</strong> lessons</span>
+          <span><strong>{progress.assessments.total}</strong> checks</span>
+        </div>
+        <div className="course-card-progress">
+          <div className="course-progress-label"><span>Course progress</span><strong>{progress.percentage}%</strong></div>
+          <ProgressBar percentage={progress.percentage} />
+          <span className="course-progress-caption">{progress.lessons.completed} of {progress.lessons.total} lessons complete</span>
+        </div>
+        <div className="course-card-actions">
+          <button className="course-details-button" type="button" aria-expanded={expanded} onClick={onToggle}>
+            {expanded ? "Close details" : "View course details"} <span aria-hidden="true">{expanded ? "↑" : "↓"}</span>
+          </button>
+          <button className="course-primary-button" type="button" onClick={onContinue}>
+            {actionLabel} <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+
+        {expanded && (
+          <div className="course-detail-panel" id={`course-outline-${progress.course.id}`}>
+            <div className="course-detail-heading">
+              <div>
+                <span className="course-detail-eyebrow">Course details</span>
+                <h4>{progress.course.title}</h4>
+              </div>
+              <button className="course-detail-close" type="button" onClick={onToggle} aria-label={`Close ${progress.course.title} details`}>×</button>
+            </div>
+            <div className="course-detail-grid">
+              <section className="course-detail-section course-detail-overview">
+                <span className="course-detail-label">Overview</span>
+                <p>{narrative.overview || narrative.freeform || "This CITIS course combines structured lessons with an industry-focused learning path."}</p>
+              </section>
+              <section className="course-detail-section">
+                <span className="course-detail-label">Objectives</span>
+                {narrative.objectiveIntro && <p className="course-detail-intro">{narrative.objectiveIntro}</p>}
+                <ul className="course-bullet-list">{objectiveItems.map((item) => <li key={item}><span aria-hidden="true">+</span>{item}</li>)}</ul>
+              </section>
+              <section className="course-detail-section">
+                <span className="course-detail-label">Outcomes</span>
+                {narrative.outcomeIntro && <p className="course-detail-intro">{narrative.outcomeIntro}</p>}
+                <ul className="course-bullet-list">{outcomeItems.map((item) => <li key={item}><span aria-hidden="true">✓</span>{item}</li>)}</ul>
+              </section>
+              <section className="course-detail-section">
+                <span className="course-detail-label">Industry opportunities</span>
+                <p>{narrative.industry || "Build skills that can transfer into contemporary technology and professional roles."}</p>
+                {narrative.group && <span className="course-detail-context">{narrative.group}</span>}
+              </section>
+              <section className="course-detail-section">
+                <span className="course-detail-label">Job roles</span>
+                {narrative.roles.length ? <div className="course-role-list">{narrative.roles.map((role) => <span key={role}>{role}</span>)}</div> : <p>Explore role pathways connected to this course as you progress.</p>}
+              </section>
+              <section className="course-detail-section course-certification-section">
+                <span className="course-detail-label">Certification alignment</span>
+                <p>{narrative.certification || "CITIS learning pathway"}</p>
+                {narrative.section && <span className="course-detail-context">{narrative.section}</span>}
+              </section>
+            </div>
+            <div className="course-roadmap">
+              <div className="course-roadmap-heading">
+                <div><span className="course-detail-label">Course roadmap</span><h4>Modules & lessons</h4></div>
+                <span>{progress.modules.length} modules · {progress.lessons.total} lessons</span>
+              </div>
+              <div className="course-module-list">
+                {progress.modules.map((module) => (
+                  <details className="course-module" key={module.id} open={module.sequence === 1}>
+                    <summary>
+                      <span className="course-module-number">{String(module.sequence).padStart(2, "0")}</span>
+                      <span className="course-module-name"><strong>{module.title}</strong><small>{module.lessons.total} lessons · {module.assessments.total} assessments</small></span>
+                      <span className="course-module-progress">{module.percentage}% <span aria-hidden="true">⌄</span></span>
+                    </summary>
+                    <div className="course-module-content">
+                      <div className="module-progress-line"><span>{module.lessons.completed} of {module.lessons.total} lessons complete</span><strong>{module.state === "COMPLETED" ? "Complete" : stateLabel[module.state]}</strong></div>
+                      <ProgressBar percentage={module.percentage} />
+                      <div className="course-lesson-list">
+                        {module.lessonItems.map((lesson) => (
+                          <div className="course-lesson" key={lesson.id}>
+                            <span className="course-lesson-status" aria-hidden="true">○</span>
+                            <span><strong>{lesson.title}</strong>{lesson.description && <small>{lesson.description}</small>}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </div>
+            <button className="course-detail-continue" type="button" onClick={onContinue}>{actionLabel} <span aria-hidden="true">→</span></button>
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+function CourseCatalogue({ courses, provider }: { courses: Progress[]; provider: LmsCourseProvider | null }) {
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<CatalogueFilter>("all");
+  const [sort, setSort] = useState<CatalogueSort>("recommended");
+  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const normalizedSearch = search.trim().toLowerCase();
+
+  const visibleCourses = courses
+    .filter((progress) => {
+      const category = categoryForCourse(progress.course.programme_name);
+      if (filter !== "all" && category !== filter) return false;
+      if (!normalizedSearch) return true;
+      const searchable = `${progress.course.title} ${progress.course.code} ${progress.course.programme_name || ""} ${progress.course.description || ""}`.toLowerCase();
+      return searchable.includes(normalizedSearch);
+    })
+    .sort((left, right) => {
+      if (sort === "title") return left.course.title.localeCompare(right.course.title);
+      if (sort === "progress") return right.percentage - left.percentage || left.course.title.localeCompare(right.course.title);
+      if (sort === "modules") return right.modules.length - left.modules.length || left.course.title.localeCompare(right.course.title);
+      return sortRank(left.state) - sortRank(right.state) || right.percentage - left.percentage || left.course.title.localeCompare(right.course.title);
+    });
+
+  const categoryCount = (value: CatalogueFilter) => value === "all" ? courses.length : courses.filter((course) => categoryForCourse(course.course.programme_name) === value).length;
+  const completedCourses = courses.filter((course) => course.state === "COMPLETED").length;
+  const activeCourses = courses.filter((course) => course.state === "IN_PROGRESS").length;
+  const totalModules = courses.reduce((total, course) => total + course.modules.length, 0);
+
+  function openCourse(courseId: string) {
+    setExpandedCourseId(courseId);
+    window.setTimeout(() => document.getElementById(`course-outline-${courseId}`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+  }
+
+  return (
+    <section className="course-catalogue" aria-labelledby="course-catalogue-title">
+      <div className="catalogue-heading">
+        <div>
+          <span className="catalogue-eyebrow">Your learning library</span>
+          <h2 id="course-catalogue-title">{provider ? `${providerLabel(provider)} courses` : "Courses built for your next step"}</h2>
+          <p>Find a pathway, open the full roadmap, and keep building momentum across your CITIS learning journey.</p>
+        </div>
+        <div className="catalogue-total"><strong>{courses.length}</strong><span>enrolled courses</span></div>
+      </div>
+      <div className="catalogue-stat-row">
+        <div><span className="catalogue-stat-icon">◎</span><span><strong>{activeCourses}</strong><small>In progress</small></span></div>
+        <div><span className="catalogue-stat-icon">✓</span><span><strong>{completedCourses}</strong><small>Completed</small></span></div>
+        <div><span className="catalogue-stat-icon">▦</span><span><strong>{totalModules}</strong><small>Learning modules</small></span></div>
+      </div>
+      <div className="catalogue-toolbar">
+        <label className="catalogue-search">
+          <span className="search-icon" aria-hidden="true">⌕</span>
+          <span className="sr-only">Search courses</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by course, skill, or code…" type="search" />
+          {search && <button type="button" aria-label="Clear course search" onClick={() => setSearch("")}>×</button>}
+        </label>
+        <label className="catalogue-sort"><span>Sort by</span><select value={sort} onChange={(event) => setSort(event.target.value as CatalogueSort)}><option value="recommended">Recommended</option><option value="title">Title A–Z</option><option value="progress">Progress</option><option value="modules">Most modules</option></select></label>
+      </div>
+      <div className="catalogue-filter-row" role="group" aria-label="Filter courses by category">
+        {catalogueCategories.map((category) => <button className={filter === category.value ? "is-active" : ""} key={category.value} type="button" onClick={() => setFilter(category.value)}>{category.label}<span>{categoryCount(category.value)}</span></button>)}
+      </div>
+      <div className="catalogue-results-line"><span>Showing <strong>{visibleCourses.length}</strong> of {courses.length} courses</span>{(search || filter !== "all") && <button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button>}</div>
+      {visibleCourses.length === 0 ? (
+        <div className="catalogue-empty"><span>⌕</span><h3>No courses match those filters</h3><p>Try a different keyword or clear the category filter to see your full learning library.</p><button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Show all courses</button></div>
+      ) : (
+        <div className="course-card-grid">
+          {visibleCourses.map((progress) => <CourseCard key={progress.course.id} progress={progress} expanded={expandedCourseId === progress.course.id} onToggle={() => setExpandedCourseId((current) => current === progress.course.id ? null : progress.course.id)} onContinue={() => openCourse(progress.course.id)} />)}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -399,104 +691,41 @@ export default function StudentPortalPage() {
 
   return (
     <main className="student-shell" style={{ background: "#f5f8fb", color: "#12304a", fontFamily: "Arial, sans-serif", minHeight: "100vh", padding: "48px 24px" }}>
-      <div style={{ margin: "0 auto", maxWidth: 1040 }}>
-        <p style={{ color: "#0f766e", fontSize: 13, fontWeight: 700, letterSpacing: "0.16em", margin: 0, textTransform: "uppercase" }}>CITIS learning portal</p>
-        <header style={{ alignItems: "end", display: "flex", gap: 24, justifyContent: "space-between", margin: "12px 0 32px" }}>
-          <div>
-            <h1 style={{ fontSize: "clamp(32px, 5vw, 52px)", letterSpacing: "-0.04em", margin: 0 }}>{provider ? `${providerLabel(provider)} learning progress` : "Your learning progress"}</h1>
-            <p style={{ color: "#61718a", fontSize: 17, lineHeight: 1.6, margin: "12px 0 0", maxWidth: 620 }}>See how far you have progressed across your enrolled CITIS courses. Lesson and assessment completion updates this view automatically.</p>
+      <div className="student-container">
+        <div className="portal-topbar">
+          <div className="portal-brand"><span className="portal-brand-citis">CITIS</span><span className="portal-brand-infot">InfoTech</span><span className="portal-brand-divider" /><span className="portal-brand-label">Learning portal</span></div>
+          <div className="portal-actions"><span className="portal-session">Student space</span><button className="portal-signout" onClick={() => void logout()} disabled={loggingOut} type="button">{loggingOut ? "Signing out…" : "Sign out"} <span aria-hidden="true">↗</span></button></div>
+        </div>
+        <header className="portal-hero">
+          <div className="portal-hero-copy">
+            <span className="portal-eyebrow">CITIS learning portal {provider && `· ${providerLabel(provider)}`}</span>
+            <h1>Build momentum.<br /><em>Own your next step.</em></h1>
+            <p>Explore your enrolled courses, follow the roadmap, and turn every completed lesson into career-ready confidence.</p>
           </div>
-           <div style={{ alignItems: "center", display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
-             <div style={{ background: "#fff4c2", borderRadius: 16, color: "#795b00", fontSize: 14, padding: "14px 18px", whiteSpace: "nowrap" }}>Progress dashboard</div>
-             <button onClick={() => void logout()} disabled={loggingOut} style={{ background: "white", border: "1px solid #c9d7e2", borderRadius: 12, color: "#12304a", cursor: loggingOut ? "wait" : "pointer", font: "inherit", fontSize: 14, fontWeight: 700, padding: "13px 16px" }} type="button">
-               {loggingOut ? "Signing out…" : "Sign out"}
-             </button>
-           </div>
+          <div className="portal-hero-card">
+            <span className="portal-hero-card-icon">✦</span>
+            <span>Today’s focus</span>
+            <strong>{provider ? `${providerLabel(provider)} pathway` : "Your learning library"}</strong>
+            <small>Small steps. Visible progress.</small>
+          </div>
         </header>
 
-        {loading && <section style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, padding: 28 }}>Loading your courses…</section>}
+        {loading && <section className="portal-state-card">Loading your courses…</section>}
         {!loading && error && (
-          <section style={{ background: "#fff8f5", border: "1px solid #f0c5b8", borderRadius: 20, padding: 28 }}>
-            <h2 style={{ margin: "0 0 8px" }}>We couldn’t load your progress</h2>
-            <p style={{ color: "#7d5d55", margin: 0 }}>{error}</p>
-            <a href="/auth/login" style={{ color: "#0f766e", display: "inline-block", fontWeight: 700, marginTop: 18 }}>Sign in to continue</a>
+          <section className="portal-state-card portal-error-card">
+            <h2>We couldn’t load your progress</h2>
+            <p>{error}</p>
+            <a href="/auth/login">Sign in to continue</a>
           </section>
         )}
         {!loading && !error && courses.length === 0 && (
-          <section style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, padding: 28 }}>
-            <h2 style={{ margin: "0 0 8px" }}>No active courses yet</h2>
-            <p style={{ color: "#61718a", margin: 0 }}>Your institution’s learning team will show your courses here after you are enrolled.</p>
+          <section className="portal-state-card">
+            <span className="portal-empty-icon">○</span>
+            <h2>No active courses yet</h2>
+            <p>Your institution’s learning team will show your courses here after you are enrolled.</p>
           </section>
         )}
-        {!loading && !error && courses.length > 0 && (
-          <section style={{ display: "grid", gap: 20 }}>
-            {courses.map((progress) => (
-              <article key={progress.course.id} style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, boxShadow: "0 12px 30px rgba(18, 48, 74, 0.06)", padding: "26px 28px" }}>
-                <div style={{ alignItems: "start", display: "flex", gap: 20, justifyContent: "space-between" }}>
-                  <div>
-                    <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>{progress.course.code}</p>
-                    <h2 style={{ fontSize: 25, margin: "8px 0 6px" }}>{progress.course.title}</h2>
-                    {progress.course.description && <p style={{ color: "#61718a", lineHeight: 1.5, margin: 0 }}>{progress.course.description}</p>}
-                  </div>
-                  <strong style={{ color: "#0f766e", fontSize: 30, whiteSpace: "nowrap" }}>{progress.percentage}%</strong>
-                </div>
-                <div style={{ margin: "22px 0 14px" }}><ProgressBar percentage={progress.percentage} /></div>
-                <div style={{ alignItems: "center", color: "#61718a", display: "flex", flexWrap: "wrap", fontSize: 14, gap: "8px 22px" }}>
-                  <strong style={{ color: "#12304a" }}>{stateLabel[progress.state]}</strong>
-                  <span>{progress.lessons.completed} of {progress.lessons.total} lessons</span>
-                  <span>{progress.assessments.completed} of {progress.assessments.total} assessments</span>
-                </div>
-                {progress.modules.length > 0 && (
-                  <div style={{ borderTop: "1px solid #e8eef3", display: "grid", gap: 16, marginTop: 24, paddingTop: 22 }}>
-                    <details open style={{ border: "1px solid #d8e2eb", borderRadius: 14, overflow: "hidden" }}>
-                      <summary style={{ alignItems: "center", cursor: "pointer", display: "flex", gap: 12, justifyContent: "space-between", listStyle: "none", padding: "16px 18px" }}>
-                        <span>
-                          <strong style={{ display: "block", fontSize: 16 }}>Open course outline</strong>
-                          <span style={{ color: "#61718a", display: "block", fontSize: 13, marginTop: 4 }}>{progress.modules.length} modules · {progress.lessons.total} lessons</span>
-                        </span>
-                        <span aria-hidden="true" style={{ color: "#0f766e", fontSize: 22 }}>⌄</span>
-                      </summary>
-                      <div style={{ borderTop: "1px solid #e8eef3", display: "grid", gap: 10, padding: 12 }}>
-                    {progress.modules.map((module) => (
-                      <details key={module.id} style={{ background: "#f8fbfd", border: "1px solid #e1e9ef", borderRadius: 12 }}>
-                        <summary style={{ alignItems: "center", cursor: "pointer", display: "flex", gap: 12, justifyContent: "space-between", listStyle: "none", padding: "13px 15px" }}>
-                          <span style={{ fontWeight: 700 }}>{module.sequence}. {module.title}</span>
-                          <span style={{ color: "#61718a", fontSize: 13, whiteSpace: "nowrap" }}>{module.lessons.total} lessons</span>
-                        </summary>
-                        <div style={{ borderTop: "1px solid #e1e9ef", padding: "12px 15px 0" }}>
-                          <div style={{ alignItems: "center", color: "#61718a", display: "flex", fontSize: 13, justifyContent: "space-between", marginBottom: 7 }}>
-                            <span>Module progress</span>
-                            <span>{module.percentage}% · {stateLabel[module.state]}</span>
-                          </div>
-                          <ProgressBar percentage={module.percentage} />
-                          <p style={{ color: "#71879a", fontSize: 13, margin: "7px 0 0" }}>{module.lessons.completed}/{module.lessons.total} lessons · {module.assessments.completed}/{module.assessments.total} assessments</p>
-                        </div>
-                        <div style={{ borderTop: "1px solid #e1e9ef", display: "grid", gap: 9, padding: "10px 12px 12px" }}>
-                          {module.lessonItems.map((lesson) => (
-                            <details key={lesson.id} style={{ background: "white", border: "1px solid #e6edf3", borderRadius: 10 }}>
-                              <summary style={{ alignItems: "center", cursor: "pointer", display: "flex", gap: 10, justifyContent: "space-between", listStyle: "none", padding: "11px 13px" }}>
-                                <span><span style={{ color: "#6b8194", fontSize: 12, marginRight: 8 }}>{lesson.sequence}</span><strong>{lesson.title}</strong></span>
-                                <span style={{ color: "#0f766e", fontSize: 12, whiteSpace: "nowrap" }}>Not started</span>
-                              </summary>
-                              {lesson.description && (
-                                <div style={{ borderTop: "1px solid #eef2f5", color: "#61718a", fontSize: 14, lineHeight: 1.55, padding: "10px 13px 12px" }}>
-                                  <p style={{ margin: 0 }}>{lesson.description}</p>
-                                  {lesson.estimatedDuration != null && <span style={{ display: "block", fontSize: 12, marginTop: 8 }}>Estimated duration: {lesson.estimatedDuration} minutes</span>}
-                                </div>
-                              )}
-                            </details>
-                          ))}
-                        </div>
-                      </details>
-                    ))}
-                      </div>
-                    </details>
-                  </div>
-                )}
-              </article>
-            ))}
-          </section>
-        )}
+        {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} />}
         {!loading && !error && (
           <section style={{ marginTop: 28 }}>
             <div style={{ marginBottom: 14 }}>
