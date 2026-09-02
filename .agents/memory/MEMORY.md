@@ -12,3 +12,4 @@
 - [LMS authentication diagnosis](lms-auth-diagnosis.md) — verify login, session lookup, portal entry, and dashboard requests separately before changing auth logic.
 - [LMS provider branding](lms-provider-branding.md) — certification catalogue headers need contained provider-specific marks verified in the live preview.
 - [MOS objective imports](mos-objective-imports.md) — keep versioned MOS exam codes as separate tracks and attach each official objective PDF once.
+- [Unity objective imports](unity-objective-imports.md) — preserve Unity Artist, Programmer, and VR Developer as distinct role-based certification tracks with one source PDF each.

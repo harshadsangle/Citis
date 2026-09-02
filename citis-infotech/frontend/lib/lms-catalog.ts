@@ -15,10 +15,10 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft";
+export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft" | "unity";
 
 export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
-  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" ? value : undefined;
+  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" || value === "unity" ? value : undefined;
 }
 
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
@@ -840,6 +840,60 @@ const MICROSOFT_COURSES: LmsCourse[] = [
   },
 ];
 
+const UNITY_COURSES: LmsCourse[] = [
+  {
+    id: "unity-certified-user-artist",
+    title: "Unity Certified User Artist",
+    description: "Official Unity Certified User Artist objectives for 2D and 3D digital artistry, asset workflows, scene design, lighting, cameras, materials, and rendering.",
+    audience: "The target candidate has at least 150 hours of Unity software use and training, and can create interactive 2D and 3D experiences with limited assistance.",
+    details: [
+      { label: "Target experience", value: "At least 150 hours" },
+      { label: "Objective areas", value: "3 sections" },
+      { label: "Credential", value: "Unity Certified User" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Asset Management", description: "Import FBX and OBJ assets, configure Asset Store content, slice spritesheets, identify mesh components, animate keyframes, and use Prefabs." },
+      { number: "02", title: "Scene Content Design", description: "Use Transform tools, prototype with primitives and low-poly meshes, and create landscapes with the Terrain tool and materials." },
+      { number: "03", title: "Lighting, Cameras, and Materials Implementation", description: "Configure Standard Shader materials, lighting, cameras, and the appropriate rendering pipeline." },
+    ],
+  },
+  {
+    id: "unity-certified-user-programmer",
+    title: "Unity Certified User Programmer",
+    description: "Official Unity Certified User Programmer objectives for C# programming, debugging, API interpretation, code evaluation, Unity interface navigation, and Animator state machines.",
+    audience: "The target candidate has at least 150 hours of Unity software use and training, and can use foundational C# and Unity programming concepts independently.",
+    details: [
+      { label: "Target experience", value: "At least 150 hours" },
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Unity Certified User" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Debugging, Problem-Solving, and Interpreting the API", description: "Interpret debug logs, diagnose null objects, and select appropriate Unity API methods, properties, arguments, and syntax." },
+      { number: "02", title: "Creating Code", description: "Initialize variables, use data collections, construct functions, handle input, apply flow control, and respond to UI changes." },
+      { number: "03", title: "Evaluating Code", description: "Evaluate event functions, data types, access modifiers, ECS classes, naming conventions, and code comments." },
+      { number: "04", title: "Navigating the Interface", description: "Use Unity IDE windows, change the scripting IDE, and create functional Animator state machines." },
+    ],
+  },
+  {
+    id: "unity-certified-user-vr-developer",
+    title: "Unity Certified User VR Developer",
+    description: "Official Unity Certified User VR Developer objectives for creating VR scenes, world-space UX, interaction, locomotion, C# scripting, troubleshooting, playtesting, and optimization.",
+    audience: "The target candidate has at least 150 hours of Unity software use and training; familiarity with C# and VR software and hardware is helpful for this certification path.",
+    details: [
+      { label: "Target experience", value: "At least 150 hours" },
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Credential", value: "Unity Certified User" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Basic Unity Concepts for VR Development", description: "Understand stereoscopic vision, XR differences, tracking, VR input, packages, Prefabs, Transform, workspace windows, and Inspector components." },
+      { number: "02", title: "Building a Scene for VR", description: "Apply VR preplanning, environment design with finalized 3D assets, and Baked versus Realtime lighting." },
+      { number: "03", title: "UX Implementation for VR", description: "Build world-space UI, physical object interactions, locomotion, health and safety interactions, and 2D or spatial audio." },
+      { number: "04", title: "Scripting with Unity", description: "Select C# code and Unity classes for VR goals and handle collision and trigger events." },
+      { number: "05", title: "Troubleshooting and Playtesting", description: "Troubleshoot scene and physics settings, interpret Console logs and errors, and optimize VR scenes." },
+    ],
+  },
+];
+
 export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
   {
     id: "adobe",
@@ -983,5 +1037,12 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     eyebrow: "Microsoft Office Specialist certification courses",
     description: "Official objective-led preparation for Microsoft Word, Excel, PowerPoint, Outlook, and Access exams across Office 2016, Office 2019, and Microsoft 365 Apps.",
     courses: MICROSOFT_COURSES,
+  },
+  {
+    id: "unity",
+    name: "Unity Certified User",
+    eyebrow: "Unity Certified User certification courses",
+    description: "Official objective-led preparation for Unity Artist, Programmer, and VR Developer certification exams.",
+    courses: UNITY_COURSES,
   },
 ];

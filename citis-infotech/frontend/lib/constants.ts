@@ -140,8 +140,8 @@ const globalCertificationItems = [
   },
   {
     title: "Unity",
-    href: "/engagements/global-certifications/unity",
-    description: "Real-time 3D and interactive experiences.",
+    href: "/lms?provider=unity",
+    description: "Unity Artist, Programmer, and VR Developer certifications.",
     icon: Sparkles,
   },
 ] as const;

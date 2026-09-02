@@ -268,10 +268,10 @@ function errorMessage(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
 }
 
-type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft";
+type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft" | "unity";
 
 function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
-  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" ? value : null;
+  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" || value === "unity" ? value : null;
 }
 
 function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
@@ -280,6 +280,7 @@ function providerForProgrammeName(value?: string | null): LmsCourseProvider | nu
   if (name.includes("autodesk")) return "autodesk";
   if (name.includes("comptia")) return "comptia";
   if (name.includes("microsoft")) return "microsoft";
+  if (name.includes("unity")) return "unity";
   return null;
 }
 

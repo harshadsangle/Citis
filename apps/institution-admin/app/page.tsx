@@ -36,10 +36,10 @@ type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: numbe
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1").replace(/\/$/, "");
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 
-type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft";
+type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft" | "unity";
 
 function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
-  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" ? value : null;
+  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" || value === "unity" ? value : null;
 }
 
 function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
@@ -48,6 +48,7 @@ function providerForProgrammeName(value?: string | null): LmsCourseProvider | nu
   if (name.includes("autodesk")) return "autodesk";
   if (name.includes("comptia")) return "comptia";
   if (name.includes("microsoft")) return "microsoft";
+  if (name.includes("unity")) return "unity";
   return null;
 }
 
