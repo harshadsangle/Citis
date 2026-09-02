@@ -21,6 +21,7 @@ const PROVIDER_LOGOS: Record<LmsCourseProvider, { src: string; alt: string; size
   adobe: { src: "/images/adobe.png", alt: "Adobe logo", sizes: "120px" },
   comptia: { src: "/images/comptia-authorized-partner.jpg", alt: "CompTIA logo", sizes: "56px" },
   autodesk: { src: "/images/autodesk-logo.svg", alt: "Autodesk logo", sizes: "112px" },
+  microsoft: { src: "/images/microsoft.png", alt: "Microsoft logo", sizes: "112px" },
 };
 
 function ProviderLogo({ provider }: { provider: LmsCourseProvider }) {
@@ -90,7 +91,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
             {provider
               ? courseCategories[0]?.description
-              : "Browse objective-led Adobe, Autodesk, and CompTIA certification courses across creative, CAD, architecture, design, content, web, marketing, IT, cloud, data, project, networking, and cybersecurity paths."}
+              : "Browse objective-led Adobe, Autodesk, CompTIA, and Microsoft Office Specialist certification courses across creative, CAD, architecture, design, content, web, marketing, productivity, IT, cloud, data, project, networking, and cybersecurity paths."}
           </p>
         </div>
 

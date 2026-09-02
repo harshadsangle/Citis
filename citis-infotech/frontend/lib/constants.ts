@@ -128,8 +128,8 @@ const globalCertificationItems = [
   },
   {
     title: "Microsoft",
-    href: "/engagements/global-certifications/microsoft",
-    description: "Productivity, data and cloud skills.",
+    href: "/lms?provider=microsoft",
+    description: "Microsoft Office Specialist productivity and data certifications.",
     icon: Award,
   },
   {

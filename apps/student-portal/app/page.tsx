@@ -123,10 +123,10 @@ const stateLabel: Record<Progress["state"], string> = {
   COMPLETED: "Completed",
 };
 
-type LmsCourseProvider = "adobe" | "autodesk" | "comptia";
+type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft";
 
 function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
-  return value === "adobe" || value === "autodesk" || value === "comptia" ? value : null;
+  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" ? value : null;
 }
 
 function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
@@ -134,6 +134,7 @@ function providerForProgrammeName(value?: string | null): LmsCourseProvider | nu
   if (name.includes("adobe")) return "adobe";
   if (name.includes("autodesk")) return "autodesk";
   if (name.includes("comptia")) return "comptia";
+  if (name.includes("microsoft")) return "microsoft";
   return null;
 }
 

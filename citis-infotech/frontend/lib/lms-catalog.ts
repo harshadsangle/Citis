@@ -15,10 +15,10 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export type LmsCourseProvider = "adobe" | "autodesk" | "comptia";
+export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft";
 
 export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
-  return value === "adobe" || value === "autodesk" || value === "comptia" ? value : undefined;
+  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" ? value : undefined;
 }
 
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
@@ -510,6 +510,336 @@ const COMPTIA_COURSES: LmsCourse[] = [
   }),
 ];
 
+const MICROSOFT_COURSES: LmsCourse[] = [
+  {
+    id: "mos-word-2016-77-725",
+    title: "Microsoft Word (Office 2016) — Exam 77-725",
+    description: "Official Microsoft Office Specialist objectives for creating, formatting, collaborating on, and communicating with professional Word documents in Office 2016.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Word 2016, and can complete document-creation tasks independently.",
+    details: [
+      { label: "Exam", value: "77-725" },
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Create and Manage Documents", description: "Create documents, use templates, insert content, navigate, format, and customize document views." },
+      { number: "02", title: "Navigate Through a Document", description: "Search for text, add hyperlinks and bookmarks, and move to specific document locations." },
+      { number: "03", title: "Format a Document", description: "Apply themes, styles, page setup, headers, footers, and page-background elements." },
+      { number: "04", title: "Customize Options and Views", description: "Configure Word options, views, zoom settings, the Quick Access Toolbar, and document properties." },
+      { number: "05", title: "Manage Tables and Lists", description: "Create and modify tables, sort content, and build numbered or bulleted lists." },
+      { number: "06", title: "Insert and Format Graphic Elements", description: "Insert and format shapes, pictures, SmartArt, screenshots, icons, and text boxes." },
+    ],
+  },
+  {
+    id: "mos-word-expert-2016-77-726",
+    title: "Microsoft Word Expert (Office 2016) — Exam 77-726",
+    description: "Official Microsoft Office Specialist objectives for advanced Word document management, review, formatting, custom elements, and productivity features in Office 2016.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Word 2016, and can independently create and manage specialized professional documents.",
+    details: [
+      { label: "Exam", value: "77-726" },
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Documents and Templates", description: "Modify templates, reuse custom styles and building blocks, manage versions, and compare documents." },
+      { number: "02", title: "Prepare Documents for Review", description: "Track changes, manage comments, compare and combine documents, and protect reviewed content." },
+      { number: "03", title: "Use Advanced Editing and Formatting", description: "Apply advanced find and replace, paragraph layout, styles, themes, and formatting controls." },
+      { number: "04", title: "Create Custom Document Elements", description: "Build and manage custom styles, building blocks, fields, content controls, and forms." },
+      { number: "05", title: "Use Advanced Word Features", description: "Manage references, mail merge, macros, master documents, and linked document content." },
+    ],
+  },
+  {
+    id: "mos-excel-2016-77-727",
+    title: "Microsoft Excel (Office 2016) — Exam 77-727",
+    description: "Official Microsoft Office Specialist objectives for creating, managing, formatting, analyzing, and visualizing worksheets and workbooks in Excel 2016.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Excel 2016, and can complete spreadsheet tasks independently.",
+    details: [
+      { label: "Exam", value: "77-727" },
+      { label: "Objective areas", value: "7 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Create Worksheets and Workbooks", description: "Create workbooks, import data, navigate worksheets, and customize workbook views." },
+      { number: "02", title: "Navigate in Worksheets and Workbooks", description: "Find, move, and format worksheet content while managing rows, columns, and worksheet structure." },
+      { number: "03", title: "Format Worksheets and Workbooks", description: "Apply cell formats, page setup, themes, styles, headers, footers, and print settings." },
+      { number: "04", title: "Manage Data Cells and Ranges", description: "Insert, manipulate, format, sort, filter, and validate data cells and ranges." },
+      { number: "05", title: "Create Tables", description: "Create, format, modify, and manage Excel tables and their data." },
+      { number: "06", title: "Perform Operations with Formulas and Functions", description: "Create formulas, use references and functions, and summarize data with formulas." },
+      { number: "07", title: "Create Charts and Objects", description: "Create, format, modify, and manage charts, illustrations, and other worksheet objects." },
+    ],
+  },
+  {
+    id: "mos-excel-expert-2016-77-728",
+    title: "Microsoft Excel Expert (Office 2016) — Exam 77-728",
+    description: "Official Microsoft Office Specialist objectives for advanced Excel workbook management, data analysis, formulas, charts, and PivotTables in Office 2016.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Excel 2016, and can complete advanced spreadsheet tasks independently.",
+    details: [
+      { label: "Exam", value: "77-728" },
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Workbook Options and Settings", description: "Manage workbooks, references, macros, versions, collaboration, protection, and calculation options." },
+      { number: "02", title: "Apply Custom Data Formats and Layouts", description: "Apply custom formats, data validation, advanced conditional formatting, and filtering." },
+      { number: "03", title: "Create Advanced Formulas and Macros", description: "Use logical, lookup, date, financial, array, and data-analysis functions and create simple macros." },
+      { number: "04", title: "Create Advanced Charts and Tables", description: "Build advanced charts, PivotTables, PivotCharts, slicers, calculated fields, and grouped data." },
+    ],
+  },
+  {
+    id: "mos-powerpoint-2016-77-729",
+    title: "Microsoft PowerPoint (Office 2016) — Exam 77-729",
+    description: "Official Microsoft Office Specialist objectives for creating, formatting, presenting, and managing professional presentations in PowerPoint 2016.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with PowerPoint 2016, and can complete presentation tasks independently.",
+    details: [
+      { label: "Exam", value: "77-729" },
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Create and Manage Presentations", description: "Create presentations, use templates, apply presentation options, and manage multiple presentations." },
+      { number: "02", title: "Insert and Format Slides", description: "Insert, duplicate, arrange, hide, delete, and apply layouts and backgrounds to slides." },
+      { number: "03", title: "Modify Slides, Handouts, and Notes", description: "Customize slide masters, handouts, notes, headers, footers, and print settings." },
+      { number: "04", title: "Insert and Format Text, Shapes, and Images", description: "Add and format text, shapes, pictures, SmartArt, screenshots, icons, and 3D elements." },
+      { number: "05", title: "Insert Tables, Charts, SmartArt, and Media", description: "Create and format tables, charts, SmartArt, audio, video, and other presentation content." },
+      { number: "06", title: "Apply Transitions and Animations", description: "Apply transitions, animations, timings, and presentation effects to slide content." },
+    ],
+  },
+  {
+    id: "mos-outlook-2016-77-731",
+    title: "Microsoft Outlook (Office 2016) — Exam 77-731",
+    description: "Official Microsoft Office Specialist objectives for professional email, correspondence, calendars, contacts, scheduling, and tasks in Outlook 2016.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Outlook 2016, and can complete communication and scheduling tasks independently.",
+    details: [
+      { label: "Exam", value: "77-731" },
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage the Outlook Environment", description: "Customize settings, navigation, accounts, views, and message or calendar display options." },
+      { number: "02", title: "Manage Messages", description: "Create, format, send, respond to, organize, search, and print email messages." },
+      { number: "03", title: "Manage Contacts", description: "Create, edit, organize, search, and communicate with contacts and contact groups." },
+      { number: "04", title: "Manage Calendars", description: "Create appointments and meetings, manage calendars, and schedule resources." },
+      { number: "05", title: "Manage Tasks", description: "Create, assign, update, organize, and track tasks and follow-up activities." },
+    ],
+  },
+  {
+    id: "mos-word-2019-mo-100",
+    title: "Microsoft Word (Office 2019) — Exam MO-100",
+    description: "Official Microsoft Office Specialist objectives for managing documents, formatting content, tables, references, graphics, and collaboration in Word 2019.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Word 2019, and can complete professional document tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-100" },
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Documents", description: "Navigate, format, save, share, inspect, and manage professional Word documents." },
+      { number: "02", title: "Insert and Format Text, Paragraphs, and Sections", description: "Insert content, format text and paragraphs, and configure document sections." },
+      { number: "03", title: "Manage Tables and Lists", description: "Create and modify tables, numbered lists, bulleted lists, and list levels." },
+      { number: "04", title: "Create and Manage References", description: "Create footnotes, endnotes, tables of contents, citations, and bibliographies." },
+      { number: "05", title: "Insert and Format Graphic Elements", description: "Insert, format, and manage shapes, pictures, icons, SmartArt, and text boxes." },
+      { number: "06", title: "Manage Document Collaboration", description: "Manage comments, track changes, review documents, and control document access." },
+    ],
+  },
+  {
+    id: "mos-word-expert-2019-mo-101",
+    title: "Microsoft Word Expert (Office 2019) — Exam MO-101",
+    description: "Official Microsoft Office Specialist objectives for advanced Word editing, document options, custom elements, references, and productivity features in Office 2019.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Word 2019, and can independently create and manage specialized professional documents.",
+    details: [
+      { label: "Exam", value: "MO-101" },
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Document Options and Settings", description: "Manage documents and templates, collaboration, language options, and advanced application settings." },
+      { number: "02", title: "Use Advanced Editing and Formatting Features", description: "Use advanced find and replace, paste options, paragraph layout, hyphenation, styles, and formatting." },
+      { number: "03", title: "Create Custom Document Elements", description: "Create and manage building blocks, custom styles, fields, content controls, and forms." },
+      { number: "04", title: "Use Advanced Word Features", description: "Manage references, mail merge, master documents, macros, and linked document content." },
+    ],
+  },
+  {
+    id: "mos-excel-2019-mo-200",
+    title: "Microsoft Excel (Office 2019) — Exam MO-200",
+    description: "Official Microsoft Office Specialist objectives for managing worksheets, data, tables, formulas, functions, and charts in Excel 2019.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Excel 2019, and can complete spreadsheet tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-200" },
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Worksheets and Workbooks", description: "Import data, navigate workbooks, format worksheets, customize views, and prepare workbooks for sharing." },
+      { number: "02", title: "Manage Data Cells and Ranges", description: "Manipulate, format, name, sort, filter, and validate worksheet cells and ranges." },
+      { number: "03", title: "Manage Tables and Table Data", description: "Create, modify, format, sort, filter, and summarize Excel tables." },
+      { number: "04", title: "Perform Operations Using Formulas and Functions", description: "Create formulas, use references and functions, and perform data calculations." },
+      { number: "05", title: "Manage Charts", description: "Create, format, modify, and manage charts and chart elements." },
+    ],
+  },
+  {
+    id: "mos-excel-expert-2019-mo-201",
+    title: "Microsoft Excel Expert (Office 2019) — Exam MO-201",
+    description: "Official Microsoft Office Specialist objectives for advanced Excel workbook settings, data formats, formulas, macros, charts, and PivotTables in Office 2019.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Excel 2019, and can complete advanced spreadsheet tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-201" },
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Workbook Options and Settings", description: "Manage workbooks, macros, collaboration, protection, versions, and formula calculation options." },
+      { number: "02", title: "Manage and Format Data", description: "Apply custom formats, advanced conditional formatting, filtering, subtotals, and duplicate-data controls." },
+      { number: "03", title: "Create Advanced Formulas and Macros", description: "Use logical, lookup, date, financial, dynamic-array, analysis, and error-checking tools and macros." },
+      { number: "04", title: "Manage Advanced Charts and Tables", description: "Create advanced charts, PivotTables, slicers, calculated fields, and PivotCharts." },
+    ],
+  },
+  {
+    id: "mos-powerpoint-2019-mo-300",
+    title: "Microsoft PowerPoint (Office 2019) — Exam MO-300",
+    description: "Official Microsoft Office Specialist objectives for managing presentations, slides, content, media, transitions, animations, and presentation delivery in PowerPoint 2019.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with PowerPoint 2019, and can complete presentation tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-300" },
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Presentations", description: "Modify masters, options, views, print settings, slide shows, collaboration, and distribution settings." },
+      { number: "02", title: "Manage Slides", description: "Insert, modify, order, group, hide, and arrange slides and layouts." },
+      { number: "03", title: "Insert and Format Text, Shapes, and Images", description: "Create, format, align, group, and manage text, shapes, pictures, icons, and 3D models." },
+      { number: "04", title: "Insert Tables, Charts, SmartArt, 3D Models, and Media", description: "Add and format structured data, diagrams, charts, models, audio, and video." },
+      { number: "05", title: "Apply Transitions and Animations", description: "Apply transitions, animations, timings, and motion effects to presentation content." },
+      { number: "06", title: "Manage Multiple Presentations", description: "Compare, combine, reuse, and present content across multiple presentation files." },
+    ],
+  },
+  {
+    id: "mos-outlook-2019-mo-400",
+    title: "Microsoft Outlook (Office 2019) — Exam MO-400",
+    description: "Official Microsoft Office Specialist objectives for Outlook settings, correspondence, contacts, calendars, meetings, scheduling, and tasks in Office 2019.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Outlook 2019, and can complete communication and scheduling tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-400" },
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Outlook Settings and Processes", description: "Customize the interface, accounts, mail settings, search, printing, saving, and attachment workflows." },
+      { number: "02", title: "Manage Messages", description: "Create, format, send, respond to, organize, and manage email content and attachments." },
+      { number: "03", title: "Manage Schedules", description: "Create appointments and meetings, manage calendars, and schedule resources and attendees." },
+      { number: "04", title: "Manage Contacts and Tasks", description: "Create and manage contacts, contact groups, tasks, flags, and follow-up activities." },
+      { number: "05", title: "Manage Multiple Accounts", description: "Configure and work with multiple Outlook accounts and account-specific settings." },
+    ],
+  },
+  {
+    id: "mos-access-expert-2019-mo-500",
+    title: "Microsoft Access Expert (Office 2019) — Exam MO-500",
+    description: "Official Microsoft Office Specialist objectives for advanced Access database objects, data management, queries, forms, reports, and relationships in Office 2019.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Access 2019, and can complete advanced database tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-500" },
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Database Objects", description: "Create, modify, organize, and manage tables, relationships, indexes, and database objects." },
+      { number: "02", title: "Manage Data", description: "Import, export, validate, update, summarize, and maintain database data." },
+      { number: "03", title: "Create Queries", description: "Create advanced select, action, parameter, crosstab, and SQL queries." },
+      { number: "04", title: "Create Forms", description: "Create, format, configure, and manage advanced forms and controls." },
+      { number: "05", title: "Create Reports", description: "Create, format, calculate, group, sort, and publish advanced reports." },
+    ],
+  },
+  {
+    id: "mos-word-microsoft-365-mo-110",
+    title: "Word (Microsoft 365 Apps) — Exam MO-110",
+    description: "Official Microsoft Office Specialist objectives for managing documents, formatting content, tables, references, graphics, and collaboration in Microsoft 365 Apps.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Word in Microsoft 365 Apps, and can complete professional document tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-110" },
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Documents", description: "Navigate, format, save, share, inspect, and manage professional Word documents." },
+      { number: "02", title: "Insert and Format Text, Paragraphs, and Sections", description: "Insert content, format text and paragraphs, and configure document sections." },
+      { number: "03", title: "Manage Tables and Lists", description: "Create and modify tables, numbered lists, bulleted lists, and list levels." },
+      { number: "04", title: "Create and Manage References", description: "Create footnotes, endnotes, tables of contents, citations, and bibliographies." },
+      { number: "05", title: "Insert and Format Graphic Elements", description: "Insert, format, and manage shapes, pictures, icons, SmartArt, and text boxes." },
+      { number: "06", title: "Manage Document Collaboration", description: "Manage comments, track changes, review documents, and control document access." },
+    ],
+  },
+  {
+    id: "mos-word-expert-microsoft-365-mo-111",
+    title: "Word Expert (Microsoft 365 Apps) — Exam MO-111",
+    description: "Official Microsoft Office Specialist objectives for advanced Word editing, document options, custom elements, references, and productivity features in Microsoft 365 Apps.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Word in Microsoft 365 Apps, and can independently create and manage specialized professional documents.",
+    details: [
+      { label: "Exam", value: "MO-111" },
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Document Options and Settings", description: "Manage documents and templates, collaboration, language options, and advanced application settings." },
+      { number: "02", title: "Use Advanced Editing and Formatting Features", description: "Use advanced find and replace, paste options, paragraph layout, styles, and formatting." },
+      { number: "03", title: "Create Custom Document Elements", description: "Create and manage building blocks, custom styles, fields, content controls, and forms." },
+      { number: "04", title: "Use Advanced Word Features", description: "Manage references, mail merge, master documents, macros, and linked document content." },
+    ],
+  },
+  {
+    id: "mos-excel-microsoft-365-mo-210",
+    title: "Excel (Microsoft 365 Apps) — Exam MO-210",
+    description: "Official Microsoft Office Specialist objectives for managing worksheets, data, tables, formulas, functions, and charts in Microsoft 365 Apps.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Excel in Microsoft 365 Apps, and can complete spreadsheet tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-210" },
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Worksheets and Workbooks", description: "Import data, navigate workbooks, format worksheets, customize views, and prepare workbooks for sharing." },
+      { number: "02", title: "Manage Data Cells and Ranges", description: "Manipulate, format, name, sort, filter, and validate worksheet cells and ranges." },
+      { number: "03", title: "Manage Tables and Table Data", description: "Create, modify, format, sort, filter, and summarize Excel tables." },
+      { number: "04", title: "Perform Operations Using Formulas and Functions", description: "Create formulas, use references and functions, and perform data calculations." },
+      { number: "05", title: "Manage Charts", description: "Create, format, modify, and manage charts and chart elements." },
+    ],
+  },
+  {
+    id: "mos-excel-expert-microsoft-365-mo-211",
+    title: "Excel Expert (Microsoft 365 Apps) — Exam MO-211",
+    description: "Official Microsoft Office Specialist objectives for advanced Excel workbook settings, data formats, formulas, macros, charts, and PivotTables in Microsoft 365 Apps.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with Excel in Microsoft 365 Apps, and can complete advanced spreadsheet tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-211" },
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Workbook Options and Settings", description: "Manage workbooks, macros, collaboration, protection, versions, and formula calculation options." },
+      { number: "02", title: "Manage and Format Data", description: "Apply custom formats, advanced conditional formatting, filtering, subtotals, and duplicate-data controls." },
+      { number: "03", title: "Create Advanced Formulas and Macros", description: "Use logical, lookup, date, financial, dynamic-array, analysis, and error-checking tools and macros." },
+      { number: "04", title: "Manage Advanced Charts and Tables", description: "Create advanced charts, PivotTables, slicers, calculated fields, and PivotCharts." },
+    ],
+  },
+  {
+    id: "mos-powerpoint-microsoft-365-mo-310",
+    title: "PowerPoint (Microsoft 365 Apps) — Exam MO-310",
+    description: "Official Microsoft Office Specialist objectives for managing presentations, slides, content, media, transitions, animations, and delivery in Microsoft 365 Apps.",
+    audience: "The target candidate has approximately 150 hours of instruction and hands-on experience with PowerPoint in Microsoft 365 Apps, and can complete presentation tasks independently.",
+    details: [
+      { label: "Exam", value: "MO-310" },
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Credential", value: "Microsoft Office Specialist" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Manage Presentations", description: "Modify masters, options, views, print settings, slide shows, collaboration, and distribution settings." },
+      { number: "02", title: "Manage Slides", description: "Insert, modify, order, group, hide, and arrange slides and layouts." },
+      { number: "03", title: "Insert and Format Text, Shapes, and Images", description: "Create, format, align, group, and manage text, shapes, pictures, icons, and 3D models." },
+      { number: "04", title: "Insert Tables, Charts, SmartArt, 3D Models, and Media", description: "Add and format structured data, diagrams, charts, models, audio, and video." },
+      { number: "05", title: "Apply Transitions and Animations", description: "Apply transitions, animations, timings, and motion effects to presentation content." },
+      { number: "06", title: "Manage Multiple Presentations", description: "Compare, combine, reuse, and present content across multiple presentation files." },
+    ],
+  },
+];
+
 export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
   {
     id: "adobe",
@@ -646,5 +976,12 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     eyebrow: "CompTIA certification courses",
     description: "Official objective-led preparation across CompTIA foundational, infrastructure, cloud, data, project, networking, Linux, and cybersecurity certifications.",
     courses: COMPTIA_COURSES,
+  },
+  {
+    id: "microsoft",
+    name: "Microsoft Office Specialist",
+    eyebrow: "Microsoft Office Specialist certification courses",
+    description: "Official objective-led preparation for Microsoft Word, Excel, PowerPoint, Outlook, and Access exams across Office 2016, Office 2019, and Microsoft 365 Apps.",
+    courses: MICROSOFT_COURSES,
   },
 ];
