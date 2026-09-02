@@ -1,10 +1,18 @@
-import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Req, Res, UseGuards } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { successResponse } from "../../common/response";
 import type { ContextRequest } from "../../common/request-context";
 import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
-import { LoginDto, OtpRequestDto, OtpVerifyDto, ProviderDto } from "./auth.dto";
+import {
+  ForgotPasswordDto,
+  LoginDto,
+  OtpRequestDto,
+  OtpVerifyDto,
+  ProviderDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from "./auth.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -22,6 +30,42 @@ export class AuthController {
       path: "/",
     });
     return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
+  }
+
+  @Post("register")
+  @HttpCode(201)
+  async register(@Body() input: RegisterDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.register(input, {
+        ipAddress: request.context.ipAddress,
+        userAgent: request.headers["user-agent"],
+      }),
+      request,
+    );
+  }
+
+  @Post("forgot-password")
+  @HttpCode(202)
+  async forgotPassword(@Body() input: ForgotPasswordDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.requestPasswordReset(input, {
+        ipAddress: request.context.ipAddress,
+        userAgent: request.headers["user-agent"],
+      }),
+      request,
+    );
+  }
+
+  @Post("reset-password/:token")
+  @HttpCode(200)
+  async resetPassword(@Param("token") token: string, @Body() input: ResetPasswordDto, @Req() request: ContextRequest) {
+    return successResponse(await this.auth.resetPassword(token, input), request);
+  }
+
+  @Get("verify-email/:token")
+  @HttpCode(200)
+  async verifyEmail(@Param("token") token: string, @Req() request: ContextRequest) {
+    return successResponse(await this.auth.verifyEmail(token), request);
   }
 
   @Post("logout")

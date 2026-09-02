@@ -156,23 +156,110 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
       <div><Label htmlFor="login-email">Email</Label><Input id="login-email" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} />{message(errors.email?.message)}</div>
-      <div><div className="flex justify-between"><Label htmlFor="login-password">Password</Label><Link href="/auth/forgot-password" className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link></div><div className="relative mt-2"><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="min-h-12 rounded-xl bg-background/70 px-4 pr-12" {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="absolute top-1/2 right-3 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-primary" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message)}</div>
+      <div><div className="flex justify-between"><Label htmlFor="login-password">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link></div><div className="relative mt-2"><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="min-h-12 rounded-xl bg-background/70 px-4 pr-12" {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="absolute top-1/2 right-3 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-primary" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message)}</div>
       <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="font-normal">Keep me signed in</Label></div>} />
       {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button className="h-12 w-full rounded-xl text-sm shadow-[0_12px_25px_rgba(239,125,60,.2)]" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Sign in"}</Button>
+      <p className="text-center text-sm text-muted-foreground">New to CITIS? <Link href={`/auth/register?portal=${portal}`} className="font-semibold text-primary hover:underline">Create new account</Link></p>
     </form>
   );
 }
 
 const emailSchema = z.object({ email: z.string().email("Enter a valid email address") });
-const resetSchema = z.object({ password: z.string().min(8, "Use at least 8 characters"), confirmPassword: z.string() }).refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });
+const passwordSchema = z.string()
+  .min(8, "Use at least 8 characters")
+  .max(128, "Use 128 characters or fewer")
+  .regex(/[a-z]/, "Include a lowercase letter")
+  .regex(/[A-Z]/, "Include an uppercase letter")
+  .regex(/\d/, "Include a number");
+const resetSchema = z.object({ password: passwordSchema, confirmPassword: z.string() }).refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });
+const registerSchema = z.object({
+  firstName: z.string().trim().min(1, "Enter your first name").max(80),
+  lastName: z.string().trim().max(80),
+  email: z.string().trim().email("Enter a valid email address"),
+  password: passwordSchema,
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, { path: ["confirmPassword"], message: "Passwords do not match" });
+
+const registrationRoleByPortal: Record<LmsPortal, "learner" | "instructor" | "admin"> = {
+  learner: "learner",
+  instructor: "instructor",
+  admin: "admin",
+};
+
+export function RegisterForm({ portal = "learner" }: { portal?: LmsPortal }) {
+  const [done, setDone] = useState(false);
+  const [serverError, setServerError] = useState("");
+  const [verificationUrl, setVerificationUrl] = useState("");
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { firstName: "", lastName: "", email: "", password: "", confirmPassword: "" },
+  });
+  const onSubmit = async (values: z.infer<typeof registerSchema>) => {
+    setServerError("");
+    try {
+      const response = await apiFetch<{ data: { developmentVerificationToken?: string } }>("/auth/register", {
+        method: "POST",
+        body: JSON.stringify({
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
+          role: registrationRoleByPortal[portal],
+        }),
+        revalidate: false,
+      });
+      const token = response.data.developmentVerificationToken;
+      if (token) setVerificationUrl(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+      setDone(true);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "We could not create your account. Please try again.");
+    }
+  };
+  if (done) {
+    const staff = portal !== "learner";
+    return (
+      <div role="status" className="surface rounded-xl p-7 text-center">
+        <CheckCircle2 className="mx-auto size-12 text-success" />
+        <h3 className="mt-4 font-heading text-2xl font-semibold">Account request received</h3>
+        <p className="mt-3 text-sm leading-6 text-muted-foreground">
+          Verify your email to activate your account{staff ? ". An institution administrator will review staff access before you can sign in." : "."}
+        </p>
+        {verificationUrl && <Link href={verificationUrl} className="mt-5 inline-flex font-semibold text-primary hover:underline">Open verification link (development)</Link>}
+      </div>
+    );
+  }
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div><Label htmlFor="register-first-name">First name</Label><Input id="register-first-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="given-name" {...register("firstName")} />{message(errors.firstName?.message)}</div>
+        <div><Label htmlFor="register-last-name">Last name</Label><Input id="register-last-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="family-name" {...register("lastName")} />{message(errors.lastName?.message)}</div>
+      </div>
+      <div><Label htmlFor="register-email">Email</Label><Input id="register-email" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} />{message(errors.email?.message)}</div>
+      <div><Label htmlFor="register-password">Password</Label><Input id="register-password" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="password" autoComplete="new-password" {...register("password")} />{message(errors.password?.message)}<p className="mt-1 text-xs text-muted-foreground">Use 8–128 characters with upper, lower, and a number.</p></div>
+      <div><Label htmlFor="register-confirm-password">Confirm password</Label><Input id="register-confirm-password" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="password" autoComplete="new-password" {...register("confirmPassword")} />{message(errors.confirmPassword?.message)}</div>
+      {portal !== "learner" && <p className="rounded-xl border border-primary/15 bg-primary/5 p-3 text-sm text-muted-foreground">Staff accounts require email verification and institution approval before portal access is enabled.</p>}
+      {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+      <Button className="h-12 w-full rounded-xl text-sm shadow-[0_12px_25px_rgba(239,125,60,.2)]" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Create new account"}</Button>
+    </form>
+  );
+}
 
 export function ForgotPasswordForm() {
   const [done, setDone] = useState(false);
+  const [serverError, setServerError] = useState("");
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<z.infer<typeof emailSchema>>({ resolver: zodResolver(emailSchema) });
-  const onSubmit = async (values: z.infer<typeof emailSchema>) => { try { await apiFetch("/auth/forgot-password", { method: "POST", body: JSON.stringify(values), revalidate: false }); } finally { setDone(true); } };
+  const onSubmit = async (values: z.infer<typeof emailSchema>) => {
+    setServerError("");
+    try {
+      await apiFetch("/auth/forgot-password", { method: "POST", body: JSON.stringify(values), revalidate: false });
+      setDone(true);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : "We could not send a reset link. Please try again.");
+    }
+  };
   if (done) return <FormSuccess title="Check your inbox" copy="If an account exists for that email, we sent a secure password reset link." />;
-  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" {...register("email")} />{message(errors.email?.message)}</div><Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
+  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" {...register("email")} />{message(errors.email?.message)}</div>{serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}<Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
 }
 
 export function ResetPasswordForm() {
