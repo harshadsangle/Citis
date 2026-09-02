@@ -22,7 +22,8 @@
     "db:import-after-effects": "node scripts/import-adobe-after-effects-course.mjs",
     "db:import-adobe-courses": "node scripts/import-adobe-objectives-courses.mjs",
     "db:import-autodesk-courses": "node scripts/import-autodesk-objectives-courses.mjs",
-    "db:import-comptia-courses": "node scripts/import-comptia-objectives-courses.mjs"
+    "db:import-comptia-courses": "node scripts/import-comptia-objectives-courses.mjs",
+    "db:import-citis-course-catalogue": "node scripts/import-citis-course-catalogue.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
