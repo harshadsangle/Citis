@@ -14,6 +14,7 @@ export declare class CertificateService {
     list(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query?: CertificateListQueryDto): Promise<{
         data: {
             id: unknown;
+            course_id: unknown;
             certificate_number: unknown;
             verification_id: unknown;
             learner_name: string;
@@ -33,6 +34,7 @@ export declare class CertificateService {
     }>;
     get(id: string, user: AuthenticatedUser): Promise<{
         id: unknown;
+        course_id: unknown;
         certificate_number: unknown;
         verification_id: unknown;
         learner_name: string;
@@ -68,6 +70,7 @@ export declare class CertificateService {
     }>;
     issueIfEligible(tenantId: string, courseId: string, learnerId: string, request?: ContextRequest): Promise<{
         id: unknown;
+        course_id: unknown;
         certificate_number: unknown;
         verification_id: unknown;
         learner_name: string;

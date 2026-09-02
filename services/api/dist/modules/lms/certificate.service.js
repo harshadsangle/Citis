@@ -86,6 +86,7 @@ let CertificateService = class CertificateService {
     safeDetails(row) {
         return {
             id: row.id,
+            course_id: row.course_id,
             certificate_number: row.certificate_number,
             verification_id: row.verification_id,
             learner_name: learnerName(row),

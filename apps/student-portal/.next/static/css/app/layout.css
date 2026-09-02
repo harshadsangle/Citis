@@ -1,0 +1,82 @@
+/*!********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ../../node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[2]!../../node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[14].oneOf[10].use[3]!./app/styles.css ***!
+  \********************************************************************************************************************************************************************************************************************************************************************/
+:root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #102f49; background: #f4f8fb; font-synthesis: none; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; }
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .52; }
+
+.student-shell {
+  background:
+    radial-gradient(circle at 8% 0%, rgb(92 166 177 / .16), transparent 27%),
+    radial-gradient(circle at 96% 14%, rgb(239 125 60 / .13), transparent 24%),
+    #f4f8fb !important;
+  color: #102f49 !important;
+  font-family: "Avenir Next", "Segoe UI", Arial, sans-serif !important;
+  min-height: 100dvh !important;
+  padding: clamp(24px, 5vw, 64px) max(18px, 4vw) 72px !important;
+}
+.student-shell > div { max-width: 1120px !important; }
+.student-shell h1, .student-shell h2, .student-shell h3, .student-shell strong {
+  font-family: "Avenir Next", "Segoe UI", Arial, sans-serif !important;
+}
+.student-shell h1 { color: #0a3454 !important; font-weight: 700 !important; }
+.student-shell h2 { color: #123f60 !important; font-weight: 650 !important; }
+.student-shell h3 { color: #174c6e !important; font-weight: 650 !important; }
+.student-shell p, .student-shell span { color: inherit; }
+.student-shell > div > header { align-items: flex-start !important; margin: 16px 0 42px !important; }
+.student-shell > div > header > div:first-child { max-width: 720px; }
+.student-shell > div > header > div:last-child {
+  background: #fff4e7 !important; border: 1px solid #f2d6c1; border-radius: 999px !important;
+  color: #9a572d !important; font-size: 12px !important; font-weight: 700; padding: 10px 14px !important;
+}
+.student-shell section {
+  border-color: #d3e1e8 !important; border-radius: 18px !important;
+  box-shadow: 0 12px 34px rgb(18 75 115 / .07) !important;
+}
+.student-shell article {
+  border-color: #d3e1e8 !important; border-radius: 18px !important;
+  box-shadow: 0 10px 28px rgb(18 75 115 / .055) !important;
+}
+.student-shell article > div:first-child { gap: 24px !important; }
+.student-shell article strong[style*="fontSize: 30px"] { color: #267d76 !important; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif !important; }
+.student-shell div[style*="background: rgb(230, 237, 243)"],
+.student-shell div[style*="background: #e6edf3"] {
+  background: #dce8ee !important; height: 9px !important;
+}
+.student-shell div[style*="background: rgb(15, 118, 110)"],
+.student-shell div[style*="background: #0f766e"] {
+  background: linear-gradient(90deg, #278a76, #5ca6b1) !important;
+}
+.student-shell button {
+  min-height: 42px; border-radius: 10px !important; transition: transform 180ms ease, background-color 180ms ease, border-color 180ms ease !important;
+}
+.student-shell button:hover:not(:disabled) { transform: translateY(-1px); }
+.student-shell input, .student-shell textarea {
+  background: #fbfdfe !important; border-color: #c4d5df !important; border-radius: 11px !important;
+}
+.student-shell input:focus, .student-shell textarea:focus {
+  border-color: #5ca6b1 !important; box-shadow: 0 0 0 3px rgb(92 166 177 / .16) !important; outline: none !important;
+}
+.student-shell details > summary { min-height: 52px; }
+.student-shell details > summary:focus-visible { outline: 2px solid #ef7d3c !important; outline-offset: -2px; }
+.student-shell a { color: #155d88 !important; }
+.student-shell [style*="background: white"], .student-shell [style*="background: white;"] { background: #fbfdfe !important; }
+.student-shell [style*="background: #f8fbfd"], .student-shell [style*="background: #f5f8fb"] { background: #f1f6f8 !important; }
+.student-shell [style*="background: #eefbf7"] { background: #e8f6f1 !important; }
+.student-shell [style*="background: #fff8f5"] { background: #fff5f1 !important; }
+
+@media (max-width: 700px) {
+  .student-shell > div > header { flex-direction: column !important; }
+  .student-shell > div > header > div:last-child { align-self: flex-start; }
+  .student-shell article > div:first-child { flex-wrap: wrap !important; }
+  .student-shell article { padding: 20px !important; }
+  .student-shell article button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

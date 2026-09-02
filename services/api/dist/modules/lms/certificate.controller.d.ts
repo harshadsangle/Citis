@@ -30,6 +30,7 @@ export declare class CertificateController {
     constructor(certificates: CertificateService);
     list(request: ContextRequest, query: CertificateListQueryDto): Promise<import("../../common/response").ApiSuccess<{
         id: unknown;
+        course_id: unknown;
         certificate_number: unknown;
         verification_id: unknown;
         learner_name: string;
@@ -42,6 +43,7 @@ export declare class CertificateController {
     }[]>>;
     get(id: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<{
         id: unknown;
+        course_id: unknown;
         certificate_number: unknown;
         verification_id: unknown;
         learner_name: string;

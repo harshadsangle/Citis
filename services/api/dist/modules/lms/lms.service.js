@@ -802,7 +802,7 @@ let LmsService = class LmsService {
     }
     async progressCourse(courseId, user) {
         const result = await this.db.query(`SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.description, c.status,
-              p.status AS programme_status, i.status AS institution_status
+              p.name AS programme_name, p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
        JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
@@ -884,7 +884,18 @@ let LmsService = class LmsService {
                    SELECT 1 FROM lms_assessment_completions ac
                    WHERE ac.tenant_id = $2 AND ac.course_id = $1 AND ac.module_id = cm.id
                      AND ac.assessment_id = a.id AND ac.learner_id = $3 AND ac.status = 'COMPLETED'
-                 )) AS assessment_completed
+                  )) AS assessment_completed,
+               (SELECT COALESCE(json_agg(
+                 json_build_object(
+                   'id', l.id,
+                   'title', l.title,
+                   'description', l.description,
+                   'sequence', l.sequence,
+                   'estimatedDuration', l.estimated_duration
+                 ) ORDER BY l.sequence ASC, l.id ASC
+               ), '[]'::json)
+                FROM lessons l
+                WHERE l.tenant_id = $2 AND l.module_id = cm.id AND l.status = 'PUBLISHED') AS lesson_items
        FROM course_modules cm
        WHERE cm.tenant_id = $2 AND cm.course_id = $1 AND cm.status = 'PUBLISHED'
        ORDER BY cm.sequence ASC, cm.id ASC`, [course.id, user.tenantId, learnerId]);
@@ -895,6 +906,18 @@ let LmsService = class LmsService {
             const assessmentCompleted = Number(row.assessment_completed ?? 0);
             const total = lessonTotal + assessmentTotal;
             const completed = lessonCompleted + assessmentCompleted;
+            const lessonItems = Array.isArray(row.lesson_items)
+                ? row.lesson_items.map((item) => {
+                    const lesson = item;
+                    return {
+                        id: String(lesson.id),
+                        title: String(lesson.title),
+                        description: lesson.description,
+                        sequence: Number(lesson.sequence),
+                        estimatedDuration: lesson.estimatedDuration == null ? null : Number(lesson.estimatedDuration),
+                    };
+                })
+                : [];
             return {
                 id: row.module_id,
                 title: row.module_title,
@@ -903,6 +926,7 @@ let LmsService = class LmsService {
                 percentage: progressPercentage(completed, total),
                 lessons: { completed: lessonCompleted, total: lessonTotal },
                 assessments: { completed: assessmentCompleted, total: assessmentTotal },
+                lessonItems,
             };
         });
         const lessons = modules.reduce((summary, module) => ({
@@ -921,6 +945,7 @@ let LmsService = class LmsService {
                 title: course.title,
                 code: course.code,
                 description: course.description,
+                programme_name: course.programme_name,
                 status: course.status,
             },
             learnerId,

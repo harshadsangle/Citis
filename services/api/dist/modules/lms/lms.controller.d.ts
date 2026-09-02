@@ -101,6 +101,7 @@ export declare class LmsController {
             title: unknown;
             code: unknown;
             description: unknown;
+            programme_name: unknown;
             status: unknown;
         };
         learnerId: string;
@@ -128,6 +129,13 @@ export declare class LmsController {
                 completed: number;
                 total: number;
             };
+            lessonItems: {
+                id: string;
+                title: string;
+                description: string | null;
+                sequence: number;
+                estimatedDuration: number | null;
+            }[];
         }[];
     }[]>>;
     courseProgress(courseId: string, request: ContextRequest, query: ProgressViewerQueryDto): Promise<import("../../common/response").ApiSuccess<{
@@ -136,6 +144,7 @@ export declare class LmsController {
             title: unknown;
             code: unknown;
             description: unknown;
+            programme_name: unknown;
             status: unknown;
         };
         learnerId: string;
@@ -163,6 +172,13 @@ export declare class LmsController {
                 completed: number;
                 total: number;
             };
+            lessonItems: {
+                id: string;
+                title: string;
+                description: string | null;
+                sequence: number;
+                estimatedDuration: number | null;
+            }[];
         }[];
     }>>;
     completeLesson(lessonId: string, request: ContextRequest): Promise<import("../../common/response").ApiSuccess<Record<string, unknown>>>;

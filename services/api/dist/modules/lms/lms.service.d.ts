@@ -160,6 +160,7 @@ export declare class LmsService {
             title: unknown;
             code: unknown;
             description: unknown;
+            programme_name: unknown;
             status: unknown;
         };
         learnerId: string;
@@ -187,6 +188,13 @@ export declare class LmsService {
                 completed: number;
                 total: number;
             };
+            lessonItems: {
+                id: string;
+                title: string;
+                description: string | null;
+                sequence: number;
+                estimatedDuration: number | null;
+            }[];
         }[];
     }[]>;
     getCourseProgress(courseId: string, user: AuthenticatedUser, learnerId?: string): Promise<{
@@ -195,6 +203,7 @@ export declare class LmsService {
             title: unknown;
             code: unknown;
             description: unknown;
+            programme_name: unknown;
             status: unknown;
         };
         learnerId: string;
@@ -222,6 +231,13 @@ export declare class LmsService {
                 completed: number;
                 total: number;
             };
+            lessonItems: {
+                id: string;
+                title: string;
+                description: string | null;
+                sequence: number;
+                estimatedDuration: number | null;
+            }[];
         }[];
     }>;
     completeLesson(lessonId: string, request: ContextRequest): Promise<Record<string, unknown>>;
