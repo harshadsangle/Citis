@@ -26,7 +26,7 @@ flowchart LR
     Disk[(Local uploads volume)]
     Mail[Console or Mailpit SMTP]
 
-    U -->|http://localhost:3000| FE
+    U -->|http://localhost:5000| FE
     FE -->|REST /api/v1| API
     FE -->|REST /api| CMS
     API --> M

@@ -81,7 +81,7 @@ npm run develop --prefix strapi-cms
 
 Open:
 
-- Site: http://localhost:3000
+- Site: http://localhost:5000
 - API health: http://localhost:5000/health
 - Strapi admin: http://localhost:1337/admin
 - Mailpit (if using Compose): http://localhost:8025
