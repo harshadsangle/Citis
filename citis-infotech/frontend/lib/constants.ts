@@ -193,6 +193,12 @@ export const MEGA_MENUS = {
         icon: Award,
         children: globalCertificationItems,
       },
+      {
+        title: "Professional Programs & Specializations",
+        href: "/engagements/professional-programs",
+        description: "Applied programmes and specialisations for future-ready careers.",
+        icon: Sparkles,
+      },
     ],
   },
   products: {

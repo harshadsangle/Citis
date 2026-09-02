@@ -5,6 +5,7 @@ import { generatePageMetadata } from "@/lib/seo";
 import { redirectToLmsPortal } from "@/lib/lms-portal";
 import { LMS_PORTALS, normalizeLmsPortal, type LmsPortal } from "@/lib/lms-roles";
 import { LMS_COURSE_CATEGORIES, normalizeLmsCourseProvider, type LmsCourseProvider } from "@/lib/lms-catalog";
+import { ProfessionalProgramsCatalogue } from "@/components/marketing/ProfessionalProgramsCatalogue";
 
 export const metadata = generatePageMetadata({
   title: "Learning Portal",
@@ -83,10 +84,10 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
         <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
       </div>
       </section>
-      <section id="course-catalogue" className="border-t border-border/70 bg-background py-16 dark:bg-slate-950/20 sm:py-24">
+      <section id="global-certifications" className="border-t border-border/70 bg-background py-16 dark:bg-slate-950/20 sm:py-24">
       <div className="container-site">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="section-eyebrow"><span className="h-px w-8 bg-accent" />Course catalogue</p>
+          <p className="section-eyebrow"><span className="h-px w-8 bg-accent" />Global certifications</p>
           <h2 className="mt-4 font-heading text-3xl font-semibold tracking-tight sm:text-4xl">
             {provider ? `Explore ${courseCategories[0]?.name} certification courses.` : "Explore focused certification paths."}
           </h2>
@@ -187,6 +188,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
         </div>
       </div>
       </section>
+      <ProfessionalProgramsCatalogue compact />
     </>
   );
 }
