@@ -32,7 +32,7 @@ function OfferingCard({ offering }: { offering: LmsProfessionalOffering }) {
   }
 
   return (
-    <details id={offering.id} className="group scroll-mt-28 rounded-3xl border border-border/80 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
+    <details id={offering.id} className="group/course scroll-mt-28 rounded-3xl border border-border/80 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
       <summary className="flex cursor-pointer list-none items-start gap-4 px-5 py-5 sm:px-7 sm:py-6 [&::-webkit-details-marker]:hidden">
         <span className="mt-0.5 grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
           {offering.type === "Professional Program" ? <GraduationCap className="size-5" /> : <Layers3 className="size-5" />}
@@ -42,7 +42,7 @@ function OfferingCard({ offering }: { offering: LmsProfessionalOffering }) {
           <span className="mt-1 block font-heading text-lg font-semibold leading-7 text-foreground sm:text-xl">{offering.title}</span>
             <span className="mt-3 block text-sm font-semibold text-muted-foreground">{details.modules}</span>
         </span>
-        <ChevronDown className="mt-2 size-5 shrink-0 text-primary transition-transform group-open:rotate-180" />
+          <ChevronDown className="mt-2 size-5 shrink-0 text-primary transition-transform group-open/course:rotate-180" />
       </summary>
 
       <div className="border-t border-border/70 px-5 py-6 sm:px-7 sm:py-7">
@@ -84,21 +84,22 @@ function OfferingCard({ offering }: { offering: LmsProfessionalOffering }) {
 
 function OfferingGroup({ eyebrow, title, description, offerings }: { eyebrow: string; title: string; description: string; offerings: LmsProfessionalOffering[] }) {
   return (
-    <div>
-      <div className="flex items-start gap-3">
-        <span className="mt-1 grid size-9 shrink-0 place-items-center rounded-xl bg-accent/25 text-accent-foreground">
-          <BriefcaseBusiness className="size-4" />
+    <details className="group/section rounded-3xl border border-border/80 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
+      <summary className="flex cursor-pointer list-none items-start gap-4 px-5 py-5 sm:px-7 sm:py-6 [&::-webkit-details-marker]:hidden">
+        <span className="mt-1 grid size-11 shrink-0 place-items-center rounded-2xl bg-accent/25 text-accent-foreground">
+          <BriefcaseBusiness className="size-5" />
         </span>
-        <div>
-          <p className="text-xs font-bold tracking-[0.16em] text-primary uppercase">{eyebrow}</p>
-          <h3 className="mt-1 font-heading text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h3>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      <div className="mt-6 grid gap-3">
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-bold tracking-[0.16em] text-primary uppercase">{eyebrow}</span>
+          <span className="mt-1 block font-heading text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{title}</span>
+          <span className="mt-3 block text-sm leading-6 text-muted-foreground">{description}</span>
+        </span>
+        <ChevronDown className="mt-2 size-5 shrink-0 text-primary transition-transform group-open/section:rotate-180" />
+      </summary>
+      <div className="grid gap-3 border-t border-border/70 px-5 py-5 sm:px-7 sm:py-7">
         {offerings.map((offering) => <OfferingCard key={offering.id} offering={offering} />)}
       </div>
-    </div>
+    </details>
   );
 }
 
