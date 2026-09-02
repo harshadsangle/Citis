@@ -399,6 +399,28 @@ html.high-contrast textarea:focus-visible {
   transition: box-shadow 180ms ease, transform 180ms ease;
 }
 
+.lms-course-summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.lms-course-summary::-webkit-details-marker {
+  display: none;
+}
+
+.lms-course-summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.lms-course-chevron {
+  transition: transform 180ms ease;
+}
+
+.lms-course-card[open] .lms-course-chevron {
+  transform: rotate(180deg);
+}
+
 .lms-course-card:hover {
   box-shadow: 0 18px 36px rgb(30 61 84 / 0.1);
   transform: translateY(-2px);
@@ -406,6 +428,7 @@ html.high-contrast textarea:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   .lms-category-chevron,
+  .lms-course-chevron,
   .lms-course-card {
     transition: none;
   }
