@@ -8,6 +8,7 @@ import { MEGA_MENUS, type MegaMenuItem } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 export type MegaMenuKey = keyof typeof MEGA_MENUS;
+type MenuItemsVariant = "default" | "certification";
 
 function CertificationMegaPanel({
   courses,
@@ -23,38 +24,13 @@ function CertificationMegaPanel({
       <p className="px-3 pt-2 pb-2 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">
         Certification Courses
       </p>
-      <ul className="grid grid-cols-2 gap-1.5" role="menu">
-        {courses.map((course) => {
-          const CourseIcon = course.icon;
-          const courseActive = pathname === course.href;
-          return (
-            <li key={course.href} role="none">
-                  <Link
-                role="menuitem"
-                href={course.href}
-                onClick={onNavigate}
-                   className={cn(
-                       "group flex min-h-12 items-center gap-2.5 rounded-xl px-3 py-2 transition-colors",
-                  courseActive
-                    ? "bg-[#0F4C81] text-white"
-                    : "text-[#0b1524] hover:bg-[#0F4C81]/08 hover:text-[#0F4C81]",
-                )}
-              >
-                <span
-                  className={cn(
-                    "mt-0.5 grid size-8 shrink-0 place-items-center rounded-md",
-                    courseActive ? "bg-white/15 text-orange-300" : "bg-[#0F4C81]/10 text-[#0F4C81]",
-                  )}
-                >
-                  <CourseIcon className="size-4" />
-                </span>
-                    <span className="min-w-0 font-heading text-sm leading-5 font-semibold">{course.title}</span>
-                <ArrowRight className="mt-1 ml-auto size-3.5 shrink-0 opacity-60 transition group-hover:translate-x-0.5" />
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <MenuItems
+        items={courses}
+        pathname={pathname}
+        onNavigate={onNavigate}
+        variant="certification"
+        className="grid grid-cols-2 gap-1.5"
+      />
     </div>
   );
 }
@@ -63,20 +39,25 @@ function MenuItems({
   items,
   pathname,
   onNavigate,
+  variant = "default",
+  className,
 }: {
   items: readonly MegaMenuItem[];
   pathname: string;
   onNavigate?: () => void;
+  variant?: MenuItemsVariant;
+  className?: string;
 }) {
   const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
   const [certificationPanelLeft, setCertificationPanelLeft] = useState<number | null>(null);
 
   return (
-    <ul className="flex flex-col gap-1">
+    <ul className={cn("flex flex-col gap-1", className)}>
       {items.map((item) => {
         const Icon = item.icon;
         const hasChildren = Boolean(item.children?.length);
         const active = pathname === item.href || (hasChildren && pathname.startsWith(`${item.href}/`));
+        const isCertificationItem = variant === "certification";
         return (
           <li
             key={item.href}
@@ -97,7 +78,9 @@ function MenuItems({
           >
             <div
               className={cn(
-                "group flex items-center gap-1 rounded-lg transition-colors",
+                isCertificationItem
+                  ? "group flex min-h-12 items-center gap-2.5 rounded-xl px-3 py-2 transition-colors"
+                  : "group flex items-center gap-1 rounded-lg transition-colors",
                 active
                   ? "bg-[#0F4C81] text-white"
                   : "text-[#0b1524] hover:bg-[#0F4C81]/08 hover:text-[#0F4C81]",
@@ -107,24 +90,31 @@ function MenuItems({
                 role="menuitem"
                 href={item.href}
                 onClick={onNavigate}
-                className="flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5"
+                className={cn(
+                  "flex min-w-0 flex-1 items-center",
+                  isCertificationItem ? "gap-2.5" : "gap-3 px-3 py-2.5",
+                )}
               >
                 <span
                   className={cn(
-                    "grid size-9 shrink-0 place-items-center rounded-md",
+                    "grid shrink-0 place-items-center rounded-md",
+                    isCertificationItem ? "size-8" : "size-9",
                     active ? "bg-white/15 text-orange-300" : "bg-[#0F4C81]/10 text-[#0F4C81]",
                   )}
                 >
                   <Icon className="size-4" />
                 </span>
-                <span className="flex-1 font-heading text-sm font-semibold">{item.title}</span>
+                <span className={cn("flex-1 font-heading text-sm font-semibold", isCertificationItem && "leading-5")}>{item.title}</span>
               </Link>
               {hasChildren ? (
                 <button
                   type="button"
                   aria-label={`Show ${item.title} submenu`}
                   aria-expanded={openSubmenu === item.href}
-                  className="mr-1 grid size-9 shrink-0 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className={cn(
+                    "grid shrink-0 place-items-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    isCertificationItem ? "size-8" : "mr-1 size-9",
+                  )}
                   onClick={() => setOpenSubmenu((current) => (current === item.href ? null : item.href))}
                 >
                   <ChevronRight className="size-4" />
@@ -132,7 +122,7 @@ function MenuItems({
               ) : (
                 <ArrowRight
                   className={cn(
-                    "mr-3 size-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100",
+                    isCertificationItem ? "size-3.5 opacity-60 transition group-hover:translate-x-0.5" : "mr-3 size-3.5 opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100",
                     active && "opacity-80",
                   )}
                 />
@@ -156,7 +146,13 @@ function MenuItems({
                 {item.title === "Global Certifications" ? (
                   <CertificationMegaPanel courses={item.children ?? []} pathname={pathname} onNavigate={onNavigate} />
                 ) : (
-                  <MenuPanel items={item.children ?? []} title={item.title} pathname={pathname} onNavigate={onNavigate} />
+                  <MenuPanel
+                    items={item.children ?? []}
+                    title={item.title}
+                    pathname={pathname}
+                    onNavigate={onNavigate}
+                    variant={variant}
+                  />
                 )}
               </div>
             )}
@@ -172,16 +168,18 @@ function MenuPanel({
   title,
   pathname,
   onNavigate,
+  variant,
 }: {
   items: readonly MegaMenuItem[];
   title: string;
   pathname: string;
   onNavigate?: () => void;
+  variant?: MenuItemsVariant;
 }) {
   return (
     <div className="mega-menu max-h-[calc(100vh-6rem)] w-[min(380px,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-primary/15 bg-card p-3 shadow-[0_18px_50px_rgba(18,75,115,0.16)]">
       <p className="px-3 pt-2 pb-2 text-[11px] font-bold tracking-[0.18em] text-[#FF7A00] uppercase">{title}</p>
-      <MenuItems items={items} pathname={pathname} onNavigate={onNavigate} />
+      <MenuItems items={items} pathname={pathname} onNavigate={onNavigate} variant={variant} />
     </div>
   );
 }

@@ -17,7 +17,7 @@ function DisplayList({ items }: { items: string[] }) {
 
 function OfferingCard({ offering }: { offering: LmsProfessionalOffering }) {
   return (
-    <details className="group rounded-3xl border border-border/80 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
+    <details id={offering.id} className="group scroll-mt-28 rounded-3xl border border-border/80 bg-card shadow-sm transition hover:border-primary/30 hover:shadow-md">
       <summary className="flex cursor-pointer list-none items-start gap-4 px-5 py-5 sm:px-7 sm:py-6 [&::-webkit-details-marker]:hidden">
         <span className="mt-0.5 grid size-11 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
           {offering.type === "Professional Program" ? <GraduationCap className="size-5" /> : <Layers3 className="size-5" />}

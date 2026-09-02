@@ -16,6 +16,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
+import { PROFESSIONAL_PROGRAMS, SPECIALIZATIONS } from "@/lib/professional-programs";
 
 export const SITE_CONFIG = {
   name: "CITIS InfoTech",
@@ -46,6 +47,20 @@ export const NAV_LINKS = [
   { label: "About", href: "/about", megaMenu: "about" },
   { label: "Contact", href: "/contact", megaMenu: "contact" },
 ] as const;
+
+const professionalCourseItems = PROFESSIONAL_PROGRAMS.map((offering) => ({
+  title: offering.title,
+  href: `/engagements/professional-programs#${offering.id}`,
+  description: offering.capstone,
+  icon: GraduationCap,
+}));
+
+const specializationItems = SPECIALIZATIONS.map((offering) => ({
+  title: offering.title,
+  href: `/engagements/professional-programs#${offering.id}`,
+  description: offering.capstone,
+  icon: Sparkles,
+}));
 
 const globalCertificationItems = [
   {
@@ -143,6 +158,20 @@ const globalCertificationItems = [
     href: "/lms?provider=unity",
     description: "Unity Artist, Programmer, and VR Developer certifications.",
     icon: Sparkles,
+  },
+  {
+    title: "Professional Courses",
+    href: "/engagements/professional-programs",
+    description: "Applied CITIS professional programmes for future-ready careers.",
+    icon: GraduationCap,
+    children: professionalCourseItems,
+  },
+  {
+    title: "Specializations",
+    href: "/engagements/professional-programs",
+    description: "Focused CITIS specializations for deeper professional capability.",
+    icon: Sparkles,
+    children: specializationItems,
   },
 ] as const;
 
