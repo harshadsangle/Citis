@@ -15,6 +15,7 @@ const gradingPermissionMigration = readFileSync(resolve(process.cwd(), "../../pa
 const attemptStabilityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/011_lms_assessment_attempt_stability.sql"), "utf8");
 const instructorDashboardMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/012_lms_instructor_dashboard_access.sql"), "utf8");
 const certificateMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/013_lms_certificates.sql"), "utf8");
+const teacherContentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/015_lms_teacher_content_management.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -133,6 +134,14 @@ test("instructor dashboard migration grants read-only course and roster access",
   assert.match(instructorDashboardMigration, /lms\.course\.view/);
   assert.match(instructorDashboardMigration, /lms\.enrollment\.view/);
   assert.match(instructorDashboardMigration, /012_lms_instructor_dashboard_access/);
+});
+
+test("teacher content migration grants nested content lifecycle permissions", () => {
+  assert.match(teacherContentMigration, /r\.code = 'TEACHER'/);
+  for (const permission of ["lms.course_module.create", "lms.course_module.update", "lms.course_module.publish", "lms.course_module.archive", "lms.lesson.create", "lms.lesson.update", "lms.lesson.publish", "lms.lesson.archive", "lms.learning_resource.create", "lms.learning_resource.update", "lms.learning_resource.publish", "lms.learning_resource.archive"]) {
+    assert.match(teacherContentMigration, new RegExp(permission.replaceAll(".", "\\.")));
+  }
+  assert.match(teacherContentMigration, /015_lms_teacher_content_management/);
 });
 
 test("certificate migration defines scoped issuance, verification, and export permissions", () => {

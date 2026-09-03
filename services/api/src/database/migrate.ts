@@ -23,7 +23,7 @@ async function main() {
     }, Promise.resolve(null));
     if (!migrationRoot) throw new Error("Could not locate packages/database/migrations from the current working directory.");
 
-    for (const version of ["001_foundation", "002_lms_course_management", "003_lms_managed_resources", "004_lms_enrollment_assignments", "005_lms_progress_tracking", "006_lms_assignments", "007_lms_scope_isolation", "008_lms_assessment_engine", "009_lms_assessment_operations", "010_lms_assessment_grading_permission", "011_lms_assessment_attempt_stability", "012_lms_instructor_dashboard_access", "013_lms_certificates", "014_auth_account_recovery_registration"]) {
+    for (const version of ["001_foundation", "002_lms_course_management", "003_lms_managed_resources", "004_lms_enrollment_assignments", "005_lms_progress_tracking", "006_lms_assignments", "007_lms_scope_isolation", "008_lms_assessment_engine", "009_lms_assessment_operations", "010_lms_assessment_grading_permission", "011_lms_assessment_attempt_stability", "012_lms_instructor_dashboard_access", "013_lms_certificates", "014_auth_account_recovery_registration", "015_lms_teacher_content_management"]) {
       const migration = await readFile(resolve(migrationRoot, `${version}.sql`), "utf8");
       await client.query(migration);
       console.log(`Applied ${version}`);

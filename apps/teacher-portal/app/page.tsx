@@ -191,6 +191,36 @@ type LearningResource = {
   managed_file_name?: string | null;
 };
 
+type ModuleEditor = {
+  id?: string;
+  title: string;
+  description: string;
+  sequence: string;
+};
+
+type LessonEditor = {
+  id?: string;
+  moduleId: string;
+  moduleTitle?: string;
+  title: string;
+  description: string;
+  sequence: string;
+  estimatedDuration: string;
+};
+
+type ResourceEditor = {
+  id?: string;
+  lessonId: string;
+  lessonTitle?: string;
+  resourceType: string;
+  title: string;
+  url: string;
+  filePath: string;
+  duration: string;
+  sequence: string;
+  file?: File;
+};
+
 type CourseModuleData = {
   module: CourseModule;
   lessons: Array<{ lesson: Lesson; resources: LearningResource[] }>;
@@ -245,7 +275,7 @@ type ApiEnvelope<T> = {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
-  if (init?.body) headers.set("Content-Type", "application/json");
+  if (init?.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
   const response = await fetch(`/api/v1${path}`, {
     ...init,
     credentials: "include",
@@ -400,6 +430,7 @@ function answerText(value: unknown): string {
 
 const assessmentTypes = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "PROJECT", "VIVA", "PRACTICAL"];
 const questionTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"];
+const resourceTypes = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 
 function statusLabel(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/(^|\s)\S/g, (letter) => letter.toUpperCase());
@@ -432,6 +463,12 @@ export default function TeacherPortalPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyAction, setBusyAction] = useState("");
+  const [moduleEditor, setModuleEditor] = useState<ModuleEditor | null>(null);
+  const [moduleArchiveCandidate, setModuleArchiveCandidate] = useState<CourseModule | null>(null);
+  const [lessonEditor, setLessonEditor] = useState<LessonEditor | null>(null);
+  const [lessonArchiveCandidate, setLessonArchiveCandidate] = useState<Lesson | null>(null);
+  const [resourceEditor, setResourceEditor] = useState<ResourceEditor | null>(null);
+  const [resourceArchiveCandidate, setResourceArchiveCandidate] = useState<LearningResource | null>(null);
   const [assignmentEditor, setAssignmentEditor] = useState<AssignmentEditor | null>(null);
   const [archiveCandidate, setArchiveCandidate] = useState<Assignment | null>(null);
   const [expandedAssignmentId, setExpandedAssignmentId] = useState("");
@@ -579,6 +616,292 @@ export default function TeacherPortalPage() {
   function selectCourse(courseId: string, scrollToSubmissions = false) {
     setSelectedCourseId(courseId);
     if (scrollToSubmissions) window.setTimeout(() => document.getElementById("submissions")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
+  function openModuleEditor(module?: CourseModule) {
+    setModuleEditor(module ? {
+      id: module.id,
+      title: module.title,
+      description: module.description || "",
+      sequence: String(module.sequence),
+    } : {
+      title: "",
+      description: "",
+      sequence: String((selected?.modules.length || 0) + 1),
+    });
+  }
+
+  async function saveModule() {
+    if (!selected || !moduleEditor) return;
+    const title = moduleEditor.title.trim();
+    const sequence = Number(moduleEditor.sequence);
+    if (title.length < 2) {
+      setError("Add a module title.");
+      return;
+    }
+    if (!Number.isInteger(sequence) || sequence < 1) {
+      setError("Module sequence must be a positive whole number.");
+      return;
+    }
+    setBusyAction(`save-module:${moduleEditor.id || "new"}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(moduleEditor.id ? `/course-modules/${encodeURIComponent(moduleEditor.id)}` : "/course-modules", {
+        method: moduleEditor.id ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...(moduleEditor.id ? {} : { courseId: selected.course.id }),
+          title,
+          description: moduleEditor.description.trim() || undefined,
+          sequence,
+        }),
+      });
+      setModuleEditor(null);
+      setNotice(moduleEditor.id ? `${title} was updated.` : `${title} was saved as a draft.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The module could not be saved."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function publishModule(module: CourseModule) {
+    setBusyAction(`publish-module:${module.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/course-modules/${encodeURIComponent(module.id)}/publish`, { method: "POST" });
+      setNotice(`${module.title} is now available in the course.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The module could not be published."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function archiveModule(module: CourseModule) {
+    setBusyAction(`archive-module:${module.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/course-modules/${encodeURIComponent(module.id)}/archive`, { method: "POST" });
+      setModuleArchiveCandidate(null);
+      setNotice(`${module.title} was archived.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The module could not be archived."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  function openLessonEditor(module: CourseModule, lesson?: Lesson) {
+    setLessonEditor(lesson ? {
+      id: lesson.id,
+      moduleId: module.id,
+      moduleTitle: module.title,
+      title: lesson.title,
+      description: lesson.description || "",
+      sequence: String(lesson.sequence),
+      estimatedDuration: lesson.estimated_duration === null || lesson.estimated_duration === undefined ? "" : String(lesson.estimated_duration),
+    } : {
+      moduleId: module.id,
+      moduleTitle: module.title,
+      title: "",
+      description: "",
+      sequence: String((selected?.modules.find(({ module: item }) => item.id === module.id)?.lessons.length || 0) + 1),
+      estimatedDuration: "",
+    });
+  }
+
+  async function saveLesson() {
+    if (!selected || !lessonEditor) return;
+    const title = lessonEditor.title.trim();
+    const sequence = Number(lessonEditor.sequence);
+    const estimatedDuration = lessonEditor.estimatedDuration.trim() ? Number(lessonEditor.estimatedDuration) : undefined;
+    if (title.length < 2) {
+      setError("Add a lesson title.");
+      return;
+    }
+    if (!Number.isInteger(sequence) || sequence < 1) {
+      setError("Lesson sequence must be a positive whole number.");
+      return;
+    }
+    if (estimatedDuration !== undefined && (!Number.isInteger(estimatedDuration) || estimatedDuration < 0 || estimatedDuration > 100000)) {
+      setError("Lesson duration must be a whole number between 0 and 100,000 minutes.");
+      return;
+    }
+    setBusyAction(`save-lesson:${lessonEditor.id || "new"}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(lessonEditor.id ? `/lessons/${encodeURIComponent(lessonEditor.id)}` : "/lessons", {
+        method: lessonEditor.id ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...(lessonEditor.id ? {} : { moduleId: lessonEditor.moduleId }),
+          title,
+          description: lessonEditor.description.trim() || undefined,
+          sequence,
+          estimatedDuration,
+        }),
+      });
+      setLessonEditor(null);
+      setNotice(lessonEditor.id ? `${title} was updated.` : `${title} was saved as a draft.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The lesson could not be saved."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function publishLesson(lesson: Lesson) {
+    setBusyAction(`publish-lesson:${lesson.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/lessons/${encodeURIComponent(lesson.id)}/publish`, { method: "POST" });
+      setNotice(`${lesson.title} is now available in the course.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The lesson could not be published."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function archiveLesson(lesson: Lesson) {
+    setBusyAction(`archive-lesson:${lesson.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/lessons/${encodeURIComponent(lesson.id)}/archive`, { method: "POST" });
+      setLessonArchiveCandidate(null);
+      setNotice(`${lesson.title} was archived.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The lesson could not be archived."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  function openResourceEditor(lesson: Lesson, resource?: LearningResource) {
+    setResourceEditor(resource ? {
+      id: resource.id,
+      lessonId: lesson.id,
+      lessonTitle: lesson.title,
+      resourceType: resource.resource_type,
+      title: resource.title,
+      url: resource.url || "",
+      filePath: resource.file_path || "",
+      duration: resource.duration === null || resource.duration === undefined ? "" : String(resource.duration),
+      sequence: String(resource.sequence),
+    } : {
+      lessonId: lesson.id,
+      lessonTitle: lesson.title,
+      resourceType: "VIDEO",
+      title: "",
+      url: "",
+      filePath: "",
+      duration: "",
+      sequence: String(1 + (selected?.modules.flatMap(({ lessons }) => lessons).find(({ lesson: item }) => item.id === lesson.id)?.resources.length || 0)),
+    });
+  }
+
+  async function saveResource() {
+    if (!selected || !resourceEditor) return;
+    const title = resourceEditor.title.trim();
+    const sequence = Number(resourceEditor.sequence);
+    const duration = resourceEditor.duration.trim() ? Number(resourceEditor.duration) : undefined;
+    const needsUrl = ["VIDEO", "LINK", "SCORM", "INTERACTIVE"].includes(resourceEditor.resourceType);
+    const hasUpload = Boolean(resourceEditor.file);
+    if (title.length < 2) {
+      setError("Add a resource title.");
+      return;
+    }
+    if (!Number.isInteger(sequence) || sequence < 1) {
+      setError("Resource sequence must be a positive whole number.");
+      return;
+    }
+    if (duration !== undefined && (!Number.isInteger(duration) || duration < 0 || duration > 100000)) {
+      setError("Resource duration must be a whole number between 0 and 100,000 minutes.");
+      return;
+    }
+    if (needsUrl && !resourceEditor.url.trim()) {
+      setError(`${statusLabel(resourceEditor.resourceType)} resources require a URL.`);
+      return;
+    }
+    if (hasUpload && !["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resourceEditor.resourceType)) {
+      setError("Managed files are supported for PDF, document, presentation, and SCORM resources.");
+      return;
+    }
+    setBusyAction(`save-resource:${resourceEditor.id || "new"}`);
+    setError("");
+    setNotice("");
+    try {
+      const saved = await request<LearningResource>(resourceEditor.id ? `/learning-resources/${encodeURIComponent(resourceEditor.id)}` : "/learning-resources", {
+        method: resourceEditor.id ? "PATCH" : "POST",
+        body: JSON.stringify({
+          ...(resourceEditor.id ? {} : { lessonId: resourceEditor.lessonId }),
+          resourceType: resourceEditor.resourceType,
+          title,
+          url: resourceEditor.url.trim() || undefined,
+          filePath: resourceEditor.filePath.trim() || undefined,
+          duration,
+          sequence,
+        }),
+      });
+      if (resourceEditor.file) {
+        const formData = new FormData();
+        formData.append("file", resourceEditor.file);
+        const endpoint = resourceEditor.resourceType === "SCORM" ? "scorm" : "file";
+        await request(`/learning-resources/${encodeURIComponent(saved.id || resourceEditor.id || "")}/${endpoint}`, {
+          method: "POST",
+          body: formData,
+        });
+      }
+      setResourceEditor(null);
+      setNotice(resourceEditor.id ? `${title} was updated.` : `${title} was saved as a draft.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The learning resource could not be saved."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function publishResource(resource: LearningResource) {
+    setBusyAction(`publish-resource:${resource.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/learning-resources/${encodeURIComponent(resource.id)}/publish`, { method: "POST" });
+      setNotice(`${resource.title} is now available in the lesson.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The learning resource could not be published."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function archiveResource(resource: LearningResource) {
+    setBusyAction(`archive-resource:${resource.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/learning-resources/${encodeURIComponent(resource.id)}/archive`, { method: "POST" });
+      setResourceArchiveCandidate(null);
+      setNotice(`${resource.title} was archived.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The learning resource could not be archived."));
+    } finally {
+      setBusyAction("");
+    }
   }
 
   function openAssignmentEditor(assignment?: Assignment) {
@@ -1162,37 +1485,44 @@ export default function TeacherPortalPage() {
 
              <section className="panel content-panel" id="content">
                <div className="panel-heading detail-heading">
-                 <div><p className="eyebrow">Selected course</p><h2>Course content</h2><p className="panel-copy">{selected ? "Modules, lessons, and learning resources available for this assigned course." : "Select an assigned course to view its learning content."}</p></div>
-                 {selected && <span className="readonly-badge">View only</span>}
+                 <div><p className="eyebrow">Selected course</p><h2>Course content</h2><p className="panel-copy">{selected ? "Build the module, lesson, and resource hierarchy for this assigned course." : "Select an assigned course to manage its learning content."}</p></div>
+                 {selected && <div className="content-heading-actions"><span className="count-badge">{selected.modules.length}</span><button className="primary-button small-button" type="button" onClick={() => openModuleEditor()} disabled={loading}>+ New module</button></div>}
                </div>
                {loading && <div className="state"><div className="spinner" /><div><strong>Loading course content…</strong><p>Reading the modules, lessons, and resources for your assigned courses.</p></div></div>}
                {!loading && !selected && <div className="state"><div className="state-icon">≡</div><div><strong>No course selected</strong><p>Assigned course content will appear here after you select a course.</p></div></div>}
-               {!loading && selected?.structureError && <div className="state"><div className="state-icon error-icon">!</div><div><strong>Course content is unavailable</strong><p>{selected.structureError}</p></div></div>}
-               {!loading && selected && !selected.structureError && selected.modules.length === 0 && <div className="state"><div className="state-icon">+</div><div><strong>No modules available</strong><p>This assigned course does not have any modules or lessons to display yet.</p></div></div>}
+               {!loading && selected?.structureError && <div className="state"><div className="state-icon error-icon">!</div><div><strong>Course content is unavailable</strong><p>{selected.structureError}</p><button className="text-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing}>Retry</button></div></div>}
+               {moduleEditor && selected && <form className="content-editor" onSubmit={(event) => { event.preventDefault(); void saveModule(); }}>
+                 <div className="editor-heading"><div><p className="eyebrow">{moduleEditor.id ? "Edit module" : "New module"}</p><h3>{moduleEditor.id ? "Update module details" : "Create a draft module"}</h3></div><button className="icon-button" type="button" onClick={() => setModuleEditor(null)} aria-label="Close module editor">×</button></div>
+                 <div className="form-grid"><label>Title<input value={moduleEditor.title} onChange={(event) => setModuleEditor((current) => current && { ...current, title: event.target.value })} placeholder="e.g. Digital foundations" maxLength={180} required /></label><label>Sequence<input type="number" value={moduleEditor.sequence} onChange={(event) => setModuleEditor((current) => current && { ...current, sequence: event.target.value })} min="1" step="1" required /></label><label className="full-field">Description <span className="optional-label">(optional)</span><textarea value={moduleEditor.description} onChange={(event) => setModuleEditor((current) => current && { ...current, description: event.target.value })} placeholder="Describe what learners will cover." maxLength={2000} rows={3} /></label></div>
+                 <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setModuleEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-module:${moduleEditor.id || "new"}`}>{busyAction === `save-module:${moduleEditor.id || "new"}` ? "Saving…" : moduleEditor.id ? "Save changes" : "Save draft"}</button></div>
+               </form>}
+               {lessonEditor && selected && <form className="content-editor" onSubmit={(event) => { event.preventDefault(); void saveLesson(); }}>
+                 <div className="editor-heading"><div><p className="eyebrow">{lessonEditor.id ? "Edit lesson" : "New lesson"} · {lessonEditor.moduleTitle}</p><h3>{lessonEditor.id ? "Update lesson details" : "Create a draft lesson"}</h3></div><button className="icon-button" type="button" onClick={() => setLessonEditor(null)} aria-label="Close lesson editor">×</button></div>
+                 <div className="form-grid"><label>Title<input value={lessonEditor.title} onChange={(event) => setLessonEditor((current) => current && { ...current, title: event.target.value })} placeholder="e.g. Working with files" maxLength={180} required /></label><label>Sequence<input type="number" value={lessonEditor.sequence} onChange={(event) => setLessonEditor((current) => current && { ...current, sequence: event.target.value })} min="1" step="1" required /></label><label>Estimated duration <span className="optional-label">(minutes)</span><input type="number" value={lessonEditor.estimatedDuration} onChange={(event) => setLessonEditor((current) => current && { ...current, estimatedDuration: event.target.value })} min="0" max="100000" step="1" placeholder="Optional" /></label><label className="full-field">Description <span className="optional-label">(optional)</span><textarea value={lessonEditor.description} onChange={(event) => setLessonEditor((current) => current && { ...current, description: event.target.value })} placeholder="Give learners context for this lesson." maxLength={2000} rows={3} /></label></div>
+                 <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setLessonEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-lesson:${lessonEditor.id || "new"}`}>{busyAction === `save-lesson:${lessonEditor.id || "new"}` ? "Saving…" : lessonEditor.id ? "Save changes" : "Save draft"}</button></div>
+               </form>}
+               {resourceEditor && selected && <form className="content-editor" onSubmit={(event) => { event.preventDefault(); void saveResource(); }}>
+                 <div className="editor-heading"><div><p className="eyebrow">{resourceEditor.id ? "Edit resource" : "New resource"} · {resourceEditor.lessonTitle}</p><h3>{resourceEditor.id ? "Update learning resource" : "Attach a draft resource"}</h3></div><button className="icon-button" type="button" onClick={() => setResourceEditor(null)} aria-label="Close resource editor">×</button></div>
+                 <div className="form-grid"><label>Title<input value={resourceEditor.title} onChange={(event) => setResourceEditor((current) => current && { ...current, title: event.target.value })} placeholder="e.g. Download the practice guide" maxLength={180} required /></label><label>Resource type{resourceEditor.id ? <span className="readonly-field">{statusLabel(resourceEditor.resourceType)}</span> : <select value={resourceEditor.resourceType} onChange={(event) => setResourceEditor((current) => current && { ...current, resourceType: event.target.value, url: ["VIDEO", "LINK", "SCORM", "INTERACTIVE"].includes(event.target.value) ? current.url : "" })}>{resourceTypes.map((type) => <option value={type} key={type}>{statusLabel(type)}</option>)}</select>}</label><label className="full-field">URL {["VIDEO", "LINK", "SCORM", "INTERACTIVE"].includes(resourceEditor.resourceType) ? <span className="optional-label">(required)</span> : <span className="optional-label">(optional for document resources)</span>}<input type="url" value={resourceEditor.url} onChange={(event) => setResourceEditor((current) => current && { ...current, url: event.target.value })} placeholder="https://…" maxLength={2048} required={["VIDEO", "LINK", "SCORM", "INTERACTIVE"].includes(resourceEditor.resourceType)} /></label><label>Duration <span className="optional-label">(minutes)</span><input type="number" value={resourceEditor.duration} onChange={(event) => setResourceEditor((current) => current && { ...current, duration: event.target.value })} min="0" max="100000" step="1" placeholder="Optional" /></label><label>Sequence<input type="number" value={resourceEditor.sequence} onChange={(event) => setResourceEditor((current) => current && { ...current, sequence: event.target.value })} min="1" step="1" required /></label><label className="full-field">Managed file <span className="optional-label">(optional; PDF, document, presentation, or SCORM)</span><input type="file" accept={resourceEditor.resourceType === "SCORM" ? ".zip,.scorm" : resourceEditor.resourceType === "PDF" ? ".pdf" : resourceEditor.resourceType === "DOCUMENT" ? ".doc,.docx,.txt" : resourceEditor.resourceType === "PRESENTATION" ? ".ppt,.pptx" : undefined} onChange={(event) => setResourceEditor((current) => current && { ...current, file: event.target.files?.[0] })} /></label></div>
+                 <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setResourceEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-resource:${resourceEditor.id || "new"}`}>{busyAction === `save-resource:${resourceEditor.id || "new"}` ? "Saving…" : resourceEditor.id ? "Save changes" : "Save draft"}</button></div>
+               </form>}
+               {!loading && selected && !selected.structureError && selected.modules.length === 0 && !moduleEditor && <div className="state compact"><div className="state-icon">+</div><div><strong>No modules available</strong><p>Create the first module to start building this assigned course.</p><button className="text-button" type="button" onClick={() => openModuleEditor()}>Create a module →</button></div></div>}
                {!loading && selected && !selected.structureError && selected.modules.length > 0 && <div className="module-list">
                  {selected.modules.map(({ module, lessons }) => (
                    <article className="module-card" key={module.id}>
-                     <div className="module-heading">
-                       <div className="module-number">{String(module.sequence).padStart(2, "0")}</div>
-                       <div className="module-title"><strong>{module.title}</strong><small>{module.description || `${lessons.length} lesson${lessons.length === 1 ? "" : "s"}`}</small></div>
-                       <StatusPill status={module.status} />
-                     </div>
-                     {lessons.length === 0 && <div className="nested-state">No lessons in this module.</div>}
-                     {lessons.length > 0 && <div className="lesson-list">
-                       {lessons.map(({ lesson, resources }) => (
-                         <div className="lesson-row" key={lesson.id}>
-                           <div className="lesson-title"><span className="lesson-icon">L</span><span><strong>{lesson.title}</strong><small>{lesson.description || `${resources.length} learning resource${resources.length === 1 ? "" : "s"}`}{lesson.estimated_duration ? ` · ${lesson.estimated_duration} min` : ""}</small></span></div>
-                           <StatusPill status={lesson.status} />
-                           {resources.length > 0 && <div className="resource-list">
-                             {resources.map((resource) => {
-                               const href = resourceHref(resource);
-                               return <div className="resource-row" key={resource.id}><span className="resource-icon">↗</span><span><strong>{resource.title}</strong><small>{statusLabel(resource.resource_type)}{resource.duration ? ` · ${resource.duration} min` : ""}{resource.managed_file_name ? ` · ${resource.managed_file_name}` : ""}</small></span>{href ? <a href={href} target="_blank" rel="noreferrer">Open</a> : <span className="muted">No link</span>}</div>;
-                             })}
-                           </div>}
-                           {resources.length === 0 && <div className="nested-state lesson-empty">No learning resources attached.</div>}
-                         </div>
-                       ))}
-                     </div>}
+                     <div className="module-heading"><div className="module-number">{String(module.sequence).padStart(2, "0")}</div><div className="module-title"><strong>{module.title}</strong><small>{module.description || `${lessons.length} lesson${lessons.length === 1 ? "" : "s"}`}</small></div><StatusPill status={module.status} /><div className="content-actions"><button className="text-button" type="button" onClick={() => openModuleEditor(module)}>Edit</button>{module.status === "DRAFT" && <button className="text-button" type="button" onClick={() => void publishModule(module)} disabled={busyAction === `publish-module:${module.id}`}>{busyAction === `publish-module:${module.id}` ? "Publishing…" : "Publish"}</button>}{module.status !== "ARCHIVED" && <button className="text-button danger-text" type="button" onClick={() => setModuleArchiveCandidate(module)}>Archive</button>}</div></div>
+                     {moduleArchiveCandidate?.id === module.id && <div className="confirm-bar" role="alert"><div><strong>Archive this module?</strong><span>Its lessons and resources will no longer be part of active delivery.</span></div><div><button className="secondary-button small-button" type="button" onClick={() => setModuleArchiveCandidate(null)}>Cancel</button><button className="archive-button" type="button" onClick={() => void archiveModule(module)} disabled={busyAction === `archive-module:${module.id}`}>{busyAction === `archive-module:${module.id}` ? "Archiving…" : "Confirm archive"}</button></div></div>}
+                     <div className="nested-toolbar"><span>{lessons.length} lesson{lessons.length === 1 ? "" : "s"}</span><button className="text-button strong" type="button" onClick={() => openLessonEditor(module)} disabled={module.status === "ARCHIVED"}>+ Add lesson</button></div>
+                     {lessons.length === 0 && <div className="nested-state">No lessons in this module yet.</div>}
+                     {lessons.length > 0 && <div className="lesson-list">{lessons.map(({ lesson, resources }) => (
+                       <div className="lesson-row" key={lesson.id}>
+                         <div className="lesson-title"><span className="lesson-icon">L</span><span><strong>{lesson.title}</strong><small>{lesson.description || `${resources.length} learning resource${resources.length === 1 ? "" : "s"}`}{lesson.estimated_duration ? ` · ${lesson.estimated_duration} min` : ""}</small></span></div><StatusPill status={lesson.status} /><div className="content-actions"><button className="text-button" type="button" onClick={() => openLessonEditor(module, lesson)}>Edit</button>{lesson.status === "DRAFT" && <button className="text-button" type="button" onClick={() => void publishLesson(lesson)} disabled={busyAction === `publish-lesson:${lesson.id}`}>{busyAction === `publish-lesson:${lesson.id}` ? "Publishing…" : "Publish"}</button>}{lesson.status !== "ARCHIVED" && <button className="text-button danger-text" type="button" onClick={() => setLessonArchiveCandidate(lesson)}>Archive</button>}</div>
+                         {lessonArchiveCandidate?.id === lesson.id && <div className="confirm-bar" role="alert"><div><strong>Archive this lesson?</strong><span>Learners will no longer see it in active course delivery.</span></div><div><button className="secondary-button small-button" type="button" onClick={() => setLessonArchiveCandidate(null)}>Cancel</button><button className="archive-button" type="button" onClick={() => void archiveLesson(lesson)} disabled={busyAction === `archive-lesson:${lesson.id}`}>{busyAction === `archive-lesson:${lesson.id}` ? "Archiving…" : "Confirm archive"}</button></div></div>}
+                         <div className="resource-toolbar"><span>{resources.length} resource{resources.length === 1 ? "" : "s"}</span><button className="text-button strong" type="button" onClick={() => openResourceEditor(lesson)} disabled={lesson.status === "ARCHIVED"}>+ Add resource</button></div>
+                         {resources.length > 0 && <div className="resource-list">{resources.map((resource) => { const href = resourceHref(resource); return <div className="resource-row" key={resource.id}><span className="resource-icon">↗</span><span><strong>{resource.title}</strong><small>{statusLabel(resource.resource_type)}{resource.duration ? ` · ${resource.duration} min` : ""}{resource.managed_file_name ? ` · ${resource.managed_file_name}` : ""}</small></span>{href ? <a href={href} target="_blank" rel="noreferrer">Open</a> : <span className="muted">No link</span>}<div className="content-actions"><button className="text-button" type="button" onClick={() => openResourceEditor(lesson, resource)}>Edit</button>{resource.status === "DRAFT" && <button className="text-button" type="button" onClick={() => void publishResource(resource)} disabled={busyAction === `publish-resource:${resource.id}`}>{busyAction === `publish-resource:${resource.id}` ? "Publishing…" : "Publish"}</button>}{resource.status !== "ARCHIVED" && <button className="text-button danger-text" type="button" onClick={() => setResourceArchiveCandidate(resource)}>Archive</button>}</div>{resourceArchiveCandidate?.id === resource.id && <div className="confirm-bar" role="alert"><div><strong>Archive this resource?</strong><span>It will no longer be available to learners.</span></div><div><button className="secondary-button small-button" type="button" onClick={() => setResourceArchiveCandidate(null)}>Cancel</button><button className="archive-button" type="button" onClick={() => void archiveResource(resource)} disabled={busyAction === `archive-resource:${resource.id}`}>{busyAction === `archive-resource:${resource.id}` ? "Archiving…" : "Confirm archive"}</button></div></div>}</div>; })}</div>}
+                         {resources.length === 0 && <div className="nested-state lesson-empty">No learning resources attached.</div>}
+                       </div>
+                     ))}</div>}
                    </article>
                  ))}
                </div>}
@@ -1424,6 +1754,13 @@ export default function TeacherPortalPage() {
         .detail-heading { align-items: center; }
         .course-actions { display: flex; align-items: center; gap: 12px; }
          .readonly-badge { padding: 6px 9px; border: 1px solid #cfe8e4; border-radius: 6px; color: #358b83; background: #eefaf8; font-size: 9px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+          .content-heading-actions, .content-actions { display: flex; align-items: center; gap: 8px; }
+          .content-actions { flex-wrap: wrap; justify-content: flex-end; }
+          .content-editor { margin: 17px 24px 0; padding: 18px; border: 1px solid #cfe8e4; border-radius: 10px; background: linear-gradient(145deg, #fbfffe, #f5fbfc); }
+          .nested-toolbar, .resource-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #92a2b1; font-size: 9px; font-weight: 700; }
+          .nested-toolbar { padding: 10px 16px 8px 58px; border-bottom: 1px solid #edf1f6; }
+          .resource-toolbar { grid-column: 1 / -1; margin: 1px 0 0 34px; padding-top: 8px; border-top: 1px dashed #e5f1ef; }
+          .resource-row > .content-actions { flex: 0 0 auto; }
         .state { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 190px; padding: 30px; color: #70849a; }
         .state.compact { min-height: 145px; justify-content: flex-start; }
         .state strong { display: block; color: #244669; font-size: 12px; }
@@ -1791,6 +2128,16 @@ export default function TeacherPortalPage() {
             .heading-quick-action { min-width: 0; }
             .metric-card { min-height: 112px; }
             .table-caption { padding-right: 15px; padding-left: 15px; }
+            .content-heading-actions { align-items: flex-end; flex-direction: column; }
+            .module-heading { align-items: flex-start; flex-wrap: wrap; }
+            .module-heading .module-title { min-width: calc(100% - 43px); }
+            .module-heading .status-pill { margin-left: 43px; }
+            .module-heading .content-actions { width: 100%; justify-content: flex-start; padding-left: 43px; }
+            .lesson-row > .content-actions { grid-column: 1 / -1; justify-content: flex-start; padding-left: 34px; }
+            .resource-row { align-items: flex-start; flex-wrap: wrap; }
+            .resource-row > .content-actions { width: 100%; padding-left: 30px; justify-content: flex-start; }
+            .resource-row > a, .resource-row > .muted { margin-left: 30px; }
+            .nested-toolbar { padding-left: 16px; }
           }
           @media (max-width: 430px) {
             .heading-actions { align-items: stretch; flex-direction: column; }

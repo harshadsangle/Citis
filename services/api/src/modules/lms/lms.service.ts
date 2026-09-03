@@ -480,7 +480,7 @@ export class LmsService {
 
   private async resourceFor(id: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT lr.*, p.institution_id, c.campus_id
+        `SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id
        FROM learning_resources lr
        JOIN lessons l ON l.id = lr.lesson_id AND l.tenant_id = lr.tenant_id
        JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = lr.tenant_id
@@ -496,6 +496,7 @@ export class LmsService {
 
   async uploadResourceFile(id: string, file: LmsUpload, request: ContextRequest) {
     const resource = await this.resourceFor(id, request.context.user!);
+    await this.assertAssignedTeacherManage(request.context.user!, String(resource.course_id), resource.campus_id as string | null);
     if (!["PDF", "DOCUMENT", "PRESENTATION"].includes(String(resource.resource_type))) {
       throw new BadRequestException("Only document resources can receive managed files.");
     }
@@ -505,6 +506,7 @@ export class LmsService {
 
   async uploadScormPackage(id: string, file: LmsUpload, request: ContextRequest) {
     const resource = await this.resourceFor(id, request.context.user!);
+    await this.assertAssignedTeacherManage(request.context.user!, String(resource.course_id), resource.campus_id as string | null);
     if (resource.resource_type !== "SCORM") throw new BadRequestException("The resource must be a SCORM resource.");
     const stored = await this.storage.storeScormPackage(request.context.user!.tenantId, id, file);
     return this.replaceManagedFile(resource, stored, "SCORM", request);
@@ -673,7 +675,7 @@ export class LmsService {
                JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
                JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
                WHERE x.id = $1 AND x.tenant_id = $2`;
-    const result = await this.db.query<{ institution_id: string; campus_id: string | null }>(query, [id, user.tenantId]);
+    const result = await this.db.query<{ institution_id: string; campus_id: string | null; course_id?: string | null }>(query, [id, user.tenantId]);
     if (!result.rows[0]) throw new NotFoundException("LMS content not found.");
     return result.rows[0];
   }
