@@ -1,0 +1,260 @@
+© 2019 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+IC3 Living Online - Global Standard 5
+IC3 Digital Literacy Certification
+Objective Domains
+Manage Workbook Options and Settings
+1.	
+Internet Concepts
+1.1	
+Identify Internet concepts
+1.1.1	
+Identify Internet infrastructure
+1.1.2	
+Locate and validate Internet content
+1.1.3	
+Identify browser concepts
+1.1.4	
+Identify intellectual property (IP) and copyright concepts
+1.1.5	
+Identify licensing concepts
+1.1.6	
+Identify censorship concepts
+1.1.7	
+Identify plagiarism concepts
+2.	 Common Functionality
+2.1	
+Demonstrate website navigation techniques
+2.1.1	
+Navigate website content by clicking and double-clicking
+2.1.2	
+Display hidden information by mousing over website content
+2.1.3	
+Drag and drop files onto a website page
+3.	 Email clients
+3.1	
+Recall email clients and services
+3.1.1	
+Recall email service providers
+3.1.2	
+Recall desktop email applications
+3.1.3	
+Recall web email services
+3.2	
+Understand message concepts
+3.2.1	
+Identify the components of a message header
+3.2.2	
+Distinguish among message response options (reply, reply all, forward)
+3.2.3	
+Distinguish between courtesy copy options (cc, bcc)
+3.2.4	
+Determine the effects of message and mailbox size limits
+3.2.5	
+Identify the purpose of an email signature
+3.3	
+Understand email management concepts
+3.3.1	
+Identify types of junk mail
+3.3.2	
+Locate quarantined messages
+3.3.3	
+Configure message archival settings
+3.3.4	
+Locate deleted messages
+3.3.5	
+Restore deleted messages
+3.3.6	
+Empty the Deleted Items folder
+3.3.7	
+Recall reasons for creating email folders
+3.3.8	
+Create a folder
+3.3.9	
+Move a message to a folder
+
+
+© 2019 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+IC3 Living Online
+3.4	
+Understand email attachment concepts
+3.4.1	
+Recognize email attachments
+3.4.2	
+Attach files to an email message
+3.4.3	
+Save an email attachment from a message
+3.5	
+Understand contact management concepts
+3.5.1	
+Create a list of contacts
+3.5.2	
+Create a contact record
+4.	 Calendaring
+4.1	
+Manage appointments and events in online 
+calendar applications
+4.1.1	
+Create one-time and recurring events, 
+appointments, and meetings
+4.1.2	
+Invite people to an event or meeting
+4.1.3	
+Recognize necessary and optional elements of 
+an event or meeting invitation
+4.2	
+Share online calendars
+4.2.1	
+Request access to someone’s calendar
+4.2.2	
+Share your calendarKnow how to view multiple 
+calendars
+4.3	
+Manage multiple calendars using online 
+calendar applications
+4.3.1	
+Display multiple calendars side by side
+4.3.2	
+Overlay multiple calendars
+4.3.3	
+Change the color assigned to a calendar
+4.4	
+Understand online calendar subscriptions
+4.4.1	
+Identify common types of subscription 
+calendars
+4.4.2	
+Subscribe to an Internet calendar
+5.	 Social Media
+5.1	
+Understand social media concepts
+5.1.1	
+Identify the purposes of social networks
+5.1.2	
+Identify the effect of following a person or 
+group on a social network
+5.1.3	
+Identify the effects of posting information 
+online
+5.2	
+Understand social network concepts
+5.2.1	
+Distinguish among school, business, and 
+personal social networking
+5.2.2	
+Distinguish between open and closed social 
+networks
+5.3	
+Recall information-posting platform concepts
+5.3.1	
+Recall the definition and purpose of blogs
+5.3.2	
+Recall the definition and purpose of wikis
+5.3.3	
+Recall the definition and purpose of forums
+5.3.4	
+Recognize means of communication on blogs, 
+wikis, and forums
+5.4	
+Understand cyber bullying concepts
+5.4.1	
+Recall the definition of cyber bullying
+5.4.2	
+Recognize actions that are classified as cyber 
+bullying
+5.4.3	
+Identify the outcome of cyber bullying
+6.	 Communications
+6.1	
+Understand communication options
+6.1.1	
+Distinguish between communication methods
+6.1.2	
+Recommend the most appropriate 
+communication method for a given 
+circumstance
+6.2	
+Understand SMS text messaging concepts
+6.2.1	
+Identify appropriate uses of text messaging as 
+a business communication tool
+6.3	
+Understand chat platform concepts
+6.3.1	
+Identify available chat platforms
+6.3.2	
+Identify appropriate uses of chat platforms in a 
+business setting
+6.4	
+Identify online collaboration tools
+6.4.1	
+Recall online collaboration tools for remote 
+learners and workers
+6.4.2	
+Identify online file storage systems for remote 
+workers
+6.4.3	
+Identify online conferencing platforms
+6.4.4	
+Recall features of online conferencing 
+platforms
+7.	
+Online Conferencing
+7.1	
+Understand online conferencing concepts
+7.1.1	
+Distinguish between available online 
+conferencing platforms
+7.1.2	
+Recognize common capabilities of online 
+conferencing platforms (voice, video, screen 
+sharing, hosted presentations)
+8.	 Streaming
+8.1	
+Understand content streaming concepts
+8.1.1	
+Recall the definition of streaming
+8.1.2	
+Identify instances of audio streaming, video 
+streaming, and live streaming
+8.1.3	
+Distinguish between streaming and 
+downloading
+9.	 Digital Citizenship
+9.1	
+Understand online communication methods
+9.1.1	
+Recognize the speed and obtrusiveness of 
+available online communication methods
+
+
+© 2019 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+IC3 Living Online
+9.1.2	
+Identify the best online communication method 
+to use in a specific situation
+9.2	
+Understand physical wellness aspects of 
+living online
+9.2.1	
+Identify ergonomic best practices for 
+maintaining physical health while working on a 
+computer or device
+9.2.2	
+Identify the effects of screen time on physical 
+health
+9.3	
+Manage online identities
+9.3.1	
+Modify information stored in an online profile
+9.4	
+Understand personal and professional 
+identity concepts
+9.4.1	
+Distinguish between personal and professional 
+online identities
+9.4.2	
+Recognize elements of a person’s online 
+identity
+9.4.3	
+Analyze the positive and negative effects of 
+online activities
