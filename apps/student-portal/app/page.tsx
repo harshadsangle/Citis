@@ -501,11 +501,15 @@ function CourseLearningView({
   provider,
   onBack,
   onCompleteLesson,
+  certificate,
+  onViewCertificates,
 }: {
   progress: Progress;
   provider: LmsCourseProvider | null;
   onBack: () => void;
   onCompleteLesson: (courseId: string, lessonId: string) => Promise<void>;
+  certificate?: Certificate;
+  onViewCertificates: () => void;
 }) {
   const allLessons = progress.modules.flatMap((module) => module.lessonItems.map((lesson) => ({ lesson, module })));
   const [activeLessonId, setActiveLessonId] = useState(() => firstLessonId(progress));
@@ -514,6 +518,9 @@ function CourseLearningView({
   ));
   const [busyLessonId, setBusyLessonId] = useState("");
   const [lessonError, setLessonError] = useState("");
+  const [resources, setResources] = useState<LearningResource[]>([]);
+  const [resourcesLoading, setResourcesLoading] = useState(false);
+  const [resourcesError, setResourcesError] = useState("");
   const activeIndex = Math.max(0, allLessons.findIndex((item) => item.lesson.id === activeLessonId));
   const activeItem = allLessons[activeIndex] || allLessons[0];
   const completedCount = allLessons.filter(({ lesson, module }) => completedLessonIds.has(lesson.id) || module.state === "COMPLETED" || module.lessonItems.indexOf(lesson) < module.lessons.completed).length;
@@ -533,6 +540,28 @@ function CourseLearningView({
   const next = allLessons[activeIndex + 1];
   const isCompleted = completedLessonIds.has(activeLesson.id) || activeModule.state === "COMPLETED" || activeModule.lessonItems.indexOf(activeLesson) < activeModule.lessons.completed;
   const category = categoryForCourse(progress.course.programme_name);
+
+  useEffect(() => {
+    if (!activeLesson?.id) return;
+    const controller = new AbortController();
+    setResourcesLoading(true);
+    setResourcesError("");
+    fetch(`/api/v1/learning-resources?lessonId=${encodeURIComponent(activeLesson.id)}&pageSize=100`, { credentials: "include", signal: controller.signal })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null) as { data?: LearningResource[]; error?: { message?: string } } | null;
+        if (!response.ok) throw new Error(body?.error?.message || "We couldn't load this lesson's resources.");
+        setResources((body?.data || []).filter((resource) => resource.status === undefined || resource.status === "PUBLISHED").sort((left, right) => left.sequence - right.sequence));
+      })
+      .catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === "AbortError") return;
+        setResourcesError(reason instanceof Error ? reason.message : "We couldn't load this lesson's resources.");
+        setResources([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setResourcesLoading(false);
+      });
+    return () => controller.abort();
+  }, [activeLesson?.id]);
 
   async function completeCurrentLesson() {
     if (isCompleted || busyLessonId) return;
