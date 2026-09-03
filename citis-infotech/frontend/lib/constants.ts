@@ -125,8 +125,8 @@ const globalCertificationItems = [
   },
   {
     title: "Information Technology Specialist",
-    href: "/engagements/global-certifications/information-technology-specialist",
-    description: "Job-ready technology foundations.",
+    href: "/lms?provider=its",
+    description: "Networking, security, cloud, data, programming and web foundations.",
     icon: BriefcaseBusiness,
   },
   {

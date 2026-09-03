@@ -98,7 +98,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
           <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
             {provider
               ? courseCategories[0]?.description
-              : "Browse objective-led Adobe, Autodesk, Cisco, CompTIA, IC3 Digital Literacy, Intuit, Microsoft Office Specialist, and Unity Certified User certification courses across creative, CAD, architecture, design, content, web, marketing, digital literacy, bookkeeping, finance, productivity, game development, VR, IT, cloud, data, project, networking, and cybersecurity paths."}
+              : "Browse objective-led Adobe, Autodesk, Cisco, CompTIA, IC3 Digital Literacy, Information Technology Specialist, Intuit, Microsoft Office Specialist, and Unity Certified User certification courses across creative, CAD, architecture, design, content, web, marketing, digital literacy, bookkeeping, finance, productivity, game development, VR, IT, cloud, data, project, networking, and cybersecurity paths."}
           </p>
         </div>
 
