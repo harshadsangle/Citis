@@ -99,6 +99,9 @@ export declare class LmsService {
     }>;
     private assertParent;
     private contentScope;
+    private isInstructorOnly;
+    private assertAssignedTeacherRead;
+    private assertAssignedTeacherManage;
     private createChild;
     private updateChild;
     private validateResource;

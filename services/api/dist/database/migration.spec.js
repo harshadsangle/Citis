@@ -19,6 +19,7 @@ const gradingPermissionMigration = (0, node_fs_1.readFileSync)((0, node_path_1.r
 const attemptStabilityMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/011_lms_assessment_attempt_stability.sql"), "utf8");
 const instructorDashboardMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/012_lms_instructor_dashboard_access.sql"), "utf8");
 const certificateMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/013_lms_certificates.sql"), "utf8");
+const teacherContentMigration = (0, node_fs_1.readFileSync)((0, node_path_1.resolve)(process.cwd(), "../../packages/database/migrations/015_lms_teacher_content_management.sql"), "utf8");
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
     (0, node_test_1.default)(`migration defines ${table}`, () => {
         strict_1.default.match(migration, new RegExp(`CREATE TABLE IF NOT EXISTS ${table}\\b`));
@@ -122,6 +123,13 @@ for (const table of ["lms_assessments", "lms_lesson_progress", "lms_assessment_c
     strict_1.default.match(instructorDashboardMigration, /lms\.course\.view/);
     strict_1.default.match(instructorDashboardMigration, /lms\.enrollment\.view/);
     strict_1.default.match(instructorDashboardMigration, /012_lms_instructor_dashboard_access/);
+});
+(0, node_test_1.default)("teacher content migration grants nested content lifecycle permissions", () => {
+    strict_1.default.match(teacherContentMigration, /r\.code = 'TEACHER'/);
+    for (const permission of ["lms.course_module.create", "lms.course_module.update", "lms.course_module.publish", "lms.course_module.archive", "lms.lesson.create", "lms.lesson.update", "lms.lesson.publish", "lms.lesson.archive", "lms.learning_resource.create", "lms.learning_resource.update", "lms.learning_resource.publish", "lms.learning_resource.archive"]) {
+        strict_1.default.match(teacherContentMigration, new RegExp(permission.replaceAll(".", "\\.")));
+    }
+    strict_1.default.match(teacherContentMigration, /015_lms_teacher_content_management/);
 });
 (0, node_test_1.default)("certificate migration defines scoped issuance, verification, and export permissions", () => {
     strict_1.default.match(certificateMigration, /CREATE TABLE IF NOT EXISTS lms_certificates\b/);

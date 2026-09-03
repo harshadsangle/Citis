@@ -169,10 +169,7 @@ let LmsService = class LmsService {
         const filter = this.statusFilter(query.status);
         const values = [user.tenantId];
         const clauses = ["c.tenant_id = $1"];
-        const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
-        const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
-            && !user.roles.some((role) => administratorRoles.includes(role.code))
-            && !(0, access_scope_1.isPlatformUser)(user);
+        const instructorOnly = this.isInstructorOnly(user);
         if (instructorOnly) {
             values.push(user.id);
             clauses.push(`EXISTS (
@@ -263,6 +260,10 @@ let LmsService = class LmsService {
         const filter = this.statusFilter(query.status);
         const values = [user.tenantId];
         const clauses = [`x.tenant_id = $1`];
+        const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
+        const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
+            && !user.roles.some((role) => administratorRoles.includes(role.code))
+            && !(0, access_scope_1.isPlatformUser)(user);
         if (parentId) {
             values.push(parentId);
             clauses.push(`x.${parentColumn} = $${values.length}`);
@@ -270,6 +271,19 @@ let LmsService = class LmsService {
         if (filter.values.length) {
             values.push(filter.values[0]);
             clauses.push(`x.status = $${values.length}`);
+        }
+        if (instructorOnly) {
+            values.push(user.id);
+            clauses.push(`EXISTS (
+        SELECT 1
+        FROM lms_instructor_assignments ia
+        WHERE ia.tenant_id = x.tenant_id
+          AND ia.institution_id = p.institution_id
+          AND ia.course_id = c.id
+          AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
+          AND ia.instructor_id = $${values.length}
+          AND ia.status = 'ACTIVE'
+      )`);
         }
         const pageParam = values.length + 1;
         values.push(pageSize, offset);
@@ -297,7 +311,7 @@ let LmsService = class LmsService {
             this.db.query(`SELECT ${selection} FROM ${fromClause}
          WHERE ${clauses.join(" AND ")}
          ORDER BY x.sequence ASC LIMIT $${pageParam} OFFSET $${pageParam + 1}`, values),
-            this.db.query(`SELECT count(*)::text AS count FROM ${table} x WHERE ${clauses.join(" AND ")}`, values.slice(0, -2)),
+            this.db.query(`SELECT count(*)::text AS count FROM ${fromClause} WHERE ${clauses.join(" AND ")}`, values.slice(0, -2)),
         ]);
         void parentTable;
         void resource;
@@ -307,6 +321,8 @@ let LmsService = class LmsService {
     async getChild(id, table, user) {
         const scope = await this.contentScope(id, table, user);
         (0, access_scope_1.assertScopeForRead)(user, scope.institution_id, scope.campus_id);
+        if (scope.course_id)
+            await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id);
         const result = await this.db.query(`SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`, [id, user.tenantId]);
         if (!result.rows[0])
             throw new common_1.NotFoundException("LMS content not found.");
@@ -379,7 +395,7 @@ let LmsService = class LmsService {
         });
     }
     async resourceFor(id, user) {
-        const result = await this.db.query(`SELECT lr.*, p.institution_id, c.campus_id
+        const result = await this.db.query(`SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id
        FROM learning_resources lr
        JOIN lessons l ON l.id = lr.lesson_id AND l.tenant_id = lr.tenant_id
        JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = lr.tenant_id
@@ -393,6 +409,7 @@ let LmsService = class LmsService {
     }
     async uploadResourceFile(id, file, request) {
         const resource = await this.resourceFor(id, request.context.user);
+        await this.assertAssignedTeacherManage(request.context.user, String(resource.course_id), resource.campus_id);
         if (!["PDF", "DOCUMENT", "PRESENTATION"].includes(String(resource.resource_type))) {
             throw new common_1.BadRequestException("Only document resources can receive managed files.");
         }
@@ -401,6 +418,7 @@ let LmsService = class LmsService {
     }
     async uploadScormPackage(id, file, request) {
         const resource = await this.resourceFor(id, request.context.user);
+        await this.assertAssignedTeacherManage(request.context.user, String(resource.course_id), resource.campus_id);
         if (resource.resource_type !== "SCORM")
             throw new common_1.BadRequestException("The resource must be a SCORM resource.");
         const stored = await this.storage.storeScormPackage(request.context.user.tenantId, id, file);
@@ -528,26 +546,28 @@ let LmsService = class LmsService {
         if (!result.rows[0])
             throw new common_1.NotFoundException("Parent LMS content not found in the current tenant.");
         (0, access_scope_1.assertScope)(user, scope.institution_id, scope.campus_id);
+        if (scope.course_id)
+            await this.assertAssignedTeacherManage(user, String(scope.course_id), scope.campus_id);
     }
     async contentScope(id, table, user) {
         const query = table === "programmes"
-            ? "SELECT institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2"
+            ? "SELECT institution_id, campus_id, NULL::uuid AS course_id FROM programmes WHERE id = $1 AND tenant_id = $2"
             : table === "courses"
-                ? "SELECT institution_id, campus_id FROM courses WHERE id = $1 AND tenant_id = $2"
+                ? "SELECT institution_id, campus_id, id AS course_id FROM courses WHERE id = $1 AND tenant_id = $2"
                 : table === "course_modules"
-                    ? `SELECT p.institution_id, c.campus_id
+                    ? `SELECT p.institution_id, c.campus_id, c.id AS course_id
              FROM course_modules x
              JOIN courses c ON c.id = x.course_id AND c.tenant_id = x.tenant_id
              JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
              WHERE x.id = $1 AND x.tenant_id = $2`
                     : table === "lessons"
-                        ? `SELECT p.institution_id, c.campus_id
+                        ? `SELECT p.institution_id, c.campus_id, c.id AS course_id
                FROM lessons x
                JOIN course_modules cm ON cm.id = x.module_id AND cm.tenant_id = x.tenant_id
                JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
                JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
                WHERE x.id = $1 AND x.tenant_id = $2`
-                        : `SELECT p.institution_id, c.campus_id
+                        : `SELECT p.institution_id, c.campus_id, c.id AS course_id
                FROM learning_resources x
                JOIN lessons l ON l.id = x.lesson_id AND l.tenant_id = x.tenant_id
                JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = x.tenant_id
@@ -558,6 +578,29 @@ let LmsService = class LmsService {
         if (!result.rows[0])
             throw new common_1.NotFoundException("LMS content not found.");
         return result.rows[0];
+    }
+    isInstructorOnly(user) {
+        const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
+        return user.roles.some((role) => role.code === "TEACHER")
+            && !user.roles.some((role) => administratorRoles.includes(role.code))
+            && !(0, access_scope_1.isPlatformUser)(user);
+    }
+    async assertAssignedTeacherRead(user, institutionId, courseId, campusId) {
+        if (!this.isInstructorOnly(user))
+            return;
+        if (!await this.hasAssignmentStaffAccess(user, institutionId, courseId, campusId)) {
+            throw new common_1.NotFoundException("The requested resource was not found.");
+        }
+    }
+    async assertAssignedTeacherManage(user, courseId, campusId) {
+        if (!this.isInstructorOnly(user))
+            return;
+        const course = await this.db.query("SELECT institution_id, campus_id FROM courses WHERE id = $1 AND tenant_id = $2", [courseId, user.tenantId]);
+        if (!course.rows[0])
+            throw new common_1.NotFoundException("Course not found in the current tenant.");
+        if (!await this.hasAssignmentStaffAccess(user, course.rows[0].institution_id, courseId, campusId ?? course.rows[0].campus_id)) {
+            throw new common_1.ForbiddenException("You are not authorized to manage content for this course.");
+        }
     }
     async createChild(table, resource, parentId, title, description, sequence, user, request) {
         return this.run(async () => {

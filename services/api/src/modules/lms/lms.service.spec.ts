@@ -74,7 +74,7 @@ test("assigned teachers can read nested course content while unassigned teachers
   };
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
   const { service } = serviceWith(async (text) => {
-    if (text.startsWith("SELECT p.institution_id")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    if (text.startsWith("SELECT p.institution_id")) return { rows: [{ id: "module-1", institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
     if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
     if (text.startsWith("SELECT * FROM course_modules")) return { rows: [{ id: "module-1", tenant_id: teacher.tenantId, course_id: "course-1", title: "Module one" }] };
     return { rows: [] };

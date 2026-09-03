@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ProviderDto = exports.OtpVerifyDto = exports.OtpRequestDto = exports.LoginDto = void 0;
+exports.ProviderDto = exports.OtpVerifyDto = exports.OtpRequestDto = exports.ResetPasswordDto = exports.ForgotPasswordDto = exports.RegisterDto = exports.LoginDto = void 0;
 const class_validator_1 = require("class-validator");
 class LoginDto {
     email;
@@ -31,6 +31,80 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], LoginDto.prototype, "tenantSlug", void 0);
+const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$/;
+class RegisterDto {
+    email;
+    password;
+    firstName;
+    lastName;
+    role;
+    tenantSlug;
+}
+exports.RegisterDto = RegisterDto;
+__decorate([
+    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.MaxLength)(254),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.MaxLength)(128),
+    (0, class_validator_1.Matches)(strongPasswordPattern, {
+        message: "Password must be 8–128 characters and include uppercase, lowercase, and a number.",
+    }),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "password", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(1),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "firstName", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "lastName", void 0);
+__decorate([
+    (0, class_validator_1.IsIn)(["learner", "instructor", "admin"]),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "role", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], RegisterDto.prototype, "tenantSlug", void 0);
+class ForgotPasswordDto {
+    email;
+    tenantSlug;
+}
+exports.ForgotPasswordDto = ForgotPasswordDto;
+__decorate([
+    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.MaxLength)(254),
+    __metadata("design:type", String)
+], ForgotPasswordDto.prototype, "email", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], ForgotPasswordDto.prototype, "tenantSlug", void 0);
+class ResetPasswordDto {
+    password;
+}
+exports.ResetPasswordDto = ResetPasswordDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.MaxLength)(128),
+    (0, class_validator_1.Matches)(strongPasswordPattern, {
+        message: "Password must be 8–128 characters and include uppercase, lowercase, and a number.",
+    }),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "password", void 0);
 class OtpRequestDto {
     mobile;
     tenantSlug;

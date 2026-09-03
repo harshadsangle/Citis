@@ -49,6 +49,8 @@ const bcrypt = __importStar(require("bcryptjs"));
 const database_service_1 = require("../../database/database.service");
 const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 const SESSION_DAYS = 7;
+const RESET_TOKEN_MINUTES = 60;
+const VERIFICATION_TOKEN_HOURS = 24;
 function hashToken(token) {
     return (0, node_crypto_1.createHash)("sha256").update(token).digest("hex");
 }
@@ -88,6 +90,113 @@ let AuthService = class AuthService {
             user.tenant_id,
         ]);
         return this.startSession(user.id, metadata);
+    }
+    async register(input, metadata) {
+        const roleCode = {
+            learner: "STUDENT",
+            instructor: "TEACHER",
+            admin: "INSTITUTION_ADMINISTRATOR",
+        }[input.role];
+        const tenant = await this.db.query("SELECT id FROM tenants WHERE slug = $1 AND status = 'ACTIVE' LIMIT 1", [input.tenantSlug?.trim() || "citis-platform"]);
+        if (!tenant.rows[0])
+            throw new common_1.BadRequestException("The requested institution is not available.");
+        const email = input.email.trim().toLowerCase();
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        const verificationToken = (0, node_crypto_1.randomBytes)(32).toString("base64url");
+        const tokenHash = hashToken(verificationToken);
+        await this.db.transaction(async (client) => {
+            const existing = await client.query("SELECT id FROM users WHERE tenant_id = $1 AND lower(email) = lower($2) LIMIT 1", [tenant.rows[0].id, email]);
+            if (existing.rows[0])
+                throw new common_1.ConflictException("An account already exists for that email.");
+            const user = await client.query(`INSERT INTO users (tenant_id, email, password_hash, first_name, last_name, status)
+         VALUES ($1, $2, $3, $4, $5, 'PENDING')
+         RETURNING id`, [tenant.rows[0].id, email, passwordHash, input.firstName.trim(), input.lastName.trim()]);
+            const role = await client.query("SELECT id FROM roles WHERE tenant_id = $1 AND code = $2 AND status = 'ACTIVE' LIMIT 1", [tenant.rows[0].id, roleCode]);
+            if (!role.rows[0])
+                throw new common_1.BadRequestException("That account role is not available.");
+            await client.query(`INSERT INTO user_roles (tenant_id, user_id, role_id)
+         VALUES ($1, $2, $3)`, [tenant.rows[0].id, user.rows[0].id, role.rows[0].id]);
+            await client.query(`INSERT INTO auth_email_verification_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, now() + interval '${VERIFICATION_TOKEN_HOURS} hours')`, [user.rows[0].id, tokenHash]);
+        });
+        return {
+            accepted: true,
+            status: "PENDING",
+            role: input.role,
+            requiresApproval: input.role !== "learner",
+            ...(process.env.NODE_ENV !== "production" ? { developmentVerificationToken: verificationToken } : {}),
+        };
+    }
+    async requestPasswordReset(input, metadata) {
+        const email = input.email.trim().toLowerCase();
+        const result = await this.db.query(`SELECT u.id
+       FROM users u
+       JOIN tenants t ON t.id = u.tenant_id
+       WHERE lower(u.email) = lower($1)
+         AND ($2::text IS NULL OR t.slug = $2)
+         AND t.status = 'ACTIVE'
+         AND u.status <> 'ARCHIVED'
+       ORDER BY u.created_at
+       LIMIT 1`, [email, input.tenantSlug?.trim() || null]);
+        if (!result.rows[0])
+            return { accepted: true };
+        const rawToken = (0, node_crypto_1.randomBytes)(32).toString("base64url");
+        await this.db.transaction(async (client) => {
+            await client.query("UPDATE auth_password_reset_tokens SET consumed_at = now() WHERE user_id = $1 AND consumed_at IS NULL", [result.rows[0].id]);
+            await client.query(`INSERT INTO auth_password_reset_tokens
+           (user_id, token_hash, expires_at, requested_ip, requested_user_agent)
+         VALUES ($1, $2, now() + interval '${RESET_TOKEN_MINUTES} minutes', $3, $4)`, [result.rows[0].id, hashToken(rawToken), metadata.ipAddress ?? null, metadata.userAgent ?? null]);
+        });
+        return {
+            accepted: true,
+            ...(process.env.NODE_ENV !== "production" ? { developmentResetToken: rawToken } : {}),
+        };
+    }
+    async resetPassword(token, input) {
+        const passwordHash = await bcrypt.hash(input.password, 12);
+        return this.db.transaction(async (client) => {
+            const result = await client.query(`SELECT t.id, t.user_id
+         FROM auth_password_reset_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token_hash = $1 AND t.consumed_at IS NULL AND t.expires_at > now()
+           AND u.status <> 'ARCHIVED'
+         FOR UPDATE`, [hashToken(token)]);
+            if (!result.rows[0])
+                throw new common_1.BadRequestException("This password reset link is invalid or has expired.");
+            await client.query("UPDATE users SET password_hash = $1, updated_at = now() WHERE id = $2 AND status <> 'ARCHIVED'", [passwordHash, result.rows[0].user_id]);
+            await client.query("UPDATE auth_password_reset_tokens SET consumed_at = now() WHERE id = $1", [result.rows[0].id]);
+            await client.query("UPDATE auth_sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL", [result.rows[0].user_id]);
+            return { reset: true };
+        });
+    }
+    async verifyEmail(token) {
+        return this.db.transaction(async (client) => {
+            const result = await client.query(`SELECT v.id, v.user_id, r.code AS role_code
+         FROM auth_email_verification_tokens v
+         JOIN users u ON u.id = v.user_id
+         JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+         JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+         WHERE v.token_hash = $1
+           AND v.consumed_at IS NULL
+           AND v.expires_at > now()
+           AND u.status <> 'ARCHIVED'
+         LIMIT 1
+         FOR UPDATE OF v`, [hashToken(token)]);
+            if (!result.rows[0])
+                throw new common_1.BadRequestException("This verification link is invalid or has expired.");
+            await client.query("UPDATE auth_email_verification_tokens SET consumed_at = now() WHERE id = $1", [result.rows[0].id]);
+            const activeAfterVerification = result.rows[0].role_code === "STUDENT";
+            await client.query(`UPDATE users
+         SET email_verified_at = now(),
+             status = CASE WHEN status = 'PENDING' AND $1 THEN 'ACTIVE' ELSE status END,
+             updated_at = now()
+         WHERE id = $2`, [activeAfterVerification, result.rows[0].user_id]);
+            return {
+                verified: true,
+                status: activeAfterVerification ? "ACTIVE" : "PENDING",
+                requiresApproval: !activeAfterVerification,
+            };
+        });
     }
     async startSession(userId, metadata) {
         const token = (0, node_crypto_1.randomBytes)(32).toString("base64url");

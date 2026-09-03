@@ -34,6 +34,24 @@ let AuthController = class AuthController {
         });
         return (0, response_1.successResponse)({ expiresAt: session.expiresAt.toISOString() }, request);
     }
+    async register(input, request) {
+        return (0, response_1.successResponse)(await this.auth.register(input, {
+            ipAddress: request.context.ipAddress,
+            userAgent: request.headers["user-agent"],
+        }), request);
+    }
+    async forgotPassword(input, request) {
+        return (0, response_1.successResponse)(await this.auth.requestPasswordReset(input, {
+            ipAddress: request.context.ipAddress,
+            userAgent: request.headers["user-agent"],
+        }), request);
+    }
+    async resetPassword(token, input, request) {
+        return (0, response_1.successResponse)(await this.auth.resetPassword(token, input), request);
+    }
+    async verifyEmail(token, request) {
+        return (0, response_1.successResponse)(await this.auth.verifyEmail(token), request);
+    }
     async logout(request, response) {
         const token = auth_guard_1.AuthGuard.tokenFrom(request);
         if (token)
@@ -74,6 +92,43 @@ __decorate([
     __metadata("design:paramtypes", [auth_dto_1.LoginDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
+__decorate([
+    (0, common_1.Post)("register"),
+    (0, common_1.HttpCode)(201),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.RegisterDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "register", null);
+__decorate([
+    (0, common_1.Post)("forgot-password"),
+    (0, common_1.HttpCode)(202),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [auth_dto_1.ForgotPasswordDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, common_1.Post)("reset-password/:token"),
+    (0, common_1.HttpCode)(200),
+    __param(0, (0, common_1.Param)("token")),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, auth_dto_1.ResetPasswordDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.Get)("verify-email/:token"),
+    (0, common_1.HttpCode)(200),
+    __param(0, (0, common_1.Param)("token")),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyEmail", null);
 __decorate([
     (0, common_1.Post)("logout"),
     (0, common_1.HttpCode)(200),

@@ -56,6 +56,74 @@ function serviceWith(query) {
     }, request), common_1.BadRequestException);
     strict_1.default.equal(insertAttempted, false);
 });
+(0, node_test_1.default)("assigned teachers can read nested course content while unassigned teachers receive not found", async () => {
+    const teacher = {
+        ...user,
+        email: "teacher@example.com",
+        roles: [{ code: "TEACHER", name: "Teacher" }],
+        permissions: ["lms.course_module.view"],
+    };
+    const teacherRequest = { context: { ...request.context, user: teacher } };
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT p.institution_id"))
+            return { rows: [{ id: "module-1", institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+        if (text.startsWith("SELECT 1"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.startsWith("SELECT * FROM course_modules"))
+            return { rows: [{ id: "module-1", tenant_id: teacher.tenantId, course_id: "course-1", title: "Module one" }] };
+        return { rows: [] };
+    });
+    const visible = await service.getChild("module-1", "course_modules", teacher);
+    strict_1.default.equal(visible.id, "module-1");
+    const { service: blockedService } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT p.institution_id"))
+            return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-2" }] };
+        if (text.startsWith("SELECT 1"))
+            return { rows: [] };
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(blockedService.getChild("module-2", "course_modules", teacher), common_1.NotFoundException);
+});
+(0, node_test_1.default)("only assigned teachers can create nested course content", async () => {
+    const teacher = {
+        ...user,
+        email: "teacher@example.com",
+        roles: [{ code: "TEACHER", name: "Teacher" }],
+        permissions: ["lms.course_module.create"],
+    };
+    const teacherRequest = { context: { ...request.context, user: teacher } };
+    let inserted = false;
+    const { service } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT institution_id, campus_id, id AS course_id"))
+            return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+        if (text.startsWith("SELECT id FROM courses"))
+            return { rows: [{ id: "course-1" }] };
+        if (text.startsWith("SELECT institution_id, campus_id FROM courses"))
+            return { rows: [{ institution_id: "institution-1", campus_id: null }] };
+        if (text.startsWith("SELECT 1"))
+            return { rows: [{ allowed: 1 }] };
+        if (text.startsWith("INSERT INTO course_modules")) {
+            inserted = true;
+            return { rows: [{ id: "module-1", tenant_id: teacher.tenantId, course_id: "course-1", title: "Module one", status: "DRAFT" }] };
+        }
+        return { rows: [] };
+    });
+    const created = await service.createCourseModule({ courseId: "course-1", title: "Module one", sequence: 1 }, teacherRequest);
+    strict_1.default.equal(created.id, "module-1");
+    strict_1.default.equal(inserted, true);
+    const { service: blockedService } = serviceWith(async (text) => {
+        if (text.startsWith("SELECT institution_id, campus_id, id AS course_id"))
+            return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+        if (text.startsWith("SELECT id FROM courses"))
+            return { rows: [{ id: "course-1" }] };
+        if (text.startsWith("SELECT institution_id, campus_id FROM courses"))
+            return { rows: [{ institution_id: "institution-1", campus_id: null }] };
+        if (text.startsWith("SELECT 1"))
+            return { rows: [] };
+        return { rows: [] };
+    });
+    await strict_1.default.rejects(blockedService.createCourseModule({ courseId: "course-1", title: "Blocked module", sequence: 1 }, teacherRequest), common_1.ForbiddenException);
+});
 (0, node_test_1.default)("publishing content writes an auditable status mutation", async () => {
     const { service, audits } = serviceWith(async (text) => {
         if (text.startsWith("SELECT * FROM courses")) {
