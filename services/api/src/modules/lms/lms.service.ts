@@ -325,6 +325,10 @@ export class LmsService {
     const filter = this.statusFilter(query.status);
     const values: unknown[] = [user.tenantId];
     const clauses = [`x.tenant_id = $1`];
+    const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
+    const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
+      && !user.roles.some((role) => administratorRoles.includes(role.code))
+      && !isPlatformUser(user);
     if (parentId) {
       values.push(parentId);
       clauses.push(`x.${parentColumn} = $${values.length}`);
@@ -332,6 +336,19 @@ export class LmsService {
     if (filter.values.length) {
       values.push(filter.values[0]);
       clauses.push(`x.status = $${values.length}`);
+    }
+    if (instructorOnly) {
+      values.push(user.id);
+      clauses.push(`EXISTS (
+        SELECT 1
+        FROM lms_instructor_assignments ia
+        WHERE ia.tenant_id = x.tenant_id
+          AND ia.institution_id = p.institution_id
+          AND ia.course_id = c.id
+          AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
+          AND ia.instructor_id = $${values.length}
+          AND ia.status = 'ACTIVE'
+      )`);
     }
     const pageParam = values.length + 1;
     values.push(pageSize, offset);
@@ -362,7 +379,7 @@ export class LmsService {
          ORDER BY x.sequence ASC LIMIT $${pageParam} OFFSET $${pageParam + 1}`,
         values,
       ),
-      this.db.query<{ count: string }>(`SELECT count(*)::text AS count FROM ${table} x WHERE ${clauses.join(" AND ")}`, values.slice(0, -2)),
+      this.db.query<{ count: string }>(`SELECT count(*)::text AS count FROM ${fromClause} WHERE ${clauses.join(" AND ")}`, values.slice(0, -2)),
     ]);
     void parentTable;
     void resource;
@@ -373,6 +390,7 @@ export class LmsService {
   async getChild(id: string, table: LmsTable, user: AuthenticatedUser) {
     const scope = await this.contentScope(id, table, user);
     assertScopeForRead(user, scope.institution_id, scope.campus_id);
+    if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.course_id), scope.campus_id);
     const result = await this.db.query(
       `SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`,
       [id, user.tenantId],
@@ -630,27 +648,28 @@ export class LmsService {
     const result = await this.db.query(`SELECT id FROM ${table} WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'`, [id, user.tenantId]);
     if (!result.rows[0]) throw new NotFoundException("Parent LMS content not found in the current tenant.");
     assertScope(user, scope.institution_id, scope.campus_id);
+    if (scope.course_id) await this.assertAssignedTeacherManage(user, String(scope.course_id), scope.campus_id);
   }
 
   private async contentScope(id: string, table: LmsTable, user: AuthenticatedUser) {
     const query = table === "programmes"
-      ? "SELECT institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2"
+      ? "SELECT institution_id, campus_id, NULL::uuid AS course_id FROM programmes WHERE id = $1 AND tenant_id = $2"
       : table === "courses"
-        ? "SELECT institution_id, campus_id FROM courses WHERE id = $1 AND tenant_id = $2"
+        ? "SELECT institution_id, campus_id, id AS course_id FROM courses WHERE id = $1 AND tenant_id = $2"
         : table === "course_modules"
-          ? `SELECT p.institution_id, c.campus_id
+          ? `SELECT p.institution_id, c.campus_id, c.id AS course_id
              FROM course_modules x
              JOIN courses c ON c.id = x.course_id AND c.tenant_id = x.tenant_id
              JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
              WHERE x.id = $1 AND x.tenant_id = $2`
           : table === "lessons"
-            ? `SELECT p.institution_id, c.campus_id
+            ? `SELECT p.institution_id, c.campus_id, c.id AS course_id
                FROM lessons x
                JOIN course_modules cm ON cm.id = x.module_id AND cm.tenant_id = x.tenant_id
                JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
                JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
                WHERE x.id = $1 AND x.tenant_id = $2`
-            : `SELECT p.institution_id, c.campus_id
+             : `SELECT p.institution_id, c.campus_id, c.id AS course_id
                FROM learning_resources x
                JOIN lessons l ON l.id = x.lesson_id AND l.tenant_id = x.tenant_id
                JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = x.tenant_id
@@ -660,6 +679,32 @@ export class LmsService {
     const result = await this.db.query<{ institution_id: string; campus_id: string | null }>(query, [id, user.tenantId]);
     if (!result.rows[0]) throw new NotFoundException("LMS content not found.");
     return result.rows[0];
+  }
+
+  private isInstructorOnly(user: AuthenticatedUser) {
+    const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
+    return user.roles.some((role) => role.code === "TEACHER")
+      && !user.roles.some((role) => administratorRoles.includes(role.code))
+      && !isPlatformUser(user);
+  }
+
+  private async assertAssignedTeacherRead(user: AuthenticatedUser, courseId: string, campusId?: string | null) {
+    if (!this.isInstructorOnly(user)) return;
+    if (!await this.hasAssignmentStaffAccess(user, String(user.scopes.find((scope) => scope.campusId === campusId || scope.campusId === null)?.institutionId || ""), courseId, campusId)) {
+      throw new NotFoundException("The requested resource was not found.");
+    }
+  }
+
+  private async assertAssignedTeacherManage(user: AuthenticatedUser, courseId: string, campusId?: string | null) {
+    if (!this.isInstructorOnly(user)) return;
+    const course = await this.db.query<{ institution_id: string; campus_id: string | null }>(
+      "SELECT institution_id, campus_id FROM courses WHERE id = $1 AND tenant_id = $2",
+      [courseId, user.tenantId],
+    );
+    if (!course.rows[0]) throw new NotFoundException("Course not found in the current tenant.");
+    if (!await this.hasAssignmentStaffAccess(user, course.rows[0].institution_id, courseId, campusId ?? course.rows[0].campus_id)) {
+      throw new ForbiddenException("You are not authorized to manage content for this course.");
+    }
   }
 
   private async createChild(
