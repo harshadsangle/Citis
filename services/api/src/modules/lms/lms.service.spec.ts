@@ -81,7 +81,7 @@ test("assigned teachers can read nested course content while unassigned teachers
   });
 
   const visible = await service.getChild("module-1", "course_modules", teacher);
-  assert.equal(visible.id, "module-1");
+  assert.equal((visible as Record<string, unknown>).id, "module-1");
 
   const { service: blockedService } = serviceWith(async (text) => {
     if (text.startsWith("SELECT p.institution_id")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-2" }] };
