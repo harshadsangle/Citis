@@ -318,7 +318,7 @@ function CourseCard({
         </div>
         <div className="course-card-actions">
           <button className="course-details-button" type="button" aria-expanded={expanded} onClick={onToggle}>
-            {expanded ? "Close details" : "View course details"} <span aria-hidden="true">{expanded ? "↑" : "↓"}</span>
+            {expanded ? "Close details" : "Open course page"} <span aria-hidden="true">{expanded ? "↑" : "→"}</span>
           </button>
           <button className="course-primary-button" type="button" onClick={onContinue}>
             {actionLabel} <span aria-hidden="true">↗</span>
