@@ -26,6 +26,7 @@
     "db:import-its-courses": "node scripts/import-information-technology-specialist-courses.mjs",
     "db:import-pmi-course": "node scripts/import-pmi-project-management-ready-course.mjs",
     "db:import-meta-course": "node scripts/import-meta-digital-marketing-associate-course.mjs",
+    "db:import-mce-course": "node scripts/import-microsoft-certified-educator-course.mjs",
     "db:import-citis-course-catalogue": "node scripts/import-citis-course-catalogue.mjs"
   },
   "dependencies": {
