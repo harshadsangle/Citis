@@ -628,6 +628,7 @@ function CourseLearningView({
             <div className="lesson-article-kicker">{isCompleted ? "Completed lesson" : "Now learning"}</div>
             <h3>{activeLesson.title}</h3>
             <p className="lesson-lede">{activeLesson.description || "Work through this lesson to build the next part of your CITIS learning pathway."}</p>
+            <LearningResourceViewer resources={resources} loading={resourcesLoading} error={resourcesError} />
             <div className="lesson-content-card">
               <span className="course-detail-label">Lesson overview</span>
               {(activeLesson.description || "This lesson is part of your guided CITIS course roadmap.").split(/\r?\n+/).filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
@@ -638,6 +639,13 @@ function CourseLearningView({
               {!isCompleted && <button className="course-primary-button" type="button" onClick={() => void completeCurrentLesson()} disabled={busyLessonId === activeLesson.id}>{busyLessonId === activeLesson.id ? "Saving…" : "Mark as complete"}</button>}
             </div>
             {lessonError && <div className="lesson-error" role="alert">{lessonError}</div>}
+            {progress.state === "COMPLETED" && (
+              <div className="course-complete-banner">
+                <div className="course-complete-badge" aria-hidden="true">✓</div>
+                <div><span className="course-detail-label">Course complete</span><strong>You’ve earned this milestone.</strong><p>Your completed learning record is ready. {certificate ? "Your certificate is available to download." : "Your certificate will appear here after the final checks finish."}</p></div>
+                <button className="course-primary-button" type="button" onClick={onViewCertificates}>{certificate ? "View certificate" : "View completion status"} <span aria-hidden="true">→</span></button>
+              </div>
+            )}
           </article>
           <nav className="lesson-navigation" aria-label="Lesson navigation">
             <button type="button" onClick={() => previous && selectLesson(previous.lesson.id)} disabled={!previous}><span>← Previous lesson</span><strong>{previous?.lesson.title || "Start of course"}</strong></button>
