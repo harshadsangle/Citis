@@ -1,0 +1,129 @@
+© 2023 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+Manage Workbook Options and Settings
+1.	 Standards and Concepts
+1.1	
+Identify the fundamental conceptual building blocks of networks. 
+•	TCP/IP model, OSI model, frames and packets, addressing
+1.2	
+Differentiate between bandwidth and throughput.
+•	Latency, delay, speed test vs. Iperf
+1.3	
+Differentiate between LAN, WAN, MAN, CAN, PAN, and WLAN.
+•	Identify and illustrate common physical and logical network topologies.
+1.4	
+Compare and contrast cloud and on-premises applications and 
+services.
+•	Public, private, hybrid, SaaS, PaaS, IaaS, remote work/hybrid work
+1.5	
+Describe common network applications and protocols.
+•	TCP vs. UDP (connection-oriented vs. connectionless), FTP, SFTP, TFTP, 
+HTTP, HTTPS, DHCP, DNS, ICMP, NTP
+2.	 	Addressing and Subnet Formats
+2.1	
+Compare and contrast private addresses and public addresses.
+•	Address classes, NAT concepts
+2.2	
+Identify IPv4 addresses and subnet formats.
+•	Subnet concepts, Subnet Calculator, slash notation, subnet mask, 
+broadcast domain
+2.3	
+Identify IPv6 addresses and prefix formats. 
+•	Types of addresses, prefix concepts 
+3.	 Endpoints and Media Types
+3.1	
+Identify cables and connectors commonly used in local area networks.
+•	Cable types: fiber, copper, twisted pair; Connector types: coax, RJ-45, 
+RJ-11, fiber connector types
+Cisco Certified Support Technician
+Networking
+Objectives: CCST Networking
+The successful candidate has the foundational knowledge and skills necessary to 
+demonstrate how networks operate, including the devices, media, and protocols 
+that enable network communication. This test will be an entry point into the Cisco 
+certification program. The next certification in the pathway is Cisco Certified Network 
+Associate.
+This is a certification for foundational network technicians, networking students, interns, 
+etc. The exam targets secondary and immediate post-secondary students, and IT and 
+Networking professionals. The successful candidates are qualified work-ready network 
+technicians and customer support technicians, students, and interns with at least 150 
+hours of instruction and hands-on experience.   
+
+
+© 2023 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+3.2	
+Differentiate between Wi-Fi, cellular, and wired network technologies. 
+•	Copper, including sources of interference; fiber; wireless, including 
+802.11 (unlicensed, 2.4GHz, 5GHz, 6GHz); cellular (licensed), sources of 
+interference
+3.3	
+Describe endpoint devices.
+•	Internet of Things (IoT) devices, computers, mobile devices, IP Phone, 
+printer, server
+3.4	
+Demonstrate how to set up and check network connectivity on Windows, 
+Linux, Mac OS, Android, and Apple iOS. 
+•	Networking utilities on Windows, Linux, Android, and Apple operating 
+systems; how to run troubleshooting commands; wireless client settings 
+(SSID, authentication, WPA mode)
+4.	 Infrastructure
+4.1	
+Identify the status lights on a Cisco device when given instruction by an 
+engineer.
+•	Link light color and status (blinking or solid)
+4.2	
+Use a network diagram provided by an engineer to attach the appropriate 
+cables. 
+•	Patch cables, switches and routers, small topologies, power, rack layout
+4.3	
+Identify the various ports on network devices. 
+•	Console port, serial port, fiber port, Ethernet ports, SFPs, USB port, PoE
+4.4	
+Explain basic routing concepts.
+•	Default gateway, layer 2 vs. layer 3 switches, local network vs. remote 
+network)
+4.5	
+Explain basic switching concepts.
+•	MAC address tables, MAC address filtering, VLAN 
+5.	 Diagnosing Problems
+5.1	
+Demonstrate effective troubleshooting methodologies and help desk best 
+practices, including ticketing, documentation, and information gathering.
+•	Policies and procedures, accurate and complete documentation, 
+prioritization
+5.2	
+Perform a packet capture with Wireshark and save it to a file. 
+•	Purpose of using a packet analyzer, saving and opening a .pcap file
+5.3	
+Run basic diagnostic commands and interpret the results.
+•	ping, ipconfig/ifconfig/ip, tracert/traceroute, nslookup; recognize how 
+firewalls can influence the result
+5.4	
+Differentiate between different ways to access and collect data about 
+network devices. 
+•	Remote access (RDP, SSH, telnet), VPN, terminal emulators, Console, 
+Network Management Systems, cloud-managed network (Meraki), scripts
+Cisco Certified Support Technician Exam Objectives
+
+
+© 2023 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+5.5	
+Run basic show commands on a Cisco network device. 
+•	show run, show cdp neighbors, show ip interface brief, show ip route, show 
+version, show inventory, show switch, show mac address-table, show 
+interface, show interface x, show interface status; privilege levels; command 
+help and auto-complete
+6.	 Security
+6.1	
+Describe how firewalls operate to filter traffic.
+•	Firewalls (blocked ports and protocols); rules deny or permit access
+6.2	
+Describe foundational security concepts. 
+•	Confidentiality, integrity, and availability (CIA); authentication, authorization, and 
+accounting (AAA); Multifactor Authentication (MFA); encryption, certificates, 
+and password complexity; identity stores/databases (Active Directory); threats 
+and vulnerabilities; spam, phishing, malware, and denial of service
+6.3	
+Configure basic wireless security on a home router (WPAx).
+•	 WPA, WPA2, WPA3; choosing between Personal and Enterprise; wireless      	
+security concepts
+Cisco Certified Support Technician Exam Objectives

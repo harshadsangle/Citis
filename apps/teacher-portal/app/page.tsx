@@ -298,16 +298,17 @@ function errorMessage(reason: unknown, fallback: string) {
   return reason instanceof Error ? reason.message : fallback;
 }
 
-type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
+type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
 
 function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
-  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "ic3" || value === "intuit" || value === "microsoft" || value === "unity" ? value : null;
+  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "microsoft" || value === "unity" ? value : null;
 }
 
 function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
   const name = value?.trim().toLowerCase() || "";
   if (name.includes("adobe")) return "adobe";
   if (name.includes("autodesk")) return "autodesk";
+  if (name.includes("cisco")) return "cisco";
   if (name.includes("comptia")) return "comptia";
   if (name.includes("ic3") || name.includes("digital literacy")) return "ic3";
   if (name.includes("intuit") || name.includes("quickbooks")) return "intuit";

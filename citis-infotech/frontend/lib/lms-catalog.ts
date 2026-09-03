@@ -15,10 +15,10 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
+export type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
 
 export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
-  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "ic3" || value === "intuit" || value === "microsoft" || value === "unity" ? value : undefined;
+  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "microsoft" || value === "unity" ? value : undefined;
 }
 
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
@@ -840,6 +840,65 @@ const MICROSOFT_COURSES: LmsCourse[] = [
   },
 ];
 
+const CISCO_COURSES: LmsCourse[] = [
+  {
+    id: "cisco-certified-support-technician-it-support",
+    title: "Cisco Certified Support Technician IT Support",
+    description: "Official Cisco Certified Support Technician IT Support objectives for entry-level help desk, desktop support, connectivity, operating system, application, security, and job-tool skills.",
+    audience: "Entry-level help desk technicians, end user desktop support technicians, IT students, interns, and other candidates with at least 150 hours of instruction and hands-on experience.",
+    details: [
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Target experience", value: "At least 150 hours" },
+      { label: "Credential", value: "Cisco Certified Support Technician IT Support" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "IT Support Job Tasks and Responsibilities", description: "Help desk concepts, customer-interaction documentation, problem-solving processes, and the interpersonal practices used in IT support." },
+      { number: "02", title: "Hardware Issues", description: "Safety procedures, device information, ports and cables, desktop components, drivers, e-waste, and commonly encountered hardware issues." },
+      { number: "03", title: "Connectivity and Resource Access Issues", description: "Network-based resources, directory services, multifactor authentication, shared drives, peripheral connectivity, end-device network access, and connectivity commands." },
+      { number: "04", title: "Operating System and Application Issues", description: "Windows, macOS, and mobile device issues; virtualization and cloud terminology; and common application installation and support issues." },
+      { number: "05", title: "Common Threats and Preventions", description: "End-user security threats, basic investigation and escalation, social engineering, and company policies protecting confidential, proprietary, and personally identifiable information." },
+      { number: "06", title: "Job Tools", description: "Remote access software and troubleshooting tools used to research issues and update internal documentation, including AI limitations, ethics, privacy, and security risks." },
+    ],
+  },
+  {
+    id: "cisco-certified-support-technician-networking",
+    title: "Cisco Certified Support Technician Networking",
+    description: "Official Cisco Certified Support Technician Networking objectives for foundational network operations, addressing, endpoints, infrastructure, troubleshooting, and security.",
+    audience: "Foundational network technicians, networking students, interns, and IT or networking professionals with at least 150 hours of instruction and hands-on experience.",
+    details: [
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Target experience", value: "At least 150 hours" },
+      { label: "Credential", value: "Cisco Certified Support Technician Networking" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Standards and Concepts", description: "TCP/IP and OSI models, frames and packets, addressing, bandwidth and throughput, network types and topologies, cloud and on-premises services, and common protocols." },
+      { number: "02", title: "Addressing and Subnet Formats", description: "Private and public addresses, NAT, IPv4 addresses and subnet formats, subnet concepts, subnet masks, broadcast domains, IPv6 addresses, and prefix formats." },
+      { number: "03", title: "Endpoints and Media Types", description: "LAN cables and connectors, Wi-Fi, cellular and wired technologies, endpoint devices, and network connectivity on Windows, Linux, macOS, Android, and Apple iOS." },
+      { number: "04", title: "Infrastructure", description: "Cisco device status lights, network diagrams and cabling, network-device ports, basic routing concepts, and basic switching concepts." },
+      { number: "05", title: "Diagnosing Problems", description: "Troubleshooting methodology, help desk practices, packet capture with Wireshark, diagnostic commands, and methods for accessing and collecting network-device data." },
+      { number: "06", title: "Security", description: "Firewall traffic filtering, confidentiality, integrity and availability, authentication, authorization and accounting, multifactor authentication, encryption, threats, and basic wireless security." },
+    ],
+  },
+  {
+    id: "cisco-certified-support-technician-cybersecurity",
+    title: "Cisco Certified Support Technician Cybersecurity",
+    description: "Official Cisco Certified Support Technician Cybersecurity objectives for essential security principles, network and endpoint security, vulnerability and risk management, and incident handling.",
+    audience: "Candidates beginning their cybersecurity journey with at least 150 hours of instruction and hands-on experience.",
+    details: [
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Target experience", value: "At least 150 hours" },
+      { label: "Credential", value: "Cisco Certified Support Technician Cybersecurity" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Essential Security Principles", description: "Vulnerabilities, threats, exploits, risks, attack vectors, hardening, defense-in-depth, the CIA triad, attackers, ethics, access management, and encryption." },
+      { number: "02", title: "Basic Network Security Concepts", description: "TCP/IP protocol vulnerabilities, network addresses, IPv4 and IPv6, MAC addresses, segmentation, CIDR, NAT, network security architecture, wireless security, ACLs, firewalls, VPNs, and NAC." },
+      { number: "03", title: "Endpoint Security Concepts", description: "Operating system security, endpoint assessment tools, security policies and standards, software and hardware updates, system logs, and malware removal." },
+      { number: "04", title: "Vulnerability Assessment and Risk Management", description: "Vulnerability identification and mitigation, reconnaissance, testing, threat intelligence, vulnerability databases, cybersecurity reporting, risk ranking, mitigation strategies, disaster recovery, and business continuity." },
+      { number: "05", title: "Incident Handling", description: "Security-event monitoring and escalation, SIEM and SOAR, digital forensics, attack attribution, evidence handling, compliance frameworks, reporting, and the incident-response lifecycle." },
+    ],
+  },
+];
+
 const IC3_COURSES: LmsCourse[] = [
   {
     id: "ic3-spark",
@@ -1183,6 +1242,13 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     eyebrow: "CompTIA certification courses",
     description: "Official objective-led preparation across CompTIA foundational, infrastructure, cloud, data, project, networking, Linux, and cybersecurity certifications.",
     courses: COMPTIA_COURSES,
+  },
+  {
+    id: "cisco",
+    name: "Cisco Certified Support Technician",
+    eyebrow: "Cisco · Certiport certification courses",
+    description: "Official objective-led preparation for Cisco Certified Support Technician IT Support, Networking, and Cybersecurity certifications.",
+    courses: CISCO_COURSES,
   },
   {
     id: "ic3",
