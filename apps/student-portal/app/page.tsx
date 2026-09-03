@@ -33,6 +33,18 @@ type Progress = {
   }>;
 };
 
+type LearningResource = {
+  id: string;
+  lesson_id: string;
+  resource_type: string;
+  title: string;
+  url?: string | null;
+  file_path?: string | null;
+  duration?: number | null;
+  sequence: number;
+  status?: string;
+};
+
 type Assignment = {
   id: string;
   course_id: string;
