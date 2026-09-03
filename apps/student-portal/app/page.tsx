@@ -406,6 +406,96 @@ function firstLessonId(progress: Progress) {
   return firstIncompleteModule?.lessonItems[0]?.id || progress.modules[0]?.lessonItems[0]?.id || "";
 }
 
+function resourceTypeLabel(resourceType: string) {
+  return resourceType.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function resourceUrl(resource: LearningResource) {
+  return resource.url || `/api/v1/learning-resources/${resource.id}/file`;
+}
+
+function videoEmbedUrl(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.hostname.includes("youtube.com")) {
+      const videoId = url.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : value;
+    }
+    if (url.hostname === "youtu.be") return `https://www.youtube.com/embed${url.pathname}`;
+    if (url.hostname.includes("vimeo.com")) {
+      const videoId = url.pathname.split("/").filter(Boolean).pop();
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : value;
+    }
+  } catch {
+    return value;
+  }
+  return value;
+}
+
+function resourceIsVideo(resource: LearningResource) {
+  return resource.resource_type.toUpperCase().includes("VIDEO") || /\.(mp4|webm|ogg)(?:$|\?)/i.test(resource.url || "");
+}
+
+function resourceIsDocument(resource: LearningResource) {
+  const type = resource.resource_type.toUpperCase();
+  return type.includes("PDF") || type.includes("DOCUMENT") || type === "FILE";
+}
+
+function LearningResourceViewer({ resources, loading, error }: { resources: LearningResource[]; loading: boolean; error: string }) {
+  const [activeResourceId, setActiveResourceId] = useState("");
+  const activeResource = resources.find((resource) => resource.id === activeResourceId) || resources[0];
+
+  useEffect(() => {
+    setActiveResourceId(resources[0]?.id || "");
+  }, [resources]);
+
+  if (loading) {
+    return <div className="lesson-resource-loading"><span className="resource-loading-dot" /> Loading lesson media…</div>;
+  }
+  if (error) {
+    return <div className="lesson-resource-error" role="alert">{error}</div>;
+  }
+  if (!activeResource) {
+    return (
+      <div className="lesson-resource-empty">
+        <span className="resource-empty-mark" aria-hidden="true">▶</span>
+        <div><strong>Reading lesson</strong><p>This lesson has no video or downloadable resource yet. Use the lesson overview below, then mark it complete when you’re ready.</p></div>
+      </div>
+    );
+  }
+
+  const url = resourceUrl(activeResource);
+  const isEmbed = resourceIsVideo(activeResource) && /^https?:\/\//i.test(url) && !/\.(mp4|webm|ogg)(?:$|\?)/i.test(url);
+
+  return (
+    <div className="lesson-resource">
+      <div className="lesson-resource-frame">
+        {resourceIsVideo(activeResource) && (isEmbed ? (
+          <iframe title={activeResource.title} src={videoEmbedUrl(url)} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+        ) : (
+          <video controls preload="metadata" src={url}>
+            Your browser does not support embedded video.
+          </video>
+        ))}
+        {resourceIsDocument(activeResource) && <iframe title={activeResource.title} src={url} />}
+        {!resourceIsVideo(activeResource) && !resourceIsDocument(activeResource) && (
+          <div className="lesson-resource-link-card">
+            <span className="resource-link-icon" aria-hidden="true">↗</span>
+            <div><strong>{activeResource.title}</strong><p>{resourceTypeLabel(activeResource.resource_type)} resource</p></div>
+            <a href={url} target="_blank" rel="noreferrer">Open resource</a>
+          </div>
+        )}
+      </div>
+      <div className="lesson-resource-footer">
+        <div><span className="lesson-resource-kicker">{resourceTypeLabel(activeResource.resource_type)}</span><strong>{activeResource.title}</strong></div>
+        {resources.length > 1 && (
+          <label className="lesson-resource-select"><span>Lesson resource</span><select value={activeResource.id} onChange={(event) => setActiveResourceId(event.target.value)}>{resources.map((resource) => <option key={resource.id} value={resource.id}>{resource.title}</option>)}</select></label>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CourseLearningView({
   progress,
   provider,
