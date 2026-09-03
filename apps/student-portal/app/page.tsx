@@ -135,10 +135,10 @@ const stateLabel: Record<Progress["state"], string> = {
   COMPLETED: "Completed",
 };
 
-type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "its" | "microsoft" | "unity";
+type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "its" | "microsoft" | "pmi" | "unity";
 
 function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | null {
-  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "its" || value === "microsoft" || value === "unity" ? value : null;
+  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "its" || value === "microsoft" || value === "pmi" || value === "unity" ? value : null;
 }
 
 function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
@@ -151,12 +151,14 @@ function providerForProgrammeName(value?: string | null): LmsCourseProvider | nu
   if (name.includes("intuit") || name.includes("quickbooks")) return "intuit";
   if (name.includes("it specialist")) return "its";
   if (name.includes("microsoft")) return "microsoft";
+  if (name.includes("pmi") || name.includes("project management institute")) return "pmi";
   if (name.includes("unity")) return "unity";
   return null;
 }
 
 function providerLabel(provider: LmsCourseProvider | null) {
   if (provider === "its") return "IT Specialist";
+  if (provider === "pmi") return "Project Management Institute";
   return provider ? provider.charAt(0).toUpperCase() + provider.slice(1) : "CITIS";
 }
 

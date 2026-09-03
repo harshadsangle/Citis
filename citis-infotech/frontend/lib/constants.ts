@@ -149,8 +149,8 @@ const globalCertificationItems = [
   },
   {
     title: "Project Management Institute",
-    href: "/engagements/global-certifications/project-management-institute",
-    description: "Project delivery and leadership.",
+    href: "/lms?provider=pmi",
+    description: "PMI Project Management Ready® project fundamentals.",
     icon: Compass,
   },
   {

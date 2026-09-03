@@ -15,10 +15,10 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "its" | "microsoft" | "unity";
+export type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "its" | "microsoft" | "pmi" | "unity";
 
 export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
-  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "its" || value === "microsoft" || value === "unity" ? value : undefined;
+  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "its" || value === "microsoft" || value === "pmi" || value === "unity" ? value : undefined;
 }
 
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
@@ -1142,6 +1142,27 @@ const ITS_COURSES: LmsCourse[] = [
   itsCourse("its-networking", "IT Specialist Networking", ["Networking Fundamentals", "Network Infrastructures", "Network Hardware", "Protocols and Services", "Troubleshooting"], "Objective-led preparation for the Certiport IT Specialist Networking exam."),
 ];
 
+const PMI_COURSES: LmsCourse[] = [
+  {
+    id: "pmi-project-management-ready",
+    title: "PMI Project Management Ready®",
+    description: "Official PMI objective-led preparation introducing project management concepts and tools across career paths.",
+    audience: "Learners preparing for the PMI Project Management Ready® certification with foundational project management experience.",
+    details: [
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Objective lessons", value: "16 topics" },
+      { label: "Credential", value: "PMI Project Management Ready®" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Project Management Fundamentals", description: "Project management approaches, ethics, leadership skills, and communications." },
+      { number: "02", title: "Starting the Project", description: "Project charters and stakeholder roles, responsibilities, authority, and decision making." },
+      { number: "03", title: "Planning the work", description: "Project management plans, scope, scheduling, and budgets." },
+      { number: "04", title: "Completing the work", description: "Monitoring scope, schedule, and budget; quality; and change management." },
+      { number: "05", title: "Ending the project", description: "Project completion, contract closeout, sponsor signoff, archiving, and lessons learned." },
+    ],
+  },
+];
+
 export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
   {
     id: "adobe",
@@ -1306,6 +1327,13 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     eyebrow: "IT Specialist certification courses",
     description: "Official Certiport objective-led preparation across networking, security, cloud, data, programming, web, and computational thinking exams.",
     courses: ITS_COURSES,
+  },
+  {
+    id: "pmi",
+    name: "Project Management Institute",
+    eyebrow: "PMI certification courses",
+    description: "Official objective-led preparation for PMI Project Management Ready®, covering project fundamentals from initiation through closeout.",
+    courses: PMI_COURSES,
   },
   {
     id: "microsoft",
