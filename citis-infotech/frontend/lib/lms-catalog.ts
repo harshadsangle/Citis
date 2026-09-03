@@ -838,6 +838,26 @@ const MICROSOFT_COURSES: LmsCourse[] = [
       { number: "06", title: "Manage Multiple Presentations", description: "Compare, combine, reuse, and present content across multiple presentation files." },
     ],
   },
+  {
+    id: "mce-technology-literacy-for-educators-62-193",
+    title: "Microsoft Certified Educator: Technology Literacy for Educators (62-193)",
+    description: "Official Microsoft Certified Educator objective-led preparation based on the 21st Century Learning Design framework for technology-rich teaching and learning.",
+    audience: "Educators, teacher candidates, faculty at teacher-training colleges, educational administrators, and professionals validating technology-literacy competency.",
+    details: [
+      { label: "Exam", value: "62-193" },
+      { label: "Objective areas", value: "7 sections" },
+      { label: "Credential", value: "Microsoft Certified Educator" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Facilitate Student Collaboration", description: "Design and manage learning environments that enable shared responsibility, substantive decisions, and interdependent student work." },
+      { number: "02", title: "Facilitate Skilled Communication", description: "Create multimodal, evidence-supported products for specific audiences and evaluate student communication." },
+      { number: "03", title: "Facilitate Knowledge Construction", description: "Transform learning activities so students apply knowledge in new contexts and engage in interdisciplinary learning." },
+      { number: "04", title: "Faclitate Self-Regulation", description: "Enable students to plan, revise, set goals, choose strategies, and monitor their own learning." },
+      { number: "05", title: "Facilitate Real World Problem Solving and Innovation", description: "Develop activities that require novel solutions, complex products, real-world issues, and benefits for others." },
+      { number: "06", title: "Facilitate Student use of Information and Communication Tools (ICT)", description: "Use Microsoft technology and ICT resources to support knowledge construction, diverse learners, outcomes, and classroom logistics." },
+      { number: "07", title: "Use ICT to be an Effective Educator", description: "Select appropriate ICT resources and pedagogical approaches for educational outcomes, professional development, and digital citizenship." },
+    ],
+  },
 ];
 
 const CISCO_COURSES: LmsCourse[] = [
