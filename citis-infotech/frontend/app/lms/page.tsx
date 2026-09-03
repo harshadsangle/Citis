@@ -25,6 +25,7 @@ const PROVIDER_LOGOS: Record<LmsCourseProvider, { src: string; alt: string; size
   cisco: { src: "/images/cisco-logo.svg", alt: "Cisco logo", sizes: "112px" },
   ic3: { src: "/images/ic3-logo.png", alt: "IC3 Digital Literacy logo", sizes: "112px" },
   intuit: { src: "/images/intuit-logo.png", alt: "Intuit logo", sizes: "112px" },
+  its: { src: "/images/citis-logo.svg", alt: "IT Specialist certification pathway", sizes: "112px" },
   microsoft: { src: "/images/microsoft.png", alt: "Microsoft logo", sizes: "112px" },
   unity: { src: "/images/unity.png", alt: "Unity logo", sizes: "112px" },
 };
