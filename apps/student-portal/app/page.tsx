@@ -783,14 +783,14 @@ function CourseCatalogue({
   }
 
   return (
-    <section className="course-catalogue" aria-labelledby="course-catalogue-title">
+    <section className="course-catalogue" id="my-learning" aria-labelledby="course-catalogue-title">
       <div className="catalogue-heading">
         <div>
           <span className="catalogue-eyebrow">Your learning library</span>
           <h2 id="course-catalogue-title">{provider ? `${providerLabel(provider)} courses` : "Courses built for your next step"}</h2>
-          <p>Find a pathway, open the full roadmap, and keep building momentum across your CITIS learning journey.</p>
+           <p>Pick up where you left off, explore your curriculum, and keep building momentum across your CITIS learning journey.</p>
         </div>
-        <div className="catalogue-total"><strong>{courses.length}</strong><span>enrolled courses</span></div>
+         <div className="catalogue-total"><strong>{courses.length}</strong><span>in My Learning</span></div>
       </div>
       <div className="catalogue-stat-row">
         <div><span className="catalogue-stat-icon">◎</span><span><strong>{activeCourses}</strong><small>In progress</small></span></div>
@@ -918,6 +918,20 @@ export default function StudentPortalPage() {
     }
   }
 
+  async function refreshProgress() {
+    const response = await fetch("/api/v1/progress", { credentials: "include" });
+    if (!response.ok) return;
+    const body = await response.json() as { data?: Progress[] };
+    const nextCourses = body.data || [];
+    setCourses(provider ? nextCourses.filter((progress) => providerForProgrammeName(progress.course.programme_name) === provider) : nextCourses);
+  }
+
+  async function refreshCertificates() {
+    const nextCertificates = await fetchDashboardList<Certificate>("/api/v1/certificates");
+    const visibleCourseIds = new Set(courses.map((course) => course.course.id));
+    setCertificates(provider ? nextCertificates.filter((certificate) => visibleCourseIds.has(certificate.course_id)) : nextCertificates);
+  }
+
   async function downloadCertificate(certificate: Certificate) {
     setCertificateBusy(certificate.id);
     setCertificateNotice("");
@@ -1019,6 +1033,8 @@ export default function StudentPortalPage() {
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't submit this assessment.");
       setActiveAttempt(body.data);
       await loadAssessmentHistory();
+      await refreshProgress();
+      await refreshCertificates();
       setAssessmentNotice(body.data.grading_status === "PENDING" ? "Assessment submitted. It is waiting for instructor review." : "Assessment submitted. Your result was calculated by the server.");
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "We couldn't submit this assessment.");
@@ -1079,6 +1095,7 @@ export default function StudentPortalPage() {
       const progressBody = await progressResponse.json() as { data?: Progress };
       if (progressBody.data) setCourses((current) => current.map((course) => course.course.id === courseId ? progressBody.data! : course));
     }
+    await refreshCertificates();
   }
 
   function dueLabel(value?: string | null) {
@@ -1088,10 +1105,16 @@ export default function StudentPortalPage() {
   return (
     <main className="student-shell" style={{ background: "#f5f8fb", color: "#12304a", fontFamily: "Arial, sans-serif", minHeight: "100vh", padding: "48px 24px" }}>
       <div className="student-container">
-        <div className="portal-topbar">
+          <div className="portal-topbar">
           <div className="portal-brand"><span className="portal-brand-citis">CITIS</span><span className="portal-brand-infot">InfoTech</span><span className="portal-brand-divider" /><span className="portal-brand-label">Learning portal</span></div>
           <div className="portal-actions"><span className="portal-session">Student space</span><button className="portal-signout" onClick={() => void logout()} disabled={loggingOut} type="button">{loggingOut ? "Signing out…" : "Sign out"} <span aria-hidden="true">↗</span></button></div>
         </div>
+          <nav className="learner-nav" aria-label="Learner navigation">
+            <a className="is-active" href="#my-learning">My Learning</a>
+            <a href="#assessments">Assessments</a>
+            <a href="#assignments">Assignments</a>
+            <a href="#certificates">Certificates</a>
+          </nav>
         <header className="portal-hero">
           <div className="portal-hero-copy">
             <span className="portal-eyebrow">CITIS learning portal {provider && `· ${providerLabel(provider)}`}</span>
@@ -1102,7 +1125,8 @@ export default function StudentPortalPage() {
             <span className="portal-hero-card-icon">✦</span>
             <span>Today’s focus</span>
             <strong>{provider ? `${providerLabel(provider)} pathway` : "Your learning library"}</strong>
-            <small>Small steps. Visible progress.</small>
+             <small>Small steps. Visible progress.</small>
+             <a href="#my-learning">Open My Learning <span aria-hidden="true">→</span></a>
           </div>
         </header>
 
@@ -1121,9 +1145,9 @@ export default function StudentPortalPage() {
             <p>Your institution’s learning team will show your courses here after you are enrolled.</p>
           </section>
         )}
-        {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} onCompleteLesson={completeLesson} />}
+        {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} certificates={certificates} onViewCertificates={() => document.getElementById("certificates")?.scrollIntoView({ behavior: "smooth", block: "start" })} onCompleteLesson={completeLesson} />}
         {!loading && !error && (
-          <section className="assessment-history-section">
+          <section className="assessment-history-section" id="assessment-history">
             <div className="portal-section-heading">
               <div>
                 <p className="portal-eyebrow">Your record</p>
@@ -1156,7 +1180,7 @@ export default function StudentPortalPage() {
           </section>
         )}
         {!loading && !error && (
-          <section style={{ marginTop: 28 }}>
+          <section className="certificates-section" id="certificates">
             <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
               <div>
                 <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Recognition</p>
@@ -1189,7 +1213,7 @@ export default function StudentPortalPage() {
           </section>
         )}
         {!loading && !error && (
-          <section className="assessment-section">
+          <section className="assessment-section" id="assessments">
             <div className="portal-section-heading">
               <div>
                 <p className="portal-eyebrow">Knowledge checks</p>
@@ -1303,7 +1327,7 @@ export default function StudentPortalPage() {
           </section>
         )}
         {!loading && !error && (
-          <section style={{ marginTop: 28 }}>
+          <section className="assignments-section" id="assignments">
             <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
               <div>
                 <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Course work</p>
