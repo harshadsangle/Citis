@@ -657,19 +657,98 @@ function CourseLearningView({
   );
 }
 
+function CourseDetailsView({
+  progress,
+  provider,
+  certificate,
+  onBack,
+  onStart,
+  onViewCertificates,
+}: {
+  progress: Progress;
+  provider: LmsCourseProvider | null;
+  certificate?: Certificate;
+  onBack: () => void;
+  onStart: () => void;
+  onViewCertificates: () => void;
+}) {
+  const narrative = parseCourseNarrative(progress.course.description);
+  const learningPoints = narrative.objectives.length ? narrative.objectives : narrative.outcomes.length ? narrative.outcomes : ["Follow structured lessons and assessments in your enrolled CITIS pathway."];
+  const actionLabel = progress.state === "NOT_STARTED" ? "Start course" : progress.state === "COMPLETED" ? "Review course" : "Continue learning";
+
+  return (
+    <section className="course-detail-page" aria-labelledby="course-detail-title">
+      <button className="learning-back-button" type="button" onClick={onBack}>← Back to My Learning</button>
+      <div className="course-detail-hero">
+        <div className="course-detail-hero-art">
+          <span>{provider ? providerLabel(provider) : "CITIS"}</span>
+          <strong>{String(progress.modules.length).padStart(2, "0")}</strong>
+          <i aria-hidden="true" />
+        </div>
+        <div className="course-detail-hero-copy">
+          <div className="course-card-topline"><span className={`catalogue-category category-${categoryForCourse(progress.course.programme_name).toLowerCase().replaceAll(" ", "-")}`}>{categoryForCourse(progress.course.programme_name)}</span><span className={`course-state course-state-${progress.state.toLowerCase()}`}>{stateLabel[progress.state]}</span></div>
+          <span className="course-detail-course-code">{progress.course.code}</span>
+          <h2 id="course-detail-title">{progress.course.title}</h2>
+          <p>{narrative.overview || narrative.freeform || progress.course.description || "A structured CITIS learning experience built around practical skills and measurable progress."}</p>
+          <div className="course-detail-hero-actions">
+            <button className="course-primary-button" type="button" onClick={onStart}>{actionLabel} <span aria-hidden="true">→</span></button>
+            {certificate && <button className="course-details-button" type="button" onClick={onViewCertificates}>View certificate</button>}
+          </div>
+        </div>
+        <aside className="course-detail-summary">
+          <div className="course-detail-summary-progress"><strong>{progress.percentage}%</strong><span>course progress</span><ProgressBar percentage={progress.percentage} /></div>
+          <div className="course-detail-summary-stats"><span><strong>{progress.modules.length}</strong>modules</span><span><strong>{progress.lessons.total}</strong>lessons</span><span><strong>{progress.assessments.total}</strong>checks</span></div>
+        </aside>
+      </div>
+      <div className="course-detail-body">
+        <main>
+          <section className="course-detail-content-block">
+            <span className="course-detail-eyebrow">A clear path forward</span>
+            <h3>What you’ll learn</h3>
+            <div className="course-learning-points">{learningPoints.map((item) => <div key={item}><span aria-hidden="true">✓</span><p>{item}</p></div>)}</div>
+          </section>
+          <section className="course-detail-content-block">
+            <div className="course-detail-block-heading"><div><span className="course-detail-eyebrow">Course content</span><h3>Curriculum</h3></div><span>{progress.lessons.total} lessons · {progress.modules.length} modules</span></div>
+            <div className="detail-curriculum-list">
+              {progress.modules.map((courseModule) => (
+                <details key={courseModule.id} open={courseModule.sequence === 1}>
+                  <summary><span className="detail-curriculum-number">{String(courseModule.sequence).padStart(2, "0")}</span><span><strong>{courseModule.title}</strong><small>{courseModule.lessons.total} lessons · {courseModule.percentage}% complete</small></span><span aria-hidden="true">⌄</span></summary>
+                  <div>{courseModule.lessonItems.map((lesson) => <span key={lesson.id}><b aria-hidden="true">○</b>{lesson.title}{lesson.estimatedDuration != null && <small>{lesson.estimatedDuration} min</small>}</span>)}</div>
+                </details>
+              ))}
+            </div>
+          </section>
+        </main>
+        <aside className="course-detail-side-card">
+          <span className="course-detail-eyebrow">Your progress</span>
+          <strong>{progress.lessons.completed} of {progress.lessons.total}</strong>
+          <p>lessons completed</p>
+          <ProgressBar percentage={progress.percentage} />
+          <div className="course-detail-side-list"><span><b>Next up</b>{progress.modules.find((courseModule) => courseModule.state !== "COMPLETED")?.title || "Review your course"}</span><span><b>Assessment checks</b>{progress.assessments.completed} of {progress.assessments.total} complete</span></div>
+          <button className="course-primary-button" type="button" onClick={onStart}>{actionLabel} <span aria-hidden="true">→</span></button>
+        </aside>
+      </div>
+    </section>
+  );
+}
+
 function CourseCatalogue({
   courses,
   provider,
   onCompleteLesson,
+  certificates,
+  onViewCertificates,
 }: {
   courses: Progress[];
   provider: LmsCourseProvider | null;
   onCompleteLesson: (courseId: string, lessonId: string) => Promise<void>;
+  certificates: Certificate[];
+  onViewCertificates: () => void;
 }) {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<CatalogueFilter>("all");
   const [sort, setSort] = useState<CatalogueSort>("recommended");
-  const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const [detailCourseId, setDetailCourseId] = useState<string | null>(null);
   const [learningCourseId, setLearningCourseId] = useState<string | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
 
@@ -695,7 +774,12 @@ function CourseCatalogue({
 
   if (learningCourseId) {
     const learningCourse = courses.find((course) => course.course.id === learningCourseId);
-    if (learningCourse) return <CourseLearningView progress={learningCourse} provider={provider} onBack={() => setLearningCourseId(null)} onCompleteLesson={onCompleteLesson} />;
+    if (learningCourse) return <CourseLearningView progress={learningCourse} provider={provider} certificate={certificates.find((certificate) => certificate.course_id === learningCourse.course.id)} onViewCertificates={onViewCertificates} onBack={() => setLearningCourseId(null)} onCompleteLesson={onCompleteLesson} />;
+  }
+
+  if (detailCourseId) {
+    const detailCourse = courses.find((course) => course.course.id === detailCourseId);
+    if (detailCourse) return <CourseDetailsView progress={detailCourse} provider={provider} certificate={certificates.find((certificate) => certificate.course_id === detailCourse.course.id)} onBack={() => setDetailCourseId(null)} onStart={() => setLearningCourseId(detailCourse.course.id)} onViewCertificates={onViewCertificates} />;
   }
 
   return (
@@ -730,7 +814,7 @@ function CourseCatalogue({
         <div className="catalogue-empty"><span>⌕</span><h3>No courses match those filters</h3><p>Try a different keyword or clear the category filter to see your full learning library.</p><button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Show all courses</button></div>
       ) : (
         <div className="course-card-grid">
-          {visibleCourses.map((progress) => <CourseCard key={progress.course.id} progress={progress} expanded={expandedCourseId === progress.course.id} onToggle={() => setExpandedCourseId((current) => current === progress.course.id ? null : progress.course.id)} onContinue={() => setLearningCourseId(progress.course.id)} />)}
+           {visibleCourses.map((progress) => <CourseCard key={progress.course.id} progress={progress} expanded={false} onToggle={() => setDetailCourseId(progress.course.id)} onContinue={() => setLearningCourseId(progress.course.id)} />)}
         </div>
       )}
     </section>
