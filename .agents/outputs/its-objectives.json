@@ -1,0 +1,1719 @@
+[
+  {
+    "file": "ITS_OD_102_Network_Security_0922_1788429376324.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Defense in Depth",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Identify core security principles"
+          },
+          {
+            "number": "1.2",
+            "title": "Define and enforce physical security"
+          },
+          {
+            "number": "1.3",
+            "title": "Identify security policy types"
+          },
+          {
+            "number": "1.4",
+            "title": "Identify attack types"
+          },
+          {
+            "number": "1.5",
+            "title": "Identify backup and restore types"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Operating System Security",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Identify client and server protection"
+          },
+          {
+            "number": "2.2",
+            "title": "Configure user authentication"
+          },
+          {
+            "number": "2.3",
+            "title": "Manage permissions in Windows and Linux"
+          },
+          {
+            "number": "2.4",
+            "title": "Facilitate non-repudiation using audit policies and log files"
+          },
+          {
+            "number": "2.5",
+            "title": "Demonstrate knowledge of encryption"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Network Device Security",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Implement wireless security"
+          },
+          {
+            "number": "3.2",
+            "title": "Identify the role of network protection devices"
+          },
+          {
+            "number": "3.3",
+            "title": "Identify network isolation methods"
+          },
+          {
+            "number": "3.4",
+            "title": "Identify protocol security concepts"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Secure Computing",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Implement email protection"
+          },
+          {
+            "number": "4.2",
+            "title": "Manage browser security"
+          },
+          {
+            "number": "4.3",
+            "title": "Install and configure anti-malware and antivirus software"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_103_Devices_0125_1788429376325.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Windows Installation and Configuration",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Recognize basic computer components and explain their functions, including:"
+          },
+          {
+            "number": "1.2",
+            "title": "Describe the purpose of Active Directory services, including:"
+          },
+          {
+            "number": "1.3",
+            "title": "Install Windows using the default settings"
+          },
+          {
+            "number": "1.4",
+            "title": "Configure user account options"
+          },
+          {
+            "number": "1.5",
+            "title": "Configure desktop settings"
+          },
+          {
+            "number": "1.6",
+            "title": "Configure accessibility settings to meet user’s specific needs"
+          },
+          {
+            "number": "1.7",
+            "title": "Manage updates"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Windows Feature, Application and Peripheral",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Manage applications and Windows features"
+          },
+          {
+            "number": "2.2",
+            "title": "Explain the purpose and capabilities of Windows Copilot (Windows 11 Only)"
+          },
+          {
+            "number": "2.3",
+            "title": "Describe the purpose of the Windows Registry"
+          },
+          {
+            "number": "2.4",
+            "title": "Compare and contrast capabilities of peripheral connection types"
+          },
+          {
+            "number": "2.5",
+            "title": "Configure projection and display properties"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Data Access and Management",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Describe cloud services"
+          },
+          {
+            "number": "3.2",
+            "title": "Describe and configure local and network file sharing and permissions"
+          },
+          {
+            "number": "3.3",
+            "title": "Manage backup and restore of user files and states"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Device Security",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Configure Windows Defender Firewall settings"
+          },
+          {
+            "number": "4.2",
+            "title": "Describe user authentication and configure Windows sign-in options"
+          },
+          {
+            "number": "4.3",
+            "title": "Describe various security threats"
+          },
+          {
+            "number": "4.4",
+            "title": "Describe how to respond to various malware and social engineering attacks"
+          },
+          {
+            "number": "4.5",
+            "title": "Manage User Account Control (UAC) settings"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Windows Management and Troubleshooting",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Perform troubleshooting tasks"
+          },
+          {
+            "number": "5.2",
+            "title": "Troubleshoot operating system and application issues"
+          },
+          {
+            "number": "5.3",
+            "title": "Manage and troubleshoot hardware and peripherals"
+          },
+          {
+            "number": "5.4",
+            "title": "Manage and troubleshoot device connections to networks and domains"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_104_Cloud_Computing_1023_1788429376325.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Cloud Concepts",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Explain cloud advantages to stakeholders"
+          },
+          {
+            "number": "1.2",
+            "title": "Explain cost to stakeholders"
+          },
+          {
+            "number": "1.3",
+            "title": "Explain performance to stakeholders"
+          },
+          {
+            "number": "1.4",
+            "title": "Explain reliability to stakeholders"
+          },
+          {
+            "number": "1.5",
+            "title": "Explain availability to stakeholders"
+          },
+          {
+            "number": "1.6",
+            "title": "Explain scalability to stakeholders"
+          },
+          {
+            "number": "1.7",
+            "title": "Recommend off-the-shelf (OTS) or custom solutions as needed"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Developing cloud architecture",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Choose between public, private, and hybrid cloud implementations"
+          },
+          {
+            "number": "2.2",
+            "title": "Draw an architectural diagram (show data flows)"
+          },
+          {
+            "number": "2.3",
+            "title": "Define requirements"
+          },
+          {
+            "number": "2.4",
+            "title": "Identify how services communicate through application programming interfaces (APIs)"
+          },
+          {
+            "number": "2.5",
+            "title": "Create virtual machines"
+          },
+          {
+            "number": "2.6",
+            "title": "Identify data storage requirements"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Implementing the cloud development life cycle",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Create content in virtual environments"
+          },
+          {
+            "number": "3.2",
+            "title": "Perform testing"
+          },
+          {
+            "number": "3.3",
+            "title": "Structure the overall cloud-based solution"
+          },
+          {
+            "number": "3.4",
+            "title": "Deploy application"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Deploy the application",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Manage operational costs"
+          },
+          {
+            "number": "4.2",
+            "title": "Develop business continuity and disaster recovery policy"
+          },
+          {
+            "number": "4.3",
+            "title": "Provide support to users"
+          },
+          {
+            "number": "4.4",
+            "title": "Monitor cloud systems"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Understanding cloud governance",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Comply with privacy and regulatory requirements"
+          },
+          {
+            "number": "5.2",
+            "title": "Comply with ethical guidelines"
+          },
+          {
+            "number": "5.3",
+            "title": "Managing cloud security"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_105_Cybersecurity_0524(3)_1788429376326.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Security Principles",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Explain common security principles"
+          },
+          {
+            "number": "1.2",
+            "title": "Explain cybersecurity frameworks and industry-accepted best practices"
+          },
+          {
+            "number": "1.3",
+            "title": "Explain vulnerabilities, threats, and common attacks"
+          },
+          {
+            "number": "1.4",
+            "title": "Recognize social engineering attacks"
+          },
+          {
+            "number": "1.5",
+            "title": "Explain access management principles and procedures"
+          },
+          {
+            "number": "1.6",
+            "title": "Explain how encryption protects the confidentiality and integrity of data"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Securing the Network",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Identify vulnerabilities associated with commonly used protocols"
+          },
+          {
+            "number": "2.2",
+            "title": "Describe the role of addressing in network security"
+          },
+          {
+            "number": "2.3",
+            "title": "Describe the purpose and function of network security technologies"
+          },
+          {
+            "number": "2.4",
+            "title": "Validate the security of wireless networks"
+          },
+          {
+            "number": "2.5",
+            "title": "Examine network security logs to identify anomalies"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Securing Endpoint Devices",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Apply security settings to harden operating systems"
+          },
+          {
+            "number": "3.2",
+            "title": "Use endpoint tools to gather security assessment information"
+          },
+          {
+            "number": "3.3",
+            "title": "Use packet capture utilities to identify anomalies"
+          },
+          {
+            "number": "3.4",
+            "title": "Demonstrate familiarity with endpoint security policies and standards"
+          },
+          {
+            "number": "3.5",
+            "title": "Interpret system logs to identify anomalies"
+          },
+          {
+            "number": "3.6",
+            "title": "Perform malware removal"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Vulnerability Assessment and Risk Management",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Use threat intelligence sources to identify potential network vulnerabilities"
+          },
+          {
+            "number": "4.2",
+            "title": "Explain risk management"
+          },
+          {
+            "number": "4.3",
+            "title": "Explain the penetration testing process"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Incident Handling",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Monitor security events to determine if escalation is required"
+          },
+          {
+            "number": "5.2",
+            "title": "Explain the digital forensics process and attack frameworks"
+          },
+          {
+            "number": "5.3",
+            "title": "Explain the elements of cybersecurity incident response"
+          },
+          {
+            "number": "5.4",
+            "title": "Explain the importance of disaster recovery and business continuity planning"
+          },
+          {
+            "number": "5.5",
+            "title": "Assist users in restoring data after an incident"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_201_Databases_0922_1788429376326.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Database Design",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Given a scenario, design tables for storing data"
+          },
+          {
+            "number": "1.2",
+            "title": "Given a scenario, identify the appropriate primary key"
+          },
+          {
+            "number": "1.3",
+            "title": "Given a scenario, choose data types to meet requirements"
+          },
+          {
+            "number": "1.4",
+            "title": "Given a scenario, design relationships between tables"
+          },
+          {
+            "number": "1.5",
+            "title": "Normalize a database"
+          },
+          {
+            "number": "1.6",
+            "title": "Given a scenario, identify data protection measures"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Database Object Management using DDL",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Construct and analyze queries that create, alter, and drop tables"
+          },
+          {
+            "number": "2.2",
+            "title": "Construct and analyze queries that create, alter, and drop views"
+          },
+          {
+            "number": "2.3",
+            "title": "Construct and analyze stored procedures and functions"
+          },
+          {
+            "number": "2.4",
+            "title": "Given a scenario, choose between clustered and non-clustered indexes"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Data Retrieval",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Construct and analyze queries that select data"
+          },
+          {
+            "number": "3.2",
+            "title": "Construct and analyze queries that sort and filter data"
+          },
+          {
+            "number": "3.3",
+            "title": "Construct and analyze queries that aggregate data"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Data Manipulation using DML",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Construct and analyze INSERT statements"
+          },
+          {
+            "number": "4.2",
+            "title": "Construct and analyze UPDATE statements"
+          },
+          {
+            "number": "4.3",
+            "title": "Construct and analyze DELETE statements"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Troubleshooting",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Troubleshoot data object management query failures"
+          },
+          {
+            "number": "5.2",
+            "title": "Troubleshoot data retrieval query failures"
+          },
+          {
+            "number": "5.3",
+            "title": "Troubleshoot data manipulation query failures"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_202_Data_Analytics_0922_1788429376327.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Data Basics",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Define the concept of data"
+          },
+          {
+            "number": "1.2",
+            "title": "Describe basic data variable types"
+          },
+          {
+            "number": "1.3",
+            "title": "Describe basic structures used in data analytics"
+          },
+          {
+            "number": "1.4",
+            "title": "Describe data categories"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Data Manipulation",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Import, store, and export data"
+          },
+          {
+            "number": "2.2",
+            "title": "Clean data"
+          },
+          {
+            "number": "2.3",
+            "title": "Organize data"
+          },
+          {
+            "number": "2.4",
+            "title": "Aggregate data"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Data Analysis",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Describe and differentiate between types of data analysis"
+          },
+          {
+            "number": "3.2",
+            "title": "Describe and differentiate between data aggregation and interpretation metrics"
+          },
+          {
+            "number": "3.3",
+            "title": "Describe and differentiate between exploratory data analysis methods"
+          },
+          {
+            "number": "3.4",
+            "title": "Evaluate and explain the results of data analyses"
+          },
+          {
+            "number": "3.5",
+            "title": "Define and describe the role of artificial intelligence in data analysis"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Data Visualization and Communication",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Report data"
+          },
+          {
+            "number": "4.2",
+            "title": "Create visualizations from data"
+          },
+          {
+            "number": "4.3",
+            "title": "Derive conclusions from a data visualization"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Responsible Analytics Practices",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Describe data privacy laws and best practices"
+          },
+          {
+            "number": "5.2",
+            "title": "Describe best practices for responsible data handling"
+          },
+          {
+            "number": "5.3",
+            "title": "Given a scenario, describe types of bias that affect collection and interpretation of data"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_301_HTML_and_CSS_1023_1788429376327.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "HTML Fundamentals",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Construct markup that uses metadata elements"
+          },
+          {
+            "number": "1.2",
+            "title": "Construct well-formed page markup"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "CSS Fundamentals",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Analyze and implement inline styles, internal (embedded) style sheets, and external style sheets"
+          },
+          {
+            "number": "2.2",
+            "title": "Construct and analyze rule sets"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Document Structure using HTML",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Construct and analyze markup to structure content and organize data"
+          },
+          {
+            "number": "3.2",
+            "title": "Construct and analyze markup that uses HTML5 semantic elements"
+          },
+          {
+            "number": "3.3",
+            "title": "Construct and analyze markup that implements navigation"
+          },
+          {
+            "number": "3.4",
+            "title": "Construct and analyze markup that uses form elements"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Multimedia Presentation using HTML",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Construct and analyze markup that displays images"
+          },
+          {
+            "number": "4.2",
+            "title": "Construct and analyze markup that plays video and audio"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Webpage Styling using CSS",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Construct and analyze styles that position content"
+          },
+          {
+            "number": "5.2",
+            "title": "Construct and analyze styles that format text"
+          },
+          {
+            "number": "5.3",
+            "title": "Construct and analyze styles that format backgrounds and borders"
+          },
+          {
+            "number": "5.4",
+            "title": "Construct and analyze styles that create a simple responsive layout"
+          }
+        ]
+      },
+      {
+        "number": "6",
+        "title": "Accessibility, Readability, and Testing",
+        "lessons": [
+          {
+            "number": "6.1",
+            "title": "Construct well-formed HTML and CSS markup that conforms to industry best practices"
+          },
+          {
+            "number": "6.2",
+            "title": "Apply accessibility principles and evaluate content accessibility"
+          },
+          {
+            "number": "6.3",
+            "title": "Evaluate the structural integrity of HTML and CSS markup"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_302_Javascript_0922_1788429376328.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "JavaScript Operators, Methods, and Keywords",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Complete and debug code that uses assignment and arithmetic operators"
+          },
+          {
+            "number": "1.2",
+            "title": "Apply JavaScript best practices"
+          },
+          {
+            "number": "1.3",
+            "title": "Evaluate the use of internal and external scripts"
+          },
+          {
+            "number": "1.4",
+            "title": "Implement exception handling"
+          },
+          {
+            "number": "1.5",
+            "title": "Complete and debug code that interacts with the Browser Object Model (BOM)"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Variables, Data Types, and Functions",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Declare and use variables of primitive data types"
+          },
+          {
+            "number": "2.2",
+            "title": "Declare and use arrays"
+          },
+          {
+            "number": "2.3",
+            "title": "Complete and debug code that uses objects"
+          },
+          {
+            "number": "2.4",
+            "title": "Complete and debug code that uses built-in Math functions"
+          },
+          {
+            "number": "2.5",
+            "title": "Complete and debug functions that accept parameters and return values"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Decisions and Loops",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Evaluate expressions that use logical and comparison operators"
+          },
+          {
+            "number": "3.2",
+            "title": "Complete and debug decision statements"
+          },
+          {
+            "number": "3.3",
+            "title": "Complete and debug loops"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Document Object Model",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Identify and construct the Document Object Model (DOM) tree"
+          },
+          {
+            "number": "4.2",
+            "title": "Identify and handle document, form, keyboard, and mouse events"
+          },
+          {
+            "number": "4.3",
+            "title": "Complete and debug code that outputs to an HTML document"
+          },
+          {
+            "number": "4.4",
+            "title": "Complete and debug code that locates, modifies, and adds HTML elements and attributes to documents"
+          },
+          {
+            "number": "4.5",
+            "title": "Create events using event handlers and listeners"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "HTML Forms",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Complete and debug code that retrieves form input and sets form field values"
+          },
+          {
+            "number": "5.2",
+            "title": "Complete and debug code that performs input validation"
+          },
+          {
+            "number": "5.3",
+            "title": "Describe the form submission process"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_303_Python_1023_1788429376328.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Operations using Data Types and Operators",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Evaluate expressions to identify the data types Python assigns to variables"
+          },
+          {
+            "number": "1.2",
+            "title": "Perform and analyze data and data type operations"
+          },
+          {
+            "number": "1.3",
+            "title": "Determine the sequence of execution based on operator precedence"
+          },
+          {
+            "number": "1.4",
+            "title": "Select operators to achieve the intended results"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Flow Control with Decisions and Loops",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Construct and analyze code segments that use branching statements"
+          },
+          {
+            "number": "2.2",
+            "title": "Construct and analyze code segments that perform iteration"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Input and Output Operations",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Construct and analyze code segments that perform file input and output operations"
+          },
+          {
+            "number": "3.2",
+            "title": "Construct and analyze code segments that perform console input and output operations"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Code Documentation and Structure",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Document code segments"
+          },
+          {
+            "number": "4.2",
+            "title": "Construct and analyze code segments that include function definitions"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Troubleshooting and Error Handling",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Analyze, detect, and fix code segments that have errors"
+          },
+          {
+            "number": "5.2",
+            "title": "Analyze and construct code segments that handle exceptions"
+          },
+          {
+            "number": "5.3",
+            "title": "Perform unit testing"
+          }
+        ]
+      },
+      {
+        "number": "6",
+        "title": "Operations using Modules and Tools",
+        "lessons": [
+          {
+            "number": "6.1",
+            "title": "Perform basic file system and command-line operations by using built-in modules"
+          },
+          {
+            "number": "6.2",
+            "title": "Solve complex computing problems by using built-in modules"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_304_Java_0922_1788429376329.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Java Fundamentals",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Describe the use of main in a Java application"
+          },
+          {
+            "number": "1.2",
+            "title": "Perform basic input and output using standard packages"
+          },
+          {
+            "number": "1.3",
+            "title": "Evaluate the scope of a variable"
+          },
+          {
+            "number": "1.4",
+            "title": "Comment and document programs"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Data Types, Variables, and Expressions",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Declare and use primitive data type variables"
+          },
+          {
+            "number": "2.2",
+            "title": "Construct and evaluate code that manipulates strings"
+          },
+          {
+            "number": "2.3",
+            "title": "Construct and evaluate code that creates, iterates, and manipulates arrays and array lists"
+          },
+          {
+            "number": "2.4",
+            "title": "Construct and evaluate code that performs parsing, casting, and conversion"
+          },
+          {
+            "number": "2.5",
+            "title": "Construct and evaluate arithmetic expressions"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Flow Control Implementation",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Construct and evaluate code that uses branching statements"
+          },
+          {
+            "number": "3.2",
+            "title": "Construct and evaluate code that uses loops"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Object-Oriented Programming",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Construct and evaluate class definitions"
+          },
+          {
+            "number": "4.2",
+            "title": "Declare, implement, and access data members in classes"
+          },
+          {
+            "number": "4.3",
+            "title": "Declare, implement, and access methods"
+          },
+          {
+            "number": "4.4",
+            "title": "Instantiate and use class objects in programs"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Code Compilation and Debugging",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Troubleshoot syntax errors, logic errors, and runtime errors"
+          },
+          {
+            "number": "5.2",
+            "title": "Implement exception handling"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_305_Software_Develop_0922(1)_1788429376329.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Core Programming Concepts",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Describe computer storage and data types"
+          },
+          {
+            "number": "1.2",
+            "title": "Construct and analyze algorithms and flowcharts to solve programming problems"
+          },
+          {
+            "number": "1.3",
+            "title": "Incorporate error handling into applications or modules"
+          },
+          {
+            "number": "1.4",
+            "title": "Construct and analyze code based on functional programming patterns"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Software Development Principles",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Describe software development lifecycle (SDLC) management"
+          },
+          {
+            "number": "2.2",
+            "title": "Interpret application specifications"
+          },
+          {
+            "number": "2.3",
+            "title": "Construct and analyze code that uses algorithms and data structures"
+          },
+          {
+            "number": "2.4",
+            "title": "Describe the purpose of version control systems"
+          },
+          {
+            "number": "2.5",
+            "title": "Describe secure coding concepts"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Object-Oriented Programming",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Construct, analyze, and use classes"
+          },
+          {
+            "number": "3.2",
+            "title": "Construct and analyze code that uses inheritance"
+          },
+          {
+            "number": "3.3",
+            "title": "Construct and analyze code that uses polymorphism"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Web Applications",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Construct and analyze web applications"
+          },
+          {
+            "number": "4.2",
+            "title": "Describe and configure web hosting"
+          },
+          {
+            "number": "4.3",
+            "title": "Describe and configure web services"
+          },
+          {
+            "number": "4.4",
+            "title": "Describe and identify architectural patterns"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Databases",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Design and normalize a database"
+          },
+          {
+            "number": "5.2",
+            "title": "Construct, analyze, and optimize ANSI SQL queries"
+          },
+          {
+            "number": "5.3",
+            "title": "Manage transactions"
+          },
+          {
+            "number": "5.4",
+            "title": "Describe database access methods"
+          },
+          {
+            "number": "5.5",
+            "title": "Describe types of NoSQL databases"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_306_HTML_App_Develop_0922_1788429376330.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Application Lifecycle Management",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Describe the application lifecycle management stages"
+          },
+          {
+            "number": "1.2",
+            "title": "Debug and test web apps"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Graphics and Animation",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Use the canvas element to create graphics and animations"
+          },
+          {
+            "number": "2.2",
+            "title": "Use the svg element to create and display graphics"
+          },
+          {
+            "number": "2.3",
+            "title": "Transform, style, and enhance text and graphics"
+          },
+          {
+            "number": "2.4",
+            "title": "Apply CSS filters to images"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Forms",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Construct and analyze markup that uses form elements"
+          },
+          {
+            "number": "3.2",
+            "title": "Configure input validation"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Layouts",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Manage content layout, positioning, and flow by using CSS"
+          },
+          {
+            "number": "4.2",
+            "title": "Construct layouts by using responsive design"
+          },
+          {
+            "number": "4.3",
+            "title": "Construct flexible responsive layouts by using CSS flexbox"
+          },
+          {
+            "number": "4.4",
+            "title": "Construct grid-based layouts by using CSS grid"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "JavaScript Coding",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Create and use custom classes"
+          },
+          {
+            "number": "5.2",
+            "title": "Perform data access by using JavaScript"
+          },
+          {
+            "number": "5.3",
+            "title": "Construct code that responds to events by using event listeners and handlers"
+          },
+          {
+            "number": "5.4",
+            "title": "Construct code that uses JavaScript APIs"
+          },
+          {
+            "number": "5.5",
+            "title": "Manage the state of an application"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_Computational_Think_1023(2)_1788429376331.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Foundational Concepts",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Understand and recognize different types of data (ISTE 3B, 5B)"
+          },
+          {
+            "number": "1.2",
+            "title": "Recognize and apply logical reasoning (ISTE 3A, 5B)"
+          },
+          {
+            "number": "1.3",
+            "title": "Explain algorithmic thinking (ISTE 5A, 5D)"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Identify and Collect Data",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Assess data needs and available data (ISTE 3B, 5B, 5C)"
+          },
+          {
+            "number": "2.2",
+            "title": "Understand data quality (ISTE 3B, 5B)"
+          },
+          {
+            "number": "2.3",
+            "title": "Collect the data needed to solve a problem (ISTE 1D, 2B, 3B, 3C, 5B)"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Apply Abstraction",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Identify patterns in and apply abstraction to data (ISTE 5A, 5B, 5C)"
+          },
+          {
+            "number": "3.2",
+            "title": "Recognize, create and interpret abstract models (ISTE 5C, 5D)"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Specify a Solution",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Define and decompose a problem (ISTE 4B, 5A, 5C)"
+          },
+          {
+            "number": "4.2",
+            "title": "Identify requirements (ISTE 4A, 4B, 6A)"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Automate a Solution",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Use a sequence of steps in algorithms (ISTE 5B, 5D)"
+          },
+          {
+            "number": "5.2",
+            "title": "Automate repetitive tasks by using iteration (ISTE 5D)"
+          },
+          {
+            "number": "5.3",
+            "title": "Use selection statements in algorithms (ISTE 5D)"
+          },
+          {
+            "number": "5.4",
+            "title": "Use variables in algorithms (ISTE 5D)"
+          }
+        ]
+      },
+      {
+        "number": "6",
+        "title": "Present and Improve a Solution",
+        "lessons": [
+          {
+            "number": "6.1",
+            "title": "Produce a computational artifact to present a solution to a target audience (ISTE 6A, 6C, 6D)"
+          },
+          {
+            "number": "6.2",
+            "title": "Collaborate on computational artifacts (ISTE 1C, 7B)"
+          },
+          {
+            "number": "6.3",
+            "title": "Perform iterative design on an automated solution (ISTE 1D, 4C, 5C, 5D)"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_Networking_101_0922_1788429357030.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Networking Fundamentals",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Define network concepts"
+          },
+          {
+            "number": "1.2",
+            "title": "Define cloud and virtualization concepts"
+          },
+          {
+            "number": "1.3",
+            "title": "Describe remote access methods"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Network Infrastructures",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Define the characteristics of local area networks (LANs)"
+          },
+          {
+            "number": "2.2",
+            "title": "Define the characteristics of wide area networks (WANs)"
+          },
+          {
+            "number": "2.3",
+            "title": "Identify wireless networking methods and characteristics"
+          },
+          {
+            "number": "2.4",
+            "title": "Compare and contrast network topologies and access methods"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Network Hardware",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Describe characteristics of switches"
+          },
+          {
+            "number": "3.2",
+            "title": "Describe characteristics of routers"
+          },
+          {
+            "number": "3.3",
+            "title": "Describe characteristics of physical media"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Protocols and Services",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Describe the Open Systems Interconnection (OSI) model"
+          },
+          {
+            "number": "4.2",
+            "title": "Describe the Transmission Control Protocol (TCP) model"
+          },
+          {
+            "number": "4.3",
+            "title": "Describe IPv4 concepts"
+          },
+          {
+            "number": "4.4",
+            "title": "Describe IPv6 concepts"
+          },
+          {
+            "number": "4.5",
+            "title": "Identify well-known ports"
+          },
+          {
+            "number": "4.6",
+            "title": "Describe name resolution concepts"
+          },
+          {
+            "number": "4.7",
+            "title": "Identify the roles of networking services"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Troubleshooting",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Given a scenario, describe the troubleshooting process in a small- medium business network"
+          },
+          {
+            "number": "5.2",
+            "title": "Given a scenario, use the appropriate hardware troubleshooting tools"
+          },
+          {
+            "number": "5.3",
+            "title": "Given a scenario, use the appropriate Windows software tools to troubleshoot a problem"
+          },
+          {
+            "number": "5.4",
+            "title": "Given a scenario, use the appropriate Linux software tools to troubleshoot a problem"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "file": "ITS_OD_Networking_101_0922_1788429376331.txt",
+    "modules": [
+      {
+        "number": "1",
+        "title": "Networking Fundamentals",
+        "lessons": [
+          {
+            "number": "1.1",
+            "title": "Define network concepts"
+          },
+          {
+            "number": "1.2",
+            "title": "Define cloud and virtualization concepts"
+          },
+          {
+            "number": "1.3",
+            "title": "Describe remote access methods"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "title": "Network Infrastructures",
+        "lessons": [
+          {
+            "number": "2.1",
+            "title": "Define the characteristics of local area networks (LANs)"
+          },
+          {
+            "number": "2.2",
+            "title": "Define the characteristics of wide area networks (WANs)"
+          },
+          {
+            "number": "2.3",
+            "title": "Identify wireless networking methods and characteristics"
+          },
+          {
+            "number": "2.4",
+            "title": "Compare and contrast network topologies and access methods"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "title": "Network Hardware",
+        "lessons": [
+          {
+            "number": "3.1",
+            "title": "Describe characteristics of switches"
+          },
+          {
+            "number": "3.2",
+            "title": "Describe characteristics of routers"
+          },
+          {
+            "number": "3.3",
+            "title": "Describe characteristics of physical media"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "title": "Protocols and Services",
+        "lessons": [
+          {
+            "number": "4.1",
+            "title": "Describe the Open Systems Interconnection (OSI) model"
+          },
+          {
+            "number": "4.2",
+            "title": "Describe the Transmission Control Protocol (TCP) model"
+          },
+          {
+            "number": "4.3",
+            "title": "Describe IPv4 concepts"
+          },
+          {
+            "number": "4.4",
+            "title": "Describe IPv6 concepts"
+          },
+          {
+            "number": "4.5",
+            "title": "Identify well-known ports"
+          },
+          {
+            "number": "4.6",
+            "title": "Describe name resolution concepts"
+          },
+          {
+            "number": "4.7",
+            "title": "Identify the roles of networking services"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "title": "Troubleshooting",
+        "lessons": [
+          {
+            "number": "5.1",
+            "title": "Given a scenario, describe the troubleshooting process in a small- medium business network"
+          },
+          {
+            "number": "5.2",
+            "title": "Given a scenario, use the appropriate hardware troubleshooting tools"
+          },
+          {
+            "number": "5.3",
+            "title": "Given a scenario, use the appropriate Windows software tools to troubleshoot a problem"
+          },
+          {
+            "number": "5.4",
+            "title": "Given a scenario, use the appropriate Linux software tools to troubleshoot a problem"
+          }
+        ]
+      }
+    ]
+  }
+]
