@@ -1,0 +1,104 @@
+
+--- PAGE 1 ---
+© 2021-22 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+Manage Workbook Options and Settings
+1.	 Accounting Basics
+1.1	
+Define accounting and the concepts underlying accounting measurement
+1.1.1	 Explain the ethical responsibilities of bookkeepers
+1.1.2	 Explain the accounting equation
+1.1.3	 Describe the purpose and content of balance sheets, statements of equity, 
+income statements, and statements of cash flows
+1.2	
+Summarize the double-entry accounting method
+1.2.1	 Define double-entry accounting terms
+1.2.2	 Explain how double-entry accounting works in accounting software
+1.2.3	 Demonstrate an understanding of T-accounts
+1.2.4	 Read and interpret the transaction journal and general ledger in accounting 
+software
+1.3	
+Describe the fundamental concepts of the accounting cycle
+1.3.1	 Demonstrate an understanding of the accounting cycle
+1.3.2	 Summarize the adjusting process
+1.3.3	 Describe the entries related to the adjusting process
+1.3.4	 Explain the impact of posting adjusting journal entries on net income, the 
+balance sheet, and equity
+1.4	
+Summarize accounting principles
+1.4.1	 Explain the key assumptions of financial accounting, reporting, and 
+measurement-triggering transaction events
+1.4.2	 Determine whether to record transactions as revenue or expense
+1.4.3	 Compare and contrast accrual accounting and cash-basis accounting
+2.	 Accounting for Assets and Sales Transactions
+2.1	
+Summarize assets and sales transactions
+2.1.1	 Define assets and identify natural account balance
+2.1.2	 Differentiate between current and long-term assets
+2.1.3	 Identify the financial statements on which assets appear
+2.1.4	 Explain accounting for sales, accounts receivable, and cash receipts
+2.1.5	 Identify other notes receivable and uncollectible accounts
+2.2	
+Describe the importance of merchandise inventory
+2.2.1	 Identify and define merchandise inventory
+2.2.2	 Apply inventory valuation methods
+2.2.3	 Describe when and how to adjust inventory balance
+2.3	
+Define depreciation concepts and terminology
+2.3.1	 Describe principles relating to service life and depreciation
+2.3.2	 Identify how depreciation expense is reported on income statements
+EXAM OBJECTIVES
+Intuit Certified Bookkeeping Professional
+
+--- PAGE 2 ---
+© 2021-22 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+2.4	
+Describe the effect of asset and sales transactions on the accounting 
+equation
+2.4.1	 Describe the effect of sales transactions on the accounting equation
+2.4.2	 Describe the effect of merchandise inventory on the accounting equation
+2.4.3	 Describe the effect of common property and equipment entries on the 
+accounting equation
+2.4.4	 Describe the effect of other asset transactions on the accounting equation
+3.	 Accounting for Liabilities, Equity, and Purchase 
+Transactions
+3.1	
+Summarize liabilities and purchase transactions
+3.1.1	 Define liabilities and identify natural account balance
+3.1.2	 Differentiate between current and long-term liabilities
+3.1.3	 Identify the financial statements on which liabilities appear
+3.1.4	 Explain accounting for purchases, accounts payable, and cash payments
+3.1.5	 Identify other liabilities
+3.2	
+Describe basic payroll transactions
+3.2.1	 Define basic payroll accounting terms
+3.2.2	 Explain accounting for payroll
+3.2.3	 Explain payroll tax forms
+3.3	
+Compare and contrast different types of equity
+3.3.1	 Identify types of equity accounts
+3.3.2	 Explain the connection between equity and income statements
+3.4	
+Describe the effect of liability, equity, and purchase transactions on the 
+accounting equation
+3.4.1	 Describe the effect of purchase transactions on the accounting equation
+3.4.2	 Describe the effect of payroll transactions on the accounting equation
+3.4.3	 Describe the effect of equity transactions on the accounting equation
+3.4.4	 Describe the effect of other liability transactions on the accounting equation
+4.	 Reconciliation and Financial Statements
+4.1	
+Describe the purpose and process of account reconciliations
+4.1.1	 Define reconciliation concepts
+4.1.2	 Identify accounts that are typically reconciled
+4.1.3	 Identify reconciliation source documentation types
+4.2	
+Describe the process of bank reconciliations
+4.2.1	 Prepare for a bank reconciliation
+4.2.2	 Reconcile bank accounts
+4.2.3	 Explain bank reconciling items
+4.3	
+Describe basic financial statement analytical methods
+4.3.1	 Read and comprehend balance sheets
+4.3.2	 Read and comprehend comparative income statements
+4.3.3	 Read and comprehend budget vs. actual reports
+4.3.4	 Analyze cost of goods sold and comparative revenue
+4.3.5	 Compare month-over-month income statements to identify potential issues

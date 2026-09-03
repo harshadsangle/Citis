@@ -1,0 +1,96 @@
+
+--- PAGE 1 ---
+© 2021-22 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+Manage Workbook Options and Settings
+1.	 Design for Delight Concepts	
+	
+1.1	
+Identify and define key principles of the Design for Delight mindset	
+1.1.1	 Identify and define the Deep Customer Empathy principle
+1.1.2	 Identify and define the Go Broad to Go Narrow principle
+1.1.3	 Identify and define the Rapid Experiments with Customers principle
+1.2	
+Define core concepts of the Design for Delight principles	
+1.2.1	 Identify the three metrics of customer delight
+1.2.2	 Identify the role of the customer
+1.2.3	 Describe the relationship between the customer problem, the solution, and the 
+customer benefit
+1.2.4	 Describe looping concepts
+1.2.5	 Define and describe prototyping and experimentation
+2.	 Develop deep customer empathy	
+	
+2.1	
+Define and describe the process of developing deep customer empathy	
+2.1.1	 Learn about customers through observation
+2.1.2	 Identify the customer challenge
+2.1.3	 Summarize what you learned
+2.1.4	 Define the customer problem statement
+2.1.5	 Conceptualize the ideal customer state
+2.2	
+Learn about customers through observing their behavior	
+2.2.1	 Identify and describe customer observation methods
+2.2.2	 Identify customer observation best practices
+2.2.3	 Identify important takeaways from customer observation
+2.3	
+Examine what you learned	
+2.3.1	 Identify the most important results of customer observations
+2.3.2	 Identify surprises and pain points
+2.4	
+Define the customer problem	
+2.4.1	 Identify the components of a customer problem statement
+2.4.2	 Given a situation, create or complete a customer problem statement
+2.5	
+Conceptualize the ideal customer state	
+2.5.1	 Identify the components of an ideal state statement
+2.5.2	 Given a situation, create or complete an ideal state statement
+3.	 Brainstorm and narrow	 	
+3.1	
+Identify the purposes of brainstorming and narrowing	
+3.1.1	 Identify the purpose of brainstorming
+3.1.2	 Identify the purpose of narrowing
+EXAM OBJECTIVES
+Intuit Design for Delight Innovator Certification
+
+--- PAGE 2 ---
+© 2021-22 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+3.2	
+Identify methods of brainstorming and narrowing (specific methods)	
+3.2.1	 Identify methods of brainstorming
+3.2.2	 Identify methods of narrowing
+3.3	
+Identify best practices for brainstorming and narrowing (general concepts)	
+3.3.1	 Identify best practices for brainstorming
+3.3.2	 Identify best practices for narrowing
+3.4	
+Identify methods of making ideas into concrete solutions	
+3.4.1	 Identify methods of representing ideas
+3.4.2	 Identify the information necessary in a representation
+4.	 Perform rapid customer experiments	
+	
+4.1	
+Identify the purpose and principles of rapid experiments	
+4.1.1	 Describe the rapid experiment process
+4.1.2	 Identify the purposes of rapid customer experiments
+4.2	
+Generate a list of assumptions	
+4.2.1	 Define and identify assumptions
+4.2.2	 Describe experiment assumptions and importance
+4.3	
+Prioritize customer behavior assumptions	
+4.3.1	 Given a set of assumptions, identify the most-crucial assumptions
+4.3.2	 Given a set of assumptions, identify the least-proven assumptions
+4.3.3	 Given a set of assumptions, identify the Leap of Faith assumptions
+4.4	
+Create an experiment to test the “leap of faith” assumption	
+4.4.1	 Identify the components of a good experiment
+4.4.2	 Identify the components of a hypothesis statement
+4.4.3	 Given a situation, create or complete a hypothesis statement
+4.5	
+Prototype your experiment internally	
+4.5.1	 Identify prototyping methods
+4.5.2	 Identify requirements of a successful experiment
+4.6	
+Evaluate test results and identify next steps	
+4.6.1	 Evaluate the success of a test
+4.6.2	 Identify what you learned from the test
+4.6.3	 Describe how to identify the next steps

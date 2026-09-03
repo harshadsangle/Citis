@@ -1,0 +1,136 @@
+
+--- PAGE 1 ---
+© 2021-23 Certiport, A Business of NCS Pearson, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the 
+property of their respective holders.
+Manage Workbook Options and Settings
+The Intuit QuickBooks Online Certified User exam assesses competency in the Intuit 
+QuickBooks Online Plus software including knowledge associated with: QuickBooks 
+Online administration; sales and money in; vendors and money out; bank accounts, 
+transaction rules, and receipts; and basic reports and views.
+An individual earning this certification has at least 150 hours of instruction or hands-on 
+experience with the Intuit QuickBooks Online software. 
+1.	 Intuit QuickBooks Online Administration
+A candidate should know: 
+1.1	
+Set up Intuit QuickBooks Online
+1.1.1	 Recognize features and benefits of Intuit QuickBooks Online Plus
+1.1.2	 Describe licensing requirements for setting up an entity in Intuit QuickBooks 
+Online
+1.1.3	 Describe the process of migrating company to Intuit QuickBooks Online
+1.1.4	 Describe the access of each default user role 
+1.2	
+Manage Intuit QuickBooks Online
+1.2.1	 Identify the company information that you can and can’t edit
+1.2.2	 Recognize the benefits of the Close the Books feature
+1.2.3	 Compare and contrast the cash and accrual accounting methods
+1.2.4	 Identify the purposes of project tracking, class tracking, and locations
+1.2.5	 Describe how to activate project tracking, class tracking, and locations
+1.2.6	 Identify the tasks performed by automation
+1.3	
+Manage lists
+1.3.1	 Identify the lists that you can import
+1.3.2	 Identify the content of various lists
+1.3.3	 Identify the appropriate lists for different purposes
+1.3.4	 Identify when and how to add, edit, delete, and merge list items
+1.3.5	 Manage the Chart of Accounts
+1.4	
+Manage recurring transactions
+1.4.1	 Describe reasons for making transactions recurring
+1.4.2	 Define types of recurrence
+1.4.3	 Describe how to implement recurring transactions
+1.5	
+Manage journal entries
+1.5.1	 Identify the information required for journal entries
+1.5.2	 Describe how to implement journal entries
+1.6	
+Connect Intuit QuickBooks Online to apps
+1.6.1	 Identify the purpose of apps
+1.6.2	 Identify where to get apps
+1.6.3	 Identify the risks and benefits of extending functionality through apps
+EXAM OBJECTIVES
+Intuit QuickBooks Online Certified User
+
+--- PAGE 2 ---
+© 2021-23 Certiport, A Business of NCS Pearson, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the 
+property of their respective holders.
+2.	 Sales and Money-In
+2.1	
+Set-up customers
+2.1.1	 Identify the importance of the Display Name field
+2.1.2	 Differentiate between billing and shipping addresses
+2.1.3	 Define and describe the use of customer payment terms
+2.1.4	 Identify taxable and non-taxable customers
+2.1.5	 Define and describe the correct use of sub-customers
+2.2	
+Set-up products and services
+2.2.1	 Describe and differentiate between products and services
+2.2.2	 Identify the information required to set up products or services
+2.2.3	 Describe reasons for setting-up products or services
+2.2.4	 Contrast inventory products and non-inventory products
+2.3	
+Manage sales settings
+2.3.1	 Customize sales forms
+2.3.2	 Customize email message forms
+2.3.3	 Describe the purpose of activating customer discounts
+2.3.4	 Describe the Intuit QuickBooks Payments feature and how it differs from 
+traditional payments
+2.4	
+Record basic money-in transactions
+2.4.1	 Describe the money-in transaction workflow
+2.4.2	 Record and manage invoices and sales receipts
+2.4.3	 Receive, record, and manage payments, undeposited funds, and deposits
+2.4.4	 Record credit memos and refund receipts
+3.	 Vendors and Money-out
+3.1	
+Manage vendor records
+3.1.1	 Describe how to identify existing customers as vendors
+3.1.2	 Describe when and how to merge vendor accounts
+3.1.3	 Describe how to add or change vendor payment terms
+3.1.4	 Describe how and why to identify vendors as 1099 contractors
+3.2	
+Manage expense settings
+3.2.1	 Describe how and why to activate expense tracking by customer
+3.2.2	 Describe when and how to make expenses and items billable
+3.2.3	 Describe how to identify unbilled billable expenses
+3.3	
+Record and manage basic money-out transactions
+3.3.1	 Describe the money-out transaction workflow
+3.3.2	 Identify types of money-out transactions
+3.3.3	 Compare and describe the appropriate use of checks and bill payments
+3.3.4	 Describe the effects of recording bills, checks, and credit card transactions
+3.3.5	 Differentiate between expense transactions and bank feed transactions
+3.3.6	 Describe how to record check, credit card, and debit card expense transactions
+3.3.7	 Describe the use and effects of vendor credits and refunds
+3.3.8	 Describe why and how to void, delete, and edit money-out transactions and the 
+impact thereof
+
+--- PAGE 3 ---
+© 2021-23 Certiport, A Business of NCS Pearson, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the 
+property of their respective holders.
+4.	 Bank Accounts, Transaction Rules, and Receipts
+4.1	
+Implement financial account connections
+4.1.1	 Identify the types of financial accounts Intuit QuickBooks Online can connect to
+4.1.2	 Describe the benefits of connecting Intuit QuickBooks Online to accounts
+4.2	
+Manage bank feeds
+4.2.1	 Process bank feed transactions
+4.2.2	 Define and describe the use of bank rules
+4.3	
+Manage receipts
+4.3.1	 Identify methods of uploading receipts
+4.3.2	 Describe how to record transactions from uploaded receipts
+5.	 Basic Reports and Views
+5.1	
+Describe the content and purpose of reports
+5.1.1	 Describe the content and purpose of financial reports
+5.1.2	 Describe the content and purpose of money-in reports
+5.1.3	 Describe the content and purpose of money-out reports
+5.2	
+Customize and deliver standard reports
+5.2.1	 Customize standard reports
+5.2.2	 Identify report delivery formats
+5.3	
+Access other reports and views
+5.3.1	 Describe the content of the Audit Log
+5.3.2	 Describe the content and functionality of the dashboards
