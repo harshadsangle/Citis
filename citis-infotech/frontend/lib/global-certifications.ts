@@ -706,6 +706,118 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     suitableFor: "Learners, entrepreneurs and professionals supporting business operations",
   },
   {
+    slug: "intuit-certified-bookkeeping-professional",
+    name: "Intuit Certified Bookkeeping Professional",
+    provider: "Intuit · Certiport",
+    category: "Business and finance",
+    tagline: "Build practical bookkeeping knowledge grounded in official exam objectives.",
+    overview:
+      "The Intuit Certified Bookkeeping Professional certification validates knowledge of accounting basics, assets and sales transactions, liabilities and purchases, reconciliation, and financial statements.",
+    skills: [
+      "Accounting basics and double-entry accounting",
+      "Assets, sales transactions and inventory",
+      "Liabilities, equity, purchases and payroll",
+      "Reconciliation and financial statement analysis",
+    ],
+    benefits: [
+      "Build a structured foundation in bookkeeping concepts",
+      "Practise interpreting common financial statements",
+      "Understand how transactions affect the accounting equation",
+      "Prepare for an official Intuit certification pathway",
+    ],
+    careerRelevance:
+      "Bookkeeping knowledge supports accounts support, finance administration, small-business operations and entry-level bookkeeping roles.",
+    suitableFor: "Learners preparing for bookkeeping and finance-support roles",
+    examDetails: [
+      "Official objective domains: Accounting Basics; Accounting for Assets and Sales Transactions; Accounting for Liabilities, Equity, and Purchase Transactions; Reconciliation and Financial Statements.",
+      "Objective source: Intuit Certified Bookkeeping Professional exam objectives supplied by Certiport.",
+    ],
+  },
+  {
+    slug: "intuit-design-for-delight-innovator",
+    name: "Intuit Design for Delight Innovator Certification",
+    provider: "Intuit · Certiport",
+    category: "Innovation and design",
+    tagline: "Turn customer understanding into practical experiments and better solutions.",
+    overview:
+      "The Intuit Design for Delight Innovator Certification validates knowledge of the Design for Delight mindset, deep customer empathy, brainstorming and narrowing, and rapid customer experiments.",
+    skills: [
+      "Deep customer empathy",
+      "Customer problem and ideal-state statements",
+      "Brainstorming, narrowing and representing ideas",
+      "Assumptions, hypotheses, prototyping and experiments",
+    ],
+    benefits: [
+      "Develop a repeatable customer-focused innovation process",
+      "Practise turning observations into clear problem statements",
+      "Learn to prioritize assumptions and test leap-of-faith beliefs",
+      "Build confidence evaluating experiments and choosing next steps",
+    ],
+    careerRelevance:
+      "Design for Delight skills support product, service, UX, innovation, entrepreneurship, customer success and project roles.",
+    suitableFor: "Learners, designers, product teams and aspiring innovators",
+    examDetails: [
+      "Official objective domains: Design for Delight Concepts; Develop deep customer empathy; Brainstorm and narrow; Perform rapid customer experiments.",
+      "Objective source: Intuit Design for Delight Innovator exam objectives supplied by Certiport.",
+    ],
+  },
+  {
+    slug: "intuit-quickbooks-online-certified-user",
+    name: "Intuit QuickBooks Online Certified User",
+    provider: "Intuit · Certiport",
+    category: "Business and finance",
+    tagline: "Validate practical QuickBooks Online administration and accounting workflows.",
+    overview:
+      "The Intuit QuickBooks Online Certified User exam assesses competency in QuickBooks Online Plus administration, sales and money in, vendors and money out, bank accounts, transaction rules, receipts, and basic reports and views.",
+    skills: [
+      "QuickBooks Online Plus administration",
+      "Customers, products, sales and money-in workflows",
+      "Vendors, expenses and money-out transactions",
+      "Bank feeds, receipts, reports and dashboards",
+    ],
+    benefits: [
+      "Build confidence with core QuickBooks Online workflows",
+      "Practise organising customers, vendors, products and accounts",
+      "Understand transaction, bank-feed and receipt processes",
+      "Prepare for a software-focused accounting certification",
+    ],
+    careerRelevance:
+      "QuickBooks Online capability supports bookkeeping, accounts administration, small-business finance, payroll support and operations roles.",
+    suitableFor: "Learners, bookkeepers, entrepreneurs and finance-support professionals",
+    examDetails: [
+      "Official objective domains: Intuit QuickBooks Online Administration; Sales and Money-In; Vendors and Money-out; Bank Accounts, Transaction Rules, and Receipts; Basic Reports and Views.",
+      "The official objectives state that an individual earning this certification has at least 150 hours of instruction or hands-on experience with Intuit QuickBooks Online software.",
+    ],
+  },
+  {
+    slug: "intuit-personal-finance",
+    name: "Intuit Personal Finance Certification",
+    provider: "Intuit · Certiport",
+    category: "Personal finance",
+    tagline: "Build informed habits for earning, spending, saving, investing and managing risk.",
+    overview:
+      "The Intuit Personal Finance Certification covers earning income, spending, saving, investing, managing credit, managing debt, insurance, identity fraud and consumer protection.",
+    skills: [
+      "Income, taxes, compensation and payment methods",
+      "Budgeting, spending decisions and major purchases",
+      "Saving, banking, investing and financial goals",
+      "Credit, debt, insurance and consumer protection",
+    ],
+    benefits: [
+      "Build practical financial decision-making skills",
+      "Understand common income, tax, banking and credit concepts",
+      "Compare saving, investing, lending and insurance choices",
+      "Recognise common fraud risks and consumer protection resources",
+    ],
+    careerRelevance:
+      "Personal finance knowledge supports financial wellbeing, entrepreneurship, business operations, customer-facing finance services and further study.",
+    suitableFor: "Students, learners, entrepreneurs and professionals building financial confidence",
+    examDetails: [
+      "Official objective domains: Earning income; Spending; Saving; Investing; Managing Credit; Managing Risk.",
+      "Objective source: Intuit Personal Finance exam objectives supplied by Certiport.",
+    ],
+  },
+  {
     slug: "meta",
     name: "Meta",
     provider: "Meta digital marketing pathway",
