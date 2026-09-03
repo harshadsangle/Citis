@@ -257,8 +257,8 @@ async function main() {
       await client.query("BEGIN");
       await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", ["citis-import-information-technology-specialist-courses"]);
       const institutionResult = process.env.INSTITUTION_ID
-        ? await client.query("SELECT id, tenant_id, campus_id FROM institutions WHERE id = $1 AND status <> 'ARCHIVED'", [process.env.INSTITUTION_ID])
-        : await client.query("SELECT id, tenant_id, campus_id FROM institutions WHERE status <> 'ARCHIVED' ORDER BY created_at ASC, id ASC");
+        ? await client.query("SELECT id, tenant_id FROM institutions WHERE id = $1 AND status <> 'ARCHIVED'", [process.env.INSTITUTION_ID])
+        : await client.query("SELECT id, tenant_id FROM institutions WHERE status <> 'ARCHIVED' ORDER BY created_at ASC, id ASC");
       if (!institutionResult.rows[0]) throw new Error("No active institution is available for the import.");
       if (!process.env.INSTITUTION_ID && institutionResult.rows.length !== 1) throw new Error("More than one active institution exists; set INSTITUTION_ID to choose the import scope.");
       const institution = institutionResult.rows[0];
