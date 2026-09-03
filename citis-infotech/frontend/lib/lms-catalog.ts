@@ -15,10 +15,10 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "its" | "microsoft" | "pmi" | "unity";
+export type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "its" | "meta" | "microsoft" | "pmi" | "unity";
 
 export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
-  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "its" || value === "microsoft" || value === "pmi" || value === "unity" ? value : undefined;
+  return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "its" || value === "meta" || value === "microsoft" || value === "pmi" || value === "unity" ? value : undefined;
 }
 
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
@@ -1163,6 +1163,27 @@ const PMI_COURSES: LmsCourse[] = [
   },
 ];
 
+const META_COURSES: LmsCourse[] = [
+  {
+    id: "meta-certified-digital-marketing-associate",
+    title: "Meta Certified Digital Marketing Associate",
+    description: "Official Meta objective-led preparation for establishing a digital presence, creating and managing advertisements, and reporting campaign outcomes across Meta technologies.",
+    audience: "Entry-level marketing professionals, advertising and marketing students, interns, and early-career professionals preparing with at least 150 hours of instruction and hands-on experience.",
+    details: [
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Objective lessons", value: "19 topics" },
+      { label: "Credential", value: "Meta Certified Digital Marketing Associate" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "The value of Meta technologies", description: "Identify Meta technologies and communicate their value proposition for businesses." },
+      { number: "02", title: "Establish a business presence", description: "Establish business presence across Facebook, Instagram, and WhatsApp and optimize creative for mobile." },
+      { number: "03", title: "Advertising fundamentals", description: "Understand advertising value, campaign objectives, Meta Pixel, Conversions API, charging, privacy, and ad policies." },
+      { number: "04", title: "Create and manage ads", description: "Create and manage ads through campaign settings, targeting, formats, budgets, scheduling, and estimated results." },
+      { number: "05", title: "Reporting", description: "Identify campaign results through Meta Ads Reporting and measure campaign success." },
+    ],
+  },
+];
+
 export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
   {
     id: "adobe",
@@ -1341,6 +1362,13 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     eyebrow: "Microsoft Office Specialist certification courses",
     description: "Official objective-led preparation for Microsoft Word, Excel, PowerPoint, Outlook, and Access exams across Office 2016, Office 2019, and Microsoft 365 Apps.",
     courses: MICROSOFT_COURSES,
+  },
+  {
+    id: "meta",
+    name: "Meta",
+    eyebrow: "Meta certification courses",
+    description: "Official objective-led preparation for Meta Certified Digital Marketing Associate, from business presence and advertising fundamentals to reporting.",
+    courses: META_COURSES,
   },
   {
     id: "unity",

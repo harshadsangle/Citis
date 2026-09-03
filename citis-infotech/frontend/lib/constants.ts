@@ -137,8 +137,8 @@ const globalCertificationItems = [
   },
   {
     title: "Meta",
-    href: "/engagements/global-certifications/meta",
-    description: "Social media and digital marketing.",
+    href: "/lms?provider=meta",
+    description: "Meta Certified Digital Marketing Associate.",
     icon: Users,
   },
   {
