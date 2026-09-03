@@ -1,0 +1,143 @@
+        IT SPECIALIST EXAM OBJECTIVES
+
+                                                 Networking
+                                                       Candidates for this exam are familiar with general networking concepts and technologies
+                                                       and understand how to manage and troubleshoot a network in a small-medium business
+                                                       environment. Candidates should have some hands-on experience with Windows and Linux
+                                                       operating systems, TCP/IP, name resolution processes, networking services, and network
+                                                       topologies and troubleshooting in wired and wireless environments. Candidates should
+                                                       have at least 150 hours of instruction or hands-on experience with networking.
+
+
+                                                                    Manage Workbook Options and Settings
+                                                       To be successful on the test, the candidate is also expected to have the following
+                                                       prerequisite knowledge and skills:
+                                                          •     8th grade reading skills
+                                                          •     Basic operating system skills
+                                                          •     Problem-solving and critical thinking skills
+                                                          •     Basic hardware/software skills
+                                                          •     Digital literacy skills, including the ability to research, create content, and solve
+                                                                problems using technology
+
+
+
+
+                                                  1.      Networking Fundamentals
+                                                          1.1      Define network concepts
+                                                                   •                         Internet, intranet, extranet, client-server, peer-to-peer, transmission types
+                                                                                             (unicast, multicast, broadcast), network devices including IoT
+
+                                                          1.2      Define cloud and virtualization concepts
+                                                                   •                         Hypervisors, virtual machines, virtual switches
+
+                                                          1.3      Describe remote access methods
+                                                                   •                         Virtual Private Network (VPN), Remote Desktop
+
+                                                  2. Network Infrastructures
+                                                          2.1      Define the characteristics of local area networks (LANs)
+                                                                   •                         Perimeter networks (security zones, DMZ), VLANs, wired LAN and wireless
+                                                                                             LAN
+
+                                                          2.2      Define the characteristics of wide area networks (WANs)
+                                                                   •                         DSL, site-to-site, cable modem, satellite, cellular (3G, 4G, 5G)
+
+                                                          2.3      Identify wireless networking methods and characteristics
+                                                                   •                         Types of wireless networking standards and their characteristics (802.11,
+                                                                                             Bluetooth), types of network security (WPA, WPA2, WEP, 802.1X, and
+                                                                                             others), point-to-point (P2P) wireless, ad hoc networks, wireless bridging,
+                                                                                             wireless interference
+
+                                                          2.4      Compare and contrast network topologies and access methods
+                                                                   •                         Star, mesh, ring, bus, logical and physical topologies
+
+
+
+
+© 2021-22 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+        IT SPECIALIST EXAM OBJECTIVES
+
+
+                                                  3. Network Hardware
+                                                          3.1      Describe characteristics of switches
+                                                                   •    Number and type of Ethernet ports (access vs. trunk), number of devices
+                                                                        supported, managed or unmanaged switches, VLAN capabilities, Layer
+                                                                        2 and Layer 3 switches and security options, potential for single point of
+                                                                        failure, switching types and MAC table, capabilities of hubs vs. switches
+                                                                        (collision domain, broadcast domain, half- and full-duplex), prevention of
+                                                                        switch loops by using spanning tree protocol
+
+                                                          3.2      Describe characteristics of routers
+                                                                   •    Potential for network bottlenecks, directly connected routes, static routing,
+                                                                        dynamic routing (routing protocols), default routes, routing table and how
+                                                                        it selects best route(s), port forwarding, Quality of Service (QoS), network
+                                                                        segmentation, convergence
+
+                                                          3.3      Describe characteristics of physical media
+                                                                   •    Cable types and their characteristics, including media segment length
+                                                                        and speed; fiber optic, twisted pair shielded or unshielded (CAT5–CAT7
+                                                                        cabling); configuration (crossover vs. straight-through); susceptibility to
+                                                                        electromagnetic interference (EMI), cross-talk, and interception
+
+                                                  4. Protocols and Services
+                                                          4.1      Describe the Open Systems Interconnection (OSI) model
+                                                                   •    Identification and purpose of each layer; examples of devices, protocols,
+                                                                        and applications at each layer; MAC address
+
+                                                          4.2      Describe the Transmission Control Protocol (TCP) model
+                                                                   •    Identification and purpose of each layer; examples of devices, protocols,
+                                                                        and applications at each layer
+
+                                                          4.3      Describe IPv4 concepts
+                                                                   •    Classful vs. classless addressing, subnetting (purpose and why to use),
+                                                                        characteristics of IPv4 addressing (subnet mask, default gateway, sockets,
+                                                                        broadcast), private addresses (Class A (including loopback), Class B, and
+                                                                        Class C)
+
+                                                          4.4      Describe IPv6 concepts
+                                                                   •    Characteristics of IPv6 addressing (subnet mask, default gateway, sockets,
+                                                                        abbreviation), transitioning from IPv4 to IPv6 (tunneling protocols, tunnel
+                                                                        brokers, dual IP stack), address types (link-local vs. global), multicast
+                                                                        groups (all routers/all nodes), loopback
+
+                                                          4.5      Identify well-known ports
+                                                                   •    HTTP, HTTPS, FTP, SMTP, IMAP, DNS, RDP, SSH
+
+                                                          4.6      Describe name resolution concepts
+                                                                   •    Static name resolution (HOSTS file, LMHOSTS file), dynamic name
+                                                                        resolution (DNS, WINS), DNS resource records (A, AAAA, MX, PTR, SRV,
+                                                                        CNAME, SOA), forward vs. reverse lookups, steps in the name resolution
+                                                                        process
+
+                                                          4.7      Identify the roles of networking services
+                                                                   •    Dynamic Host Configuration Protocol (DHCP), Network Address Translation
+                                                                        (NAT) (dynamic vs. static, public vs. private, port address translation),
+                                                                        firewalls
+
+
+
+© 2021-22 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+                                                  5. Troubleshooting
+                                                          5.1      Given a scenario, describe the troubleshooting process in a small-
+                                                                   medium business network
+                                                                   •    Steps in the troubleshooting process, etiquette/professional conduct
+
+                                                          5.2      Given a scenario, use the appropriate hardware troubleshooting
+                                                                   tools
+                                                                   •    Appropriate tool selection, multimeter, cable tester, toner, time-domain
+                                                                        reflectometer (TDR), optical TDR (OTDR)
+
+                                                          5.3      Given a scenario, use the appropriate Windows software tools to
+                                                                   troubleshoot a problem
+                                                                   •    Appropriate tool selection, syntax (ping, ipconfig, tracert, pathping,
+                                                                        nslookup, hostname, netstat, arp), local loopback IP, protocols
+
+                                                          5.4      Given a scenario, use the appropriate Linux software tools to
+                                                                   troubleshoot a problem
+                                                                   •    Appropriate tool selection, syntax (ping, ip addr, traceroute, tracepath, dig,
+                                                                        host, netstat, arp)
+
+
+
+
+© 2021-22 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+

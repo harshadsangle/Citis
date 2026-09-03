@@ -1,0 +1,154 @@
+      IT SPECIALIST EXAM OBJECTIVES
+
+                                                Computational Thinking
+                                                      Candidates for this certification understand how to employ strategies for understanding and solving
+                                                      problems in ways that leverage the power of computing principles to develop solutions. Candidates know
+                                                      how to decompose problems, collect and analyze data, recognize patterns in data, represent data through
+                                                      abstractions, and automate solutions by using algorithmic thinking. Candidates know how to collaborate
+                                                      with others and also how to create computational artifacts to communicate the problem and its solution
+                                                      to others. Candidates have at least 150 hours of instruction and/or practical experience analyzing, col-
+                                                      laborating on, and solving problems using computing principles like decomposition, pattern recognition,
+                                                      sequencing, conditional logic, and iteration.
+                                                      This exam is mapped to the International Society for Technology in Education (ISTE) for alignment with the
+                                                      ISTE Computational Thinker Standard for Students (Standards 5A, 5B, 5C, and 5D). After each objective
+                                                      title below, the ISTE standard or standards to which the items for this objective could potentially map is
+                                                      indicated in parentheses.
+                                                      To be successful on the test, the candidate is also expected to have the following prerequisite knowledge
+                                                      and skills:
+                                                         • 8th grade reading skills
+                                                         • Digital literacy skills, including the ability to research, create content, and solve problems using
+                                                             technology
+
+
+
+
+                                                 1.     Foundational Concepts
+                                                        1.1       Understand and recognize different types of data (ISTE 3B, 5B)
+                                                                  •   Understand and recognize structured and unstructured data
+                                                                  •   Understand and recognize different types of data such as text, numeric,
+                                                                      date/time, image, and audio
+                                                                  •   Understand and recognize data encoding (ascii, binary, character mapping)
+
+                                                        1.2       Recognize and apply logical reasoning (ISTE 3A, 5B)
+                                                                  •   Recognize and apply Boolean and logical operators
+                                                                  •   Recognize and apply inductive reasoning
+                                                                  •   Recognize ambiguity in a logical reasoning problem
+                                                                  •   Recognize and apply deductive reasoning
+
+                                                        1.3       Explain algorithmic thinking (ISTE 5A, 5D)
+                                                                  •   Explain the purpose of algorithmic thinking
+                                                                  •   Understand the purpose of abstraction and model building
+                                                                  •   Understand the purpose and capabilities of automation
+
+                                                 2. Identify and Collect Data
+                                                        2.1       Assess data needs and available data (ISTE 3B, 5B, 5C)
+                                                                  •   Identify the data needed to solve a problem
+                                                                  •   Assess relevance of existing data sets
+                                                                  •   Determine the gap between existing data and data needs
+
+                                                        2.2       Understand data quality (ISTE 3B, 5B)
+                                                                  •   Understand validity
+                                                                  •   Understand reliability
+                                                                  •   Explain data cleaning in data sets
+
+
+© 2023 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+       IT SPECIALIST EXAM OBJECTIVES
+
+
+                                                        2.3       Collect the data needed to solve a problem (ISTE 1D, 2B, 3B, 3C, 5B)
+                                                                  •   Collect relevant data using existing data sources
+                                                                      •    Including selection of appropriate tools to gather, analyze, and process data
+                                                                      •    Including retrieval of information from a data source, such as a list, a table, an
+                                                                           infographic, etc.
+                                                                  •   Choose a method for creating original data sets such as an observation or
+                                                                      a survey
+                                                                      •    Including input-validation methods
+                                                                  •   Explain the legal and ethical dimensions of data collection
+
+                                                 3. Apply Abstraction
+                                                        3.1       Identify patterns in and apply abstraction to data (ISTE 5A, 5B, 5C)
+                                                                  •   Identify patterns in data
+                                                                  •   Organize data using models such as tables, charts, and graphs
+                                                                  •   Sort and filter data by relevant criteria
+                                                                  •   Identify similarities, differences, and subsets in a data set
+                                                                  •   Make predictions by examining patterns
+
+                                                        3.2       Recognize, create and interpret abstract models (ISTE 5C, 5D)
+                                                                  •   Recognize an abstract representation, such as a model, variable, function,
+                                                                      or procedure
+                                                                  •   Create an abstract model to understand complex systems or facilitate
+                                                                      problem solving
+                                                                  •   Interpret a process flow diagram
+
+                                                 4. Specify a Solution
+                                                        4.1       Define and decompose a problem (ISTE 4B, 5A, 5C)
+                                                                  •   Identify an appropriate problem statement based on information provided
+                                                                  •   Define the scope and limitations of a problem
+                                                                  •   Identify decision makers, collaborators, and target audience
+                                                                  •   Break down a problem into component parts by using decomposition
+
+                                                        4.2       Identify requirements (ISTE 4A, 4B, 6A)
+                                                                  •   Select a design process, such as iterative or incremental
+                                                                  •   Identify prerequisites for a solution
+                                                                  •   Identify the possible outcomes of a solution
+                                                                  •   Choose appropriate tools to develop a solution, such as flow charts,
+                                                                      spreadsheets, pseudocode, surveys
+
+                                                 5. Automate a Solution
+                                                        5.1       Use a sequence of steps in algorithms (ISTE 5B, 5D)
+                                                                  •   Create a sequence of steps
+                                                                  •   Evaluate the outcome of a sequence of steps
+                                                                  •   Recognize when to combine steps into reusable procedures and functions
+
+
+
+
+© 2023 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+       IT SPECIALIST EXAM OBJECTIVES
+
+
+                                                        5.2       Automate repetitive tasks by using iteration (ISTE 5D)
+                                                                  •   Recognize when to use iteration
+                                                                      •    Including when to use nested loops
+                                                                  •   Determine the outcome of an algorithm that uses iteration
+                                                                  •   Create an algorithm that uses iteration
+
+                                                        5.3       Use selection statements in algorithms (ISTE 5D)
+                                                                  •   Recognize when to use selection statements
+                                                                      •    Including when to use nesting in selection statements
+                                                                  •   Determine the outcome of an algorithm that uses selection statements
+                                                                  •   Create an algorithm that uses selection statements
+
+                                                        5.4       Use variables in algorithms (ISTE 5D)
+                                                                  •   Recognize when to use variables
+                                                                  •   Determine the outcome of an algorithm that uses variables
+                                                                  •   Create an algorithm that uses variables
+
+                                                 6. Present and Improve a Solution
+                                                        6.1       Produce a computational artifact to present a solution to a target
+                                                                  audience (ISTE 6A, 6C, 6D)
+                                                                  •   Choose an effective medium for communicating a solution to a target
+                                                                      audience
+                                                                      •    Including video, flow diagram, pdf, html prototype, chart, infographic, diagram,
+                                                                           graph
+                                                                  •   Create an original computational artifact to communicate a solution to a
+                                                                      target audience
+
+                                                        6.2       Collaborate on computational artifacts (ISTE 1C, 7B)
+                                                                  •   Interpret a design for a computational artifact
+                                                                  •   Critique and provide feedback on a design for a computational artifact
+                                                                  •   Incorporate collaborative feedback into a computational artifact
+
+                                                        6.3       Perform iterative design on an automated solution
+                                                                  (ISTE 1D, 4C, 5C, 5D)
+                                                                  •   Create a prototype to evaluate the effectiveness of an automated solution
+                                                                  •   Compare the efficiency of multiple possible solutions
+                                                                  •   Troubleshoot an automated solution
+                                                                  •   Use iterative testing to improve an automated solution
+
+
+
+
+© 2023 Certiport, Inc. Certiport and the Certiport logo are registered trademarks of Certiport Inc. All other trademarks and registered trademarks are the property of their respective holders.
+
