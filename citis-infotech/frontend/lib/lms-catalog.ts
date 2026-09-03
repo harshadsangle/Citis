@@ -15,10 +15,10 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "intuit" | "microsoft" | "unity";
+export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
 
 export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
-  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "intuit" || value === "microsoft" || value === "unity" ? value : undefined;
+  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "ic3" || value === "intuit" || value === "microsoft" || value === "unity" ? value : undefined;
 }
 
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
@@ -840,6 +840,85 @@ const MICROSOFT_COURSES: LmsCourse[] = [
   },
 ];
 
+const IC3_COURSES: LmsCourse[] = [
+  {
+    id: "ic3-spark",
+    title: "IC3 Spark",
+    description: "Official IC3 Spark objectives for younger learners covering Computing Fundamentals, Key Applications, and Living Online.",
+    audience: "Younger learners and primary or middle school-aged students who are new to computers or the Internet.",
+    details: [
+      { label: "Exam format", value: "Single 50-minute exam" },
+      { label: "Objective areas", value: "3 sections" },
+      { label: "Credential", value: "IC3 Spark certification" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Computing Fundamentals", description: "Mobile devices, hardware devices, computer software architecture, backup and restore, file sharing, cloud computing, and security." },
+      { number: "02", title: "Key Applications", description: "Common features, documents, spreadsheets, basic database concepts, presentations, application uses and platforms, and graphic modification." },
+      { number: "03", title: "Living Online", description: "Internet concepts, common functionality, email clients, calendaring, social media, communications, online conferencing, streaming, and digital citizenship." },
+    ],
+  },
+  {
+    id: "ic3-digital-literacy-global-standard-6-level-1",
+    title: "IC3 Digital Literacy Global Standard 6 — Level 1",
+    description: "Official IC3 GS6 Level 1 exam objectives for foundational digital literacy, including technology basics, digital citizenship, information management, content creation, communication, collaboration, and safety and security.",
+    audience: "Candidates building foundational digital literacy skills through the IC3 Digital Literacy Global Standard 6 pathway.",
+    details: [
+      { label: "Objective areas", value: "7 sections" },
+      { label: "Certification path", value: "IC3 Digital Literacy GS6 Level 1" },
+      { label: "Source", value: "Certiport exam domains" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Technology Basics", description: "Access and navigate between digital environments; identify digital devices and connections; and explain fundamental software, hardware, operating system, and networking concepts." },
+      { number: "02", title: "Digital Citizenship", description: "Create and manage a digital identity, cultivate and protect a digital reputation, and respond to inappropriate digital behavior and content." },
+      { number: "03", title: "Information Management", description: "Use and refine criteria for online searches, search within digital content, and understand copyright and licensing restrictions for digital content." },
+      { number: "04", title: "Content Creation", description: "Create basic documents and presentations, use referencing and attribution, save and back up work, and understand fundamental printing concepts." },
+      { number: "05", title: "Communication", description: "Express yourself through digital means and interact with others in a digital environment using appropriate, effective, and inclusive communication." },
+      { number: "06", title: "Collaboration", description: "Identify digital collaboration concepts and digital etiquette standards for collaborative processes." },
+      { number: "07", title: "Safety and Security", description: "Describe digital security threats, protect devices and digital content, understand data-collection technology, and identify health risks associated with digital technologies." },
+    ],
+  },
+  {
+    id: "ic3-digital-literacy-global-standard-6-level-2",
+    title: "IC3 Digital Literacy Global Standard 6 — Level 2",
+    description: "Official IC3 GS6 Level 2 exam objectives for developing digital literacy across technology basics, digital citizenship, information management, content creation, communication, collaboration, and safety and security.",
+    audience: "Candidates developing intermediate digital literacy skills through the IC3 Digital Literacy Global Standard 6 pathway.",
+    details: [
+      { label: "Objective areas", value: "7 sections" },
+      { label: "Certification path", value: "IC3 Digital Literacy GS6 Level 2" },
+      { label: "Source", value: "Certiport exam domains" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Technology Basics", description: "Customize digital environments, use a personal digital calendar, define higher-level technology concepts, adjust hardware, understand core printer concepts, and identify digital devices and connections." },
+      { number: "02", title: "Digital Citizenship", description: "Create and manage multiple digital identities, apply digital etiquette standards, and seek opportunities to increase digital competence." },
+      { number: "03", title: "Information Management", description: "Determine digital information needs, assess the veracity of search results or digital artifacts, and manage online data collection, storage, and retrieval." },
+      { number: "04", title: "Content Creation", description: "Create and edit digital content, manage digital information and files, responsibly repurpose digital resources, and publish or present content for a specific audience." },
+      { number: "05", title: "Communication", description: "Interact with others in a digital environment and understand Internet commerce basics." },
+      { number: "06", title: "Collaboration", description: "Use digital tools to collaborate on content creation and apply digital etiquette standards for collaborative processes." },
+      { number: "07", title: "Safety and Security", description: "Avoid health risks and physical harm, avoid mental health threats, understand device security, and understand file security." },
+    ],
+  },
+  {
+    id: "ic3-digital-literacy-global-standard-6-level-3",
+    title: "IC3 Digital Literacy Global Standard 6 — Level 3",
+    description: "Official IC3 GS6 Level 3 exam objectives for advanced digital literacy, including evaluating technology, information search and sources, original media, visual data, accessibility, communication, collaboration, and security.",
+    audience: "Candidates advancing digital literacy skills through the IC3 Digital Literacy Global Standard 6 pathway.",
+    details: [
+      { label: "Objective areas", value: "7 sections" },
+      { label: "Certification path", value: "IC3 Digital Literacy GS6 Level 3" },
+      { label: "Source", value: "Certiport exam domains" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Technology Basics", description: "Evaluate software and hardware devices, identify and resolve technical problems with assistance, and understand selected software concepts." },
+      { number: "02", title: "Digital Citizenship", description: "Protect others’ personally identifiable information and explain best practices for digital citizenship." },
+      { number: "03", title: "Information Management", description: "Construct an effective information search and evaluate digital information sources and multiple search results." },
+      { number: "04", title: "Content Creation", description: "Create, edit, publish, and present original digital media; represent data visually; manage files; address accessibility; apply intellectual property standards; and manage a cyclical design process." },
+      { number: "05", title: "Communication", description: "Manage interpersonal digital communications and communicate with others to identify and understand issues." },
+      { number: "06", title: "Collaboration", description: "Collaborate with others to resolve issues and contribute constructively to project teams." },
+      { number: "07", title: "Safety and Security", description: "Manage device security and understand the physical and environmental impact of digital tools and technologies." },
+    ],
+  },
+];
+
 const INTUIT_COURSES: LmsCourse[] = [
   {
     id: "intuit-certified-bookkeeping-professional",
@@ -1104,6 +1183,13 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     eyebrow: "CompTIA certification courses",
     description: "Official objective-led preparation across CompTIA foundational, infrastructure, cloud, data, project, networking, Linux, and cybersecurity certifications.",
     courses: COMPTIA_COURSES,
+  },
+  {
+    id: "ic3",
+    name: "IC3 Digital Literacy",
+    eyebrow: "IC3 · Certiport certification courses",
+    description: "Official objective-led preparation for IC3 Spark and IC3 Digital Literacy Global Standard 6 Levels 1, 2, and 3.",
+    courses: IC3_COURSES,
   },
   {
     id: "intuit",
