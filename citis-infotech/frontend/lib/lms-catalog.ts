@@ -15,10 +15,10 @@ export type LmsCourseCategory = {
   courses: LmsCourse[];
 };
 
-export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "microsoft" | "unity";
+export type LmsCourseProvider = "adobe" | "autodesk" | "comptia" | "intuit" | "microsoft" | "unity";
 
 export function normalizeLmsCourseProvider(value?: string): LmsCourseProvider | undefined {
-  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "microsoft" || value === "unity" ? value : undefined;
+  return value === "adobe" || value === "autodesk" || value === "comptia" || value === "intuit" || value === "microsoft" || value === "unity" ? value : undefined;
 }
 
 const ADOBE_COURSE_GROUPS: LmsCourseCategory[] = [
@@ -840,6 +840,80 @@ const MICROSOFT_COURSES: LmsCourse[] = [
   },
 ];
 
+const INTUIT_COURSES: LmsCourse[] = [
+  {
+    id: "intuit-certified-bookkeeping-professional",
+    title: "Intuit Certified Bookkeeping Professional",
+    description: "Official Intuit Certified Bookkeeping Professional objectives covering accounting basics, assets and sales transactions, liabilities and purchases, reconciliation, and financial statements.",
+    audience: "Candidates preparing for the Intuit Certified Bookkeeping Professional certification.",
+    details: [
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Intuit Certified Bookkeeping Professional" },
+      { label: "Source", value: "Certiport exam objectives" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Accounting Basics", description: "Accounting measurement, bookkeeping ethics, the accounting equation, financial statements, double-entry accounting, the accounting cycle, adjusting entries, and accounting principles." },
+      { number: "02", title: "Accounting for Assets and Sales Transactions", description: "Assets, natural account balances, current and long-term assets, sales, accounts receivable, cash receipts, merchandise inventory, inventory valuation, and depreciation." },
+      { number: "03", title: "Accounting for Liabilities, Equity, and Purchase Transactions", description: "Liabilities, purchase transactions, accounts payable, cash payments, payroll, payroll tax forms, equity accounts, and the effects of transactions on the accounting equation." },
+      { number: "04", title: "Reconciliation and Financial Statements", description: "Account reconciliation concepts, bank reconciliation preparation and reconciling items, balance sheets, comparative income statements, budgets, cost of goods sold, and revenue analysis." },
+    ],
+  },
+  {
+    id: "intuit-design-for-delight-innovator",
+    title: "Intuit Design for Delight Innovator Certification",
+    description: "Official Intuit Design for Delight Innovator objectives covering customer empathy, brainstorming and narrowing, rapid customer experiments, prototyping, and learning from test results.",
+    audience: "Candidates preparing for the Intuit Design for Delight Innovator Certification.",
+    details: [
+      { label: "Objective areas", value: "4 sections" },
+      { label: "Credential", value: "Intuit Design for Delight Innovator Certification" },
+      { label: "Source", value: "Certiport exam objectives" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Design for Delight Concepts", description: "The Design for Delight mindset, Deep Customer Empathy, Go Broad to Go Narrow, Rapid Experiments with Customers, customer delight metrics, problem-solution-benefit relationships, looping, prototyping, and experimentation." },
+      { number: "02", title: "Develop deep customer empathy", description: "Observing customer behavior, identifying customer challenges, summarizing learning, defining customer problem statements, and conceptualizing the ideal customer state." },
+      { number: "03", title: "Brainstorm and narrow", description: "The purposes, methods, and best practices of brainstorming and narrowing, plus methods for making ideas into concrete solutions and representations." },
+      { number: "04", title: "Perform rapid customer experiments", description: "Rapid experiment principles, assumptions, prioritizing customer behavior assumptions, leap of faith assumptions, hypotheses, internal prototypes, test evaluation, and next steps." },
+    ],
+  },
+  {
+    id: "intuit-quickbooks-online-certified-user",
+    title: "Intuit QuickBooks Online Certified User",
+    description: "Official Intuit QuickBooks Online Certified User objectives for QuickBooks Online Plus administration, sales and money in, vendors and money out, bank accounts, transaction rules, receipts, reports, and views.",
+    audience: "An individual earning this certification has at least 150 hours of instruction or hands-on experience with the Intuit QuickBooks Online software.",
+    details: [
+      { label: "Objective areas", value: "5 sections" },
+      { label: "Target experience", value: "At least 150 hours" },
+      { label: "Credential", value: "Intuit QuickBooks Online Certified User" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Intuit QuickBooks Online Administration", description: "Set up and manage Intuit QuickBooks Online Plus, manage lists, recurring transactions, journal entries, and connections to apps." },
+      { number: "02", title: "Sales and Money-In", description: "Set up customers, products, and services; manage sales settings; and record invoices, sales receipts, payments, undeposited funds, deposits, credit memos, and refund receipts." },
+      { number: "03", title: "Vendors and Money-out", description: "Manage vendor records and expense settings, identify 1099 contractors, and record and manage bills, checks, credit cards, debit cards, vendor credits, refunds, and other money-out transactions." },
+      { number: "04", title: "Bank Accounts, Transaction Rules, and Receipts", description: "Connect financial accounts, process bank-feed transactions, use bank rules, upload receipts, and record transactions from uploaded receipts." },
+      { number: "05", title: "Basic Reports and Views", description: "Understand financial, money-in, and money-out reports; customize and deliver standard reports; and use the Audit Log and dashboards." },
+    ],
+  },
+  {
+    id: "intuit-personal-finance",
+    title: "Intuit Personal Finance Certification",
+    description: "Official Intuit Personal Finance objectives covering income, spending, saving, investing, managing credit, managing debt, insurance, identity fraud, and consumer protection.",
+    audience: "Candidates preparing for the Intuit Personal Finance Certification.",
+    details: [
+      { label: "Objective areas", value: "6 sections" },
+      { label: "Credential", value: "Intuit Personal Finance Certification" },
+      { label: "Source", value: "Certiport exam objectives" },
+    ],
+    objectiveAreas: [
+      { number: "01", title: "Earning income", description: "Pay stubs, gross and net income, taxes and withholdings, filing status, deductions, credits, tax forms, total compensation, payment methods, and earned versus unearned income." },
+      { number: "02", title: "Spending", description: "Outside influences on spending, marketing and social pressures, time value of money, supply and demand, inflation, budgeting methods, expense types, and comparing major purchases." },
+      { number: "03", title: "Saving", description: "Short-term and long-term financial goals, the Pay Yourself First principle, SMART goals, consumer banking, insured deposits, debit and credit cards, and account types." },
+      { number: "04", title: "Investing", description: "The relationship between risk and return, financial risk tolerance, diversification, investment types, investment costs and income, and the Rule of 72." },
+      { number: "05", title: "Managing Credit", description: "Secured and unsecured loans, installment and revolving loans, alternative lending, funding documentation, credit scores, APR, debt types, credit reports, and debt management methods." },
+      { number: "06", title: "Managing Risk", description: "Auto, health, life, home, renters, disability, and accidental-death insurance; insurance costs and risk factors; identity fraud; and consumer protection resources." },
+    ],
+  },
+];
+
 const UNITY_COURSES: LmsCourse[] = [
   {
     id: "unity-certified-user-artist",
@@ -1030,6 +1104,13 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     eyebrow: "CompTIA certification courses",
     description: "Official objective-led preparation across CompTIA foundational, infrastructure, cloud, data, project, networking, Linux, and cybersecurity certifications.",
     courses: COMPTIA_COURSES,
+  },
+  {
+    id: "intuit",
+    name: "Intuit",
+    eyebrow: "Intuit certification courses",
+    description: "Official objective-led preparation for Intuit bookkeeping, Design for Delight, QuickBooks Online, and personal finance certifications.",
+    courses: INTUIT_COURSES,
   },
   {
     id: "microsoft",
