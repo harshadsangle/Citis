@@ -201,10 +201,7 @@ export class LmsService {
     const filter = this.statusFilter(query.status);
     const values: unknown[] = [user.tenantId];
     const clauses = ["c.tenant_id = $1"];
-    const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
-    const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
-      && !user.roles.some((role) => administratorRoles.includes(role.code))
-      && !isPlatformUser(user);
+    const instructorOnly = this.isInstructorOnly(user);
     if (instructorOnly) {
       values.push(user.id);
       clauses.push(`EXISTS (
@@ -390,7 +387,7 @@ export class LmsService {
   async getChild(id: string, table: LmsTable, user: AuthenticatedUser) {
     const scope = await this.contentScope(id, table, user);
     assertScopeForRead(user, scope.institution_id, scope.campus_id);
-    if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.course_id), scope.campus_id);
+    if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id);
     const result = await this.db.query(
       `SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`,
       [id, user.tenantId],
@@ -688,9 +685,9 @@ export class LmsService {
       && !isPlatformUser(user);
   }
 
-  private async assertAssignedTeacherRead(user: AuthenticatedUser, courseId: string, campusId?: string | null) {
+  private async assertAssignedTeacherRead(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
     if (!this.isInstructorOnly(user)) return;
-    if (!await this.hasAssignmentStaffAccess(user, String(user.scopes.find((scope) => scope.campusId === campusId || scope.campusId === null)?.institutionId || ""), courseId, campusId)) {
+    if (!await this.hasAssignmentStaffAccess(user, institutionId, courseId, campusId)) {
       throw new NotFoundException("The requested resource was not found.");
     }
   }
