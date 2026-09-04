@@ -1,6 +1,8 @@
 export declare const LMS_STATUSES: readonly ["DRAFT", "PUBLISHED", "ARCHIVED"];
 export declare const LMS_RESOURCE_TYPES: readonly ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 export declare class ContentListQueryDto {
+    page?: number;
+    pageSize?: number;
     status?: string;
 }
 export declare class CreateProgrammeDto {
