@@ -1,0 +1,48 @@
+Make the entire CITIS LMS fully working in BOTH Windows localhost and Replit. Do not just explain problems—implement and verify the fixes yourself.
+
+From the Windows project root:
+
+`C:\Users\Ayush\Citis\citis-infotech`
+
+`npm run dev` must start and keep ALL services running:
+
+* API → 4000
+* Admin → 4101
+* Instructor → 4102
+* Learner → 4103
+* Frontend → 5000
+
+Fix the Windows launcher so the API starts first and remains available before the other services start. Eliminate `ECONNREFUSED 127.0.0.1:4000`.
+
+Make Windows localhost fully database-connected. Do NOT use Replit's internal `helium` PostgreSQL host. Use a proper Windows-reachable PostgreSQL development database, initialize the existing LMS schema/data, and ensure Admin, Instructor, and Learner demo accounts work. Never expose or hardcode secrets.
+
+Use the already-working Learner authentication as the source of truth. Verify locally:
+
+* Admin login → `/api/v1/auth/me` → Admin dashboard
+* Instructor login → `/api/v1/auth/me` → Instructor dashboard
+* Learner login → `/api/v1/auth/me` → Learner dashboard
+
+Verify the same three login flows in Replit Preview and DO NOT break the existing Replit database/authentication setup.
+
+Also verify the main LMS flow:
+Admin course management → Instructor course/lesson/assessment → Learner enrollment/learning/quiz/results/certificate where implemented.
+
+Do not change working authentication logic or database schema unnecessarily.
+
+IMPORTANT:
+
+* Actually run `npm run dev` from the real Windows project root.
+* Verify all five ports are running.
+* Verify real localhost login requests, not just static/code checks.
+* Inspect and fix any startup, database, proxy, CORS, session, or environment issues found.
+* Keep secrets private and uncommitted.
+
+At the end report:
+
+1. Root causes
+2. Fixes made
+3. Final one-command startup command
+4. Windows database solution
+5. Admin/Instructor/Learner localhost verification
+6. Admin/Instructor/Learner Replit verification
+7. Any genuine remaining blocker
