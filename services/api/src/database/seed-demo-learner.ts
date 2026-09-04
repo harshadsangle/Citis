@@ -8,17 +8,20 @@ const { Pool } = pg;
 
 const DEMO_TENANT_SLUG = "citis-platform";
 const DEMO_LEARNER_EMAIL = "learner.demo@citis.in";
-const demoLearnerPassword = process.env.DEMO_LEARNER_PASSWORD;
 
-if (!demoLearnerPassword) {
-  throw new Error("DEMO_LEARNER_PASSWORD is required to seed the demo learner.");
+function requiredDemoLearnerPassword() {
+  const value = process.env.DEMO_LEARNER_PASSWORD;
+  if (!value) {
+    throw new Error("DEMO_LEARNER_PASSWORD is required to seed the demo learner.");
+  }
+  return value;
 }
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required to seed the demo learner.");
 }
 
-async function seedDemoLearner() {
+async function seedDemoLearner(password: string) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const client = await pool.connect();
 
@@ -69,7 +72,7 @@ async function seedDemoLearner() {
     }
 
     // Match AuthService.login(), which verifies password_hash with bcrypt.
-    const passwordHash = await bcrypt.hash(demoLearnerPassword, 12);
+    const passwordHash = await bcrypt.hash(password, 12);
     const existingUserResult = await client.query<{ id: string }>(
       `SELECT id
        FROM users
@@ -132,7 +135,7 @@ async function seedDemoLearner() {
   }
 }
 
-seedDemoLearner().catch((error) => {
+seedDemoLearner(requiredDemoLearnerPassword()).catch((error) => {
   console.error(`Demo learner seed failed: ${error instanceof Error ? error.message : error}`);
   process.exitCode = 1;
 });

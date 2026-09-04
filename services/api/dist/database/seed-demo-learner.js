@@ -43,8 +43,8 @@ const load_env_1 = require("../config/load-env");
 const { Pool } = pg_1.default;
 const DEMO_TENANT_SLUG = "citis-platform";
 const DEMO_LEARNER_EMAIL = "learner.demo@citis.in";
-const DEMO_LEARNER_PASSWORD = process.env.DEMO_LEARNER_PASSWORD;
-if (!DEMO_LEARNER_PASSWORD) {
+const demoLearnerPassword = process.env.DEMO_LEARNER_PASSWORD;
+if (!demoLearnerPassword) {
     throw new Error("DEMO_LEARNER_PASSWORD is required to seed the demo learner.");
 }
 if (!process.env.DATABASE_URL) {
@@ -86,7 +86,7 @@ async function seedDemoLearner() {
             throw new Error(`Active STUDENT role was not found in tenant "${DEMO_TENANT_SLUG}". Run the database migrations first.`);
         }
         // Match AuthService.login(), which verifies password_hash with bcrypt.
-        const passwordHash = await bcrypt.hash(DEMO_LEARNER_PASSWORD, 12);
+        const passwordHash = await bcrypt.hash(demoLearnerPassword, 12);
         const existingUserResult = await client.query(`SELECT id
        FROM users
        WHERE tenant_id = $1 AND lower(email) = lower($2)
