@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
@@ -11,7 +11,16 @@ function stop(exitCode) {
   stopping = true;
 
   for (const child of children) {
-    if (!child.killed) child.kill("SIGTERM");
+    if (!child.killed && child.pid) {
+      if (process.platform === "win32") {
+        spawnSync("taskkill", ["/pid", String(child.pid), "/t", "/f"], {
+          stdio: "ignore",
+          windowsHide: true,
+        });
+      } else {
+        child.kill("SIGTERM");
+      }
+    }
   }
 
   const forceExit = setTimeout(() => process.exit(exitCode), 2_500);
