@@ -38,3 +38,15 @@ On Windows, the API reads only the repository-root `.env.local`. On
 Replit/Linux, the existing API-local environment remains authoritative. The
 launcher does not create fallback credentials or replace either database
 configuration.
+
+After setting `DATABASE_URL` and the three demo password environment variables
+through your local secure environment, initialize a new Windows development
+database from the repository root:
+
+```bash
+npm run db:setup-local
+```
+
+This applies all canonical migrations and idempotently creates or updates the
+Admin, Instructor, and Learner demo accounts. It does not print or store the
+password values.

@@ -6,7 +6,7 @@ testing the shared authentication flow and standalone learner portal:
 | Field | Value |
 | --- | --- |
 | Email | `learner.demo@citis.in` |
-| Password | `Password123!` |
+| Password | `DEMO_LEARNER_PASSWORD` environment variable |
 | Portal | Learner |
 
 This account is development-only. Do not reuse this credential outside the

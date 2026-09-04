@@ -1,4 +1,5 @@
 import pg from "pg";
+import "./load-local-env.mjs";
 
 const { Pool } = pg;
 
