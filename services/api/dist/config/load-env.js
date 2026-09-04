@@ -12,8 +12,12 @@ const projectRoots = [
     process.cwd(),
     (0, node_path_1.resolve)((0, node_path_1.dirname)(__dirname), "../../../"),
 ].filter((root) => Boolean(root));
-const localEnvPath = projectRoots
-    .map((root) => (0, node_path_1.resolve)(root, ".env.local"))
+const localEnvPath = [
+    // The API package owns its local database configuration. Keep this first so
+    // workspace scripts cannot accidentally select a different repository-level file.
+    (0, node_path_1.resolve)((0, node_path_1.dirname)(__dirname), "../.env.local"),
+    ...projectRoots.map((root) => (0, node_path_1.resolve)(root, ".env.local")),
+]
     .find((candidate, index, candidates) => candidates.indexOf(candidate) === index && (0, node_fs_1.existsSync)(candidate));
 function loadLocalEnvironment() {
     if (localEnvPath) {

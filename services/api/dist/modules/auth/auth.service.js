@@ -72,24 +72,63 @@ let AuthService = class AuthService {
         this.db = db;
     }
     async login(input, metadata) {
-        const result = await this.db.query(`SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name, u.password_hash,
-              u.status, t.slug AS tenant_slug
-       FROM users u
-       JOIN tenants t ON t.id = u.tenant_id
-       WHERE lower(u.email) = lower($1)
-         AND ($2::text IS NULL OR t.slug = $2)
-         AND t.status = 'ACTIVE'
-       ORDER BY u.created_at
-       LIMIT 2`, [input.email.trim(), input.tenantSlug?.trim() || null]);
-        const user = result.rows.length === 1 ? result.rows[0] : undefined;
-        if (!user || user.status !== "ACTIVE" || !user.password_hash || !(await bcrypt.compare(input.password, user.password_hash))) {
-            throw new common_1.UnauthorizedException("Invalid email or password.");
+        const requestId = metadata.requestId || "unknown";
+        let stage = "db-query";
+        const diagnostic = (message) => {
+            console.log(`[TEMP_AUTH_DIAGNOSTIC] AuthService.login requestId=${requestId} ${message}`);
+        };
+        const diagnosticError = (error) => {
+            const errorName = error instanceof Error ? error.name : typeof error;
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            const errorCode = typeof error === "object" && error && "code" in error ? String(error.code) : "none";
+            console.error(`[TEMP_AUTH_DIAGNOSTIC] AuthService.login failed requestId=${requestId} stage=${stage} errorName=${errorName} errorCode=${errorCode} errorMessage=${errorMessage}`);
+        };
+        diagnostic("stage=db-query status=started");
+        try {
+            const result = await this.db.query(`SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name, u.password_hash,
+                u.status, t.slug AS tenant_slug
+         FROM users u
+         JOIN tenants t ON t.id = u.tenant_id
+         WHERE lower(u.email) = lower($1)
+           AND ($2::text IS NULL OR t.slug = $2)
+           AND t.status = 'ACTIVE'
+         ORDER BY u.created_at
+         LIMIT 2`, [input.email.trim(), input.tenantSlug?.trim() || null]);
+            diagnostic(`stage=db-query status=succeeded rowCount=${result.rows.length}`);
+            stage = "user-lookup";
+            const user = result.rows.length === 1 ? result.rows[0] : undefined;
+            diagnostic(`stage=user-lookup status=${user ? "found" : "not-found"} rowCount=${result.rows.length} userStatus=${user?.status || "none"} passwordHashPresent=${Boolean(user?.password_hash)}`);
+            if (!user || user.status !== "ACTIVE" || !user.password_hash) {
+                diagnostic("stage=user-lookup outcome=rejected reason=missing-or-inactive-user");
+                throw new common_1.UnauthorizedException("Invalid email or password.");
+            }
+            stage = "password-verification";
+            diagnostic("stage=password-verification status=started");
+            const passwordMatches = await bcrypt.compare(input.password, user.password_hash);
+            diagnostic(`stage=password-verification status=succeeded matched=${passwordMatches}`);
+            if (!passwordMatches) {
+                diagnostic("stage=password-verification outcome=rejected reason=password-mismatch");
+                throw new common_1.UnauthorizedException("Invalid email or password.");
+            }
+            stage = "last-login-update";
+            diagnostic("stage=last-login-update status=started");
+            await this.db.query("UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2", [
+                user.id,
+                user.tenant_id,
+            ]);
+            diagnostic("stage=last-login-update status=succeeded");
+            stage = "role-lookup";
+            diagnostic("stage=role-lookup status=not-executed reason=roles-resolve-during-auth-me");
+            stage = "session-creation";
+            diagnostic("stage=session-creation status=started");
+            const session = await this.startSession(user.id, metadata);
+            diagnostic("stage=session-creation status=succeeded");
+            return session;
         }
-        await this.db.query("UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2", [
-            user.id,
-            user.tenant_id,
-        ]);
-        return this.startSession(user.id, metadata);
+        catch (error) {
+            diagnosticError(error);
+            throw error;
+        }
     }
     async register(input, metadata) {
         const roleCode = {

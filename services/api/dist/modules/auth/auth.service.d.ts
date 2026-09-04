@@ -7,6 +7,7 @@ export declare class AuthService {
     login(input: LoginDto, metadata: {
         ipAddress?: string;
         userAgent?: string;
+        requestId?: string;
     }): Promise<{
         token: string;
         expiresAt: Date;
