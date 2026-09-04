@@ -2,17 +2,18 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import dotenv from "dotenv";
 
-const localEnvCandidates = [
-  resolve(process.cwd(), ".env.local"),
-  resolve(process.cwd(), "../../.env.local"),
-  resolve(dirname(__dirname), "../../../.env.local"),
-];
+const projectRoots = [
+  process.env.INIT_CWD,
+  process.cwd(),
+  resolve(dirname(__dirname), "../../../"),
+].filter((root): root is string => Boolean(root));
 
-const localEnvPath = localEnvCandidates.find((candidate, index, candidates) =>
-  candidates.indexOf(candidate) === index && existsSync(candidate),
-);
+const localEnvPath = projectRoots
+  .map((root) => resolve(root, ".env.local"))
+  .find((candidate, index, candidates) => candidates.indexOf(candidate) === index && existsSync(candidate));
 
 if (localEnvPath) {
-  // Keep platform-provided environment variables authoritative over local files.
-  dotenv.config({ path: localEnvPath, override: false });
+  // In local development, the explicit .env.local file is the source of truth.
+  // Platform-provided values remain the fallback when no local file exists.
+  dotenv.config({ path: localEnvPath, override: true, quiet: true });
 }
