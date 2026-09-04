@@ -8,10 +8,13 @@ function localEnvironmentCandidates() {
   // a Windows shell with a different current directory.
   const apiRoot = resolve(__dirname, "../..");
   const repositoryRoot = resolve(apiRoot, "../..");
-  // Windows local development owns the repository root .env.local. Replit
-  // runs on Linux and keeps the API-local file as its existing first choice.
+  // Windows local development owns the repository root .env.local. Do not
+  // fall back to the API-local file there: that file is the Replit/Linux
+  // override and may contain an internal-only database host.
+  // Replit runs on Linux and keeps the API-local file as its existing first
+  // choice.
   const roots = (process.platform === "win32"
-    ? [repositoryRoot, apiRoot, process.env.INIT_CWD, process.cwd()]
+    ? [repositoryRoot]
     : [apiRoot, process.env.INIT_CWD, process.cwd(), repositoryRoot])
     .filter((root): root is string => Boolean(root))
     .map((root) => resolve(root));
