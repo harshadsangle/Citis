@@ -13,5 +13,6 @@
 - [LMS provider branding](lms-provider-branding.md) — certification catalogue headers need contained provider-specific marks verified in the live preview.
 - [CSP-safe typography](csp-safe-typography.md) — this project’s CSP blocks remote stylesheet imports, so portal typography must use bundled or system font stacks.
 - [API local environment loading](api-env-loading.md) — resolve root .env.local through npm workspace contexts before creating database clients.
+- [Nullable scope uniqueness](nullable-scope-uniqueness.md) — nullable campus columns can permit duplicate equivalent user-role scopes despite a unique constraint.
 - [MOS objective imports](mos-objective-imports.md) — keep versioned MOS exam codes as separate tracks and attach each official objective PDF once.
 - [Unity objective imports](unity-objective-imports.md) — preserve Unity Artist, Programmer, and VR Developer as distinct role-based certification tracks with one source PDF each.
