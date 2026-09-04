@@ -64,12 +64,9 @@ async function request<T>(baseUrl: string, path: string, options: FetchOptions =
 
   if (!response.ok) {
     const body = await response.text();
-    console.error("[TEMP_AUTH_DIAGNOSTIC] API request failed", {
-      method,
-      url: requestUrl,
-      status: response.status,
-      responseBody: body,
-    });
+    console.error(
+      `[TEMP_AUTH_DIAGNOSTIC] API request failed method=${method} url=${requestUrl} status=${response.status} responseBody=${body}`,
+    );
     let details: unknown;
     try {
       details = JSON.parse(body);

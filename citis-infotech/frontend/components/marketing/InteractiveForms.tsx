@@ -142,36 +142,14 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
     let stage = "login";
     setServerError("");
     try {
-      console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request started", {
-        submissionId,
-        stage,
-        method: "POST",
-        url: "/api/v1/auth/login",
-      });
+      console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request started submissionId=${submissionId} stage=${stage} method=POST url=/api/v1/auth/login`);
       await authService.login(values.email, values.password);
-      console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded", {
-        submissionId,
-        stage,
-        method: "POST",
-        url: "/api/v1/auth/login",
-        status: 200,
-      });
+      console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded submissionId=${submissionId} stage=${stage} method=POST url=/api/v1/auth/login status=200`);
       stage = "auth/me";
-      console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request started", {
-        submissionId,
-        stage,
-        method: "GET",
-        url: "/api/v1/auth/me",
-      });
+      console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request started submissionId=${submissionId} stage=${stage} method=GET url=/api/v1/auth/me`);
       try {
         const response = await authService.me();
-        console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded", {
-          submissionId,
-          stage,
-          method: "GET",
-          url: "/api/v1/auth/me",
-          status: 200,
-        });
+        console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded submissionId=${submissionId} stage=${stage} method=GET url=/api/v1/auth/me status=200`);
         stage = "role-check";
         if (!canAccessLmsPortal(response.data, portal)) {
           const availablePortal = firstAvailableLmsPortal(response.data);
@@ -187,13 +165,9 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
         throw error;
       }
     } catch (error) {
-      console.error("[TEMP_AUTH_DIAGNOSTIC] LoginForm failed", {
-        submissionId,
-        stage,
-        errorName: error instanceof Error ? error.name : typeof error,
-        errorMessage: error instanceof Error ? error.message : String(error),
-        errorStatus: error instanceof ApiError ? error.status : undefined,
-      });
+      console.error(
+        `[TEMP_AUTH_DIAGNOSTIC] LoginForm failed submissionId=${submissionId} stage=${stage} errorName=${error instanceof Error ? error.name : typeof error} errorMessage=${error instanceof Error ? error.message : String(error)} errorStatus=${error instanceof ApiError ? error.status : "unknown"}`,
+      );
       if (submissionId === submissionIdRef.current) {
         setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again.");
       }
