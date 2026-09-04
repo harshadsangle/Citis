@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 require("reflect-metadata");
+require("../config/load-env");
 const promises_1 = require("node:fs/promises");
 const node_path_1 = require("node:path");
 const pg_1 = require("pg");

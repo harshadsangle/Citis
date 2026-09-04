@@ -8,8 +8,11 @@ const node_test_1 = __importDefault(require("node:test"));
 const API_ORIGIN = (process.env.LMS_AUTH_REGRESSION_API_ORIGIN || "http://127.0.0.1:4000/api/v1").replace(/\/$/, "");
 const STUDENT_PORTAL_ORIGIN = (process.env.LMS_AUTH_REGRESSION_PORTAL_ORIGIN || "http://127.0.0.1:4103").replace(/\/$/, "");
 const DEMO_LEARNER_EMAIL = "learner.demo@citis.in";
-const DEMO_LEARNER_PASSWORD = "Password123!";
+const DEMO_LEARNER_PASSWORD = process.env.DEMO_LEARNER_PASSWORD;
 const DEMO_TENANT_ID = "00000000-0000-0000-0000-000000000001";
+if (!DEMO_LEARNER_PASSWORD) {
+    throw new Error("DEMO_LEARNER_PASSWORD is required to run the learner auth regression test.");
+}
 function sessionCookie(response) {
     const setCookie = response.headers.get("set-cookie") || "";
     const match = setCookie.match(/(?:^|,\s*)citis_session=([^;]+)/);

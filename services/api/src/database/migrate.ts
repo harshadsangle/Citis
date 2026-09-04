@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import "../config/load-env";
 import { access, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Client } from "pg";
