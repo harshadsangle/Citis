@@ -18,6 +18,8 @@
     "test:learner-auth": "npm run test:auth --workspace @citis/api",
     "db:init": "node scripts/init-lms-db.mjs",
     "db:seed-demo-learner": "npm run db:seed-demo-learner --workspace @citis/api",
+    "db:seed-demo-admin": "npm run db:seed-demo-admin --workspace @citis/api",
+    "db:seed-demo-instructor": "npm run db:seed-demo-instructor --workspace @citis/api",
     "db:seed-courses": "node scripts/seed-lms-courses.mjs",
     "db:import-acrobat": "node scripts/import-acrobat-pro-course.mjs",
     "db:import-after-effects": "node scripts/import-adobe-after-effects-course.mjs",

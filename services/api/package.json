@@ -9,6 +9,8 @@
     "start:dev": "ts-node --project tsconfig.json src/main.ts",
     "db:migrate": "tsx src/database/migrate.ts",
     "db:seed-demo-learner": "tsx src/database/seed-demo-learner.ts",
+    "db:seed-demo-admin": "tsx src/database/seed-demo-staff.ts admin",
+    "db:seed-demo-instructor": "tsx src/database/seed-demo-staff.ts instructor",
     "test": "node --import tsx --test $(find src -name '*.spec.ts' -print)",
     "test:auth": "node --import tsx --test src/modules/auth/auth.regression.spec.ts"
   },
