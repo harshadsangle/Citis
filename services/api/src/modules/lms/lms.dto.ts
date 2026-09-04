@@ -21,6 +21,25 @@ export class ContentListQueryDto {
   @IsOptional()
   @IsIn(LMS_STATUSES)
   status?: string;
+
+  // These filters are read as separate controller query parameters for the
+  // programme → course → module → lesson → resource hierarchy. They must
+  // still be declared here because ValidationPipe validates the full query.
+  @IsOptional()
+  @IsUUID()
+  programmeId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  moduleId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  lessonId?: string;
 }
 
 export class CreateProgrammeDto {
