@@ -25,6 +25,20 @@ function safeDatabaseTarget(connectionString) {
         return { host: "(unavailable)", database: "(unavailable)" };
     }
 }
+function assertLocalDatabaseTarget(connectionString) {
+    if (process.platform !== "win32")
+        return;
+    let hostname;
+    try {
+        hostname = new URL(connectionString).hostname.toLowerCase();
+    }
+    catch {
+        return;
+    }
+    if (hostname === "helium") {
+        throw new Error("Windows local development requires an externally reachable DATABASE_URL in the repository-root .env.local; the Replit-internal helium host is not reachable from Windows.");
+    }
+}
 let DatabaseService = class DatabaseService {
     pool;
     constructor() {
@@ -33,6 +47,7 @@ let DatabaseService = class DatabaseService {
         if (!connectionString) {
             throw new Error("DATABASE_URL is required to create the database pool.");
         }
+        assertLocalDatabaseTarget(connectionString);
         const target = safeDatabaseTarget(connectionString);
         console.log(`CITIS API database target: host=${target.host} database=${target.database}`);
         this.pool = new pg_1.Pool({
