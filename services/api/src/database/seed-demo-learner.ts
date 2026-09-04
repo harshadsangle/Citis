@@ -105,15 +105,14 @@ async function seedDemoLearner(password: string) {
       action = "created";
     }
 
-    // Repair only this demo user's STUDENT assignments so the seed is
-    // idempotent and always leaves the intended tenant/institution scope.
+    // Replace only this demo user's STUDENT assignments so the seed is
+    // idempotent even when NULL campus values bypass a unique constraint.
     await client.query(
       `DELETE FROM user_roles
        WHERE tenant_id = $1
          AND user_id = $2
-         AND role_id = $3
-         AND (institution_id IS DISTINCT FROM $4::uuid OR campus_id IS NOT NULL)`,
-      [tenant.id, userId, studentRole.id, institution.id],
+         AND role_id = $3`,
+      [tenant.id, userId, studentRole.id],
     );
     await client.query(
       `INSERT INTO user_roles (tenant_id, user_id, role_id, institution_id, campus_id)
