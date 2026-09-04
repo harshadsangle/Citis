@@ -42,6 +42,8 @@ const load_env_1 = require("../config/load-env");
 (0, load_env_1.loadLocalEnvironment)();
 const { Pool } = pg_1.default;
 const DEMO_TENANT_SLUG = "citis-platform";
+const DEMO_INSTITUTION_SLUG = "citis-lms-demo";
+const DEMO_INSTITUTION_NAME = "CITIS LMS Demo Institution";
 const DEMO_LEARNER_EMAIL = "learner.demo@citis.in";
 function requiredDemoLearnerPassword() {
     const value = process.env.DEMO_LEARNER_PASSWORD;
@@ -69,16 +71,12 @@ async function seedDemoLearner(password) {
         if (!tenant) {
             throw new Error(`Active tenant "${DEMO_TENANT_SLUG}" was not found. Run the database migrations first.`);
         }
-        const institutionResult = await client.query(`SELECT id, name
-       FROM institutions
-       WHERE tenant_id = $1 AND status = 'ACTIVE'
-       ORDER BY created_at, id
-       LIMIT 1
-       FOR UPDATE`, [tenant.id]);
+        const institutionResult = await client.query(`INSERT INTO institutions (tenant_id, name, slug, institution_type, status)
+       VALUES ($1, $2, $3, 'SCHOOL', 'ACTIVE')
+       ON CONFLICT (tenant_id, slug) DO UPDATE
+       SET name = EXCLUDED.name, status = 'ACTIVE', updated_at = now()
+       RETURNING id, name`, [tenant.id, DEMO_INSTITUTION_NAME, DEMO_INSTITUTION_SLUG]);
         const institution = institutionResult.rows[0];
-        if (!institution) {
-            throw new Error(`No active institution was found in tenant "${DEMO_TENANT_SLUG}". Create one before seeding the learner.`);
-        }
         const roleResult = await client.query(`SELECT id
        FROM roles
        WHERE tenant_id = $1 AND code = 'STUDENT' AND status = 'ACTIVE'
