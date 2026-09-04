@@ -1,8 +1,10 @@
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
 import path from "node:path";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const require = createRequire(import.meta.url);
 const children = [];
 let stopping = false;
 
@@ -27,10 +29,10 @@ function stop(exitCode) {
   forceExit.unref();
 }
 
-function launch(label, args) {
+function launch(label, args, options = {}) {
   const child = spawn(process.execPath, args, {
     cwd: rootDir,
-    env: process.env,
+    env: options.env ?? process.env,
     stdio: "inherit",
     windowsHide: false,
   });
@@ -47,6 +49,33 @@ function launch(label, args) {
       stop(code ?? 1);
     }
   });
+  return child;
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function waitForHttp(label, url, child, timeoutMilliseconds = 30_000) {
+  const deadline = Date.now() + timeoutMilliseconds;
+  let lastError = "no response";
+
+  while (Date.now() < deadline) {
+    if (child.exitCode !== null) {
+      throw new Error(`${label} exited before becoming ready (code ${child.exitCode ?? "unknown"}).`);
+    }
+
+    try {
+      await fetch(url, { signal: AbortSignal.timeout(1_000) });
+      console.log(`[${label}] ready at ${url}`);
+      return;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      await wait(250);
+    }
+  }
+
+  throw new Error(`${label} did not become ready within ${timeoutMilliseconds}ms: ${lastError}`);
 }
 
 process.on("SIGINT", () => stop(130));
@@ -55,14 +84,24 @@ process.on("SIGTERM", () => stop(143));
 if (process.platform === "win32") {
   // Invoke both services from the repository root. Calling the nested npm
   // wrapper here would recreate the duplicated frontend path on Windows.
-  launch("api", [
-    path.join(rootDir, "node_modules", "ts-node", "dist", "bin.js"),
+  const api = launch("api", [
+    require.resolve("ts-node/dist/bin.js"),
     "--project",
     "services/api/tsconfig.json",
     "services/api/src/main.ts",
-  ]);
+  ], { env: { ...process.env, PORT: "4000" } });
+
+  try {
+    await waitForHttp("api", "http://127.0.0.1:4000/", api);
+  } catch (error) {
+    console.error(`[api] startup readiness check failed: ${error instanceof Error ? error.message : error}`);
+    stop(1);
+    await new Promise(() => {});
+  }
+
+  const nextBin = require.resolve("next/dist/bin/next");
   launch("frontend", [
-    path.join(rootDir, "node_modules", "next", "dist", "bin", "next"),
+    nextBin,
     "dev",
     "citis-infotech/frontend",
     "--turbopack",
@@ -72,7 +111,7 @@ if (process.platform === "win32") {
     "5000",
   ]);
   launch("student-portal", [
-    path.join(rootDir, "node_modules", "next", "dist", "bin", "next"),
+    nextBin,
     "dev",
     "apps/student-portal",
     "--hostname",
@@ -81,7 +120,7 @@ if (process.platform === "win32") {
     "4103",
   ]);
   launch("institution-admin", [
-    path.join(rootDir, "node_modules", "next", "dist", "bin", "next"),
+    nextBin,
     "dev",
     "apps/institution-admin",
     "--hostname",
@@ -90,7 +129,7 @@ if (process.platform === "win32") {
     "4101",
   ]);
   launch("teacher-portal", [
-    path.join(rootDir, "node_modules", "next", "dist", "bin", "next"),
+    nextBin,
     "dev",
     "apps/teacher-portal",
     "--hostname",
