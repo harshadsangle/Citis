@@ -13,7 +13,9 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-npm run dev:api &
+# Invoke the API entrypoint directly so its process stays rooted at the
+# repository directory instead of inheriting the workspace package directory.
+npm exec -- ts-node --project services/api/tsconfig.json services/api/src/main.ts &
 pids+=("$!")
 npm run dev --prefix apps/institution-admin &
 pids+=("$!")
