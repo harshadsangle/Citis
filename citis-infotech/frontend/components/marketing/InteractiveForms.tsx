@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
@@ -132,8 +132,13 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
 export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal; provider?: LmsCourseProvider }) {
   const [show, setShow] = useState(false);
   const [serverError, setServerError] = useState("");
+  const loginInFlightRef = useRef(false);
+  const submissionIdRef = useRef(0);
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
   const onSubmit = async (values: LoginInput) => {
+    if (loginInFlightRef.current) return;
+    loginInFlightRef.current = true;
+    const submissionId = ++submissionIdRef.current;
     setServerError("");
     try {
       await authService.login(values.email, values.password);
@@ -151,7 +156,15 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
         await authService.logout().catch(() => undefined);
         throw error;
       }
-    } catch (error) { setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again."); }
+    } catch (error) {
+      if (submissionId === submissionIdRef.current) {
+        setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again.");
+      }
+    } finally {
+      if (submissionId === submissionIdRef.current) {
+        loginInFlightRef.current = false;
+      }
+    }
   };
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
