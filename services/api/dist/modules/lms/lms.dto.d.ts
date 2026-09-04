@@ -4,6 +4,10 @@ export declare class ContentListQueryDto {
     page?: number;
     pageSize?: number;
     status?: string;
+    programmeId?: string;
+    courseId?: string;
+    moduleId?: string;
+    lessonId?: string;
 }
 export declare class CreateProgrammeDto {
     institutionId: string;

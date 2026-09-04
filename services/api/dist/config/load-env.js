@@ -13,12 +13,13 @@ function localEnvironmentCandidates() {
     // when npm launches the API from the repository root, the API workspace, or
     // a Windows shell with a different current directory.
     const apiRoot = (0, node_path_1.resolve)(__dirname, "../..");
-    const repositoryRoot = (0, node_path_1.resolve)(apiRoot, "..");
+    const repositoryRoot = (0, node_path_1.resolve)(apiRoot, "../..");
     // Windows local development owns the repository root .env.local. Do not
     // fall back to the API-local file there: that file is the Replit/Linux
     // override and may contain an internal-only database host.
     // Replit runs on Linux and keeps the API-local file as its existing first
-    // choice.
+    // choice. The API source lives at <repository>/services/api/src/config,
+    // making two levels above apiRoot the actual repository root.
     const roots = (process.platform === "win32"
         ? [repositoryRoot]
         : [apiRoot, process.env.INIT_CWD, process.cwd(), repositoryRoot])

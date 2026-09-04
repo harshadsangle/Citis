@@ -18,6 +18,13 @@ class ContentListQueryDto {
     page;
     pageSize;
     status;
+    // These filters are read as separate controller query parameters for the
+    // programme → course → module → lesson → resource hierarchy. They must
+    // still be declared here because ValidationPipe validates the full query.
+    programmeId;
+    courseId;
+    moduleId;
+    lessonId;
 }
 exports.ContentListQueryDto = ContentListQueryDto;
 __decorate([
@@ -40,6 +47,26 @@ __decorate([
     (0, class_validator_1.IsIn)(exports.LMS_STATUSES),
     __metadata("design:type", String)
 ], ContentListQueryDto.prototype, "status", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], ContentListQueryDto.prototype, "programmeId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], ContentListQueryDto.prototype, "courseId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], ContentListQueryDto.prototype, "moduleId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], ContentListQueryDto.prototype, "lessonId", void 0);
 class CreateProgrammeDto {
     institutionId;
     campusId;
