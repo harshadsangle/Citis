@@ -8,8 +8,12 @@ const projectRoots = [
   resolve(dirname(__dirname), "../../../"),
 ].filter((root): root is string => Boolean(root));
 
-const localEnvPath = projectRoots
-  .map((root) => resolve(root, ".env.local"))
+const localEnvPath = [
+  // The API package owns its local database configuration. Keep this first so
+  // workspace scripts cannot accidentally select a different repository-level file.
+  resolve(dirname(__dirname), "../.env.local"),
+  ...projectRoots.map((root) => resolve(root, ".env.local")),
+]
   .find((candidate, index, candidates) => candidates.indexOf(candidate) === index && existsSync(candidate));
 
 export function loadLocalEnvironment() {
