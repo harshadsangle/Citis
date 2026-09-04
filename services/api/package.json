@@ -8,6 +8,7 @@
     "start": "node dist/main.js",
     "start:dev": "ts-node --project tsconfig.json src/main.ts",
     "db:migrate": "tsx src/database/migrate.ts",
+    "db:seed-demo-learner": "tsx src/database/seed-demo-learner.ts",
     "test": "node --import tsx --test $(find src -name '*.spec.ts' -print)",
     "test:auth": "node --import tsx --test src/modules/auth/auth.regression.spec.ts"
   },

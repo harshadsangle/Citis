@@ -17,7 +17,7 @@
     "test:foundation": "npm run test --workspace @citis/api",
     "test:learner-auth": "npm run test:auth --workspace @citis/api",
     "db:init": "node scripts/init-lms-db.mjs",
-    "db:seed-demo-learner": "node scripts/seed-demo-learner.mjs",
+    "db:seed-demo-learner": "npm run db:seed-demo-learner --workspace @citis/api",
     "db:seed-courses": "node scripts/seed-lms-courses.mjs",
     "db:import-acrobat": "node scripts/import-acrobat-pro-course.mjs",
     "db:import-after-effects": "node scripts/import-adobe-after-effects-course.mjs",
