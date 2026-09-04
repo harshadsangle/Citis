@@ -2,26 +2,31 @@ import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import dotenv from "dotenv";
 
-const projectRoots = [
-  process.env.INIT_CWD,
-  process.cwd(),
-  resolve(dirname(__dirname), "../../../"),
-].filter((root): root is string => Boolean(root));
+function localEnvironmentCandidates() {
+  // Resolve these roots from the API source location first. This is stable
+  // when npm launches the API from the repository root, the API workspace, or
+  // a Windows shell with a different current directory.
+  const apiRoot = resolve(__dirname, "../..");
+  const repositoryRoot = resolve(apiRoot, "../..");
+  const roots = [apiRoot, process.env.INIT_CWD, process.cwd(), repositoryRoot]
+    .filter((root): root is string => Boolean(root))
+    .map((root) => resolve(root));
 
-const localEnvPath = [
-  // The API package owns its local database configuration. Keep this first so
-  // workspace scripts cannot accidentally select a different repository-level file.
-  resolve(dirname(__dirname), "../.env.local"),
-  ...projectRoots.map((root) => resolve(root, ".env.local")),
-]
-  .find((candidate, index, candidates) => candidates.indexOf(candidate) === index && existsSync(candidate));
+  return [...new Set(roots)].map((root) => resolve(root, ".env.local"));
+}
+
+export function getLocalEnvironmentPath() {
+  return localEnvironmentCandidates().find((candidate) => existsSync(candidate));
+}
 
 export function loadLocalEnvironment() {
-  if (localEnvPath) {
-    // In local development, the explicit .env.local file is the source of truth.
-    // Platform-provided values remain the fallback when no local file exists.
-    dotenv.config({ path: localEnvPath, override: true, quiet: true });
-  }
+  const localEnvPath = getLocalEnvironmentPath();
+  if (!localEnvPath) return;
+
+  // The API-local file is preferred when present; the repository root file is
+  // the supported fallback used by the Windows local setup. Platform-provided
+  // values remain the fallback only when neither local file exists.
+  dotenv.config({ path: localEnvPath, override: true, quiet: true });
 }
 
 loadLocalEnvironment();
