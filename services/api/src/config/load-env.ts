@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 import dotenv from "dotenv";
 
 function localEnvironmentCandidates() {
