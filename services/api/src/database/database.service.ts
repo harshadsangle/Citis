@@ -1,3 +1,4 @@
+import { loadLocalEnvironment } from "../config/load-env";
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
@@ -6,8 +7,14 @@ export class DatabaseService implements OnModuleDestroy {
   readonly pool: Pool;
 
   constructor() {
+    loadLocalEnvironment();
+    const connectionString = process.env.DATABASE_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL is required to create the database pool.");
+    }
+
     this.pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       max: Number(process.env.DATABASE_POOL_MAX || 10),
       idleTimeoutMillis: 30_000,
       connectionTimeoutMillis: 5_000,
