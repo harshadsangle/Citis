@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { apiFetch } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 import { applyJobSchema, loginSchema, partnerSchema, type ApplyJobInput, type LoginInput, type PartnerInput } from "@/lib/validations";
 import { authService } from "@/services/api";
 import { CAREERS_EMAIL, SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
@@ -139,16 +139,46 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
     if (loginInFlightRef.current) return;
     loginInFlightRef.current = true;
     const submissionId = ++submissionIdRef.current;
+    let stage = "login";
     setServerError("");
     try {
+      console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request started", {
+        submissionId,
+        stage,
+        method: "POST",
+        url: "/api/v1/auth/login",
+      });
       await authService.login(values.email, values.password);
+      console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded", {
+        submissionId,
+        stage,
+        method: "POST",
+        url: "/api/v1/auth/login",
+        status: 200,
+      });
+      stage = "auth/me";
+      console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request started", {
+        submissionId,
+        stage,
+        method: "GET",
+        url: "/api/v1/auth/me",
+      });
       try {
         const response = await authService.me();
+        console.debug("[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded", {
+          submissionId,
+          stage,
+          method: "GET",
+          url: "/api/v1/auth/me",
+          status: 200,
+        });
+        stage = "role-check";
         if (!canAccessLmsPortal(response.data, portal)) {
           const availablePortal = firstAvailableLmsPortal(response.data);
           const availableCopy = availablePortal ? ` This account belongs in the ${LMS_PORTALS[availablePortal].label}.` : "";
           throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
         }
+        stage = "redirect";
         window.location.assign(`/lms?portal=${portal}${provider ? `&provider=${provider}` : ""}`);
       } catch (error) {
         // Do not leave a valid session behind when role validation or the
@@ -157,6 +187,13 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
         throw error;
       }
     } catch (error) {
+      console.error("[TEMP_AUTH_DIAGNOSTIC] LoginForm failed", {
+        submissionId,
+        stage,
+        errorName: error instanceof Error ? error.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        errorStatus: error instanceof ApiError ? error.status : undefined,
+      });
       if (submissionId === submissionIdRef.current) {
         setServerError(error instanceof Error ? error.message : "Sign in failed. Check your details and try again.");
       }

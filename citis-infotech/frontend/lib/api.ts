@@ -41,9 +41,10 @@ function sessionId() {
 async function request<T>(baseUrl: string, path: string, options: FetchOptions = {}) {
   const { revalidate, tags, token, headers, ...init } = options;
   const method = (init.method || "GET").toUpperCase();
+  const requestUrl = `${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`;
   const csrf = typeof document !== "undefined" ? readCookie("citis_csrf") : "";
 
-  const response = await fetch(`${baseUrl.replace(/\/$/, "")}/${path.replace(/^\//, "")}`, {
+  const response = await fetch(requestUrl, {
     ...init,
     credentials: "include",
     headers: {
@@ -63,6 +64,12 @@ async function request<T>(baseUrl: string, path: string, options: FetchOptions =
 
   if (!response.ok) {
     const body = await response.text();
+    console.error("[TEMP_AUTH_DIAGNOSTIC] API request failed", {
+      method,
+      url: requestUrl,
+      status: response.status,
+      responseBody: body,
+    });
     let details: unknown;
     try {
       details = JSON.parse(body);
