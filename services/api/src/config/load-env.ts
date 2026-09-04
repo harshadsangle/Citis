@@ -8,7 +8,11 @@ function localEnvironmentCandidates() {
   // a Windows shell with a different current directory.
   const apiRoot = resolve(__dirname, "../..");
   const repositoryRoot = resolve(apiRoot, "../..");
-  const roots = [apiRoot, process.env.INIT_CWD, process.cwd(), repositoryRoot]
+  // Windows local development owns the repository root .env.local. Replit
+  // runs on Linux and keeps the API-local file as its existing first choice.
+  const roots = (process.platform === "win32"
+    ? [repositoryRoot, apiRoot, process.env.INIT_CWD, process.cwd()]
+    : [apiRoot, process.env.INIT_CWD, process.cwd(), repositoryRoot])
     .filter((root): root is string => Boolean(root))
     .map((root) => resolve(root));
 
@@ -23,9 +27,8 @@ export function loadLocalEnvironment() {
   const localEnvPath = getLocalEnvironmentPath();
   if (!localEnvPath) return;
 
-  // The API-local file is preferred when present; the repository root file is
-  // the supported fallback used by the Windows local setup. Platform-provided
-  // values remain the fallback only when neither local file exists.
+  // Local files override inherited platform values. On Windows the repository
+  // root file wins; on Linux/Replit the API-local file remains authoritative.
   dotenv.config({ path: localEnvPath, override: true, quiet: true });
 }
 
