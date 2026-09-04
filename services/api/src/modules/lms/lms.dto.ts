@@ -6,6 +6,19 @@ export const LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "
 
 export class ContentListQueryDto {
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
+
+  @IsOptional()
   @IsIn(LMS_STATUSES)
   status?: string;
 }
