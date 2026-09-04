@@ -5,7 +5,11 @@ const { Pool } = pg;
 
 const DEMO_TENANT_SLUG = "citis-platform";
 const DEMO_LEARNER_EMAIL = "learner.demo@citis.in";
-const DEMO_LEARNER_PASSWORD = "Password123!";
+const DEMO_LEARNER_PASSWORD = process.env.DEMO_LEARNER_PASSWORD;
+
+if (!DEMO_LEARNER_PASSWORD) {
+  throw new Error("DEMO_LEARNER_PASSWORD is required to seed the demo learner.");
+}
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required to seed the demo learner.");
