@@ -20,4 +20,8 @@ export function loadLocalEnvironment() {
   }
 }
 
+export function getLocalEnvironmentSource() {
+  return localEnvPath ?? "process.env";
+}
+
 loadLocalEnvironment();

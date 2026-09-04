@@ -1,10 +1,13 @@
-import { loadLocalEnvironment } from "../config/load-env";
+import { getLocalEnvironmentSource, loadLocalEnvironment } from "../config/load-env";
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
+
+let nextDatabaseServiceInstanceId = 1;
 
 @Injectable()
 export class DatabaseService implements OnModuleDestroy {
   readonly pool: Pool;
+  readonly instanceId = nextDatabaseServiceInstanceId++;
 
   constructor() {
     loadLocalEnvironment();
@@ -12,6 +15,18 @@ export class DatabaseService implements OnModuleDestroy {
     if (!connectionString) {
       throw new Error("DATABASE_URL is required to create the database pool.");
     }
+    const parsed = new URL(connectionString);
+    console.log("[DatabaseService] runtime", {
+      pid: process.pid,
+      databaseServiceInstanceId: this.instanceId,
+      poolInstanceId: this.instanceId,
+      environmentSource: getLocalEnvironmentSource(),
+      databaseUrlExists: true,
+      hostname: parsed.hostname,
+      database: decodeURIComponent(parsed.pathname.replace(/^\/+/, "")),
+      passwordExists: parsed.password.length > 0,
+      passwordLength: parsed.password.length,
+    });
 
     this.pool = new Pool({
       connectionString,

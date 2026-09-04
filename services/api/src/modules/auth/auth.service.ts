@@ -48,7 +48,13 @@ function toPrincipal(row: {
 export class AuthService {
   constructor(
     private readonly db: DatabaseService,
-  ) {}
+  ) {
+    console.log("[AuthService] runtime", {
+      pid: process.pid,
+      databaseServiceInstanceId: this.db.instanceId,
+      poolInstanceId: this.db.instanceId,
+    });
+  }
 
   async login(input: LoginDto, metadata: { ipAddress?: string; userAgent?: string }) {
     const result = await this.db.query<{
