@@ -10,13 +10,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatabaseService = void 0;
+const load_env_1 = require("../config/load-env");
 const common_1 = require("@nestjs/common");
 const pg_1 = require("pg");
 let DatabaseService = class DatabaseService {
     pool;
     constructor() {
+        (0, load_env_1.loadLocalEnvironment)();
+        const connectionString = process.env.DATABASE_URL;
+        if (!connectionString) {
+            throw new Error("DATABASE_URL is required to create the database pool.");
+        }
         this.pool = new pg_1.Pool({
-            connectionString: process.env.DATABASE_URL,
+            connectionString,
             max: Number(process.env.DATABASE_POOL_MAX || 10),
             idleTimeoutMillis: 30_000,
             connectionTimeoutMillis: 5_000,
