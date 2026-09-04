@@ -71,6 +71,24 @@ if (process.platform === "win32") {
     "--port",
     "4103",
   ]);
+  launch("institution-admin", [
+    path.join(rootDir, "node_modules", "next", "dist", "bin", "next"),
+    "dev",
+    "apps/institution-admin",
+    "--hostname",
+    "0.0.0.0",
+    "--port",
+    "4101",
+  ]);
+  launch("teacher-portal", [
+    path.join(rootDir, "node_modules", "next", "dist", "bin", "next"),
+    "dev",
+    "apps/teacher-portal",
+    "--hostname",
+    "0.0.0.0",
+    "--port",
+    "4102",
+  ]);
 } else {
   const child = spawn("bash", ["scripts/start-all-dev.sh"], {
     cwd: rootDir,
