@@ -25,6 +25,16 @@ function FormSuccess({ title, copy }: { title: string; copy: string }) {
   return <div role="status" className="surface rounded-xl p-9 text-center"><CheckCircle2 className="mx-auto size-12 text-success" /><h3 className="mt-4 font-heading text-2xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p></div>;
 }
 
+function loginErrorMessage(error: unknown, stage: string) {
+  if (error instanceof ApiError && stage === "auth/me") {
+    return `Sign-in succeeded, but session validation failed (HTTP ${error.status}). Please try again.`;
+  }
+  if (error instanceof ApiError && error.message === `Request failed with status ${error.status}`) {
+    return `Sign-in request failed (HTTP ${error.status}). Please try again.`;
+  }
+  return error instanceof Error ? error.message : "Sign in failed. Check your details and try again.";
+}
+
 export function PartnerInquiryForm() {
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -134,39 +144,18 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
   const [serverError, setServerError] = useState("");
   const loginInFlightRef = useRef(false);
   const submissionIdRef = useRef(0);
-  const setLoginServerError = (value: string, reason: string) => {
-    console.debug(
-      `[TEMP_AUTH_DIAGNOSTIC] LoginForm serverError set reason=${reason} value=${JSON.stringify(value)} currentSubmissionId=${submissionIdRef.current}`,
-    );
-    setServerError(value);
-  };
-  useEffect(() => {
-    console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm mounted portal=${portal} provider=${provider || "none"}`);
-    return () => {
-      console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm unmounted portal=${portal} provider=${provider || "none"}`);
-    };
-  }, [portal, provider]);
-  useEffect(() => {
-    console.debug(
-      `[TEMP_AUTH_DIAGNOSTIC] LoginForm serverError rendered visible=${Boolean(serverError)} value=${JSON.stringify(serverError)}`,
-    );
-  }, [serverError]);
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
   const onSubmit = async (values: LoginInput) => {
     if (loginInFlightRef.current) return;
     loginInFlightRef.current = true;
     const submissionId = ++submissionIdRef.current;
     let stage = "login";
-    setLoginServerError("", "submit-start");
+    setServerError("");
     try {
-      console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request started submissionId=${submissionId} stage=${stage} method=POST url=/api/v1/auth/login`);
       await authService.login(values.email, values.password);
-      console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded submissionId=${submissionId} stage=${stage} method=POST url=/api/v1/auth/login status=200`);
       stage = "auth/me";
-      console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request started submissionId=${submissionId} stage=${stage} method=GET url=/api/v1/auth/me`);
       try {
         const response = await authService.me();
-        console.debug(`[TEMP_AUTH_DIAGNOSTIC] LoginForm request succeeded submissionId=${submissionId} stage=${stage} method=GET url=/api/v1/auth/me status=200`);
         stage = "role-check";
         if (!canAccessLmsPortal(response.data, portal)) {
           const availablePortal = firstAvailableLmsPortal(response.data);
@@ -182,14 +171,8 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
         throw error;
       }
     } catch (error) {
-      console.error(
-        `[TEMP_AUTH_DIAGNOSTIC] LoginForm failed submissionId=${submissionId} stage=${stage} errorName=${error instanceof Error ? error.name : typeof error} errorMessage=${error instanceof Error ? error.message : String(error)} errorStatus=${error instanceof ApiError ? error.status : "unknown"}`,
-      );
       if (submissionId === submissionIdRef.current) {
-        setLoginServerError(
-          error instanceof Error ? error.message : "Sign in failed. Check your details and try again.",
-          `submit-error-${stage}`,
-        );
+        setServerError(loginErrorMessage(error, stage));
       }
     } finally {
       if (submissionId === submissionIdRef.current) {

@@ -1,4 +1,4 @@
-const CACHE_NAME = "citis-infotech-v2";
+const CACHE_NAME = "citis-infotech-v3";
 const OFFLINE_URL = "/offline";
 const FORM_QUEUE = "citis-offline-forms";
 const PRECACHE = ["/", "/offline", "/manifest.json", "/icons/icon-192.svg", "/icons/icon-512.svg", "/search"];
@@ -107,6 +107,21 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(async () => (await caches.match(request)) || caches.match(OFFLINE_URL)),
+    );
+    return;
+  }
+
+  if (["script", "style", "font"].includes(request.destination)) {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
     );
     return;
   }

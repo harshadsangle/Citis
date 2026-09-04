@@ -1,8 +1,5 @@
-/**
- * The integrated site uses its same-origin Next rewrite by default. An explicit
- * URL remains supported for deployments where the API has its own public origin.
- */
-const API_URL = process.env.NEXT_PUBLIC_API_URL?.trim() || "/api/v1";
+/** The integrated site always uses its same-origin Next rewrite for API calls. */
+const API_URL = "/api/v1";
 
 export class ApiError extends Error {
   constructor(
@@ -64,9 +61,6 @@ async function request<T>(baseUrl: string, path: string, options: FetchOptions =
 
   if (!response.ok) {
     const body = await response.text();
-    console.error(
-      `[TEMP_AUTH_DIAGNOSTIC] API request failed method=${method} url=${requestUrl} status=${response.status} responseBody=${body}`,
-    );
     let details: unknown;
     try {
       details = JSON.parse(body);
