@@ -22,9 +22,10 @@ pids+=("$!")
 npm run dev --prefix apps/teacher-portal &
 pids+=("$!")
 
-# Start the root frontend directly. Do not use the legacy citis-infotech
-# package wrapper, which appends another citis-infotech/frontend path.
-npm exec -- next dev --turbopack --hostname 0.0.0.0 --port 5000 &
+# Start the LMS frontend explicitly from the project root. Do not use the
+# legacy citis-infotech package wrapper, which changes the child process cwd to
+# a duplicated citis-infotech/frontend path.
+npm exec -- next dev citis-infotech/frontend --turbopack --hostname 0.0.0.0 --port 5000 &
 pids+=("$!")
 
 wait -n "${pids[@]}"
