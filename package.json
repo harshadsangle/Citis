@@ -15,6 +15,7 @@
     "dev:api": "npm run start:dev --workspace @citis/api",
     "build:api": "npm run build --workspace @citis/api",
     "test:foundation": "npm run test --workspace @citis/api",
+    "test:learner-auth": "npm run test:auth --workspace @citis/api",
     "db:init": "node scripts/init-lms-db.mjs",
     "db:seed-demo-learner": "node scripts/seed-demo-learner.mjs",
     "db:seed-courses": "node scripts/seed-lms-courses.mjs",

@@ -8,7 +8,8 @@
     "start": "node dist/main.js",
     "start:dev": "ts-node --project tsconfig.json src/main.ts",
     "db:migrate": "tsx src/database/migrate.ts",
-    "test": "node --import tsx --test $(find src -name '*.spec.ts' -print)"
+    "test": "node --import tsx --test $(find src -name '*.spec.ts' -print)",
+    "test:auth": "node --import tsx --test src/modules/auth/auth.regression.spec.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
