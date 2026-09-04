@@ -13,8 +13,11 @@ let ApiExceptionFilter = class ApiExceptionFilter {
         const response = host.switchToHttp().getResponse();
         const request = host.switchToHttp().getRequest();
         const status = exception instanceof common_1.HttpException ? exception.getStatus() : common_1.HttpStatus.INTERNAL_SERVER_ERROR;
-        if (!(exception instanceof common_1.HttpException)) {
-            console.error("Unhandled API exception:", exception instanceof Error ? exception.stack : exception);
+        if (status >= common_1.HttpStatus.INTERNAL_SERVER_ERROR) {
+            const exceptionName = exception instanceof Error ? exception.name : typeof exception;
+            const exceptionMessage = exception instanceof Error ? exception.message : String(exception);
+            const stack = exception instanceof Error ? exception.stack : undefined;
+            console.error(`[TEMP_AUTH_DIAGNOSTIC] requestId=${request.context?.requestId || "unknown"} exceptionName=${exceptionName} exceptionMessage=${exceptionMessage} stack=${stack || "unavailable"}`);
         }
         const exceptionResponse = exception instanceof common_1.HttpException ? exception.getResponse() : undefined;
         const payload = typeof exceptionResponse === "string" ? { message: exceptionResponse } : exceptionResponse;
