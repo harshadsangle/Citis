@@ -13,6 +13,18 @@ exports.DatabaseService = void 0;
 const load_env_1 = require("../config/load-env");
 const common_1 = require("@nestjs/common");
 const pg_1 = require("pg");
+function safeDatabaseTarget(connectionString) {
+    try {
+        const databaseUrl = new URL(connectionString);
+        return {
+            host: databaseUrl.hostname,
+            database: decodeURIComponent(databaseUrl.pathname.replace(/^\/+/, "")) || "(default)",
+        };
+    }
+    catch {
+        return { host: "(unavailable)", database: "(unavailable)" };
+    }
+}
 let DatabaseService = class DatabaseService {
     pool;
     constructor() {
@@ -21,6 +33,8 @@ let DatabaseService = class DatabaseService {
         if (!connectionString) {
             throw new Error("DATABASE_URL is required to create the database pool.");
         }
+        const target = safeDatabaseTarget(connectionString);
+        console.log(`CITIS API database target: host=${target.host} database=${target.database}`);
         this.pool = new pg_1.Pool({
             connectionString,
             max: Number(process.env.DATABASE_POOL_MAX || 10),
