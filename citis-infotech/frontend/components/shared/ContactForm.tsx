@@ -19,11 +19,12 @@ const contactSteps = [
   { value: "email", label: "Email", fields: ["email"] },
   { value: "message", label: "Message", fields: ["subject", "message", "consent"] },
 ] as const satisfies ReadonlyArray<{ value: string; label: string; fields: ReadonlyArray<FieldPath<ContactInput>> }>;
+type ContactStepValue = typeof contactSteps[number]["value"];
 
 export function ContactForm({ className }: { className?: string }) {
   const [serverError, setServerError] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [activeStep, setActiveStep] = useState(contactSteps[0].value);
+  const [activeStep, setActiveStep] = useState<ContactStepValue>(contactSteps[0].value);
   const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting } } = useForm<ContactInput>({
     resolver: zodResolver(contactSchema),
     defaultValues: { name: "", email: "", phone: "", company: "", subject: "", message: "" },
@@ -71,9 +72,11 @@ export function ContactForm({ className }: { className?: string }) {
 
   const handleStepChange = async (nextStep: string) => {
     const currentIndex = contactSteps.findIndex((step) => step.value === activeStep);
-    const nextIndex = contactSteps.findIndex((step) => step.value === nextStep);
+    const nextStepDefinition = contactSteps.find((step) => step.value === nextStep);
+    if (!nextStepDefinition) return;
+    const nextIndex = contactSteps.findIndex((step) => step.value === nextStepDefinition.value);
     if (currentIndex === -1 || nextIndex === -1 || nextIndex <= currentIndex) {
-      setActiveStep(nextStep);
+      setActiveStep(nextStepDefinition.value);
       return;
     }
 
