@@ -2,21 +2,29 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, type FieldPath } from "react-hook-form";
 import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 import { contactSchema, type ContactInput } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 
+const contactSteps = [
+  { value: "contact", label: "Contact details", fields: ["name", "phone", "company"] },
+  { value: "email", label: "Email", fields: ["email"] },
+  { value: "message", label: "Message", fields: ["subject", "message", "consent"] },
+] as const satisfies ReadonlyArray<{ value: string; label: string; fields: ReadonlyArray<FieldPath<ContactInput>> }>;
+
 export function ContactForm({ className }: { className?: string }) {
   const [serverError, setServerError] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<ContactInput>({
+  const [activeStep, setActiveStep] = useState(contactSteps[0].value);
+  const { register, handleSubmit, control, reset, trigger, formState: { errors, isSubmitting } } = useForm<ContactInput>({
     resolver: zodResolver(contactSchema),
     defaultValues: { name: "", email: "", phone: "", company: "", subject: "", message: "" },
   });
@@ -61,29 +69,60 @@ export function ContactForm({ className }: { className?: string }) {
 
   const fieldError = (message?: string) => message && <p className="mt-1.5 text-xs text-destructive">{message}</p>;
 
+  const handleStepChange = async (nextStep: string) => {
+    const currentIndex = contactSteps.findIndex((step) => step.value === activeStep);
+    const nextIndex = contactSteps.findIndex((step) => step.value === nextStep);
+    if (currentIndex === -1 || nextIndex === -1 || nextIndex <= currentIndex) {
+      setActiveStep(nextStep);
+      return;
+    }
+
+    const currentStep = contactSteps[currentIndex];
+    const isCurrentStepValid = await trigger(currentStep.fields, { shouldFocus: true });
+    if (isCurrentStepValid) setActiveStep(nextStep);
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className={cn("surface space-y-5 rounded-xl p-6 sm:p-8", className)} noValidate>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div><Label htmlFor="contact-name">Name *</Label><Input id="contact-name" autoComplete="name" className="mt-2" placeholder="Your full name" aria-invalid={!!errors.name} {...register("name")} />{fieldError(errors.name?.message)}</div>
-        <div><Label htmlFor="contact-email">Email *</Label><Input id="contact-email" type="email" autoComplete="email" className="mt-2" placeholder="you@institution.edu" aria-invalid={!!errors.email} {...register("email")} />{fieldError(errors.email?.message)}</div>
-        <div><Label htmlFor="contact-phone">Phone</Label><Input id="contact-phone" type="tel" autoComplete="tel" className="mt-2" placeholder="+91 98765 43210" aria-invalid={!!errors.phone} {...register("phone")} />{fieldError(errors.phone?.message)}</div>
-        <div><Label htmlFor="contact-company">Institution / organization</Label><Input id="contact-company" autoComplete="organization" className="mt-2" placeholder="Your institution or organization" {...register("company")} /></div>
-      </div>
-      <div><Label htmlFor="contact-subject">How can we help?</Label><Input id="contact-subject" className="mt-2" placeholder="University programme, school STEM, academy enrollment…" {...register("subject")} /></div>
-      <div><Label htmlFor="contact-message">Message *</Label><Textarea id="contact-message" className="mt-2" placeholder="Tell us about your learners, goals, and current challenge." aria-invalid={!!errors.message} {...register("message")} />{fieldError(errors.message?.message)}</div>
-      <Controller
-        control={control}
-        name="consent"
-        render={({ field }) => (
-          <div>
-            <div className="flex items-start gap-2.5">
-              <Checkbox id="contact-consent" checked={field.value} onCheckedChange={field.onChange} />
-              <Label htmlFor="contact-consent" className="text-xs leading-5 font-normal text-muted-foreground">I agree that CITIS InfoTech may use my details to respond to this request, in line with the privacy policy.</Label>
-            </div>
-            {fieldError(errors.consent?.message)}
+      <Tabs value={activeStep} onValueChange={handleStepChange}>
+        <TabsList aria-label="Contact form steps" className="grid h-auto w-full grid-cols-3 gap-1">
+          {contactSteps.map((step, index) => (
+            <TabsTrigger key={step.value} value={step.value} className="h-auto min-h-10 whitespace-normal px-2 py-2 text-xs sm:text-sm">
+              <span className="mr-1 text-muted-foreground">{index + 1}.</span>{step.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="contact">
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div><Label htmlFor="contact-name">Name *</Label><Input id="contact-name" autoComplete="name" className="mt-2" placeholder="Your full name" aria-invalid={!!errors.name} {...register("name")} />{fieldError(errors.name?.message)}</div>
+            <div><Label htmlFor="contact-phone">Phone</Label><Input id="contact-phone" type="tel" autoComplete="tel" className="mt-2" placeholder="+91 98765 43210" aria-invalid={!!errors.phone} {...register("phone")} />{fieldError(errors.phone?.message)}</div>
+            <div className="sm:col-span-2"><Label htmlFor="contact-company">Institution / organization</Label><Input id="contact-company" autoComplete="organization" className="mt-2" placeholder="Your institution or organization" {...register("company")} /></div>
           </div>
-        )}
-      />
+        </TabsContent>
+
+        <TabsContent value="email">
+          <div><Label htmlFor="contact-email">Email *</Label><Input id="contact-email" type="email" autoComplete="email" className="mt-2" placeholder="you@institution.edu" aria-invalid={!!errors.email} {...register("email")} />{fieldError(errors.email?.message)}</div>
+        </TabsContent>
+
+        <TabsContent value="message">
+          <div><Label htmlFor="contact-subject">How can we help?</Label><Input id="contact-subject" className="mt-2" placeholder="University programme, school STEM, academy enrollment…" {...register("subject")} /></div>
+          <div className="mt-5"><Label htmlFor="contact-message">Message *</Label><Textarea id="contact-message" className="mt-2" placeholder="Tell us about your learners, goals, and current challenge." aria-invalid={!!errors.message} {...register("message")} />{fieldError(errors.message?.message)}</div>
+          <Controller
+            control={control}
+            name="consent"
+            render={({ field }) => (
+              <div className="mt-5">
+                <div className="flex items-start gap-2.5">
+                  <Checkbox id="contact-consent" checked={field.value} onCheckedChange={field.onChange} aria-invalid={!!errors.consent} />
+                  <Label htmlFor="contact-consent" className="text-xs leading-5 font-normal text-muted-foreground">I agree that CITIS InfoTech may use my details to respond to this request, in line with the privacy policy.</Label>
+                </div>
+                {fieldError(errors.consent?.message)}
+              </div>
+            )}
+          />
+        </TabsContent>
+      </Tabs>
       {serverError && <p role="alert" className="rounded-lg bg-destructive/10 px-4 py-3 text-sm text-destructive">{serverError}</p>}
       <Button type="submit" variant="accent" size="lg" disabled={isSubmitting} className="w-full sm:w-auto">
         {isSubmitting ? <><LoaderCircle className="animate-spin" />Sending…</> : <>Send message<Send /></>}
