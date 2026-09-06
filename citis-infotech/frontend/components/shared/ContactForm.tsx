@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, type FieldPath } from "react-hook-form";
 import { CheckCircle2, LoaderCircle, Send } from "lucide-react";
@@ -30,6 +30,18 @@ export function ContactForm({ className }: { className?: string }) {
     defaultValues: { name: "", email: "", phone: "", company: "", subject: "", message: "" },
   });
 
+  useEffect(() => {
+    if (!submitted) return;
+
+    const timeout = window.setTimeout(() => {
+      setSubmitted(false);
+      setActiveStep(contactSteps[0].value);
+      reset();
+    }, 5000);
+
+    return () => window.clearTimeout(timeout);
+  }, [reset, submitted]);
+
   const onSubmit = async (values: ContactInput) => {
     setServerError("");
     try {
@@ -48,7 +60,6 @@ export function ContactForm({ className }: { className?: string }) {
         ].join("\n"),
       });
       setSubmitted(true);
-      reset();
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "We could not open your email app. Please write to support@citis.in.");
     }
@@ -63,7 +74,17 @@ export function ContactForm({ className }: { className?: string }) {
           Your email app should open a message to <span className="font-medium text-foreground">{SUPPORT_EMAIL}</span>.
           Send it to complete your enquiry. If nothing opened, email us directly at that address.
         </p>
-        <Button variant="outline" className="mt-6" onClick={() => setSubmitted(false)}>Send another message</Button>
+        <Button
+          variant="outline"
+          className="mt-6"
+          onClick={() => {
+            setSubmitted(false);
+            setActiveStep(contactSteps[0].value);
+            reset();
+          }}
+        >
+          Send another message
+        </Button>
       </div>
     );
   }
