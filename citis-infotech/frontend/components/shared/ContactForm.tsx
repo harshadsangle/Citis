@@ -82,7 +82,7 @@ export function ContactForm({ className }: { className?: string }) {
 
     const currentStep = contactSteps[currentIndex];
     const isCurrentStepValid = await trigger(currentStep.fields, { shouldFocus: true });
-    if (isCurrentStepValid) setActiveStep(nextStep);
+    if (isCurrentStepValid) setActiveStep(nextStepDefinition.value);
   };
 
   return (
