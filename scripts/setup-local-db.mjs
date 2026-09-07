@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { repositoryRoot } from "./load-local-env.mjs";
 
-const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const isWindows = process.platform === "win32";
+const npmCommand = isWindows ? (process.env.ComSpec || process.env.COMSPEC || "cmd.exe") : "npm";
 const steps = [
   ["db:init", "Apply the LMS database migrations"],
   ["db:seed-demo-learner", "Seed the demo learner"],
@@ -11,7 +12,10 @@ const steps = [
 
 for (const [script, description] of steps) {
   console.log(`\n==> ${description}`);
-  const result = spawnSync(npmCommand, ["run", script], {
+  const commandArgs = isWindows
+    ? ["/d", "/s", "/c", `npm.cmd run ${script}`]
+    : ["run", script];
+  const result = spawnSync(npmCommand, commandArgs, {
     cwd: repositoryRoot,
     env: process.env,
     stdio: "inherit",
