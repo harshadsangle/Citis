@@ -29,17 +29,29 @@ function resolveNextBin(projectDir) {
   return require.resolve("next/dist/bin/next", { paths: [projectDir] });
 }
 
-function hasConfiguredWindowsDatabase() {
-  if (process.env.DATABASE_URL?.trim()) return true;
-
+function readWindowsDatabaseUrl() {
   try {
     const rootEnvironment = readFileSync(path.join(rootDir, ".env.local"), "utf8");
-    return rootEnvironment.split(/\r?\n/).some((line) => {
-      const match = line.match(/^\s*DATABASE_URL\s*=\s*(.*?)\s*$/);
-      if (!match) return false;
-      const value = match[1].trim().replace(/^(['"])(.*)\1$/, "$2").trim();
-      return value.length > 0;
-    });
+    const databaseLine = rootEnvironment
+      .split(/\r?\n/)
+      .find((line) => /^\s*(?:export\s+)?DATABASE_URL\s*=/.test(line));
+    if (databaseLine) {
+      const value = databaseLine.replace(/^\s*(?:export\s+)?DATABASE_URL\s*=\s*/, "").trim();
+      return value.replace(/^(['"])(.*)\1$/, "$2").trim();
+    }
+  } catch {
+    // Fall back to the inherited environment when the local file is absent.
+  }
+
+  return process.env.DATABASE_URL?.trim() || "";
+}
+
+function hasConfiguredWindowsDatabase() {
+  const connectionString = readWindowsDatabaseUrl();
+  if (!connectionString) return false;
+
+  try {
+    return new URL(connectionString).hostname.toLowerCase() !== "helium";
   } catch {
     return false;
   }
@@ -157,42 +169,70 @@ async function waitForHttp(label, url, child, timeoutMilliseconds = 30_000) {
   throw new Error(`${label} did not become ready within ${timeoutMilliseconds}ms: ${lastError}`);
 }
 
-process.on("SIGINT", () => stop(130));
-process.on("SIGTERM", () => stop(143));
+function waitForChildren() {
+  if (children.length === 0) return Promise.resolve();
 
-if (process.platform === "win32") {
+  return new Promise((resolve) => {
+    let resolved = false;
+    const resolveOnce = () => {
+      if (resolved) return;
+      resolved = true;
+      resolve();
+    };
+
+    for (const child of children) {
+      if (child.exitCode !== null) {
+        resolveOnce();
+      } else {
+        child.once("exit", resolveOnce);
+      }
+    }
+  });
+}
+
+async function startWindowsServices() {
   // Clear generated state before startup so a previous root-level build cannot
   // collide with a development cache.
   clearNextCaches();
 
   const publicNextBin = resolveNextBin(publicFrontendDir);
   if (!hasConfiguredWindowsDatabase()) {
-    console.warn("[windows] DATABASE_URL is not configured; starting the public frontend only. Configure the repository-root .env.local to enable the API and LMS portals.");
+    console.warn("[windows] DATABASE_URL is missing, malformed, or points to the Replit-internal helium host; starting the public frontend only. Configure an external DATABASE_URL in the repository-root .env.local to enable the API and LMS portals.");
     launchPublicFrontend(publicNextBin);
-  } else {
-    // Keep the API rooted at the repository while starting each Next app from
-    // its own project directory. The public frontend has a legacy duplicate
-    // App Router tree at the repository root.
-    const api = launch("api", [
-      require.resolve("ts-node/dist/bin.js"),
-      "--project",
-      "services/api/tsconfig.json",
-      "services/api/src/main.ts",
-    ], { env: { ...process.env, PORT: "4000" } });
-
-    try {
-      await waitForHttp("api", "http://127.0.0.1:4000/", api);
-    } catch (error) {
-      console.error(`[api] startup readiness check failed: ${error instanceof Error ? error.message : error}`);
-      stop(1);
-      await new Promise(() => {});
-    }
-
-    const portalNextBin = resolveNextBin(rootDir);
-    launchPortals(portalNextBin);
-    launchPublicFrontend(publicNextBin);
+    return;
   }
-} else {
+
+  // Keep the API rooted at the repository while starting each Next app from
+  // its own project directory. The public frontend has a legacy duplicate
+  // App Router tree at the repository root.
+  const api = launch("api", [
+    require.resolve("ts-node/dist/bin.js"),
+    "--project",
+    "services/api/tsconfig.json",
+    "services/api/src/main.ts",
+  ], { env: { ...process.env, PORT: "4000" } });
+
+  try {
+    await waitForHttp("api", "http://127.0.0.1:4000/", api);
+  } catch (error) {
+    console.error(`[api] startup readiness check failed: ${error instanceof Error ? error.message : error}`);
+    process.exitCode = 1;
+    stop(1);
+    return;
+  }
+
+  const portalNextBin = resolveNextBin(rootDir);
+  launchPortals(portalNextBin);
+  launchPublicFrontend(publicNextBin);
+}
+
+async function main() {
+  process.on("SIGINT", () => stop(130));
+  process.on("SIGTERM", () => stop(143));
+
+  if (process.platform === "win32") {
+    await startWindowsServices();
+  } else {
   const child = spawn("bash", ["scripts/start-all-dev.sh"], {
     cwd: rootDir,
     env: process.env,
@@ -211,6 +251,13 @@ if (process.platform === "win32") {
       stop(code ?? 1);
     }
   });
+  }
+
+  await waitForChildren();
 }
 
-await new Promise(() => {});
+main().catch((error) => {
+  console.error(`[dev] startup failed: ${error instanceof Error ? error.message : error}`);
+  process.exitCode = 1;
+  stop(1);
+});
