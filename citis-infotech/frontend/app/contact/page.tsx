@@ -51,6 +51,15 @@ export default function ContactPage() {
                           </a>
                         </span>
                       </p>
+                      <a
+                        href={SITE_CONFIG.whatsappUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary"
+                      >
+                        <Phone className="size-4 text-primary" />
+                        {office.phone} (WhatsApp)
+                      </a>
                     </div>
                   ))}
                   <div className="space-y-3 border-t border-border pt-5 text-sm text-muted-foreground">
