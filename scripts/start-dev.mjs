@@ -25,10 +25,6 @@ function clearNextCaches() {
   }
 }
 
-function resolveNextBin(projectDir) {
-  return require.resolve("next/dist/bin/next", { paths: [projectDir] });
-}
-
 function readWindowsDatabaseUrl() {
   try {
     const rootEnvironment = readFileSync(path.join(rootDir, ".env.local"), "utf8");
@@ -57,46 +53,19 @@ function hasConfiguredWindowsDatabase() {
   }
 }
 
-function launchPublicFrontend(publicNextBin) {
-  launch("frontend", [
-    publicNextBin,
-    "dev",
-    "--turbopack",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "5000",
-  ], { cwd: publicFrontendDir });
+function launchNpmScript(label, projectDir) {
+  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+  launchCommand(label, npmCommand, ["run", "dev", "--prefix", projectDir]);
 }
 
-function launchPortals(portalNextBin) {
-  launch("student-portal", [
-    portalNextBin,
-    "dev",
-    "apps/student-portal",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "4103",
-  ]);
-  launch("institution-admin", [
-    portalNextBin,
-    "dev",
-    "apps/institution-admin",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "4101",
-  ]);
-  launch("teacher-portal", [
-    portalNextBin,
-    "dev",
-    "apps/teacher-portal",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "4102",
-  ]);
+function launchPublicFrontend() {
+  launchNpmScript("frontend", publicFrontendDir);
+}
+
+function launchPortals() {
+  launchNpmScript("student-portal", path.join(rootDir, "apps", "student-portal"));
+  launchNpmScript("institution-admin", path.join(rootDir, "apps", "institution-admin"));
+  launchNpmScript("teacher-portal", path.join(rootDir, "apps", "teacher-portal"));
 }
 
 function stop(exitCode) {
@@ -120,8 +89,8 @@ function stop(exitCode) {
   forceExit.unref();
 }
 
-function launch(label, args, options = {}) {
-  const child = spawn(process.execPath, args, {
+function launchCommand(label, command, args, options = {}) {
+  const child = spawn(command, args, {
     cwd: options.cwd ?? rootDir,
     env: options.env ?? process.env,
     stdio: "inherit",
@@ -141,6 +110,10 @@ function launch(label, args, options = {}) {
     }
   });
   return child;
+}
+
+function launch(label, args, options = {}) {
+  return launchCommand(label, process.execPath, args, options);
 }
 
 function wait(milliseconds) {
@@ -195,10 +168,9 @@ async function startWindowsServices() {
   // collide with a development cache.
   clearNextCaches();
 
-  const publicNextBin = resolveNextBin(publicFrontendDir);
   if (!hasConfiguredWindowsDatabase()) {
     console.warn("[windows] DATABASE_URL is missing, malformed, or points to the Replit-internal helium host; starting the public frontend only. Configure an external DATABASE_URL in the repository-root .env.local to enable the API and LMS portals.");
-    launchPublicFrontend(publicNextBin);
+    launchPublicFrontend();
     return;
   }
 
@@ -221,9 +193,8 @@ async function startWindowsServices() {
     return;
   }
 
-  const portalNextBin = resolveNextBin(rootDir);
-  launchPortals(portalNextBin);
-  launchPublicFrontend(publicNextBin);
+  launchPortals();
+  launchPublicFrontend();
 }
 
 async function main() {
