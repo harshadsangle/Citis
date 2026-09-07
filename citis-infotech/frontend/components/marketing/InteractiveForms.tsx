@@ -25,6 +25,20 @@ function FormSuccess({ title, copy }: { title: string; copy: string }) {
   return <div role="status" className="surface rounded-xl p-9 text-center"><CheckCircle2 className="mx-auto size-12 text-success" /><h3 className="mt-4 font-heading text-2xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p></div>;
 }
 
+const applyFieldOrder = ["name", "email", "phone", "linkedIn", "portfolio", "coverLetter", "skills", "resume"] as const;
+type ApplyField = typeof applyFieldOrder[number];
+
+const applyFieldIds: Record<ApplyField, string> = {
+  name: "apply-name",
+  email: "apply-email",
+  phone: "apply-phone",
+  linkedIn: "apply-linkedin",
+  portfolio: "apply-portfolio",
+  coverLetter: "apply-cover",
+  skills: "apply-skills",
+  resume: "apply-resume",
+};
+
 function loginErrorMessage(error: unknown, stage: string) {
   if (error instanceof ApiError && stage === "auth/me") {
     return `Sign-in succeeded, but session validation failed (HTTP ${error.status}). Please try again.`;
@@ -86,10 +100,25 @@ export function PartnerInquiryForm() {
 export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitle: string }) {
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState("");
-  const { register, handleSubmit, setValue, formState: { errors, isSubmitting } } = useForm<ApplyJobInput>({
+  const focusValidationId = useRef(0);
+  const { register, handleSubmit, setValue, trigger, getFieldState, formState: { errors, isSubmitting } } = useForm<ApplyJobInput>({
     resolver: zodResolver(applyJobSchema),
     defaultValues: { name: "", email: "", phone: "", jobId, linkedIn: "", portfolio: "", coverLetter: "" },
   });
+
+  const handleApplyFieldFocus = async (field: ApplyField) => {
+    const fieldIndex = applyFieldOrder.indexOf(field);
+    if (fieldIndex <= 0) return;
+
+    const validationId = ++focusValidationId.current;
+    const previousFields = applyFieldOrder.slice(0, fieldIndex);
+    const previousFieldsValid = await trigger(previousFields, { shouldFocus: false });
+    if (validationId !== focusValidationId.current || previousFieldsValid) return;
+
+    const firstInvalidField = previousFields.find((previousField) => getFieldState(previousField).invalid) || previousFields[previousFields.length - 1];
+    document.getElementById(applyFieldIds[firstInvalidField])?.focus();
+  };
+
   const onSubmit = async (values: ApplyJobInput) => {
     setServerError("");
     try {
@@ -124,15 +153,15 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
     <form onSubmit={handleSubmit(onSubmit)} className="surface space-y-5 rounded-xl p-6 sm:p-8" noValidate>
       <input type="hidden" {...register("jobId")} />
       <div className="grid gap-5 sm:grid-cols-2">
-       <div><Label htmlFor="apply-name">Full name *</Label><Input id="apply-name" className="mt-2" required {...register("name")} />{message(errors.name?.message)}</div>
-       <div><Label htmlFor="apply-email">Email *</Label><Input id="apply-email" className="mt-2" type="email" required {...register("email")} />{message(errors.email?.message)}</div>
-       <div><Label htmlFor="apply-phone">Phone *</Label><Input id="apply-phone" className="mt-2" type="tel" required {...register("phone")} />{message(errors.phone?.message)}</div>
-        <div><Label htmlFor="apply-linkedin">LinkedIn</Label><Input id="apply-linkedin" className="mt-2" type="url" placeholder="https://linkedin.com/in/…" {...register("linkedIn")} />{message(errors.linkedIn?.message)}</div>
+       <div><Label htmlFor="apply-name">Full name *</Label><Input id="apply-name" className="mt-2" required {...register("name")} onFocus={() => { void handleApplyFieldFocus("name"); }} />{message(errors.name?.message)}</div>
+       <div><Label htmlFor="apply-email">Email *</Label><Input id="apply-email" className="mt-2" type="email" required {...register("email")} onFocus={() => { void handleApplyFieldFocus("email"); }} />{message(errors.email?.message)}</div>
+       <div><Label htmlFor="apply-phone">Phone *</Label><Input id="apply-phone" className="mt-2" type="tel" required {...register("phone")} onFocus={() => { void handleApplyFieldFocus("phone"); }} />{message(errors.phone?.message)}</div>
+        <div><Label htmlFor="apply-linkedin">LinkedIn</Label><Input id="apply-linkedin" className="mt-2" type="url" placeholder="https://linkedin.com/in/…" {...register("linkedIn")} onFocus={() => { void handleApplyFieldFocus("linkedIn"); }} />{message(errors.linkedIn?.message)}</div>
       </div>
-      <div><Label htmlFor="apply-portfolio">Portfolio</Label><Input id="apply-portfolio" className="mt-2" type="url" placeholder="https://" {...register("portfolio")} />{message(errors.portfolio?.message)}</div>
-       <div><Label htmlFor="apply-cover">Why CITIS InfoTech? *</Label><Textarea id="apply-cover" className="mt-2 min-h-28" required {...register("coverLetter")} />{message(errors.coverLetter?.message)}</div>
-       <div><Label htmlFor="apply-skills">Skills *</Label><Input id="apply-skills" className="mt-2" required placeholder="React, Node.js, Instructional design…" {...register("skills")} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message)}</div>
-       <div><Label htmlFor="apply-resume">Résumé *</Label><label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label><Input id="apply-resume" className="sr-only" required type="file" accept=".pdf,.doc,.docx" onChange={(event) => { const file = event.target.files?.[0]; if (file) setValue("resume", file, { shouldValidate: true }); }} />{message(errors.resume?.message)}</div>
+      <div><Label htmlFor="apply-portfolio">Portfolio</Label><Input id="apply-portfolio" className="mt-2" type="url" placeholder="https://" {...register("portfolio")} onFocus={() => { void handleApplyFieldFocus("portfolio"); }} />{message(errors.portfolio?.message)}</div>
+       <div><Label htmlFor="apply-cover">Why CITIS InfoTech? *</Label><Textarea id="apply-cover" className="mt-2 min-h-28" required {...register("coverLetter")} onFocus={() => { void handleApplyFieldFocus("coverLetter"); }} />{message(errors.coverLetter?.message)}</div>
+       <div><Label htmlFor="apply-skills">Skills *</Label><Input id="apply-skills" className="mt-2" required placeholder="React, Node.js, Instructional design…" {...register("skills")} onFocus={() => { void handleApplyFieldFocus("skills"); }} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message)}</div>
+       <div><Label htmlFor="apply-resume">Résumé *</Label><label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label><Input id="apply-resume" className="sr-only" required type="file" accept=".pdf,.doc,.docx" onFocus={() => { void handleApplyFieldFocus("resume"); }} onChange={(event) => { const file = event.target.files?.[0]; if (file) setValue("resume", file, { shouldValidate: true }); }} />{message(errors.resume?.message)}</div>
       {serverError && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button type="submit" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <><LoaderCircle className="animate-spin" />Submitting…</> : <>Submit application<Send /></>}</Button>
     </form>
