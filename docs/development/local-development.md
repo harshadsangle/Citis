@@ -30,7 +30,7 @@ Install the free PostgreSQL server locally, create a database named
 `citis_lms`, and copy the repository template:
 
 ```text
-C:\Users\Ayush\Citis\citis-education-platform\.env.local
+C:\Users\Ayush\Citis\citis-infotech\.env.local
 ```
 
 ```powershell
