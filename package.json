@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev": "node scripts/start-dev.mjs",
+    "postinstall": "node scripts/ensure-public-frontend.mjs",
     "build": "npm run build --prefix citis-infotech",
     "start": "npm run start --prefix citis-infotech/frontend",
     "lint": "npm run lint --prefix citis-infotech",
