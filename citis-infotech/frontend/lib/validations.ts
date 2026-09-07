@@ -34,8 +34,8 @@ export const loginSchema = z.object({
 });
 
 export const applyJobSchema = z.object({
-  name: z.string().trim().min(2).max(80),
-  email: z.string().trim().email(),
+  name: z.string().trim().min(2, "Name must be at least 2 characters").max(80),
+  email: z.string().trim().email("Enter a valid email address"),
   phone: phoneSchema,
   jobId: z.string().min(1),
   linkedIn: z.string().url().optional().or(z.literal("")),
