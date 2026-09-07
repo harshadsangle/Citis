@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { ArrowRight, Check, LoaderCircle } from "lucide-react";
@@ -10,13 +10,52 @@ import { SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 import { newsletterSchema, type NewsletterInput } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 
+const NEWSLETTER_SUCCESS_STORAGE_KEY = "citis-newsletter-success-until";
+const NEWSLETTER_SUCCESS_DURATION_MS = 5000;
+
 export function NewsletterForm({ className, variant = "light" }: { className?: string; variant?: "light" | "dark" }) {
   const [success, setSuccess] = useState(false);
+  const [successUntil, setSuccessUntil] = useState<number | null>(null);
   const [serverError, setServerError] = useState("");
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<NewsletterInput>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsletterInput>({
     resolver: zodResolver(newsletterSchema),
     defaultValues: { email: "" },
   });
+
+  useEffect(() => {
+    const storedExpiry = window.localStorage.getItem(NEWSLETTER_SUCCESS_STORAGE_KEY);
+    const storedExpiryTime = storedExpiry ? Number(storedExpiry) : NaN;
+
+    if (!Number.isFinite(storedExpiryTime) || storedExpiryTime <= Date.now()) {
+      window.localStorage.removeItem(NEWSLETTER_SUCCESS_STORAGE_KEY);
+      return;
+    }
+
+    setSuccessUntil(storedExpiryTime);
+    setSuccess(true);
+  }, []);
+
+  useEffect(() => {
+    if (!success || successUntil === null) return;
+
+    const remainingTime = successUntil - Date.now();
+    if (remainingTime <= 0) {
+      window.localStorage.removeItem(NEWSLETTER_SUCCESS_STORAGE_KEY);
+      setSuccessUntil(null);
+      setSuccess(false);
+      reset();
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      window.localStorage.removeItem(NEWSLETTER_SUCCESS_STORAGE_KEY);
+      setSuccessUntil(null);
+      setSuccess(false);
+      reset();
+    }, remainingTime);
+
+    return () => window.clearTimeout(timeout);
+  }, [reset, success, successUntil]);
 
   const submit = async ({ email }: NewsletterInput) => {
     setServerError("");
@@ -32,6 +71,9 @@ export function NewsletterForm({ className, variant = "light" }: { className?: s
           `— Sent from the website footer`,
         ].join("\n"),
       });
+      const successExpiry = Date.now() + NEWSLETTER_SUCCESS_DURATION_MS;
+      window.localStorage.setItem(NEWSLETTER_SUCCESS_STORAGE_KEY, String(successExpiry));
+      setSuccessUntil(successExpiry);
       setSuccess(true);
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "Could not open email. Write to support@citis.in.");
