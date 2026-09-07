@@ -56,12 +56,13 @@ function hasConfiguredWindowsDatabase() {
 function launchNpmScript(label, projectDir) {
   if (process.platform === "win32") {
     const comSpec = process.env.ComSpec || process.env.COMSPEC || "cmd.exe";
-    const commandLine = `npm.cmd run dev --prefix "${projectDir.replaceAll('"', '""')}"`;
-    launchCommand(label, comSpec, ["/d", "/s", "/c", commandLine]);
+    launchCommand(label, comSpec, ["/d", "/s", "/c", "npm.cmd run dev"], {
+      cwd: projectDir,
+    });
     return;
   }
 
-  launchCommand(label, "npm", ["run", "dev", "--prefix", projectDir]);
+  launchCommand(label, "npm", ["run", "dev"], { cwd: projectDir });
 }
 
 function launchPublicFrontend() {
