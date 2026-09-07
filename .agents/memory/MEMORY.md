@@ -17,3 +17,4 @@
 - [Nullable scope uniqueness](nullable-scope-uniqueness.md) — nullable campus columns can permit duplicate equivalent user-role scopes despite a unique constraint.
 - [MOS objective imports](mos-objective-imports.md) — keep versioned MOS exam codes as separate tracks and attach each official objective PDF once.
 - [Unity objective imports](unity-objective-imports.md) — preserve Unity Artist, Programmer, and VR Developer as distinct role-based certification tracks with one source PDF each.
+- [GitHub API commit timezone](github-api-commit-timezone.md) — REST-created commits may retain the workspace timezone offset even when API dates are shown in UTC.
