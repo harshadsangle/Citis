@@ -18,3 +18,4 @@
 - [MOS objective imports](mos-objective-imports.md) — keep versioned MOS exam codes as separate tracks and attach each official objective PDF once.
 - [Unity objective imports](unity-objective-imports.md) — preserve Unity Artist, Programmer, and VR Developer as distinct role-based certification tracks with one source PDF each.
 - [GitHub API commit timezone](github-api-commit-timezone.md) — REST-created commits may retain the workspace timezone offset even when API dates are shown in UTC.
+- [GitHub integration commit client](github-integration-commit-client.md) — use the authorized SDK Git client for commits when proxyFetch mishandles array fields.
