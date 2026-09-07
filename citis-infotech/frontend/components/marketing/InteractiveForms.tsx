@@ -39,6 +39,11 @@ const applyFieldIds: Record<ApplyField, string> = {
   resume: "apply-resume",
 };
 
+function formatFileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
 function loginErrorMessage(error: unknown, stage: string) {
   if (error instanceof ApiError && stage === "auth/me") {
     return `Sign-in succeeded, but session validation failed (HTTP ${error.status}). Please try again.`;
@@ -100,6 +105,7 @@ export function PartnerInquiryForm() {
 export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitle: string }) {
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const focusValidationId = useRef(0);
   const { register, handleSubmit, reset, resetField, setValue, trigger, getFieldState, formState: { errors, isSubmitting } } = useForm<ApplyJobInput>({
     resolver: zodResolver(applyJobSchema),
@@ -111,6 +117,7 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
 
     const timeout = window.setTimeout(() => {
       setDone(false);
+      setResumeFile(null);
       reset();
     }, 5000);
 
@@ -172,7 +179,25 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
       <div><Label htmlFor="apply-portfolio">Portfolio</Label><Input id="apply-portfolio" className="mt-2" type="url" placeholder="https://" aria-invalid={!!errors.portfolio} {...register("portfolio")} onFocus={() => { void handleApplyFieldFocus("portfolio"); }} />{message(errors.portfolio?.message)}</div>
        <div><Label htmlFor="apply-cover">Why CITIS InfoTech? *</Label><Textarea id="apply-cover" className="mt-2 min-h-28" required aria-invalid={!!errors.coverLetter} {...register("coverLetter")} onFocus={() => { void handleApplyFieldFocus("coverLetter"); }} />{message(errors.coverLetter?.message)}</div>
        <div><Label htmlFor="apply-skills">Skills *</Label><Input id="apply-skills" className="mt-2" required aria-invalid={!!errors.skills} placeholder="React, Node.js, Instructional design…" {...register("skills")} onFocus={() => { void handleApplyFieldFocus("skills"); }} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message)}</div>
-       <div><Label htmlFor="apply-resume">Résumé *</Label><label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label><Input id="apply-resume" className="sr-only" required type="file" accept=".pdf,.doc,.docx" aria-invalid={!!errors.resume} onFocus={() => { void handleApplyFieldFocus("resume"); }} onChange={(event) => { const file = event.target.files?.[0]; if (file) setValue("resume", file, { shouldValidate: true }); else resetField("resume"); }} />{message(errors.resume?.message)}</div>
+       <div>
+         <Label htmlFor="apply-resume">Résumé *</Label>
+         {resumeFile ? (
+           <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/5 p-4 text-sm">
+             <label htmlFor="apply-resume" className="flex min-w-0 cursor-pointer items-center gap-3">
+               <CheckCircle2 className="size-5 shrink-0 text-success" />
+               <span className="min-w-0">
+                 <span className="block font-medium text-success">Uploaded</span>
+                 <span className="block truncate text-muted-foreground">{resumeFile.name} · {formatFileSize(resumeFile.size)}</span>
+               </span>
+             </label>
+             <button type="button" className="shrink-0 text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline" onClick={() => { setResumeFile(null); resetField("resume"); const input = document.getElementById("apply-resume") as HTMLInputElement | null; if (input) input.value = ""; }}>Remove</button>
+           </div>
+         ) : (
+           <label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label>
+         )}
+         <Input id="apply-resume" className="sr-only" required type="file" accept=".pdf,.doc,.docx" aria-invalid={!!errors.resume} onFocus={() => { void handleApplyFieldFocus("resume"); }} onChange={(event) => { const file = event.target.files?.[0]; if (file) { setResumeFile(file); setValue("resume", file, { shouldValidate: true }); } else { setResumeFile(null); resetField("resume"); } }} />
+         {message(errors.resume?.message)}
+       </div>
       {serverError && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button type="submit" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <><LoaderCircle className="animate-spin" />Submitting…</> : <>Submit application<Send /></>}</Button>
     </form>
