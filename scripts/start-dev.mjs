@@ -1,12 +1,33 @@
 import { spawn, spawnSync } from "node:child_process";
+import { rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import path from "node:path";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const publicFrontendDir = path.join(rootDir, "citis-infotech", "frontend");
+const nextProjectDirs = [
+  rootDir,
+  path.join(rootDir, "apps", "institution-admin"),
+  path.join(rootDir, "apps", "parent-portal"),
+  path.join(rootDir, "apps", "student-portal"),
+  path.join(rootDir, "apps", "super-admin"),
+  path.join(rootDir, "apps", "teacher-portal"),
+  publicFrontendDir,
+];
 const require = createRequire(import.meta.url);
 const children = [];
 let stopping = false;
+
+function clearNextCaches() {
+  for (const projectDir of nextProjectDirs) {
+    rmSync(path.join(projectDir, ".next"), { recursive: true, force: true });
+  }
+}
+
+function resolveNextBin(projectDir) {
+  return require.resolve("next/dist/bin/next", { paths: [projectDir] });
+}
 
 function stop(exitCode) {
   if (stopping) return;
@@ -82,6 +103,10 @@ process.on("SIGINT", () => stop(130));
 process.on("SIGTERM", () => stop(143));
 
 if (process.platform === "win32") {
+  // Clear generated state before startup so a previous root-level build cannot
+  // collide with a development cache.
+  clearNextCaches();
+
   // Keep the API rooted at the repository while starting each Next app from
   // its own project directory. The public frontend has a legacy duplicate
   // App Router tree at the repository root.
@@ -100,18 +125,19 @@ if (process.platform === "win32") {
     await new Promise(() => {});
   }
 
-  const nextBin = require.resolve("next/dist/bin/next");
+  const publicNextBin = resolveNextBin(publicFrontendDir);
+  const portalNextBin = resolveNextBin(rootDir);
   launch("frontend", [
-    nextBin,
+    publicNextBin,
     "dev",
     "--turbopack",
     "--hostname",
     "0.0.0.0",
     "--port",
     "5000",
-  ], { cwd: path.join(rootDir, "citis-infotech/frontend") });
+  ], { cwd: publicFrontendDir });
   launch("student-portal", [
-    nextBin,
+    portalNextBin,
     "dev",
     "apps/student-portal",
     "--hostname",
@@ -120,7 +146,7 @@ if (process.platform === "win32") {
     "4103",
   ]);
   launch("institution-admin", [
-    nextBin,
+    portalNextBin,
     "dev",
     "apps/institution-admin",
     "--hostname",
@@ -129,7 +155,7 @@ if (process.platform === "win32") {
     "4101",
   ]);
   launch("teacher-portal", [
-    nextBin,
+    portalNextBin,
     "dev",
     "apps/teacher-portal",
     "--hostname",
