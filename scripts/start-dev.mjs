@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { rmSync } from "node:fs";
+import { readFileSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -27,6 +27,64 @@ function clearNextCaches() {
 
 function resolveNextBin(projectDir) {
   return require.resolve("next/dist/bin/next", { paths: [projectDir] });
+}
+
+function hasConfiguredWindowsDatabase() {
+  if (process.env.DATABASE_URL?.trim()) return true;
+
+  try {
+    const rootEnvironment = readFileSync(path.join(rootDir, ".env.local"), "utf8");
+    return rootEnvironment.split(/\r?\n/).some((line) => {
+      const match = line.match(/^\s*DATABASE_URL\s*=\s*(.*?)\s*$/);
+      if (!match) return false;
+      const value = match[1].trim().replace(/^(['"])(.*)\1$/, "$2").trim();
+      return value.length > 0;
+    });
+  } catch {
+    return false;
+  }
+}
+
+function launchPublicFrontend(publicNextBin) {
+  launch("frontend", [
+    publicNextBin,
+    "dev",
+    "--turbopack",
+    "--hostname",
+    "0.0.0.0",
+    "--port",
+    "5000",
+  ], { cwd: publicFrontendDir });
+}
+
+function launchPortals(portalNextBin) {
+  launch("student-portal", [
+    portalNextBin,
+    "dev",
+    "apps/student-portal",
+    "--hostname",
+    "0.0.0.0",
+    "--port",
+    "4103",
+  ]);
+  launch("institution-admin", [
+    portalNextBin,
+    "dev",
+    "apps/institution-admin",
+    "--hostname",
+    "0.0.0.0",
+    "--port",
+    "4101",
+  ]);
+  launch("teacher-portal", [
+    portalNextBin,
+    "dev",
+    "apps/teacher-portal",
+    "--hostname",
+    "0.0.0.0",
+    "--port",
+    "4102",
+  ]);
 }
 
 function stop(exitCode) {
@@ -107,62 +165,33 @@ if (process.platform === "win32") {
   // collide with a development cache.
   clearNextCaches();
 
-  // Keep the API rooted at the repository while starting each Next app from
-  // its own project directory. The public frontend has a legacy duplicate
-  // App Router tree at the repository root.
-  const api = launch("api", [
-    require.resolve("ts-node/dist/bin.js"),
-    "--project",
-    "services/api/tsconfig.json",
-    "services/api/src/main.ts",
-  ], { env: { ...process.env, PORT: "4000" } });
-
-  try {
-    await waitForHttp("api", "http://127.0.0.1:4000/", api);
-  } catch (error) {
-    console.error(`[api] startup readiness check failed: ${error instanceof Error ? error.message : error}`);
-    stop(1);
-    await new Promise(() => {});
-  }
-
   const publicNextBin = resolveNextBin(publicFrontendDir);
-  const portalNextBin = resolveNextBin(rootDir);
-  launch("frontend", [
-    publicNextBin,
-    "dev",
-    "--turbopack",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "5000",
-  ], { cwd: publicFrontendDir });
-  launch("student-portal", [
-    portalNextBin,
-    "dev",
-    "apps/student-portal",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "4103",
-  ]);
-  launch("institution-admin", [
-    portalNextBin,
-    "dev",
-    "apps/institution-admin",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "4101",
-  ]);
-  launch("teacher-portal", [
-    portalNextBin,
-    "dev",
-    "apps/teacher-portal",
-    "--hostname",
-    "0.0.0.0",
-    "--port",
-    "4102",
-  ]);
+  if (!hasConfiguredWindowsDatabase()) {
+    console.warn("[windows] DATABASE_URL is not configured; starting the public frontend only. Configure the repository-root .env.local to enable the API and LMS portals.");
+    launchPublicFrontend(publicNextBin);
+  } else {
+    // Keep the API rooted at the repository while starting each Next app from
+    // its own project directory. The public frontend has a legacy duplicate
+    // App Router tree at the repository root.
+    const api = launch("api", [
+      require.resolve("ts-node/dist/bin.js"),
+      "--project",
+      "services/api/tsconfig.json",
+      "services/api/src/main.ts",
+    ], { env: { ...process.env, PORT: "4000" } });
+
+    try {
+      await waitForHttp("api", "http://127.0.0.1:4000/", api);
+    } catch (error) {
+      console.error(`[api] startup readiness check failed: ${error instanceof Error ? error.message : error}`);
+      stop(1);
+      await new Promise(() => {});
+    }
+
+    const portalNextBin = resolveNextBin(rootDir);
+    launchPortals(portalNextBin);
+    launchPublicFrontend(publicNextBin);
+  }
 } else {
   const child = spawn("bash", ["scripts/start-all-dev.sh"], {
     cwd: rootDir,
