@@ -28,9 +28,9 @@ start_service npm run dev --prefix apps/institution-admin
 start_service npm run dev --prefix apps/student-portal
 start_service npm run dev --prefix apps/teacher-portal
 
-# Start the LMS frontend explicitly from the project root. Do not use the
-# legacy citis-infotech package wrapper, which changes the child process cwd to
-# a duplicated citis-infotech/frontend path.
-start_service npm exec -- next dev citis-infotech/frontend --turbopack --hostname 0.0.0.0 --port 5000
+# Start the public frontend from its own project directory. The repository also
+# contains a legacy root-level App Router tree, so keeping this process rooted
+# in the public app prevents Next.js from registering the wrong route tree.
+start_service bash -c "cd -- \"$ROOT_DIR/citis-infotech/frontend\" && exec npm exec -- next dev --turbopack --hostname 0.0.0.0 --port 5000"
 
 wait -n "${pids[@]}"

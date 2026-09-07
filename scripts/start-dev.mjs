@@ -31,7 +31,7 @@ function stop(exitCode) {
 
 function launch(label, args, options = {}) {
   const child = spawn(process.execPath, args, {
-    cwd: rootDir,
+    cwd: options.cwd ?? rootDir,
     env: options.env ?? process.env,
     stdio: "inherit",
     windowsHide: false,
@@ -82,8 +82,9 @@ process.on("SIGINT", () => stop(130));
 process.on("SIGTERM", () => stop(143));
 
 if (process.platform === "win32") {
-  // Invoke both services from the repository root. Calling the nested npm
-  // wrapper here would recreate the duplicated frontend path on Windows.
+  // Keep the API rooted at the repository while starting each Next app from
+  // its own project directory. The public frontend has a legacy duplicate
+  // App Router tree at the repository root.
   const api = launch("api", [
     require.resolve("ts-node/dist/bin.js"),
     "--project",
@@ -103,13 +104,12 @@ if (process.platform === "win32") {
   launch("frontend", [
     nextBin,
     "dev",
-    "citis-infotech/frontend",
     "--turbopack",
     "--hostname",
     "0.0.0.0",
     "--port",
     "5000",
-  ]);
+  ], { cwd: path.join(rootDir, "citis-infotech/frontend") });
   launch("student-portal", [
     nextBin,
     "dev",
