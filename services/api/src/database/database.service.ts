@@ -26,7 +26,7 @@ function assertLocalDatabaseTarget(connectionString: string) {
 
   if (hostname === "helium") {
     throw new Error(
-      "Windows local development requires an externally reachable DATABASE_URL in the repository-root .env.local; the Replit-internal helium host is not reachable from Windows.",
+      "Windows local development requires a local PostgreSQL DATABASE_URL in the repository-root .env.local; the Replit-internal helium host is not reachable from Windows.",
     );
   }
 }

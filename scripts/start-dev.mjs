@@ -200,7 +200,7 @@ async function startWindowsServices() {
   clearNextCaches();
 
   if (!hasConfiguredWindowsDatabase()) {
-    console.warn("[windows] DATABASE_URL is missing, malformed, or points to the Replit-internal helium host; starting the public frontend only. Configure an external DATABASE_URL in the repository-root .env.local to enable the API and LMS portals.");
+    console.warn("[windows] DATABASE_URL is missing, malformed, or points to the Replit-internal helium host; starting the public frontend only. Configure a local PostgreSQL DATABASE_URL in the repository-root .env.local to enable the API and LMS portals.");
     launchPublicFrontend();
     return;
   }
