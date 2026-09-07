@@ -101,10 +101,21 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   const [done, setDone] = useState(false);
   const [serverError, setServerError] = useState("");
   const focusValidationId = useRef(0);
-  const { register, handleSubmit, setValue, trigger, getFieldState, formState: { errors, isSubmitting } } = useForm<ApplyJobInput>({
+  const { register, handleSubmit, reset, setValue, trigger, getFieldState, formState: { errors, isSubmitting } } = useForm<ApplyJobInput>({
     resolver: zodResolver(applyJobSchema),
     defaultValues: { name: "", email: "", phone: "", jobId, linkedIn: "", portfolio: "", coverLetter: "" },
   });
+
+  useEffect(() => {
+    if (!done) return;
+
+    const timeout = window.setTimeout(() => {
+      setDone(false);
+      reset();
+    }, 5000);
+
+    return () => window.clearTimeout(timeout);
+  }, [done, reset]);
 
   const handleApplyFieldFocus = async (field: ApplyField) => {
     const fieldIndex = applyFieldOrder.indexOf(field);
