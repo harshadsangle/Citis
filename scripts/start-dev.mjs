@@ -233,24 +233,24 @@ async function main() {
   if (process.platform === "win32") {
     await startWindowsServices();
   } else {
-  const child = spawn("bash", ["scripts/start-all-dev.sh"], {
-    cwd: rootDir,
-    env: process.env,
-    stdio: "inherit",
-  });
-  children.push(child);
+    const child = spawn("bash", ["scripts/start-all-dev.sh"], {
+      cwd: rootDir,
+      env: process.env,
+      stdio: "inherit",
+    });
+    children.push(child);
 
-  child.on("error", (error) => {
-    console.error(`[linux] failed to start: ${error.message}`);
-    stop(1);
-  });
-  child.on("exit", (code, signal) => {
-    if (!stopping) {
-      const status = signal ? `signal ${signal}` : `exit ${code ?? 1}`;
-      console.error(`[linux] workflow stopped with ${status}`);
-      stop(code ?? 1);
-    }
-  });
+    child.on("error", (error) => {
+      console.error(`[linux] failed to start: ${error.message}`);
+      stop(1);
+    });
+    child.on("exit", (code, signal) => {
+      if (!stopping) {
+        const status = signal ? `signal ${signal}` : `exit ${code ?? 1}`;
+        console.error(`[linux] workflow stopped with ${status}`);
+        stop(code ?? 1);
+      }
+    });
   }
 
   await waitForChildren();
