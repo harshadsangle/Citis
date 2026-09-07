@@ -54,8 +54,14 @@ function hasConfiguredWindowsDatabase() {
 }
 
 function launchNpmScript(label, projectDir) {
-  const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
-  launchCommand(label, npmCommand, ["run", "dev", "--prefix", projectDir]);
+  if (process.platform === "win32") {
+    const comSpec = process.env.ComSpec || process.env.COMSPEC || "cmd.exe";
+    const commandLine = `npm.cmd run dev --prefix "${projectDir.replaceAll('"', '""')}"`;
+    launchCommand(label, comSpec, ["/d", "/s", "/c", commandLine]);
+    return;
+  }
+
+  launchCommand(label, "npm", ["run", "dev", "--prefix", projectDir]);
 }
 
 function launchPublicFrontend() {
