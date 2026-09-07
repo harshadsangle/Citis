@@ -65,7 +65,31 @@ function launchNpmScript(label, projectDir) {
   launchCommand(label, "npm", ["run", "dev"], { cwd: projectDir });
 }
 
+function launchLocalNext(label, projectDir, args) {
+  const projectNodeModules = path.join(projectDir, "node_modules");
+  const nodePath = [projectNodeModules, process.env.NODE_PATH].filter(Boolean).join(path.delimiter);
+  launchCommand(label, process.execPath, [
+    path.join(projectNodeModules, "next", "dist", "bin", "next"),
+    ...args,
+  ], {
+    cwd: projectDir,
+    env: { ...process.env, NODE_PATH: nodePath },
+  });
+}
+
 function launchPublicFrontend() {
+  if (process.platform === "win32") {
+    launchLocalNext("frontend", publicFrontendDir, [
+      "dev",
+      "--turbopack",
+      "--hostname",
+      "0.0.0.0",
+      "--port",
+      "5000",
+    ]);
+    return;
+  }
+
   launchNpmScript("frontend", publicFrontendDir);
 }
 
