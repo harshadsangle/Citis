@@ -8,6 +8,7 @@
 - [LMS certificate lifecycle](lms-certificate-lifecycle.md) — issue only from validated, complete outcomes and keep public verification on a safe-field allowlist.
 - [Nested Next React runtime](nested-next-react-runtime.md) — the standalone public app must keep hook libraries and the renderer on one local React runtime.
 - [Next dev/build collision](next-dev-build-collision.md) — never run a production build concurrently with the managed workflow sharing a `.next` directory.
+- [Public frontend project root](public-frontend-project-root.md) — start the public Next app from its own directory because a duplicate root App Router tree exists in the workspace.
 - [CompTIA objective imports](comptia-objective-imports.md) — ignore repeated TOC markers and nested examples when mapping official PDF objectives to LMS lessons.
 - [LMS authentication diagnosis](lms-auth-diagnosis.md) — verify login, session lookup, portal entry, and dashboard requests separately before changing auth logic.
 - [LMS provider branding](lms-provider-branding.md) — certification catalogue headers need contained provider-specific marks verified in the live preview.
