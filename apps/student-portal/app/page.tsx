@@ -437,19 +437,31 @@ function resourceUrl(resource: LearningResource) {
 function videoEmbedUrl(value: string) {
   try {
     const url = new URL(value);
+    const origin = typeof window === "undefined" ? "" : window.location.origin;
     if (url.hostname.includes("youtube.com")) {
       const videoId = url.searchParams.get("v");
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : value;
+      return videoId ? `https://www.youtube.com/embed/${videoId}?enablejsapi=1&playsinline=1${origin ? `&origin=${encodeURIComponent(origin)}` : ""}` : value;
     }
-    if (url.hostname === "youtu.be") return `https://www.youtube.com/embed${url.pathname}`;
+    if (url.hostname === "youtu.be") return `https://www.youtube.com/embed${url.pathname}?enablejsapi=1&playsinline=1${origin ? `&origin=${encodeURIComponent(origin)}` : ""}`;
     if (url.hostname.includes("vimeo.com")) {
       const videoId = url.pathname.split("/").filter(Boolean).pop();
-      return videoId ? `https://player.vimeo.com/video/${videoId}` : value;
+      return videoId ? `https://player.vimeo.com/video/${videoId}?api=1&title=0&byline=0&portrait=0` : value;
     }
   } catch {
     return value;
   }
   return value;
+}
+
+function embeddedVideoProvider(value: string): "youtube" | "vimeo" | null {
+  try {
+    const hostname = new URL(value).hostname.toLowerCase();
+    if (hostname.includes("youtube.com") || hostname === "youtu.be") return "youtube";
+    if (hostname.includes("vimeo.com")) return "vimeo";
+  } catch {
+    return null;
+  }
+  return null;
 }
 
 function resourceIsVideo(resource: LearningResource) {
