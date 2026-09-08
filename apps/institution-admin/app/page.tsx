@@ -6,6 +6,7 @@ import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import { lmsHomepageUrl } from "./lms-homepage";
+import { lmsPortalUrl } from "./lms-portal-url";
 
 type Kind = "programmes" | "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
@@ -504,19 +505,17 @@ export default function InstitutionAdminPage() {
               <span className="nav-icon">{section.icon}</span>{section.shortLabel}
             </button>
           ))}
-           <button
-             className={`nav-link ${relationshipMode === "enrollments" ? "active" : ""}`}
+            <button
+              className="nav-link"
              type="button"
-             disabled={!ids.courseId}
-             onClick={() => ids.courseId && openRelationship("enrollments", ids.courseId, trail.at(-1)?.label || "Selected course")}
+              onClick={() => window.location.assign(lmsPortalUrl("learner"))}
            >
              <span className="nav-icon">E</span>Learners
            </button>
            <button
-             className={`nav-link ${relationshipMode === "instructors" ? "active" : ""}`}
+              className="nav-link"
              type="button"
-             disabled={!ids.courseId}
-             onClick={() => ids.courseId && openRelationship("instructors", ids.courseId, trail.at(-1)?.label || "Selected course")}
+              onClick={() => window.location.assign(lmsPortalUrl("instructor"))}
            >
              <span className="nav-icon">T</span>Instructors
            </button>
