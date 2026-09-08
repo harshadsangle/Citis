@@ -542,7 +542,7 @@ function LearningResourceViewer({
 }) {
   const [activeResourceId, setActiveResourceId] = useState("");
   const [videoStates, setVideoStates] = useState<Record<string, VideoWatchState>>({});
-  const videoTracker = useRef<{ resourceId: string; lastTime: number; seeking: boolean }>({ resourceId: "", lastTime: 0, seeking: false });
+  const videoTracker = useRef<{ resourceId: string; lastTime: number; duration: number; seeking: boolean }>({ resourceId: "", lastTime: 0, duration: 0, seeking: false });
   const embeddedVideoFrame = useRef<HTMLIFrameElement | null>(null);
   const activeResource = resources.find((resource) => resource.id === activeResourceId) || resources[0];
 
@@ -553,7 +553,7 @@ function LearningResourceViewer({
       nextVideoStates[resource.id] = readVideoWatchState(lessonId, resource);
     });
     setVideoStates(nextVideoStates);
-    videoTracker.current = { resourceId: resources[0]?.id || "", lastTime: 0, seeking: false };
+    videoTracker.current = { resourceId: resources[0]?.id || "", lastTime: 0, duration: 0, seeking: false };
   }, [lessonId, resources]);
 
   useEffect(() => {
@@ -572,22 +572,22 @@ function LearningResourceViewer({
     });
   }, [error, loading, onVideoStateChange, resources, videoStates]);
 
-  function persistVideoState(resourceId: string, state: VideoWatchState) {
+  const persistVideoState = useCallback((resourceId: string, state: VideoWatchState) => {
     if (typeof window === "undefined") return;
     try {
       window.localStorage.setItem(videoProgressStorageKey(lessonId, resourceId), JSON.stringify(state));
     } catch {
       // Browser storage may be unavailable; the in-memory state still gates completion.
     }
-  }
+  }, [lessonId]);
 
-  function recordVideoProgress(resourceId: string, currentTime: number, duration: number) {
+  const recordVideoProgress = useCallback((resourceId: string, currentTime: number, duration: number) => {
     setVideoStates((current) => {
       const nextState = mergeWatchedRange(current[resourceId] || emptyVideoWatchState(duration), videoTracker.current.lastTime, currentTime, duration);
       persistVideoState(resourceId, nextState);
       return { ...current, [resourceId]: nextState };
     });
-  }
+  }, [persistVideoState]);
 
   function activeVideoState() {
     if (!activeResource || !resourceIsVideo(activeResource)) return undefined;
@@ -598,7 +598,7 @@ function LearningResourceViewer({
     const video = event.currentTarget;
     const resourceId = activeResource?.id || "";
     if (!resourceId || videoTracker.current.resourceId !== resourceId) {
-      videoTracker.current = { resourceId, lastTime: video.currentTime, seeking: false };
+      videoTracker.current = { resourceId, lastTime: video.currentTime, duration: video.duration, seeking: false };
       return;
     }
     const previousTime = videoTracker.current.lastTime;
@@ -607,6 +607,7 @@ function LearningResourceViewer({
       recordVideoProgress(resourceId, video.currentTime, video.duration);
     }
     videoTracker.current.lastTime = video.currentTime;
+    videoTracker.current.duration = video.duration;
     videoTracker.current.seeking = false;
   }
 
@@ -614,7 +615,7 @@ function LearningResourceViewer({
     const video = event.currentTarget;
     const resourceId = activeResource?.id || "";
     if (!resourceId) return;
-    videoTracker.current = { resourceId, lastTime: video.currentTime, seeking: false };
+    videoTracker.current = { resourceId, lastTime: video.currentTime, duration: video.duration, seeking: false };
     setVideoStates((current) => {
       const existing = current[resourceId] || emptyVideoWatchState();
       const nextState = {
@@ -639,10 +640,10 @@ function LearningResourceViewer({
     }
   }
 
-  function handleEmbeddedVideoTime(resourceId: string, currentTime: number, duration: number) {
+  const handleEmbeddedVideoTime = useCallback((resourceId: string, currentTime: number, duration: number) => {
     if (!Number.isFinite(currentTime) || !Number.isFinite(duration) || duration <= 0) return;
     if (videoTracker.current.resourceId !== resourceId) {
-      videoTracker.current = { resourceId, lastTime: currentTime, seeking: false };
+      videoTracker.current = { resourceId, lastTime: currentTime, duration, seeking: false };
       return;
     }
     const delta = currentTime - videoTracker.current.lastTime;
@@ -650,8 +651,9 @@ function LearningResourceViewer({
       recordVideoProgress(resourceId, currentTime, duration);
     }
     videoTracker.current.lastTime = currentTime;
+    videoTracker.current.duration = duration;
     videoTracker.current.seeking = false;
-  }
+  }, [recordVideoProgress]);
 
   const activeResourceUrl = activeResource ? resourceUrl(activeResource) : "";
   const activeResourceIsEmbed = Boolean(activeResource && resourceIsVideo(activeResource) && /^https?:\/\//i.test(activeResourceUrl) && !/\.(mp4|webm|ogg)(?:$|\?)/i.test(activeResourceUrl));
@@ -659,7 +661,7 @@ function LearningResourceViewer({
   useEffect(() => {
     const frame = embeddedVideoFrame.current;
     const provider = activeResourceIsEmbed ? embeddedVideoProvider(activeResourceUrl) : null;
-    if (loading || error || !frame || !activeResource || !provider) return;
+    if (loading || error || !frame || !activeResource?.id || !provider) return;
     const resourceId = activeResource.id;
     const targetOrigin = provider === "youtube" ? "https://www.youtube.com" : "https://player.vimeo.com";
     const send = (message: Record<string, unknown>) => {
@@ -678,18 +680,16 @@ function LearningResourceViewer({
         handleEmbeddedVideoTime(resourceId, Number(data.info.currentTime), Number(data.info.duration));
       }
       if (provider === "youtube" && data.event === "onStateChange" && Number(data.info) === 0) {
-        const state = videoStates[resourceId];
-        if (state && videoTracker.current.lastTime >= state.duration - 1.5) {
-          recordVideoProgress(resourceId, state.duration, state.duration);
+        if (videoTracker.current.duration > 0 && videoTracker.current.lastTime >= videoTracker.current.duration - 1.5) {
+          recordVideoProgress(resourceId, videoTracker.current.duration, videoTracker.current.duration);
         }
       }
       if (provider === "vimeo" && data.event === "timeupdate" && data.data) {
         handleEmbeddedVideoTime(resourceId, Number(data.data.seconds), Number(data.data.duration));
       }
       if (provider === "vimeo" && data.event === "ended") {
-        const state = videoStates[resourceId];
-        if (state && videoTracker.current.lastTime >= state.duration - 1.5) {
-          recordVideoProgress(resourceId, state.duration, state.duration);
+        if (videoTracker.current.duration > 0 && videoTracker.current.lastTime >= videoTracker.current.duration - 1.5) {
+          recordVideoProgress(resourceId, videoTracker.current.duration, videoTracker.current.duration);
         }
       }
     };
@@ -719,7 +719,7 @@ function LearningResourceViewer({
       frame.removeEventListener("load", initialize);
       window.clearInterval(poll);
     };
-  }, [activeResource?.id, activeResourceIsEmbed, activeResourceUrl, error, loading]);
+  }, [activeResource?.id, activeResourceIsEmbed, activeResourceUrl, error, handleEmbeddedVideoTime, loading, recordVideoProgress]);
 
   if (loading) {
     return <div className="lesson-resource-loading"><span className="resource-loading-dot" /> Loading lesson media…</div>;
@@ -766,7 +766,7 @@ function LearningResourceViewer({
             onEnded={handleVideoEnded}
             onLoadedMetadata={handleVideoLoadedMetadata}
             onPlay={(event) => {
-              videoTracker.current = { resourceId: activeResource.id, lastTime: event.currentTarget.currentTime, seeking: false };
+              videoTracker.current = { resourceId: activeResource.id, lastTime: event.currentTarget.currentTime, duration: event.currentTarget.duration, seeking: false };
             }}
             onSeeking={() => { videoTracker.current.seeking = true; }}
             onSeeked={handleVideoSeeked}
