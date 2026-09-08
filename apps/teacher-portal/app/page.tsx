@@ -2238,6 +2238,31 @@ export default function TeacherPortalPage() {
          @media (prefers-reduced-motion: reduce) {
            *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
          }
+          /* Final readable scale for non-heading LMS content. Main h1 and metric values stay unchanged. */
+          body { font-size: 16px; line-height: 1.6; }
+          p, li { font-size: 16px; line-height: 1.65; }
+          button:not(.icon-button), input, select, textarea { font-size: 14px; line-height: 1.45; }
+          .brand small, .sidebar-foot span, .profile-trigger-copy small, .profile-menu-item small,
+          .muted, .metric-foot, .heading-identity small, .table-caption, .course-main small,
+          .course-side small, .action-row small, .module-title small, .lesson-title small,
+          .resource-row small, .assignment-title small, .assignment-meta small, .assessment-title small,
+          .assessment-meta small, .submission-course small, .question-heading small,
+          .attempt-question small, .attempt-feedback { font-size: 13px; line-height: 1.5; }
+          .sidebar-label, .live-label, .help-link, .profile-trigger-copy strong, .profile-menu-item strong,
+          .eyebrow, .metric-label, .heading-identity strong, .course-side em, .status-pill,
+          .scope-note, .submission-body a, .submission-detail > a, .form-grid label,
+          .grade-bar label, .attempt-grade-form label { font-size: 13px; line-height: 1.45; }
+          .nav-item, .primary-button, .secondary-button, .course-main strong, .action-row strong,
+          .module-title strong, .lesson-title strong, .resource-row strong, .assignment-title strong,
+          .assessment-title strong, .submission-course strong, th, td { font-size: 14px; line-height: 1.5; }
+          .intro, .panel-copy, .panel-subtitle, .assignment-description, .assessment-description,
+          .submission-body p, .submission-detail > p, .submission-copy { font-size: 16px; line-height: 1.65; }
+          .panel-heading h2 { font-size: 20px; }
+          .state strong { font-size: 16px; line-height: 1.35; }
+          .state p { font-size: 16px; line-height: 1.65; }
+          .subsection-heading h3 { font-size: 17px; }
+          .subsection-heading h4, .editor-heading h3 { font-size: 15px; }
+          .alert, .inline-state, .inline-alert, .workspace-note { font-size: 14px; line-height: 1.6; }
       `}</style>
     </main>
   );

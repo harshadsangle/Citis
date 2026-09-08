@@ -1149,3 +1149,53 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .assessment-review-heading h4 { font-size: 23px; }
 .course-detail-side-list span, .detail-curriculum-list details > div > span { font-size: 13px; }
 .assignment-card-status p, .assignment-form-help { font-size: 12px; }
+
+/* Final readable scale for non-heading LMS content. Main headings and metric values stay unchanged. */
+body { font-size: 16px; line-height: 1.6; }
+p, li { font-size: 16px; line-height: 1.65; }
+button:not(.icon-button), input, select, textarea { font-size: 14px; line-height: 1.45; }
+.portal-brand-label, .portal-session, .profile-trigger-copy strong, .profile-menu-item strong,
+.portal-eyebrow, .catalogue-eyebrow, .course-detail-eyebrow, .course-detail-label,
+.course-card-art-kicker, .catalogue-total span, .catalogue-stat-row small, .catalogue-sort,
+.catalogue-filter-row button, .catalogue-results-line, .course-detail-context,
+.course-role-list span, .course-roadmap-heading > span, .course-module-progress,
+.module-progress-line, .catalogue-empty button, .course-card-actions button,
+.course-detail-continue, .section-heading-note, .section-heading-notice, .assessment-notice,
+.certificate-kicker, .assignment-context, .certificate-download-button, .assignment-error,
+.assignment-card-status strong, .assignment-card-status > span, .submission-state-heading > span,
+.assignment-form > label, .assessment-history-copy > span, .assessment-history-feedback,
+.assessment-header-kicker, .assessment-header-copy p, .assessment-status-card > span,
+.assessment-status-card small, .assessment-progress-heading > div > span,
+.assessment-progress-heading > span, .assessment-progress-tip p, .assessment-question-topline,
+.assessment-question-type, .assessment-text-answer label, .assessment-navigation > div > span,
+.assessment-alert, .assessment-result-kicker, .assessment-result-hero p,
+.assessment-result-score span, .assessment-review-heading > span, .assessment-review-number,
+.assessment-review-copy p, .assessment-review-mark span, .assessment-list-copy p,
+.lesson-article-kicker, .lesson-resource-kicker, .lesson-resource-select span,
+.lesson-video-gate p, .lesson-video-gate-progress > span, .lesson-error,
+.lesson-completion-card p, .continue-learning-art span, .continue-learning-state,
+.continue-learning-progress p { font-size: 14px; line-height: 1.55; }
+.profile-trigger-copy small, .profile-menu-item small, .course-code, .course-module-name small,
+.course-lesson small, .learning-course-code, .learning-header-progress-bottomline,
+.learning-module-heading small, .learning-lesson-item small, .certificate-number,
+.certificate-number strong, .assignment-card-meta, .assignment-card-meta small,
+.assignment-detail-meta, .assignment-detail-meta small, .submission-date,
+.assignment-form-help, .assessment-history-result span, .lesson-resource-watch-status > span,
+.course-detail-side-card > p, .course-detail-side-list b, .detail-curriculum-list summary small,
+.detail-curriculum-list details > div > span { font-size: 13px; line-height: 1.5; }
+.portal-hero-copy > p { font-size: 20px; line-height: 1.65; }
+.portal-hero-card > span:not(.portal-hero-card-icon), .portal-hero-card small,
+.course-short-description, .course-detail-section p, .course-detail-intro, .course-bullet-list li,
+.catalogue-empty p, .learning-course-heading p, .assignment-description, .assignment-instructions,
+.submission-text, .submission-feedback, .assessment-history-feedback, .assessment-list-copy p,
+.assessment-result-hero p, .assessment-review-copy p, .lesson-content-card p,
+.lesson-resource-link-card p, .lesson-resource-empty p, .course-complete-banner p { font-size: 17px; line-height: 1.65; }
+.course-card-meta, .course-card-meta strong, .course-progress-label, .course-module-name strong,
+.course-lesson strong, .learning-module-heading strong, .learning-lesson-item strong,
+.lesson-navigation button strong, .lesson-resource-footer strong, .portal-hero-proof strong,
+.portal-loading-card > strong, .certificates-empty strong, .assignment-empty strong,
+.assignment-card-status p, .assignment-card-status strong, .assignment-submission-state strong,
+.assignment-submission-state strong { font-size: 16px; line-height: 1.5; }
+.certificates-empty span:last-child, .assignment-empty span:last-child,
+.portal-state-card p, .portal-loading-card > span:last-child { font-size: 17px; line-height: 1.65; }
+.lesson-video-gate p, .lesson-completion-card p, .continue-learning-progress p { font-size: 16px; line-height: 1.65; }

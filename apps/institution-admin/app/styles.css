@@ -342,3 +342,30 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
 @media (max-width: 780px) {
   .sidebar > .primary-nav:last-of-type .nav-link { font-size: 11px; }
 }
+
+/* Final readable scale for non-heading LMS content. Main h1 and metric values stay unchanged. */
+body { font-size: 16px; line-height: 1.6; }
+p, li { font-size: 16px; line-height: 1.65; }
+button:not(.icon-button), input, select, textarea { font-size: 14px; line-height: 1.45; }
+.brand small, .sidebar-footer span, .profile-trigger-copy small, .profile-menu-item small,
+.field-hint, .selected-file, .metric-foot, .relationship-count span { font-size: 12px; line-height: 1.45; }
+.sidebar-label, .eyebrow, .environment-pill, .help-link, .profile-trigger-copy strong,
+.profile-menu-item strong, .metric-label, .filter-label, .list-head, .status-badge { font-size: 13px; line-height: 1.45; }
+.nav-link, .sidebar-footer strong, .primary-button, .secondary-button, .crumb, .breadcrumb-bar,
+.record-meta, .record-detail, .updated-detail, .row-actions button, .row-action-link, .state-box a,
+.text-button, .modal label, .relationship-row, .relationship-person strong,
+.relationship-row .danger-action, .assignment-review-row a, .grade-controls input { font-size: 14px; line-height: 1.45; }
+.page-heading p { font-size: 16px; line-height: 1.65; }
+.panel-toolbar h2 { font-size: 20px; }
+.panel-subtitle { font-size: 15px; line-height: 1.6; }
+.record-title { font-size: 15px; line-height: 1.45; }
+.record-meta, .record-detail, .updated-detail { font-size: 14px; }
+.relationship-heading p, .relationship-add p, .relationship-empty p, .relationship-alert,
+.relationship-alert p { font-size: 15px; line-height: 1.65; }
+.relationship-add h3 { font-size: 16px; }
+.relationship-list-heading { font-size: 13px; }
+.relationship-empty strong, .relationship-alert strong, .state-box strong { font-size: 16px; line-height: 1.35; }
+.state-box p, .submission-copy { font-size: 15px; line-height: 1.65; }
+.modal-intro { font-size: 15px; line-height: 1.65; }
+.field-hint, .selected-file { font-size: 14px; line-height: 1.55; }
+.toast { font-size: 14px; line-height: 1.5; }
