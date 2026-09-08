@@ -944,7 +944,7 @@ const IC3_COURSES: LmsCourse[] = [
     details: [
       { label: "Objective areas", value: "7 sections" },
       { label: "Certification path", value: "IC3 Digital Literacy GS6 Level 1" },
-      { label: "Source", value: "Certiport exam domains" },
+      { label: "Source", value: "Official exam domains" },
     ],
     objectiveAreas: [
       { number: "01", title: "Technology Basics", description: "Access and navigate between digital environments; identify digital devices and connections; and explain fundamental software, hardware, operating system, and networking concepts." },
@@ -964,7 +964,7 @@ const IC3_COURSES: LmsCourse[] = [
     details: [
       { label: "Objective areas", value: "7 sections" },
       { label: "Certification path", value: "IC3 Digital Literacy GS6 Level 2" },
-      { label: "Source", value: "Certiport exam domains" },
+      { label: "Source", value: "Official exam domains" },
     ],
     objectiveAreas: [
       { number: "01", title: "Technology Basics", description: "Customize digital environments, use a personal digital calendar, define higher-level technology concepts, adjust hardware, understand core printer concepts, and identify digital devices and connections." },
@@ -984,7 +984,7 @@ const IC3_COURSES: LmsCourse[] = [
     details: [
       { label: "Objective areas", value: "7 sections" },
       { label: "Certification path", value: "IC3 Digital Literacy GS6 Level 3" },
-      { label: "Source", value: "Certiport exam domains" },
+      { label: "Source", value: "Official exam domains" },
     ],
     objectiveAreas: [
       { number: "01", title: "Technology Basics", description: "Evaluate software and hardware devices, identify and resolve technical problems with assistance, and understand selected software concepts." },
@@ -1007,7 +1007,7 @@ const INTUIT_COURSES: LmsCourse[] = [
     details: [
       { label: "Objective areas", value: "4 sections" },
       { label: "Credential", value: "Intuit Certified Bookkeeping Professional" },
-      { label: "Source", value: "Certiport exam objectives" },
+      { label: "Source", value: "Official exam objectives" },
     ],
     objectiveAreas: [
       { number: "01", title: "Accounting Basics", description: "Accounting measurement, bookkeeping ethics, the accounting equation, financial statements, double-entry accounting, the accounting cycle, adjusting entries, and accounting principles." },
@@ -1024,7 +1024,7 @@ const INTUIT_COURSES: LmsCourse[] = [
     details: [
       { label: "Objective areas", value: "4 sections" },
       { label: "Credential", value: "Intuit Design for Delight Innovator Certification" },
-      { label: "Source", value: "Certiport exam objectives" },
+      { label: "Source", value: "Official exam objectives" },
     ],
     objectiveAreas: [
       { number: "01", title: "Design for Delight Concepts", description: "The Design for Delight mindset, Deep Customer Empathy, Go Broad to Go Narrow, Rapid Experiments with Customers, customer delight metrics, problem-solution-benefit relationships, looping, prototyping, and experimentation." },
@@ -1059,7 +1059,7 @@ const INTUIT_COURSES: LmsCourse[] = [
     details: [
       { label: "Objective areas", value: "6 sections" },
       { label: "Credential", value: "Intuit Personal Finance Certification" },
-      { label: "Source", value: "Certiport exam objectives" },
+      { label: "Source", value: "Official exam objectives" },
     ],
     objectiveAreas: [
       { number: "01", title: "Earning income", description: "Pay stubs, gross and net income, taxes and withholdings, filing status, deductions, credits, tax forms, total compensation, payment methods, and earned versus unearned income." },
@@ -1131,7 +1131,7 @@ function itsCourse(id: string, title: string, modules: string[], description: st
     id,
     title,
     description,
-    audience: "Learners preparing for a Certiport IT Specialist exam with approximately 150 hours of instruction or hands-on experience.",
+    audience: "Learners preparing for an IT Specialist exam with approximately 150 hours of instruction or hands-on experience.",
     details: [
       { label: "Objective areas", value: `${modules.length} sections` },
       { label: "Target experience", value: "Approximately 150 hours" },
@@ -1146,20 +1146,20 @@ function itsCourse(id: string, title: string, modules: string[], description: st
 }
 
 const ITS_COURSES: LmsCourse[] = [
-  itsCourse("its-network-security", "IT Specialist Network Security", ["Defense in Depth", "Operating System Security", "Network Device Security", "Secure Computing"], "Objective-led preparation for the Certiport IT Specialist Network Security exam."),
-  itsCourse("its-device-configuration-management", "IT Specialist Device Configuration and Management", ["Windows Installation and Configuration", "Windows Feature, Application and Peripheral", "Data Access and Management", "Device Security", "Windows Management and Troubleshooting"], "Objective-led preparation for the Certiport IT Specialist Device Configuration and Management exam."),
-  itsCourse("its-cloud-computing", "IT Specialist Cloud Computing", ["Cloud Concepts", "Developing cloud architecture", "Implementing the cloud development life cycle", "Deploy the application", "Understanding cloud governance"], "Objective-led preparation for the Certiport IT Specialist Cloud Computing exam."),
-  itsCourse("its-cybersecurity", "IT Specialist Cybersecurity", ["Security Principles", "Securing the Network", "Securing Endpoint Devices", "Vulnerability Assessment and Risk Management", "Incident Handling"], "Objective-led preparation for the Certiport IT Specialist Cybersecurity exam."),
-  itsCourse("its-databases", "IT Specialist Databases", ["Database Design", "Database Object Management using DDL", "Data Retrieval", "Data Manipulation using DML", "Troubleshooting"], "Objective-led preparation for the Certiport IT Specialist Databases exam."),
-  itsCourse("its-data-analytics", "IT Specialist Data Analytics", ["Data Basics", "Data Manipulation", "Data Analysis", "Data Visualization and Communication", "Responsible Analytics Practices"], "Objective-led preparation for the Certiport IT Specialist Data Analytics exam."),
-  itsCourse("its-html-and-css", "IT Specialist HTML and CSS", ["HTML Fundamentals", "CSS Fundamentals", "Document Structure using HTML", "Multimedia Presentation using HTML", "Webpage Styling using CSS", "Accessibility, Readability, and Testing"], "Objective-led preparation for the Certiport IT Specialist HTML and CSS exam."),
-  itsCourse("its-javascript", "IT Specialist JavaScript", ["JavaScript Operators, Methods, and Keywords", "Variables, Data Types, and Functions", "Decisions and Loops", "Document Object Model", "HTML Forms"], "Objective-led preparation for the Certiport IT Specialist JavaScript exam."),
-  itsCourse("its-python", "IT Specialist Python", ["Operations using Data Types and Operators", "Flow Control with Decisions and Loops", "Input and Output Operations", "Code Documentation and Structure", "Troubleshooting and Error Handling", "Operations using Modules and Tools"], "Objective-led preparation for the Certiport IT Specialist Python exam."),
-  itsCourse("its-java", "IT Specialist Java", ["Java Fundamentals", "Data Types, Variables, and Expressions", "Flow Control Implementation", "Object-Oriented Programming", "Code Compilation and Debugging"], "Objective-led preparation for the Certiport IT Specialist Java exam."),
-  itsCourse("its-software-development", "IT Specialist Software Development", ["Core Programming Concepts", "Software Development Principles", "Object-Oriented Programming", "Web Applications", "Databases"], "Objective-led preparation for the Certiport IT Specialist Software Development exam."),
-  itsCourse("its-html5-application-development", "IT Specialist HTML5 Application Development", ["Application Lifecycle Management", "Graphics and Animation", "Forms", "Layouts", "JavaScript Coding"], "Objective-led preparation for the Certiport IT Specialist HTML5 Application Development exam."),
-  itsCourse("its-computational-thinking", "IT Specialist Computational Thinking", ["Foundational Concepts", "Identify and Collect Data", "Apply Abstraction", "Specify a Solution", "Automate a Solution", "Present and Improve a Solution"], "Objective-led preparation for the Certiport IT Specialist Computational Thinking exam."),
-  itsCourse("its-networking", "IT Specialist Networking", ["Networking Fundamentals", "Network Infrastructures", "Network Hardware", "Protocols and Services", "Troubleshooting"], "Objective-led preparation for the Certiport IT Specialist Networking exam."),
+  itsCourse("its-network-security", "IT Specialist Network Security", ["Defense in Depth", "Operating System Security", "Network Device Security", "Secure Computing"], "Objective-led preparation for the IT Specialist Network Security exam."),
+  itsCourse("its-device-configuration-management", "IT Specialist Device Configuration and Management", ["Windows Installation and Configuration", "Windows Feature, Application and Peripheral", "Data Access and Management", "Device Security", "Windows Management and Troubleshooting"], "Objective-led preparation for the IT Specialist Device Configuration and Management exam."),
+  itsCourse("its-cloud-computing", "IT Specialist Cloud Computing", ["Cloud Concepts", "Developing cloud architecture", "Implementing the cloud development life cycle", "Deploy the application", "Understanding cloud governance"], "Objective-led preparation for the IT Specialist Cloud Computing exam."),
+  itsCourse("its-cybersecurity", "IT Specialist Cybersecurity", ["Security Principles", "Securing the Network", "Securing Endpoint Devices", "Vulnerability Assessment and Risk Management", "Incident Handling"], "Objective-led preparation for the IT Specialist Cybersecurity exam."),
+  itsCourse("its-databases", "IT Specialist Databases", ["Database Design", "Database Object Management using DDL", "Data Retrieval", "Data Manipulation using DML", "Troubleshooting"], "Objective-led preparation for the IT Specialist Databases exam."),
+  itsCourse("its-data-analytics", "IT Specialist Data Analytics", ["Data Basics", "Data Manipulation", "Data Analysis", "Data Visualization and Communication", "Responsible Analytics Practices"], "Objective-led preparation for the IT Specialist Data Analytics exam."),
+  itsCourse("its-html-and-css", "IT Specialist HTML and CSS", ["HTML Fundamentals", "CSS Fundamentals", "Document Structure using HTML", "Multimedia Presentation using HTML", "Webpage Styling using CSS", "Accessibility, Readability, and Testing"], "Objective-led preparation for the IT Specialist HTML and CSS exam."),
+  itsCourse("its-javascript", "IT Specialist JavaScript", ["JavaScript Operators, Methods, and Keywords", "Variables, Data Types, and Functions", "Decisions and Loops", "Document Object Model", "HTML Forms"], "Objective-led preparation for the IT Specialist JavaScript exam."),
+  itsCourse("its-python", "IT Specialist Python", ["Operations using Data Types and Operators", "Flow Control with Decisions and Loops", "Input and Output Operations", "Code Documentation and Structure", "Troubleshooting and Error Handling", "Operations using Modules and Tools"], "Objective-led preparation for the IT Specialist Python exam."),
+  itsCourse("its-java", "IT Specialist Java", ["Java Fundamentals", "Data Types, Variables, and Expressions", "Flow Control Implementation", "Object-Oriented Programming", "Code Compilation and Debugging"], "Objective-led preparation for the IT Specialist Java exam."),
+  itsCourse("its-software-development", "IT Specialist Software Development", ["Core Programming Concepts", "Software Development Principles", "Object-Oriented Programming", "Web Applications", "Databases"], "Objective-led preparation for the IT Specialist Software Development exam."),
+  itsCourse("its-html5-application-development", "IT Specialist HTML5 Application Development", ["Application Lifecycle Management", "Graphics and Animation", "Forms", "Layouts", "JavaScript Coding"], "Objective-led preparation for the IT Specialist HTML5 Application Development exam."),
+  itsCourse("its-computational-thinking", "IT Specialist Computational Thinking", ["Foundational Concepts", "Identify and Collect Data", "Apply Abstraction", "Specify a Solution", "Automate a Solution", "Present and Improve a Solution"], "Objective-led preparation for the IT Specialist Computational Thinking exam."),
+  itsCourse("its-networking", "IT Specialist Networking", ["Networking Fundamentals", "Network Infrastructures", "Network Hardware", "Protocols and Services", "Troubleshooting"], "Objective-led preparation for the IT Specialist Networking exam."),
 ];
 
 const PMI_COURSES: LmsCourse[] = [
@@ -1344,14 +1344,14 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
   {
     id: "cisco",
     name: "Cisco Certified Support Technician",
-    eyebrow: "Cisco · Certiport certification courses",
+    eyebrow: "Cisco certification courses",
     description: "Official objective-led preparation for Cisco Certified Support Technician IT Support, Networking, and Cybersecurity certifications.",
     courses: CISCO_COURSES,
   },
   {
     id: "ic3",
     name: "IC3 Digital Literacy",
-    eyebrow: "IC3 · Certiport certification courses",
+    eyebrow: "IC3 certification courses",
     description: "Official objective-led preparation for IC3 Spark and IC3 Digital Literacy Global Standard 6 Levels 1, 2, and 3.",
     courses: IC3_COURSES,
   },
@@ -1366,7 +1366,7 @@ export const LMS_COURSE_CATEGORIES: LmsCourseCategory[] = [
     id: "its",
     name: "IT Specialist",
     eyebrow: "IT Specialist certification courses",
-    description: "Official Certiport objective-led preparation across networking, security, cloud, data, programming, web, and computational thinking exams.",
+    description: "Official objective-led preparation across networking, security, cloud, data, programming, web, and computational thinking exams.",
     courses: ITS_COURSES,
   },
   {
