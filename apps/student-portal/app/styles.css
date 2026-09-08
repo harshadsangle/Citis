@@ -1088,3 +1088,52 @@ button:disabled { cursor: not-allowed; opacity: .52; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* Readability pass: lift supporting copy without changing primary heading sizes. */
+.portal-brand-label, .portal-session, .profile-trigger-copy strong, .profile-menu-item strong,
+.portal-eyebrow, .catalogue-eyebrow, .course-detail-eyebrow, .course-detail-label,
+.course-card-art-kicker, .catalogue-total span, .catalogue-stat-row small, .catalogue-sort,
+.catalogue-filter-row button, .catalogue-results-line, .course-progress-label, .course-progress-caption,
+.course-detail-context, .course-role-list span, .course-roadmap-heading > span, .course-module-progress,
+.module-progress-line, .course-lesson strong, .catalogue-empty button, .course-card-actions button,
+.course-detail-continue, .section-heading-note, .section-heading-notice, .assessment-notice,
+.certificate-kicker, .assignment-context, .certificate-download-button, .assignment-error,
+.assignment-card-status strong, .assignment-card-status > span, .submission-state-heading > span,
+.assignment-form > label, .assessment-history-copy > span, .assessment-history-feedback,
+.assessment-header-kicker, .assessment-header-copy p, .assessment-status-card > span,
+.assessment-status-card small, .assessment-progress-heading > div > span, .assessment-progress-heading > span,
+.assessment-progress-tip p, .assessment-question-topline, .assessment-question-type,
+.assessment-text-answer label, .assessment-navigation > div > span, .assessment-alert,
+.assessment-result-kicker, .assessment-result-hero p, .assessment-result-score span,
+.assessment-review-heading > span, .assessment-review-number, .assessment-review-copy p,
+.assessment-review-mark span, .assessment-list-copy p, .lesson-article-kicker,
+.lesson-resource-kicker, .lesson-resource-select span, .lesson-video-gate p,
+.lesson-video-gate-progress > span, .lesson-error, .lesson-completion-card p,
+.continue-learning-art span, .continue-learning-state, .continue-learning-progress p { font-size: 12px; }
+.profile-trigger-copy small, .profile-menu-item small, .course-code, .course-module-name small,
+.course-lesson small, .learning-course-code, .learning-header-progress-bottomline,
+.learning-module-heading small, .learning-lesson-item small, .certificate-number,
+.certificate-number strong, .assignment-card-meta, .assignment-card-meta small,
+.assignment-detail-meta, .assignment-detail-meta small, .submission-date,
+.assignment-form-help, .assessment-history-result span, .assessment-status-card > span,
+.assessment-progress-tip p, .assessment-progress-heading > div > span,
+.assessment-progress-heading > span, .assessment-result-score span, .assessment-review-mark span,
+.lesson-resource-watch-status > span, .lesson-resource-kicker, .lesson-resource-select span,
+.course-detail-side-card > p, .course-detail-side-list b, .detail-curriculum-list summary small,
+.detail-curriculum-list details > div > span { font-size: 11px; }
+.portal-hero-copy > p { font-size: 18px; }
+.portal-hero-card > span:not(.portal-hero-card-icon), .portal-hero-card small,
+.course-short-description, .course-detail-section p, .course-detail-intro, .course-bullet-list li,
+.catalogue-empty p, .learning-course-heading p, .assignment-description, .assignment-instructions,
+.submission-text, .submission-feedback, .assessment-history-feedback, .assessment-list-copy p,
+.assessment-result-hero p, .assessment-review-copy p, .lesson-content-card p,
+.lesson-resource-link-card p, .lesson-resource-empty p, .course-complete-banner p { font-size: 14px; }
+.course-card-meta, .course-card-meta strong, .course-progress-label, .course-module-name strong,
+.course-lesson strong, .learning-module-heading strong, .learning-lesson-item strong,
+.lesson-navigation button strong, .lesson-resource-footer strong, .portal-hero-proof strong,
+.portal-loading-card > strong, .certificates-empty strong, .assignment-empty strong,
+.assignment-card-status p, .assignment-card-status strong, .assignment-submission-state strong { font-size: 13px; }
+.course-detail-heading h4, .course-roadmap-heading h4, .learning-roadmap-heading h3,
+.assessment-review-heading h4 { font-size: 23px; }
+.course-detail-side-list span, .detail-curriculum-list details > div > span { font-size: 13px; }
+.assignment-card-status p, .assignment-form-help { font-size: 12px; }
