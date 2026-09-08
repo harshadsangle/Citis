@@ -28,7 +28,7 @@ const PROVIDER_LOGOS: Record<LmsCourseProvider, { src: string; alt: string; size
   its: { src: "/images/citis-logo.svg", alt: "IT Specialist certification pathway", sizes: "112px" },
   microsoft: { src: "/images/microsoft.png", alt: "Microsoft logo", sizes: "112px" },
   meta: { src: "/images/meta-logo.png", alt: "Meta logo", sizes: "112px" },
-  pmi: { src: "/images/certiport-authorized-testing-center.jpeg", alt: "Certiport certification pathway", sizes: "96px" },
+  pmi: { src: "/images/citis-logo.svg", alt: "PMI certification pathway", sizes: "112px" },
   unity: { src: "/images/unity.png", alt: "Unity logo", sizes: "112px" },
 };
 

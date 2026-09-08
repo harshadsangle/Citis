@@ -11,7 +11,7 @@ const COURSE_CODE = "ACROBAT-PRO-ACP";
 const RESOURCE_TITLE = "Source PDF — Adobe Acrobat Pro Exam Objectives (June 2024)";
 
 const courseDescription = [
-  "Adobe Certified Professional certifications, delivered by Certiport, are the official, industry-recognized credentials that validate entry-level proficiency in Adobe Creative Cloud applications and foundational knowledge for digital media careers.",
+  "Adobe Certified Professional certifications are industry-recognized credentials that validate entry-level proficiency in Adobe Creative Cloud applications and foundational knowledge for digital media careers.",
   "",
   "The Document Creation and Management Using Adobe Acrobat Pro exam is 50-minutes in length, comprised of two sections—selected-response items followed by live-in-the-app tasks inside Acrobat Pro. The Target Candidate has approximately 150 hours of instruction and hands-on experience with the product and is familiar with product features, capabilities, and relevant career concepts.",
   "",

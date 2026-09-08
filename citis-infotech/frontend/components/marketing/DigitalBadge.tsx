@@ -50,7 +50,7 @@ export function DigitalBadge({ certification }: { certification: GlobalCertifica
 
         {isIc3 && certification.ic3Credential ? (
           <div className="relative grid size-[5.75rem] place-items-center overflow-hidden rounded-full border-[3px] border-[#d8b42b] bg-white shadow-[0_8px_20px_rgba(15,76,129,0.12)]">
-            {/* Official IC3 badge artwork from Certiport's current badging page. */}
+            {/* Official IC3 badge artwork for the certification pathway. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={certification.ic3Credential.imageUrl}
@@ -74,7 +74,7 @@ export function DigitalBadge({ certification }: { certification: GlobalCertifica
           </p>
           <div className="mx-auto mt-3 h-px w-2/3 bg-gradient-to-r from-transparent via-[#8fc1d5] to-transparent" />
           <p className="mt-2 text-[0.58rem] font-semibold tracking-[0.14em] text-[#6d8794] uppercase">
-              {isAdobe ? "Adobe · Certiport" : isApple ? "Apple · Certiport" : isIc3 ? "IC3 · Certiport" : "Global Certification"}
+              {isAdobe ? "Adobe" : isApple ? "Apple" : isIc3 ? "IC3" : "Global Certification"}
           </p>
         </div>
 

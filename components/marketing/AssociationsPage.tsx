@@ -75,10 +75,6 @@ const whyMatterItems = [
 const associationLogos = [
   { name: "CompTIA Authorized Partner", logo: "/images/comptia-authorized-partner.jpg" },
   { name: "Adobe", logo: "/images/adobe.png" },
-  {
-    name: "Certiport Authorized Testing Center",
-    logo: "/images/certiport-authorized-testing-center.jpeg",
-  },
   { name: "Microsoft", logo: "/images/microsoft.png" },
   { name: "Skills India", logo: "/images/skills-india.jpeg" },
   {
