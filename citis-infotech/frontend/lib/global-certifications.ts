@@ -24,8 +24,6 @@ export interface DigitalBadging {
   badgeDetails: string;
   sharingDetails: string;
   platformDetails: string;
-  credlyDetails: string;
-  credlyUrl: string;
 }
 
 export type AdobeDigitalBadging = DigitalBadging;
@@ -34,14 +32,13 @@ export interface AppleDigitalBadge {
   name: "App Development with Swift — Certified User" | "App Development with Swift — Associate";
   imageUrl: string;
   sourceUrl: string;
-  credlyUrl: string;
 }
 
 export interface AutodeskCredential {
   credentialName: string;
   badgeName: string;
   imageUrl: string;
-  credlyUrl: string;
+  sourceUrl: string;
 }
 
 export interface CiscoCredential {
@@ -57,7 +54,6 @@ export interface IC3Credential {
   imageUrl: string;
   imageAlt: string;
   sourceUrl: string;
-  credlyUrl: string;
   completionWording: string;
 }
 
@@ -69,8 +65,6 @@ const ADOBE_DIGITAL_BADGING_DETAILS = {
     "When you earn an Adobe Certified Professional certification, you will be notified of a corresponding digital badge. Use your digital badges to tell potential employers, academic institutions, colleagues and peers about your credentials.",
   platformDetails:
     "Your digital certification badge makes it easy for you to validate your abilities with potential employers on social media sites such as LinkedIn, Facebook and Twitter, as well as email and online portfolios.",
-  credlyDetails: "Find out more about Adobe Certified Professional digital badges on Credly.",
-  credlyUrl: "https://www.credly.com/organizations/adobe/badges",
 } satisfies Omit<DigitalBadging, "badgeName">;
 
 const IC3_DIGITAL_BADGING_DETAILS = {
@@ -80,9 +74,7 @@ const IC3_DIGITAL_BADGING_DETAILS = {
   sharingDetails:
     "IC3 Digital Literacy certifications validate digital skills for school, work and further study. The corresponding badge helps learners show those achievements to potential employers, academic institutions, colleagues and peers.",
   platformDetails:
-    "Credly is the digital badging platform for IC3 Digital Literacy. Badges can be shared on LinkedIn, Facebook and X, as well as by email and through online portfolios.",
-  credlyDetails: "Find out more about IC3 Digital Literacy digital badges on Credly.",
-  credlyUrl: "https://info.credly.com/",
+    "IC3 Digital Literacy badges can be shared on LinkedIn, Facebook and X, as well as by email and through online portfolios.",
 } satisfies Omit<DigitalBadging, "badgeName">;
 
 const IC3_BADGE_IMAGE =
@@ -94,7 +86,7 @@ const ADOBE_EXAM_DETAILS = [
   "150 hours of hands-on Adobe app experience and instruction recommended before the exam.",
   "Live-in-the-app exams available online through OnVUE or in person at a Certiport Authorized Testing Center.",
   "Exams available in 12 languages, with objective domains and product releases published by Adobe and Certiport.",
-  "A corresponding digital badge is issued through Credly after earning the certification, with verifiable credential data.",
+  "A corresponding digital badge is issued after earning the certification, with verifiable credential data.",
 ];
 
 export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
@@ -272,14 +264,12 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
         imageUrl:
           "https://certiport.pearsonvue.com/getattachment/b26ea31f-bb61-4ab8-82f7-0c44f9fc3b55/Swift_CU_600x600.png",
         sourceUrl: "https://certiport.pearsonvue.com/Certifications/Apple/App-Dev-With-Swift/Overview.aspx",
-        credlyUrl: "https://www.credly.com/org/apple/badge/app-development-with-swift-certified-user",
       },
       {
         name: "App Development with Swift — Associate",
         imageUrl:
           "https://certiport.pearsonvue.com/getattachment/8ef1956e-349b-4853-a649-1b7f31af1670/Swift_Associate_600x600.png",
         sourceUrl: "https://certiport.pearsonvue.com/Certifications/Apple/App-Dev-With-Swift/Overview.aspx",
-        credlyUrl: "https://www.credly.com/org/apple/badge/app-development-with-swift-associate",
       },
     ],
   },
@@ -304,7 +294,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       badgeName: "Tinkercad 3D Design",
       imageUrl:
         "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/AutoCAD-(1)/tinkercad-3d-design-certified-user-badge-OL.png?lang=en-US&width=150&height=150&ext=.png",
-      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-certified-tinkercad-3d-design",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
     },
   },
   {
@@ -328,7 +318,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       badgeName: "AutoCAD",
       imageUrl:
         "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/AutoCAD/autodesk-autocad-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-autocad-certified-user",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
     },
   },
   {
@@ -352,7 +342,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       badgeName: "Inventor",
       imageUrl:
         "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Inventor/autodesk-inventor-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-inventor-certified-user",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
     },
   },
   {
@@ -376,7 +366,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       badgeName: "Fusion",
       imageUrl:
         "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Fusion-360/autodesk-fusion-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-fusion-360-certified-user",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
     },
   },
   {
@@ -400,7 +390,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       badgeName: "Revit",
       imageUrl:
         "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Revit/autodesk-revit-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-revit-architecture-certified-user",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
     },
   },
   {
@@ -424,7 +414,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       badgeName: "Maya",
       imageUrl:
         "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Maya/autodesk-maya-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-maya-certified-user",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
     },
   },
   {
@@ -448,7 +438,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       badgeName: "3ds Max",
       imageUrl:
         "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/3ds-Max/autodesk-3ds-max-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      credlyUrl: "https://www.credly.com/org/autodesk/badge/autodesk-3ds-max-certified-user",
+      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
     },
   },
   {
@@ -536,7 +526,6 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       imageUrl: IC3_BADGE_IMAGE,
       imageAlt: "IC3 Digital Certification badge",
       sourceUrl: IC3_BADGE_SOURCE,
-      credlyUrl: IC3_DIGITAL_BADGING_DETAILS.credlyUrl,
       completionWording: "Three GS6 exams earn the IC3 Digital Literacy Master Certification and Master Badge.",
     },
   },
@@ -581,7 +570,6 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       imageUrl: IC3_BADGE_IMAGE,
       imageAlt: "IC3 Digital Certification badge",
       sourceUrl: IC3_BADGE_SOURCE,
-      credlyUrl: IC3_DIGITAL_BADGING_DETAILS.credlyUrl,
       completionWording: "Successful GS5 exams validate IC3 Digital Literacy across three core domains.",
     },
   },
@@ -628,7 +616,6 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       imageUrl: IC3_BADGE_IMAGE,
       imageAlt: "IC3 Digital Certification badge",
       sourceUrl: IC3_BADGE_SOURCE,
-      credlyUrl: IC3_DIGITAL_BADGING_DETAILS.credlyUrl,
       completionWording: "Successful completion earns the IC3 Spark certification.",
     },
   },
@@ -673,7 +660,6 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       imageUrl: IC3_BADGE_IMAGE,
       imageAlt: "IC3 Digital Certification badge reference",
       sourceUrl: IC3_BADGE_SOURCE,
-      credlyUrl: IC3_DIGITAL_BADGING_DETAILS.credlyUrl,
       completionWording: "Fast Track is an assessment; it does not itself award an IC3 certification or badge.",
     },
   },

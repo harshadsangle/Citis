@@ -72,11 +72,11 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                 </div>
               ) : isAutodesk && certification.autodeskCredential ? (
                 <a
-                  href={certification.autodeskCredential.credlyUrl}
+                  href={certification.autodeskCredential.sourceUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="absolute inset-0 flex items-center justify-center bg-white p-10 transition-transform hover:scale-[1.02]"
-                  aria-label={`View ${certification.autodeskCredential.credentialName} on Credly`}
+                  aria-label={`View ${certification.autodeskCredential.credentialName} on Certiport`}
                 >
                   {/* Official credential artwork from Certiport's current Autodesk certification listing. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -317,87 +317,8 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                     {certification.digitalBadging.sharingDetails}
                   </p>
                   <p className="mt-4 text-sm leading-7 text-muted-foreground">
-                    {certification.digitalBadging.platformDetails}{" "}
-                    <span>
-                      {certification.digitalBadging.credlyDetails.split("Credly")[0]}
-                      <a
-                        href={certification.digitalBadging.credlyUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
-                      >
-                        Credly
-                      </a>
-                      .
-                    </span>
+                    {certification.digitalBadging.platformDetails}
                   </p>
-                  <div className="mt-6 border-t border-border pt-5">
-                    <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">Flash your badge</p>
-                    <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                      Credly is our digital badging platform. It helps you move forward professionally by quickly
-                      establishing credibility for opportunities in education, the job market, and beyond. Each badge
-                      contains verifiable data that tells the world what you did, who says you did it, and why it
-                      matters.
-                    </p>
-                  </div>
-                  <div className="mt-6 border-t border-border pt-5">
-                    <p className="text-xs font-bold tracking-[0.16em] text-secondary uppercase">More information</p>
-                    <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                      Visit{" "}
-                      <a
-                        href={certification.digitalBadging.credlyUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
-                      >
-                        Credly
-                      </a>{" "}
-                      to find out more information.
-                    </p>
-                    <ul className="mt-3 space-y-2 text-sm leading-7 text-muted-foreground">
-                      <li>
-                        <a
-                          href="https://support.credly.com/hc/en-us/sections/360003205072--Accepting-a-Badge"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
-                        >
-                          How do I accept a Badge?
-                        </a>
-                      </li>
-                      <li>
-                        <a
-                          href="https://support.credly.com/hc/en-us/articles/360038029111-How-do-I-get-started-"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
-                        >
-                          How do I embed a badge into my email signature?
-                        </a>
-                      </li>
-                      <li>
-                        <a
-                          href="https://support.credly.com/hc/en-us/articles/360021222231-How-do-I-manage-and-share-my-digital-badge-"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
-                        >
-                          Other questions
-                        </a>
-                      </li>
-                    </ul>
-                    <p className="mt-5 text-sm leading-7 text-muted-foreground">
-                      <span className="font-semibold text-[#123d5c]">Missing your badge?</span>{" "}
-                      <a
-                        href="/contact"
-                        className="font-semibold text-primary underline decoration-primary/30 underline-offset-4 hover:text-[#315d7b]"
-                      >
-                        Contact the customer service team
-                      </a>
-                      <br />
-                      800-497-8923
-                    </p>
-                  </div>
                 </div>
               </div>
             </AnimatedSection>
