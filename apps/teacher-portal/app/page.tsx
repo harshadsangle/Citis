@@ -2187,6 +2187,25 @@ export default function TeacherPortalPage() {
           .attempt-card { box-shadow: none; }
           .state { padding: 38px 26px; }
           .state-icon { box-shadow: 0 0 0 5px #f2f8f8; }
+           /* Readability pass: lift supporting copy without changing primary heading sizes. */
+           .brand small, .sidebar-foot span, .profile-trigger-copy small, .profile-menu-item small, .muted,
+           .metric-foot, .heading-identity small, .table-caption, .course-main small, .course-side small,
+           .action-row small, .module-title small, .lesson-title small, .resource-row small, .assignment-title small,
+           .assignment-meta small, .assessment-title small, .assessment-meta small, .submission-course small,
+           .question-heading small, .attempt-question small, .attempt-feedback { font-size: 10px; }
+           .sidebar-label, .live-label, .help-link, .profile-trigger-copy strong, .profile-menu-item strong,
+           .eyebrow, .metric-label, .heading-identity strong, .course-side em, .status-pill, .scope-note,
+           .submission-body a, .submission-detail > a, .form-grid label, .grade-bar label, .attempt-grade-form label { font-size: 11px; }
+           .nav-item, .primary-button, .secondary-button, .intro, .panel-copy, .course-main strong, .action-row strong,
+           .module-title strong, .lesson-title strong, .resource-row strong, .assignment-title strong,
+           .assessment-title strong, .submission-course strong, .submission-body p, .submission-detail > p,
+           .submission-copy, .form-grid input, .form-grid select, .form-grid textarea, .grade-bar input,
+           .attempt-grade-form textarea, th, td { font-size: 12px; }
+           .panel-heading h2 { font-size: 20px; }
+           .panel-subtitle, .assignment-description, .assessment-description { font-size: 11px; }
+           .subsection-heading h3 { font-size: 14px; }
+           .subsection-heading h4, .editor-heading h3 { font-size: 12px; }
+           .alert, .inline-state, .inline-alert, .workspace-note { font-size: 11px; }
           @media (max-width: 780px) {
             .page-heading { gap: 17px; }
             .heading-actions { width: 100%; }
