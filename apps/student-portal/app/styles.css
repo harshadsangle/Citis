@@ -1199,3 +1199,7 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .certificates-empty span:last-child, .assignment-empty span:last-child,
 .portal-state-card p, .portal-loading-card > span:last-child { font-size: 17px; line-height: 1.65; }
 .lesson-video-gate p, .lesson-completion-card p, .continue-learning-progress p { font-size: 16px; line-height: 1.65; }
+
+/* Profile identity: keep account name and role readable without changing headings or metrics. */
+.profile-trigger-copy strong { font-size: 16px; line-height: 1.3; }
+.profile-trigger-copy small { font-size: 14px; line-height: 1.45; }

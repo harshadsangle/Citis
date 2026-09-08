@@ -2263,6 +2263,9 @@ export default function TeacherPortalPage() {
           .subsection-heading h3 { font-size: 17px; }
           .subsection-heading h4, .editor-heading h3 { font-size: 15px; }
           .alert, .inline-state, .inline-alert, .workspace-note { font-size: 14px; line-height: 1.6; }
+          /* Profile identity: keep account name and role readable without changing headings or metrics. */
+          .sidebar-foot strong, .profile-trigger-copy strong, .heading-identity strong { font-size: 16px; line-height: 1.3; }
+          .sidebar-foot span, .profile-trigger-copy small, .heading-identity small { font-size: 14px; line-height: 1.45; }
       `}</style>
     </main>
   );
