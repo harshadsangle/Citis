@@ -1247,29 +1247,33 @@ export default function StudentPortalPage() {
         )}
         {!loading && !error && (
           <section className="certificates-section" id="certificates">
-            <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+            <div className="portal-section-heading">
               <div>
-                <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Recognition</p>
-                <h2 style={{ fontSize: 28, margin: "6px 0 0" }}>Your certificates</h2>
+                <p className="portal-eyebrow">Recognition</p>
+                <h2>Your certificates</h2>
               </div>
-              {certificateNotice && <span style={{ color: "#0f766e", fontSize: 14, fontWeight: 700 }}>{certificateNotice}</span>}
+              {certificateNotice && <span className="section-heading-notice">{certificateNotice}</span>}
             </div>
             {certificates.length === 0 ? (
-              <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>
-                <strong style={{ color: "#12304a", display: "block", fontSize: 17, marginBottom: 7 }}>No certificates issued yet</strong>
-                <span>{courses.some((course) => course.state === "COMPLETED") ? "Your completion is being checked. Certificates are issued automatically when every published lesson and required assessment is complete." : "Complete all published lessons and required assessments in an enrolled course to receive a certificate automatically."}</span>
+              <div className="certificates-empty">
+                <span className="certificate-empty-icon" aria-hidden="true">✦</span>
+                <div>
+                  <strong>No certificates issued yet</strong>
+                  <span>{courses.some((course) => course.state === "COMPLETED") ? "Your completion is being checked. Certificates are issued automatically when every published lesson and required assessment is complete." : "Complete all published lessons and required assessments in an enrolled course to receive a certificate automatically."}</span>
+                </div>
               </div>
             ) : (
-              <div style={{ display: "grid", gap: 16 }}>
+              <div className="certificate-list">
                 {certificates.map((certificate) => (
-                  <article key={certificate.id} style={{ alignItems: "center", background: "white", border: "1px solid #b9d9d4", borderRadius: 20, boxShadow: "0 12px 30px rgba(18, 48, 74, 0.06)", display: "flex", flexWrap: "wrap", gap: 18, justifyContent: "space-between", padding: "21px 24px" }}>
-                    <div>
-                      <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>Certificate of achievement</p>
-                      <h3 style={{ fontSize: 21, margin: "7px 0 5px" }}>{certificate.course_title}</h3>
-                      <p style={{ color: "#61718a", fontSize: 14, margin: 0 }}>{certificate.course_code} · Issued {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(certificate.issue_date))}</p>
-                      <p style={{ color: "#71879a", fontSize: 13, margin: "7px 0 0" }}>Certificate number: <strong style={{ color: "#526f8c" }}>{certificate.certificate_number}</strong></p>
+                  <article className="certificate-card" key={certificate.id}>
+                    <div className="certificate-card-mark" aria-hidden="true"><span>✓</span></div>
+                    <div className="certificate-card-copy">
+                      <p className="certificate-kicker">Certificate of achievement</p>
+                      <h3>{certificate.course_title}</h3>
+                      <p className="certificate-meta">{certificate.course_code} <span aria-hidden="true">·</span> Issued {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium" }).format(new Date(certificate.issue_date))}</p>
+                      <p className="certificate-number">Certificate number <strong>{certificate.certificate_number}</strong></p>
                     </div>
-                    <button onClick={() => void downloadCertificate(certificate)} disabled={Boolean(certificateBusy)} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, padding: "11px 16px" }} type="button">
+                    <button className="certificate-download-button" onClick={() => void downloadCertificate(certificate)} disabled={Boolean(certificateBusy)} type="button">
                       {certificateBusy === certificate.id ? "Preparing…" : "Download certificate"}
                     </button>
                   </article>
@@ -1394,73 +1398,72 @@ export default function StudentPortalPage() {
         )}
         {!loading && !error && (
           <section className="assignments-section" id="assignments">
-            <div style={{ alignItems: "end", display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
+            <div className="portal-section-heading">
               <div>
-                <p style={{ color: "#0f766e", fontSize: 12, fontWeight: 700, letterSpacing: "0.12em", margin: 0, textTransform: "uppercase" }}>Course work</p>
-                <h2 style={{ fontSize: 28, margin: "6px 0 0" }}>Assignments</h2>
+                <p className="portal-eyebrow">Course work</p>
+                <h2>Assignments</h2>
               </div>
-              {submissionNotice && <span style={{ color: "#0f766e", fontSize: 14, fontWeight: 700 }}>{submissionNotice}</span>}
+              {submissionNotice && <span className="section-heading-notice">{submissionNotice}</span>}
             </div>
-            {submissionError && <div role="alert" style={{ background: "#fff8f5", border: "1px solid #f0c5b8", borderRadius: 12, color: "#ad5b4d", marginBottom: 16, padding: "12px 15px" }}>{submissionError}</div>}
-            {assignments.length === 0 && <div style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, color: "#61718a", padding: 24 }}>No published assignments are waiting for you.</div>}
+            {submissionError && <div className="assignment-error" role="alert">{submissionError}</div>}
+            {assignments.length === 0 && <div className="assignment-empty"><span className="assignment-empty-icon" aria-hidden="true">▤</span><div><strong>No published assignments yet</strong><span>When course work is ready, it will appear here for you to complete and submit.</span></div></div>}
             {activeAssignmentId && assignments.some((assignment) => assignment.id === activeAssignmentId) && (() => {
               const assignment = assignments.find((item) => item.id === activeAssignmentId)!;
               const submission = submissions[assignment.id];
               return (
-                <article style={{ background: "white", border: "1px solid #b9d9d4", borderRadius: 20, boxShadow: "0 12px 30px rgba(18, 48, 74, 0.06)", marginBottom: 16, padding: "24px 26px" }}>
-                  <button onClick={() => { setActiveAssignmentId(null); setSubmissionValidation(""); }} style={{ background: "transparent", border: 0, color: "#0f766e", cursor: "pointer", fontWeight: 700, padding: 0 }} type="button">← Back to assignments</button>
-                  <div style={{ alignItems: "start", display: "flex", gap: 16, justifyContent: "space-between", marginTop: 18 }}>
+                <article className="assignment-detail-card">
+                  <button className="assignment-back-button" onClick={() => { setActiveAssignmentId(null); setSubmissionValidation(""); }} type="button">← Back to assignments</button>
+                  <div className="assignment-detail-heading">
                     <div>
-                      <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{assignment.course_title} · {assignment.module_title}</p>
-                      <h3 style={{ fontSize: 27, margin: "7px 0 8px" }}>{assignment.title}</h3>
-                      {assignment.description && <p style={{ color: "#61718a", lineHeight: 1.55, margin: "0 0 12px" }}>{assignment.description}</p>}
-                      <p style={{ color: "#526f8c", lineHeight: 1.6, margin: 0, whiteSpace: "pre-wrap" }}>{assignment.instructions}</p>
+                      <p className="assignment-context">{assignment.course_title} <span aria-hidden="true">·</span> {assignment.module_title}</p>
+                      <h3>{assignment.title}</h3>
+                      {assignment.description && <p className="assignment-description">{assignment.description}</p>}
+                      <p className="assignment-instructions">{assignment.instructions}</p>
                     </div>
-                    <div style={{ color: "#61718a", fontSize: 13, textAlign: "right", whiteSpace: "nowrap" }}>{assignment.max_marks} marks<br />{dueLabel(assignment.due_at)}</div>
+                    <div className="assignment-detail-meta"><strong>{assignment.max_marks}</strong><span>marks</span><small>{dueLabel(assignment.due_at)}</small></div>
                   </div>
                   {submission ? (
-                    <div style={{ background: submission.status === "GRADED" ? "#eefbf7" : "#f5f8fb", borderRadius: 12, marginTop: 22, padding: "16px 18px" }}>
-                      <strong style={{ color: submission.status === "GRADED" ? "#0f766e" : "#12304a" }}>{submission.status === "GRADED" ? `Graded: ${submission.grade}/${assignment.max_marks}` : "Submitted for instructor review"}</strong>
-                      {submission.is_late && <span style={{ color: "#a06b22", marginLeft: 10 }}>Late submission</span>}
-                      <p style={{ color: "#61718a", fontSize: 13, margin: "7px 0 0" }}>Submitted {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(submission.submitted_at))}</p>
-                      <p style={{ color: "#526f8c", lineHeight: 1.55, margin: "14px 0 0", whiteSpace: "pre-wrap" }}>{submission.submission_text}</p>
-                      {submission.feedback && <p style={{ borderTop: "1px solid #d8e2eb", color: "#526f8c", lineHeight: 1.5, margin: "14px 0 0", paddingTop: 12 }}><strong>Instructor feedback:</strong> {submission.feedback}</p>}
+                    <div className={`assignment-submission-state ${submission.status === "GRADED" ? "is-graded" : ""}`}>
+                      <div className="submission-state-heading"><strong>{submission.status === "GRADED" ? `Graded: ${submission.grade}/${assignment.max_marks}` : "Submitted for instructor review"}</strong>{submission.is_late && <span>Late submission</span>}</div>
+                      <p className="submission-date">Submitted {new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(submission.submitted_at))}</p>
+                      <p className="submission-text">{submission.submission_text}</p>
+                      {submission.feedback && <p className="submission-feedback"><strong>Instructor feedback:</strong> {submission.feedback}</p>}
                     </div>
                   ) : (
-                    <div style={{ marginTop: 22 }}>
-                      <label htmlFor="assignment-submission" style={{ display: "block", fontSize: 14, fontWeight: 700, marginBottom: 8 }}>Your submission</label>
-                      <textarea id="assignment-submission" aria-describedby="assignment-submission-help" aria-invalid={Boolean(submissionValidation)} maxLength={20000} value={submissionText[assignment.id] || ""} onChange={(event) => { setSubmissionValidation(""); setSubmissionText((current) => ({ ...current, [assignment.id]: event.target.value })); }} placeholder="Write your work here…" style={{ border: `1px solid ${submissionValidation ? "#c86b5e" : "#d8e2eb"}`, borderRadius: 10, color: "#12304a", font: "inherit", minHeight: 170, padding: 12, resize: "vertical", width: "100%" }} />
-                      <div id="assignment-submission-help" style={{ alignItems: "center", color: submissionValidation ? "#ad5b4d" : "#71879a", display: "flex", fontSize: 13, justifyContent: "space-between", marginTop: 7 }}>
+                    <div className="assignment-form">
+                      <label htmlFor="assignment-submission">Your submission</label>
+                      <textarea id="assignment-submission" className={submissionValidation ? "has-error" : ""} aria-describedby="assignment-submission-help" aria-invalid={Boolean(submissionValidation)} maxLength={20000} value={submissionText[assignment.id] || ""} onChange={(event) => { setSubmissionValidation(""); setSubmissionText((current) => ({ ...current, [assignment.id]: event.target.value })); }} placeholder="Write your work here…" />
+                      <div id="assignment-submission-help" className={`assignment-form-help ${submissionValidation ? "has-error" : ""}`}>
                         <span>{submissionValidation || "Use up to 20,000 characters."}</span>
                         <span>{(submissionText[assignment.id] || "").length}/20,000</span>
                       </div>
-                      <button onClick={() => void submitAssignment(assignment)} disabled={submittingId === assignment.id} style={{ background: "#0f766e", border: 0, borderRadius: 9, color: "white", cursor: "pointer", fontWeight: 700, marginTop: 13, padding: "11px 16px" }} type="button">{submittingId === assignment.id ? "Submitting…" : "Submit work"}</button>
+                      <button className="assignment-submit-button" onClick={() => void submitAssignment(assignment)} disabled={submittingId === assignment.id} type="button">{submittingId === assignment.id ? "Submitting…" : "Submit work"} <span aria-hidden="true">→</span></button>
                     </div>
                   )}
                 </article>
               );
             })()}
-            {assignments.length > 0 && <div style={{ display: "grid", gap: 16 }}>
+            {assignments.length > 0 && <div className="assignment-list">
               {assignments.map((assignment) => {
                 const submission = submissions[assignment.id];
                 return (
-                  <article key={assignment.id} style={{ background: "white", border: "1px solid #d8e2eb", borderRadius: 20, padding: "22px 24px" }}>
-                    <div style={{ alignItems: "start", display: "flex", gap: 16, justifyContent: "space-between" }}>
+                  <article className="assignment-card" key={assignment.id}>
+                    <div className="assignment-card-heading">
                       <div>
-                        <p style={{ color: "#6b8194", fontSize: 12, fontWeight: 700, letterSpacing: "0.1em", margin: 0, textTransform: "uppercase" }}>{assignment.course_title} · {assignment.module_title}</p>
-                        <h3 style={{ fontSize: 21, margin: "7px 0 5px" }}>{assignment.title}</h3>
-                        <p style={{ color: "#61718a", fontSize: 14, lineHeight: 1.55, margin: 0 }}>{assignment.description || assignment.instructions}</p>
+                        <p className="assignment-context">{assignment.course_title} <span aria-hidden="true">·</span> {assignment.module_title}</p>
+                        <h3>{assignment.title}</h3>
+                        <p className="assignment-description">{assignment.description || assignment.instructions}</p>
                       </div>
-                      <div style={{ color: "#61718a", fontSize: 13, textAlign: "right", whiteSpace: "nowrap" }}>{assignment.max_marks} marks<br />{dueLabel(assignment.due_at)}</div>
+                      <div className="assignment-card-meta"><strong>{assignment.max_marks}</strong><span>marks</span><small>{dueLabel(assignment.due_at)}</small></div>
                     </div>
                     {submission && (
-                      <div style={{ background: submission.status === "GRADED" ? "#eefbf7" : "#f5f8fb", borderRadius: 12, color: "#526f8c", marginTop: 18, padding: "13px 15px" }}>
-                        <strong style={{ color: submission.status === "GRADED" ? "#0f766e" : "#12304a" }}>{submission.status === "GRADED" ? `Graded: ${submission.grade}/${assignment.max_marks}` : "Submitted for review"}</strong>
-                        {submission.is_late && <span style={{ color: "#a06b22", marginLeft: 10 }}>Late submission</span>}
-                        {submission.feedback && <p style={{ lineHeight: 1.5, margin: "7px 0 0" }}>{submission.feedback}</p>}
+                      <div className={`assignment-card-status ${submission.status === "GRADED" ? "is-graded" : ""}`}>
+                        <strong>{submission.status === "GRADED" ? `Graded: ${submission.grade}/${assignment.max_marks}` : "Submitted for review"}</strong>
+                        {submission.is_late && <span>Late submission</span>}
+                        {submission.feedback && <p>{submission.feedback}</p>}
                       </div>
                     )}
-                    <button onClick={() => { setActiveAssignmentId(assignment.id); setSubmissionValidation(""); }} style={{ background: "transparent", border: "1px solid #c9d7e2", borderRadius: 9, color: "#0f766e", cursor: "pointer", fontWeight: 700, marginTop: 18, padding: "10px 14px" }} type="button">{submission ? "Open submission" : "Open assignment"}</button>
+                    <button className="assignment-open-button" onClick={() => { setActiveAssignmentId(assignment.id); setSubmissionValidation(""); }} type="button">{submission ? "Open submission" : "Open assignment"} <span aria-hidden="true">↗</span></button>
                   </article>
                 );
               })}
