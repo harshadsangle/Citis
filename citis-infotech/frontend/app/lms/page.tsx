@@ -67,7 +67,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
         <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
       </div>
       </section>
-      <LmsCourseCatalogue categories={courseCategories} provider={provider} />
+      <LmsCourseCatalogue categories={courseCategories} provider={provider} providerQuery={providerQuery} />
       <ProfessionalProgramsCatalogue compact />
     </>
   );

@@ -72,7 +72,7 @@ function searchableCourseText(course: LmsCourse) {
     .toLowerCase();
 }
 
-function CourseCard({ course }: { course: LmsCourse }) {
+function CourseCard({ course, providerQuery }: { course: LmsCourse; providerQuery: string }) {
   return (
     <details className="lms-course-card group/course overflow-hidden rounded-[1.35rem] border border-primary/10 bg-white shadow-[0_6px_20px_rgb(18_75_115/0.045)] transition duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_18px_42px_rgb(18_75_115/0.12)] dark:bg-slate-950/45">
       <summary className="lms-course-summary flex cursor-pointer list-none items-center gap-4 px-5 py-5 transition-colors hover:bg-primary/[0.025] sm:px-6 sm:py-5 [&::-webkit-details-marker]:hidden">
@@ -107,7 +107,7 @@ function CourseCard({ course }: { course: LmsCourse }) {
             <p className="mt-5 text-sm leading-7 text-muted-foreground sm:text-[0.95rem]">{course.description}</p>
           </div>
           <Link
-            href="/lms/login?portal=learner"
+            href={`/lms/login?portal=learner${providerQuery}`}
             className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground shadow-[0_10px_20px_rgb(18_75_115/0.16)] transition hover:-translate-y-0.5 hover:bg-[#0d3b5c] hover:shadow-[0_14px_24px_rgb(18_75_115/0.22)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             Continue to learner portal
@@ -161,7 +161,7 @@ function CourseCard({ course }: { course: LmsCourse }) {
   );
 }
 
-function CategoryPanel({ category, index }: { category: LmsCourseCategory; index: number }) {
+function CategoryPanel({ category, index, providerQuery }: { category: LmsCourseCategory; index: number; providerQuery: string }) {
   const accent = ACCENTS[index % ACCENTS.length];
 
   return (
@@ -197,7 +197,7 @@ function CategoryPanel({ category, index }: { category: LmsCourseCategory; index
         </div>
         <div className="grid gap-3">
           {category.courses.map((course) => (
-            <CourseCard key={course.id} course={course} />
+            <CourseCard key={course.id} course={course} providerQuery={providerQuery} />
           ))}
         </div>
       </div>
@@ -208,9 +208,11 @@ function CategoryPanel({ category, index }: { category: LmsCourseCategory; index
 export function LmsCourseCatalogue({
   categories,
   provider,
+  providerQuery = "",
 }: {
   categories: LmsCourseCategory[];
   provider?: LmsCourseProvider;
+  providerQuery?: string;
 }) {
   const [query, setQuery] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("all");
@@ -326,7 +328,7 @@ export function LmsCourseCatalogue({
         <div className="mx-auto mt-8 max-w-6xl space-y-4">
           {filteredCategories.length > 0 ? (
             filteredCategories.map((category, index) => (
-              <CategoryPanel key={category.id} category={category} index={index} />
+              <CategoryPanel key={category.id} category={category} index={index} providerQuery={providerQuery} />
             ))
           ) : (
             <div className="surface rounded-[1.65rem] px-6 py-14 text-center sm:px-10">
