@@ -210,6 +210,7 @@ async function startWindowsServices() {
   // App Router tree at the repository root.
   const api = launch("api", [
     require.resolve("ts-node/dist/bin.js"),
+    "--transpile-only",
     "--project",
     "services/api/tsconfig.json",
     "services/api/src/main.ts",
