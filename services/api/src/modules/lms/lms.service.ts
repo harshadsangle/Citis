@@ -1280,7 +1280,7 @@ export class LmsService {
   }
 
   private async hasAssignmentStaffAccess(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
-    if (isPlatformUser(user)) return true;
+    if (isLmsAdministrator(user)) return true;
     const result = await this.db.query(
       `SELECT 1
        FROM user_roles ur

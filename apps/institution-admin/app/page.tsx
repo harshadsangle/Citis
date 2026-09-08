@@ -298,6 +298,15 @@ export default function InstitutionAdminPage() {
     setRelationshipMode(mode);
   }
 
+  function openCourseRelationship(mode: "assignments" | "assessments") {
+    if (ids.courseId) {
+      openRelationship(mode, ids.courseId, trail.at(-1)?.label || "Selected course");
+      return;
+    }
+    showSection("courses");
+    setToast(`Choose a course to manage ${mode}.`);
+  }
+
   function selectRecord(record: ContentRecord) {
     if (activeKind === "learning-resources") return;
     const node = { kind: activeKind, id: record.id, label: titleFor(record) };
@@ -522,16 +531,14 @@ export default function InstitutionAdminPage() {
             <button
               className={`nav-link ${relationshipMode === "assignments" ? "active" : ""}`}
               type="button"
-              disabled={!ids.courseId}
-              onClick={() => ids.courseId && openRelationship("assignments", ids.courseId, trail.at(-1)?.label || "Selected course")}
+               onClick={() => openCourseRelationship("assignments")}
             >
               <span className="nav-icon">A</span>Assignments
             </button>
              <button
                className={`nav-link ${relationshipMode === "assessments" ? "active" : ""}`}
                type="button"
-               disabled={!ids.courseId}
-               onClick={() => ids.courseId && openRelationship("assessments", ids.courseId, trail.at(-1)?.label || "Selected course")}
+                onClick={() => openCourseRelationship("assessments")}
              >
                <span className="nav-icon">Q</span>Assessments
              </button>

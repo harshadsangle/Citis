@@ -432,6 +432,20 @@ test("learner assignment listings include only published content from enrolled c
   assert.ok(queries.some((query) => query.includes("JOIN institutions i")));
 });
 
+test("LMS administrators bypass assignment staff-scope checks", async () => {
+  let queryCount = 0;
+  const { service } = serviceWith(async () => {
+    queryCount += 1;
+    return { rows: [] };
+  });
+  const hasAccess = await (service as unknown as {
+    hasAssignmentStaffAccess: (user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) => Promise<boolean>;
+  }).hasAssignmentStaffAccess(user, "institution-outside-user-scope", "course-1", "campus-1");
+
+  assert.equal(hasAccess, true);
+  assert.equal(queryCount, 0);
+});
+
 test("LMS administrators can load learner assignment listings without a course filter", async () => {
   const queries: string[] = [];
   const { service } = serviceWith(async (text) => {
