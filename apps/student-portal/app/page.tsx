@@ -543,6 +543,7 @@ function LearningResourceViewer({
   const [activeResourceId, setActiveResourceId] = useState("");
   const [videoStates, setVideoStates] = useState<Record<string, VideoWatchState>>({});
   const videoTracker = useRef<{ resourceId: string; lastTime: number; seeking: boolean }>({ resourceId: "", lastTime: 0, seeking: false });
+  const embeddedVideoFrame = useRef<HTMLIFrameElement | null>(null);
   const activeResource = resources.find((resource) => resource.id === activeResourceId) || resources[0];
 
   useEffect(() => {
@@ -638,6 +639,88 @@ function LearningResourceViewer({
     }
   }
 
+  function handleEmbeddedVideoTime(resourceId: string, currentTime: number, duration: number) {
+    if (!Number.isFinite(currentTime) || !Number.isFinite(duration) || duration <= 0) return;
+    if (videoTracker.current.resourceId !== resourceId) {
+      videoTracker.current = { resourceId, lastTime: currentTime, seeking: false };
+      return;
+    }
+    const delta = currentTime - videoTracker.current.lastTime;
+    if (!videoTracker.current.seeking && delta >= 0 && delta <= 2.25) {
+      recordVideoProgress(resourceId, currentTime, duration);
+    }
+    videoTracker.current.lastTime = currentTime;
+    videoTracker.current.seeking = false;
+  }
+
+  const activeResourceUrl = activeResource ? resourceUrl(activeResource) : "";
+  const activeResourceIsEmbed = Boolean(activeResource && resourceIsVideo(activeResource) && /^https?:\/\//i.test(activeResourceUrl) && !/\.(mp4|webm|ogg)(?:$|\?)/i.test(activeResourceUrl));
+
+  useEffect(() => {
+    const frame = embeddedVideoFrame.current;
+    const provider = activeResourceIsEmbed ? embeddedVideoProvider(activeResourceUrl) : null;
+    if (loading || error || !frame || !activeResource || !provider) return;
+    const resourceId = activeResource.id;
+    const targetOrigin = provider === "youtube" ? "https://www.youtube.com" : "https://player.vimeo.com";
+    const send = (message: Record<string, unknown>) => {
+      frame.contentWindow?.postMessage(JSON.stringify(message), targetOrigin);
+    };
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== frame.contentWindow) return;
+      let data: { event?: string; info?: { currentTime?: number; duration?: number } | number; data?: { seconds?: number; duration?: number } } | null = null;
+      try {
+        data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      } catch {
+        return;
+      }
+      if (!data) return;
+      if (provider === "youtube" && data.event === "infoDelivery" && typeof data.info === "object" && data.info) {
+        handleEmbeddedVideoTime(resourceId, Number(data.info.currentTime), Number(data.info.duration));
+      }
+      if (provider === "youtube" && data.event === "onStateChange" && Number(data.info) === 0) {
+        const state = videoStates[resourceId];
+        if (state && videoTracker.current.lastTime >= state.duration - 1.5) {
+          recordVideoProgress(resourceId, state.duration, state.duration);
+        }
+      }
+      if (provider === "vimeo" && data.event === "timeupdate" && data.data) {
+        handleEmbeddedVideoTime(resourceId, Number(data.data.seconds), Number(data.data.duration));
+      }
+      if (provider === "vimeo" && data.event === "ended") {
+        const state = videoStates[resourceId];
+        if (state && videoTracker.current.lastTime >= state.duration - 1.5) {
+          recordVideoProgress(resourceId, state.duration, state.duration);
+        }
+      }
+    };
+    const initialize = () => {
+      if (provider === "youtube") {
+        send({ event: "listening", id: resourceId, channel: "citis-lesson-video" });
+        send({ event: "command", func: "addEventListener", args: ["onStateChange"], id: resourceId });
+      } else {
+        send({ method: "addEventListener", value: "timeupdate", player_id: resourceId });
+        send({ method: "addEventListener", value: "ended", player_id: resourceId });
+      }
+    };
+    window.addEventListener("message", onMessage);
+    frame.addEventListener("load", initialize);
+    initialize();
+    const poll = window.setInterval(() => {
+      if (provider === "youtube") {
+        send({ event: "command", func: "getCurrentTime", args: [], id: resourceId });
+        send({ event: "command", func: "getDuration", args: [], id: resourceId });
+      } else {
+        send({ method: "getCurrentTime", player_id: resourceId });
+        send({ method: "getDuration", player_id: resourceId });
+      }
+    }, 1000);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      frame.removeEventListener("load", initialize);
+      window.clearInterval(poll);
+    };
+  }, [activeResource?.id, activeResourceIsEmbed, activeResourceUrl, error, loading]);
+
   if (loading) {
     return <div className="lesson-resource-loading"><span className="resource-loading-dot" /> Loading lesson media…</div>;
   }
@@ -653,8 +736,8 @@ function LearningResourceViewer({
     );
   }
 
-  const url = resourceUrl(activeResource);
-  const isEmbed = resourceIsVideo(activeResource) && /^https?:\/\//i.test(url) && !/\.(mp4|webm|ogg)(?:$|\?)/i.test(url);
+  const url = activeResourceUrl;
+  const isEmbed = activeResourceIsEmbed;
   const currentVideoState = activeVideoState();
   const currentVideoPercentage = currentVideoState?.duration ? Math.min(100, Math.round((watchedSeconds(currentVideoState) / currentVideoState.duration) * 100)) : currentVideoState?.completed ? 100 : 0;
 
@@ -669,7 +752,7 @@ function LearningResourceViewer({
         tabIndex={-1}
       >
         {resourceIsVideo(activeResource) && (isEmbed ? (
-          <iframe title={activeResource.title} src={videoEmbedUrl(url)} allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          <iframe ref={embeddedVideoFrame} title={activeResource.title} src={videoEmbedUrl(url)} allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
         ) : (
           <video
             controls
