@@ -479,7 +479,7 @@ function readVideoWatchState(lessonId: string, resource: LearningResource) {
       duration: Math.max(Number(stored.duration) || 0, resource.duration || 0),
       watchedRanges: stored.watchedRanges
         .filter((range): range is [number, number] => Array.isArray(range) && range.length === 2 && Number.isFinite(range[0]) && Number.isFinite(range[1]) && range[1] > range[0])
-        .map(([start, end]) => [Math.max(0, start), Math.max(0, end)]),
+        .map(([start, end]) => [Math.max(0, start), Math.max(0, end)] as [number, number]),
       completed: stored.completed === true,
     };
   } catch {
@@ -535,7 +535,11 @@ function LearningResourceViewer({
 
   useEffect(() => {
     setActiveResourceId(resources[0]?.id || "");
-    setVideoStates(Object.fromEntries(resources.filter(resourceIsVideo).map((resource) => [resource.id, readVideoWatchState(lessonId, resource)])));
+    const nextVideoStates: Record<string, VideoWatchState> = {};
+    resources.filter(resourceIsVideo).forEach((resource) => {
+      nextVideoStates[resource.id] = readVideoWatchState(lessonId, resource);
+    });
+    setVideoStates(nextVideoStates);
     videoTracker.current = { resourceId: resources[0]?.id || "", lastTime: 0, seeking: false };
   }, [lessonId, resources]);
 
