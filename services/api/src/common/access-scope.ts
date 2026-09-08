@@ -6,12 +6,24 @@ export interface AccessScope {
   campusId: string | null;
 }
 
+export const LMS_ADMIN_ROLE_CODES = [
+  "CITIS_SUPER_ADMIN",
+  "CITIS_PLATFORM_SUPPORT",
+  "INSTITUTION_ADMINISTRATOR",
+  "PRINCIPAL_DIRECTOR",
+  "ACADEMIC_ADMINISTRATOR",
+] as const;
+
+export function isLmsAdministrator(user: AuthenticatedUser) {
+  return user.roles.some((role) => LMS_ADMIN_ROLE_CODES.includes(role.code as typeof LMS_ADMIN_ROLE_CODES[number]));
+}
+
 export function isPlatformUser(user: AuthenticatedUser) {
-  return user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN");
+  return user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT");
 }
 
 export function canAccessScope(user: AuthenticatedUser, institutionId: string, campusId?: string | null) {
-  if (isPlatformUser(user)) return true;
+  if (isLmsAdministrator(user)) return true;
   return user.scopes.some((scope) => (
     scope.institutionId === institutionId
     && (scope.campusId === null || campusId == null || scope.campusId === campusId)
@@ -36,7 +48,7 @@ export function filterScopedRows<T extends Record<string, unknown>>(
   institutionKey = "institution_id",
   campusKey = "campus_id",
 ) {
-  if (isPlatformUser(user)) return rows;
+  if (isLmsAdministrator(user)) return rows;
   return rows.filter((row) => {
     const institutionId = row[institutionKey];
     return typeof institutionId === "string"

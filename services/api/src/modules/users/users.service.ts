@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import * as bcrypt from "bcryptjs";
 import { AuditService } from "../../common/audit.service";
-import { assertScope, isPlatformUser } from "../../common/access-scope";
+import { assertScope, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
@@ -20,12 +20,11 @@ export class UsersService {
 
   async list(user: AuthenticatedUser, page: number, pageSize: number, offset: number, tenantId?: string) {
     const scope = this.platform(user) ? tenantId : user.tenantId;
+    const scopedToActor = !isLmsAdministrator(user);
     const values: unknown[] = [];
-    const where = scope
-      ? `WHERE u.tenant_id = $1${this.userScopePredicate(user, "u", 2)}`
-      : "";
+    const where = scope ? `WHERE u.tenant_id = $1${scopedToActor ? this.userScopePredicate(user, "u", 2) : ""}` : "";
     if (scope) values.push(scope);
-    if (!this.platform(user)) values.push(user.id);
+    if (scopedToActor) values.push(user.id);
     const [rows, total] = await Promise.all([
       this.db.query(`SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at
         FROM users u ${where} ORDER BY u.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pageSize, offset]),
@@ -35,10 +34,11 @@ export class UsersService {
   }
 
   async get(id: string, user: AuthenticatedUser) {
+    const scopedToActor = !isLmsAdministrator(user);
     const result = await this.db.query(
       `SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at
-       FROM users u WHERE u.id = $1 AND ($2::uuid IS NULL OR u.tenant_id = $2)${this.userScopePredicate(user, "u", 3)}`,
-      this.platform(user) ? [id, null] : [id, user.tenantId, user.id],
+       FROM users u WHERE u.id = $1 AND ($2::uuid IS NULL OR u.tenant_id = $2)${scopedToActor ? this.userScopePredicate(user, "u", 3) : ""}`,
+      scopedToActor ? [id, user.tenantId, user.id] : [id, this.platform(user) ? null : user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("User not found.");
     return result.rows[0];
@@ -78,6 +78,7 @@ export class UsersService {
 
   async assignRole(id: string, input: AssignRoleDto, request: ContextRequest) {
     const actor = request.context.user!;
+    const scopedToActor = !isLmsAdministrator(actor);
     const userResult = await this.db.query<{ id: string; tenant_id: string }>(
       "SELECT id, tenant_id FROM users WHERE id = $1 AND tenant_id = $2",
       [id, this.platform(actor) ? null : actor.tenantId],
@@ -87,7 +88,7 @@ export class UsersService {
       "SELECT institution_id, campus_id FROM user_roles WHERE user_id = $1 AND tenant_id = $2",
       [id, userResult.rows[0].tenant_id],
     );
-    if (!this.platform(actor) && existingScopes.rows.length && !existingScopes.rows.some((scope) => (
+    if (scopedToActor && existingScopes.rows.length && !existingScopes.rows.some((scope) => (
       scope.institution_id !== null
       && actor.scopes.some((allowed) => allowed.institutionId === scope.institution_id
         && (allowed.campusId === null || scope.campus_id === null || allowed.campusId === scope.campus_id))
@@ -119,7 +120,7 @@ export class UsersService {
       if (!scope.rows[0] || (input.campusId && scope.rows[0].campus_id !== input.campusId)) {
         throw new NotFoundException("Institution or campus not found in the user tenant.");
       }
-      if (!this.platform(actor)) assertScope(actor, input.institutionId, input.campusId ?? null);
+      if (scopedToActor) assertScope(actor, input.institutionId, input.campusId ?? null);
     }
     const result = await this.db.query(
       `INSERT INTO user_roles (tenant_id, user_id, role_id, institution_id, campus_id)
@@ -134,7 +135,7 @@ export class UsersService {
   }
 
   private userScopePredicate(user: AuthenticatedUser, alias: string, actorParameter: number) {
-    if (this.platform(user)) return "";
+    if (isLmsAdministrator(user)) return "";
     return ` AND EXISTS (
       SELECT 1
       FROM user_roles target_scope
