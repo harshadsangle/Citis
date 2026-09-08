@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { lmsHomepageUrl } from "./lms-homepage";
 
 type Principal = {
   firstName?: string;
@@ -586,9 +587,9 @@ export default function TeacherPortalPage() {
         cache: "no-store",
       });
     } catch {
-      // Continue to the login screen even if the network is already down.
+      // Continue to the LMS homepage even if the network is already down.
     } finally {
-      window.location.assign("/auth/login");
+      window.location.assign(lmsHomepageUrl());
     }
   }
 

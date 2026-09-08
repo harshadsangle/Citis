@@ -5,6 +5,7 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
+import { lmsHomepageUrl } from "./lms-homepage";
 
 type Kind = "programmes" | "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
@@ -283,9 +284,9 @@ export default function InstitutionAdminPage() {
         cache: "no-store",
       });
     } catch {
-      // Continue to the login screen even if the network is already down.
+      // Continue to the LMS homepage even if the network is already down.
     } finally {
-      window.location.assign("/auth/login");
+      window.location.assign(lmsHomepageUrl());
     }
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { lmsHomepageUrl } from "./lms-homepage";
 
 async function fetchDashboardList<T>(path: string): Promise<T[]> {
   const response = await fetch(path, { credentials: "include" });
@@ -918,9 +919,9 @@ export default function StudentPortalPage() {
         cache: "no-store",
       });
     } catch {
-      // Continue to the login screen even if the network is already down.
+      // Continue to the LMS homepage even if the network is already down.
     } finally {
-      window.location.assign("/auth/login");
+      window.location.assign(lmsHomepageUrl());
     }
   }
 
