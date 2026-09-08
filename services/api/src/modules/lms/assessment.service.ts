@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from "@nestjs/common";
-import { assertScope, assertScopeForRead, filterScopedRows, isPlatformUser } from "../../common/access-scope";
+import { assertScope, assertScopeForRead, filterScopedRows, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { AuditService } from "../../common/audit.service";
 import { DatabaseService } from "../../database/database.service";
@@ -81,7 +81,7 @@ export class AssessmentService {
   }
 
   private async hasStaffAccess(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
-    if (isPlatformUser(user)) return true;
+    if (isLmsAdministrator(user)) return true;
     const result = await this.db.query(
       `SELECT 1
        FROM user_roles ur
@@ -251,9 +251,7 @@ export class AssessmentService {
     clauses.push("a.assessment_type <> 'ASSIGNMENT'");
     const isPlatform = isPlatformUser(user);
     const isTeacher = user.roles.some((role) => role.code === "TEACHER");
-    const isAdministrator = user.roles.some((role) =>
-      ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].includes(role.code),
-    );
+    const isAdministrator = isLmsAdministrator(user);
     const isStudent = user.roles.some((role) => role.code === "STUDENT");
     if (!courseIds && !isPlatform && !isTeacher && !isAdministrator && !isStudent) {
       return { data: [], meta: { page, pageSize, total: 0, totalPages: 0 } };

@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { assertScopeForRead, filterScopedRows, isPlatformUser } from "../../common/access-scope";
+import { assertScopeForRead, filterScopedRows, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
 import { AuditService } from "../../common/audit.service";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
@@ -21,13 +21,7 @@ const certificateSelect = `
 `;
 
 function staffRole(user: AuthenticatedUser) {
-  return user.roles.some((role) => [
-    "CITIS_SUPER_ADMIN",
-    "INSTITUTION_ADMINISTRATOR",
-    "PRINCIPAL_DIRECTOR",
-    "ACADEMIC_ADMINISTRATOR",
-    "TEACHER",
-  ].includes(role.code));
+  return isLmsAdministrator(user) || user.roles.some((role) => role.code === "TEACHER");
 }
 
 function learnerName(row: Record<string, unknown>) {
@@ -69,8 +63,7 @@ export class CertificateService {
     if (row.learner_id === user.id) return;
     if (isPlatformUser(user)) return;
     if (!staffRole(user)) throw new NotFoundException("Certificate not found.");
-    if (user.roles.some((role) => role.code === "TEACHER")
-      && !user.roles.some((role) => ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].includes(role.code))) {
+    if (user.roles.some((role) => role.code === "TEACHER") && !isLmsAdministrator(user)) {
       const assigned = await this.db.query(
         `SELECT 1 FROM lms_instructor_assignments
          WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3
@@ -102,11 +95,7 @@ export class CertificateService {
   async list(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: CertificateListQueryDto = {}) {
     const values: unknown[] = [user.tenantId];
     const clauses = ["cert.tenant_id = $1", "cert.status = 'ISSUED'"];
-    const administrator = user.roles.some((role) => [
-      "INSTITUTION_ADMINISTRATOR",
-      "PRINCIPAL_DIRECTOR",
-      "ACADEMIC_ADMINISTRATOR",
-    ].includes(role.code));
+    const administrator = isLmsAdministrator(user);
 
     if (!staffRole(user) || (!administrator && !isPlatformUser(user))) {
       values.push(user.id);

@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
-import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows, isPlatformUser } from "../../common/access-scope";
+import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
@@ -322,10 +322,8 @@ export class LmsService {
     const filter = this.statusFilter(query.status);
     const values: unknown[] = [user.tenantId];
     const clauses = [`x.tenant_id = $1`];
-    const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
     const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
-      && !user.roles.some((role) => administratorRoles.includes(role.code))
-      && !isPlatformUser(user);
+      && !isLmsAdministrator(user);
     if (parentId) {
       values.push(parentId);
       clauses.push(`x.${parentColumn} = $${values.length}`);
@@ -681,10 +679,8 @@ export class LmsService {
   }
 
   private isInstructorOnly(user: AuthenticatedUser) {
-    const administratorRoles = ["INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
     return user.roles.some((role) => role.code === "TEACHER")
-      && !user.roles.some((role) => administratorRoles.includes(role.code))
-      && !isPlatformUser(user);
+      && !isLmsAdministrator(user);
   }
 
   private async assertAssignedTeacherRead(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
@@ -762,7 +758,7 @@ export class LmsService {
 
   private async assertInstitutionAccess(user: AuthenticatedUser, institutionId: string, campusId?: string | null) {
     assertScope(user, institutionId, campusId);
-    if (isPlatformUser(user)) return;
+    if (isLmsAdministrator(user)) return;
     const result = await this.db.query(
       `SELECT 1
        FROM user_roles ur
