@@ -1379,23 +1379,25 @@ export class LmsService {
       clauses.push(`a.course_id = $${values.length}`);
       if (!staff) clauses.push("a.status = 'PUBLISHED'");
     } else {
-      if (!user.roles.some((role) => role.code === "STUDENT")) {
+      if (!isLmsAdministrator(user) && !user.roles.some((role) => role.code === "STUDENT")) {
         throw new BadRequestException("courseId is required when listing assignments as staff.");
       }
-      const enrolled = await this.db.query<{ course_id: string }>(
-        `SELECT course_id FROM lms_enrollments WHERE tenant_id = $1 AND learner_id = $2 AND status = 'ACTIVE'`,
-        [user.tenantId, user.id],
-      );
-      if (!enrolled.rows.length) return { data: [], meta: paginationMeta(page, pageSize, 0) };
-      values.push(enrolled.rows.map((row) => row.course_id));
-      clauses.push(`a.course_id = ANY($${values.length}::uuid[])`);
-      clauses.push(
-        "a.status = 'PUBLISHED'",
-        "c.status = 'PUBLISHED'",
-        "cm.status = 'PUBLISHED'",
-        "p.status = 'PUBLISHED'",
-        "i.status = 'ACTIVE'",
-      );
+      if (!isLmsAdministrator(user)) {
+        const enrolled = await this.db.query<{ course_id: string }>(
+          `SELECT course_id FROM lms_enrollments WHERE tenant_id = $1 AND learner_id = $2 AND status = 'ACTIVE'`,
+          [user.tenantId, user.id],
+        );
+        if (!enrolled.rows.length) return { data: [], meta: paginationMeta(page, pageSize, 0) };
+        values.push(enrolled.rows.map((row) => row.course_id));
+        clauses.push(`a.course_id = ANY($${values.length}::uuid[])`);
+        clauses.push(
+          "a.status = 'PUBLISHED'",
+          "c.status = 'PUBLISHED'",
+          "cm.status = 'PUBLISHED'",
+          "p.status = 'PUBLISHED'",
+          "i.status = 'ACTIVE'",
+        );
+      }
     }
     if (filter.values.length) {
       values.push(filter.values[0]);

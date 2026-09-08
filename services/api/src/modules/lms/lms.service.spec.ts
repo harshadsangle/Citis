@@ -432,6 +432,33 @@ test("learner assignment listings include only published content from enrolled c
   assert.ok(queries.some((query) => query.includes("JOIN institutions i")));
 });
 
+test("LMS administrators can load learner assignment listings without a course filter", async () => {
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    if (text.startsWith("SELECT a.id")) {
+      return {
+        rows: [{
+          id: "assignment-1",
+          tenant_id: user.tenantId,
+          institution_id: "institution-1",
+          course_id: "course-1",
+          module_id: "module-1",
+          title: "Portfolio",
+          status: "DRAFT",
+        }],
+      };
+    }
+    return { rows: [{ count: "1" }] };
+  });
+
+  const result = await service.listAssignments(user, 1, 20, 0, {});
+
+  assert.equal(result.data.length, 1);
+  assert.equal(queries.some((query) => query.startsWith("SELECT course_id")), false);
+  assert.equal(queries.some((query) => query.includes("a.course_id = ANY")), false);
+});
+
 test("learner assignment submissions reject blank work before touching the database", async () => {
   const learner: AuthenticatedUser = {
     ...user,
