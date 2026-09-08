@@ -55,6 +55,16 @@ export class TenantsService {
         [tenant.id, PLATFORM_TENANT_ID],
       );
       await client.query(
+        `INSERT INTO role_permissions (role_id, permission_id)
+         SELECT target_role.id, rp.permission_id
+         FROM role_permissions rp
+         JOIN roles source_role ON source_role.id = rp.role_id AND source_role.tenant_id = $2
+         JOIN roles target_role ON target_role.tenant_id = $1 AND target_role.code = source_role.code
+         WHERE source_role.code NOT IN ('CITIS_SUPER_ADMIN', 'CITIS_PLATFORM_SUPPORT')
+         ON CONFLICT (role_id, permission_id) DO NOTHING`,
+        [tenant.id, PLATFORM_TENANT_ID],
+      );
+      await client.query(
         `INSERT INTO tenant_modules (tenant_id, module_id, status)
          SELECT $1, id, 'INACTIVE' FROM modules ON CONFLICT (tenant_id, module_id) DO NOTHING`,
         [tenant.id],

@@ -16,6 +16,7 @@ const attemptStabilityMigration = readFileSync(resolve(process.cwd(), "../../pac
 const instructorDashboardMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/012_lms_instructor_dashboard_access.sql"), "utf8");
 const certificateMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/013_lms_certificates.sql"), "utf8");
 const teacherContentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/015_lms_teacher_content_management.sql"), "utf8");
+const adminAccessMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/016_lms_admin_full_access.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -152,4 +153,12 @@ test("certificate migration defines scoped issuance, verification, and export pe
   assert.match(certificateMigration, /lms_certificates_enrollment_scope_fk/);
   assert.match(certificateMigration, /lms\.certificate\.export/);
   assert.match(certificateMigration, /013_lms_certificates/);
+});
+
+test("admin access migration grants every stored permission to LMS administrator roles", () => {
+  for (const role of ["CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"]) {
+    assert.match(adminAccessMigration, new RegExp(role));
+  }
+  assert.match(adminAccessMigration, /CROSS JOIN permissions/);
+  assert.match(adminAccessMigration, /016_lms_admin_full_access/);
 });
