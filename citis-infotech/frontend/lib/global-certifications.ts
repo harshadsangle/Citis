@@ -87,7 +87,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-firefly",
     name: "Product and Experience Design with AI Using Adobe Firefly",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate ideation and design creation skills using Adobe Firefly.",
     overview:
@@ -107,7 +107,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-acrobat-pro",
     name: "Document Creation & Management Using Adobe Acrobat Pro",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate document creation and management skills using Adobe Acrobat Pro.",
     overview:
@@ -122,7 +122,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-express",
     name: "Content Creation and Marketing Using Adobe Express",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate content creation and marketing skills using Adobe Express.",
     overview:
@@ -137,7 +137,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-after-effects",
     name: "Visual Effects & Motion Graphics Using Adobe After Effects",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate visual effects and motion graphics skills using Adobe After Effects.",
     overview:
@@ -152,7 +152,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-animate",
     name: "Multiplatform Animation Using Adobe Animate",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate multiplatform animation skills using Adobe Animate.",
     overview:
@@ -167,7 +167,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-dreamweaver",
     name: "Web Authoring Using Adobe Dreamweaver",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate web authoring skills using Adobe Dreamweaver.",
     overview:
@@ -182,7 +182,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-illustrator",
     name: "Graphic Design & Illustration Using Adobe Illustrator",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate graphic design and illustration skills using Adobe Illustrator.",
     overview:
@@ -197,7 +197,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-indesign",
     name: "Print & Digital Media Publication Using Adobe InDesign",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate print and digital publication skills using Adobe InDesign.",
     overview:
@@ -212,7 +212,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-photoshop",
     name: "Visual Design Using Adobe Photoshop",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate visual design skills using Adobe Photoshop.",
     overview:
@@ -227,7 +227,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "adobe-premiere",
     name: "Digital Video Using Adobe Premiere",
-    provider: "Adobe · Certiport",
+    provider: "Adobe",
     category: "Professional certification",
     tagline: "Validate digital video skills using Adobe Premiere.",
     overview:
@@ -255,26 +255,22 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     appleBadges: [
       {
         name: "App Development with Swift — Certified User",
-        imageUrl:
-          "https://certiport.pearsonvue.com/getattachment/b26ea31f-bb61-4ab8-82f7-0c44f9fc3b55/Swift_CU_600x600.png",
-        sourceUrl: "https://certiport.pearsonvue.com/Certifications/Apple/App-Dev-With-Swift/Overview.aspx",
+        imageUrl: "/images/global-certification-sample.svg",
       },
       {
         name: "App Development with Swift — Associate",
-        imageUrl:
-          "https://certiport.pearsonvue.com/getattachment/8ef1956e-349b-4853-a649-1b7f31af1670/Swift_Associate_600x600.png",
-        sourceUrl: "https://certiport.pearsonvue.com/Certifications/Apple/App-Dev-With-Swift/Overview.aspx",
+        imageUrl: "/images/global-certification-sample.svg",
       },
     ],
   },
   {
     slug: "autodesk-tinkercad-3d-design",
     name: "Autodesk Tinkercad 3D Design",
-    provider: "Autodesk · Certiport",
+    provider: "Autodesk",
     category: "Design and engineering",
     tagline: "Design and make a better world. Start with certification.",
     overview:
-      "Certiport delivers both the Autodesk Tinkercad 3D Design and the subsequent Autodesk Certified User (ACU) certifications. They are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers.",
+      "The Autodesk Tinkercad 3D Design and Autodesk Certified User (ACU) certifications are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers.",
     skills: ["Tinkercad 3D Design"],
     benefits: [
       "They are industry-recognized credentials that can effectively launch and advance careers as designers, engineers, and makers.",
@@ -287,14 +283,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Autodesk Tinkercad 3D Design",
       badgeName: "Tinkercad 3D Design",
       imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/AutoCAD-(1)/tinkercad-3d-design-certified-user-badge-OL.png?lang=en-US&width=150&height=150&ext=.png",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
+        "/images/autodesk-logo.svg",
     },
   },
   {
     slug: "autodesk-certified-user-autocad",
     name: "Autodesk Certified User: AutoCAD",
-    provider: "Autodesk · Certiport",
+    provider: "Autodesk",
     category: "Design and engineering",
     tagline: "Design and make a better world. Start with certification.",
     overview:
@@ -311,14 +306,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Autodesk Certified User: AutoCAD",
       badgeName: "AutoCAD",
       imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/AutoCAD/autodesk-autocad-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
+        "/images/autodesk-logo.svg",
     },
   },
   {
     slug: "autodesk-certified-user-inventor",
     name: "Autodesk Certified User: Inventor",
-    provider: "Autodesk · Certiport",
+    provider: "Autodesk",
     category: "Design and engineering",
     tagline: "Design and make a better world. Start with certification.",
     overview:
@@ -335,14 +329,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Autodesk Certified User: Inventor",
       badgeName: "Inventor",
       imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Inventor/autodesk-inventor-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
+        "/images/autodesk-logo.svg",
     },
   },
   {
     slug: "autodesk-certified-user-fusion",
     name: "Autodesk Certified User: Fusion",
-    provider: "Autodesk · Certiport",
+    provider: "Autodesk",
     category: "Design and engineering",
     tagline: "Design and make a better world. Start with certification.",
     overview:
@@ -359,14 +352,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Autodesk Certified User: Fusion",
       badgeName: "Fusion",
       imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Fusion-360/autodesk-fusion-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
+        "/images/autodesk-logo.svg",
     },
   },
   {
     slug: "autodesk-certified-user-revit",
     name: "Autodesk Certified User: Revit",
-    provider: "Autodesk · Certiport",
+    provider: "Autodesk",
     category: "Design and engineering",
     tagline: "Design and make a better world. Start with certification.",
     overview:
@@ -383,14 +375,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Autodesk Certified User: Revit",
       badgeName: "Revit",
       imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Revit/autodesk-revit-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
+        "/images/autodesk-logo.svg",
     },
   },
   {
     slug: "autodesk-certified-user-maya",
     name: "Autodesk Certified User: Maya",
-    provider: "Autodesk · Certiport",
+    provider: "Autodesk",
     category: "Design and engineering",
     tagline: "Design and make a better world. Start with certification.",
     overview:
@@ -407,14 +398,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Autodesk Certified User: Maya",
       badgeName: "Maya",
       imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/Maya/autodesk-maya-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
+        "/images/autodesk-logo.svg",
     },
   },
   {
     slug: "autodesk-certified-user-3ds-max",
     name: "Autodesk Certified User: 3ds MAX",
-    provider: "Autodesk · Certiport",
+    provider: "Autodesk",
     category: "Design and engineering",
     tagline: "Design and make a better world. Start with certification.",
     overview:
@@ -431,25 +421,24 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Autodesk Certified User: 3ds MAX",
       badgeName: "3ds Max",
       imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Autodesk/Certifications/Badging/3ds-Max/autodesk-3ds-max-certified-user-badge.png?lang=en-US&width=150&height=150&ext=.png",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Autodesk/Certifications/Overview.aspx",
+        "/images/autodesk-logo.svg",
     },
   },
   {
     slug: "cisco",
     name: "Cisco Certified Support Technician",
-    provider: "Cisco · Certiport",
+    provider: "Cisco",
     category: "Professional certification",
     tagline: "Kick-start your career with a Cisco certification!",
     overview:
-      "Cisco, the worldwide leader in technology that powers the Internet, has partnered with Certiport to create the Cisco Certified Support Technician (CCST) certification program. This program includes three certification exams designed to validate work-ready skills and knowledge to help learners find a job in the field of end user support, networking, and cybersecurity. Earning a Cisco Certified Support Technician certification showcases the learner's skillset to employers, telling them they are ready to roll up their sleeves on day one.",
+      "Cisco, the worldwide leader in technology that powers the Internet, created the Cisco Certified Support Technician (CCST) certification program to validate work-ready skills and knowledge. The program includes three certification exams that help learners prepare for careers in end user support, networking, and cybersecurity.",
     skills: [
       "Cisco Certified Support Technician IT Support",
       "Cisco Certified Support Technician Networking",
       "Cisco Certified Support Technician Cybersecurity",
     ],
     benefits: [
-      "The 100-140 CCST IT Support, 100-150 CCST Networking, and 100-160 CCST Cybersecurity exams were created by a team of subject-matter experts from diverse careers and industries (including Cisco employees, networking and cybersecurity professionals, hiring managers, professors, teachers, and the experts at Certiport) to ensure these certifications effectively bridge the gap between education and the skills and knowledge needed to succeed in the workplace.",
+      "The 100-140 CCST IT Support, 100-150 CCST Networking, and 100-160 CCST Cybersecurity exams were created by subject-matter experts from diverse careers and industries to bridge the gap between education and the skills and knowledge needed to succeed in the workplace.",
       "Learners that earn the Cisco Certified Support Technician certifications are expected to have the required knowledge and work-ready skills necessary to launch a career in IT support, networking, and cybersecurity, through at least 150 hours of instruction.",
     ],
     careerRelevance:
@@ -459,10 +448,8 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
       credentialName: "Cisco Certified Support Technician",
       badgeDetails:
         "Digital badges are web-enabled versions of a credential, certification or learning outcome. Representing your credential as a badge gives you the ability to share your skills online in a way that is simple, trusted and can be easily verified in real time.",
-      imageUrl:
-        "https://certiport.pearsonvue.com/getattachment/Certifications/Cisco/Certified-Support-Technician/Badging/Cisco-Header-Digital-Badging-1050x200.jpeg",
-      imageAlt: "Establish your career in IT with a work-ready, Cisco Certified Support Technical certification from Certiport.",
-      sourceUrl: "https://certiport.pearsonvue.com/Certifications/Cisco/Certified-Support-Technician/Badging",
+      imageUrl: "/images/cisco-logo.svg",
+      imageAlt: "Cisco Certified Support Technician credential",
     },
   },
   {
@@ -482,7 +469,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "ic3-digital-literacy-global-standard-6",
     name: "IC3 Digital Literacy Global Standard 6",
-    provider: "IC3 · Certiport",
+    provider: "IC3",
     category: "Digital literacy certification",
     tagline: "Validate current digital literacy skills across three stackable levels.",
     overview:
@@ -526,7 +513,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "ic3-digital-literacy-global-standard-5",
     name: "IC3 Digital Literacy Global Standard 5",
-    provider: "IC3 · Certiport",
+    provider: "IC3",
     category: "Digital literacy certification",
     tagline: "Build a recognised foundation across computing, applications and online living.",
     overview:
@@ -546,7 +533,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     examDetails: [
       "Exam structure: Computing Fundamentals, Key Applications and Living Online.",
       "Objective domains cover computing concepts, popular productivity applications and work in an Internet or networked environment.",
-      "GS5 is the previous version of the IC3 Digital Literacy program; availability depends on the applicable Certiport exam release.",
+      "GS5 is the previous version of the IC3 Digital Literacy program; availability depends on the applicable exam release.",
     ],
     credentialDetails: [
       "Successful completion of the applicable GS5 exams produces certificates for the validated IC3 Digital Literacy domains.",
@@ -570,7 +557,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "ic3-spark",
     name: "IC3 Spark",
-    provider: "IC3 · Certiport",
+    provider: "IC3",
     category: "Digital literacy certification",
     tagline: "Give younger learners a confident start with computers and the Internet.",
     overview:
@@ -616,7 +603,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "ic3-fast-track",
     name: "IC3 Fast Track",
-    provider: "IC3 · Certiport",
+    provider: "IC3",
     category: "Digital literacy assessment",
     tagline: "Quickly gauge digital readiness for incoming learners and candidates.",
     overview:
@@ -636,7 +623,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     examDetails: [
       "Assessment purpose: gauge the digital-literacy skill set of incoming students or job candidates.",
       "Delivery: IC3 Fast Track is available on the GMetrix learning platform.",
-      "For exam lengths, objective domains, releases and policies, refer to the current Certiport exam details.",
+      "For exam lengths, objective domains, releases and policies, refer to the current exam details.",
     ],
     credentialDetails: [
       "IC3 Fast Track is an assessment and readiness measure, not an IC3 Digital Literacy certification.",
@@ -688,7 +675,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "intuit-certified-bookkeeping-professional",
     name: "Intuit Certified Bookkeeping Professional",
-    provider: "Intuit · Certiport",
+    provider: "Intuit",
     category: "Business and finance",
     tagline: "Build practical bookkeeping knowledge grounded in official exam objectives.",
     overview:
@@ -710,13 +697,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     suitableFor: "Learners preparing for bookkeeping and finance-support roles",
     examDetails: [
       "Official objective domains: Accounting Basics; Accounting for Assets and Sales Transactions; Accounting for Liabilities, Equity, and Purchase Transactions; Reconciliation and Financial Statements.",
-      "Objective source: Intuit Certified Bookkeeping Professional exam objectives supplied by Certiport.",
+      "Objective source: Intuit Certified Bookkeeping Professional exam objectives.",
     ],
   },
   {
     slug: "intuit-design-for-delight-innovator",
     name: "Intuit Design for Delight Innovator Certification",
-    provider: "Intuit · Certiport",
+    provider: "Intuit",
     category: "Innovation and design",
     tagline: "Turn customer understanding into practical experiments and better solutions.",
     overview:
@@ -738,13 +725,13 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     suitableFor: "Learners, designers, product teams and aspiring innovators",
     examDetails: [
       "Official objective domains: Design for Delight Concepts; Develop deep customer empathy; Brainstorm and narrow; Perform rapid customer experiments.",
-      "Objective source: Intuit Design for Delight Innovator exam objectives supplied by Certiport.",
+      "Objective source: Intuit Design for Delight Innovator exam objectives.",
     ],
   },
   {
     slug: "intuit-quickbooks-online-certified-user",
     name: "Intuit QuickBooks Online Certified User",
-    provider: "Intuit · Certiport",
+    provider: "Intuit",
     category: "Business and finance",
     tagline: "Validate practical QuickBooks Online administration and accounting workflows.",
     overview:
@@ -772,7 +759,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
   {
     slug: "intuit-personal-finance",
     name: "Intuit Personal Finance Certification",
-    provider: "Intuit · Certiport",
+    provider: "Intuit",
     category: "Personal finance",
     tagline: "Build informed habits for earning, spending, saving, investing and managing risk.",
     overview:
@@ -794,7 +781,7 @@ export const GLOBAL_CERTIFICATIONS: GlobalCertification[] = [
     suitableFor: "Students, learners, entrepreneurs and professionals building financial confidence",
     examDetails: [
       "Official objective domains: Earning income; Spending; Saving; Investing; Managing Credit; Managing Risk.",
-      "Objective source: Intuit Personal Finance exam objectives supplied by Certiport.",
+      "Objective source: Intuit Personal Finance exam objectives.",
     ],
   },
   {
