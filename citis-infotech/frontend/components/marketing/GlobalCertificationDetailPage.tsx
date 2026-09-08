@@ -56,61 +56,49 @@ export function GlobalCertificationDetailPage({ certification }: { certification
               {isApple ? (
                 <div className="absolute inset-0 grid grid-cols-2 items-center gap-3 bg-white p-4 sm:gap-6 sm:p-8">
                   {certification.appleBadges?.map((badge) => (
-                    <a
+                    <div
                       key={badge.name}
-                      href={badge.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
                       className="flex h-full items-center justify-center rounded-xl border border-[#d9ebf1] bg-[#fafdfe] p-2 transition-transform hover:-translate-y-1 sm:p-4"
-                      aria-label={`View the official ${badge.name} badge on Certiport`}
+                      aria-label={`Official ${badge.name} badge`}
                     >
-                      {/* Official badge artwork from Certiport's current Apple certification listing. */}
+                      {/* Official Apple certification artwork. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={badge.imageUrl} alt={badge.name} className="h-full w-full object-contain" />
-                    </a>
+                    </div>
                   ))}
                 </div>
               ) : isAutodesk && certification.autodeskCredential ? (
-                <a
-                  href={certification.autodeskCredential.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                <div
                   className="absolute inset-0 flex items-center justify-center bg-white p-10 transition-transform hover:scale-[1.02]"
-                  aria-label={`View ${certification.autodeskCredential.credentialName} on Certiport`}
+                  aria-label={`Official ${certification.autodeskCredential.credentialName} credential`}
                 >
-                  {/* Official credential artwork from Certiport's current Autodesk certification listing. */}
+                  {/* Official Autodesk credential artwork. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={certification.autodeskCredential.imageUrl}
                     alt={`${certification.autodeskCredential.credentialName} digital badge`}
                     className="h-full w-full object-contain"
                   />
-                </a>
+                </div>
               ) : isCisco && certification.ciscoCredential ? (
-                <a
-                  href={certification.ciscoCredential.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                <div
                   className="absolute inset-0 flex items-center justify-center bg-white p-8 transition-transform hover:scale-[1.02] sm:p-12"
-                  aria-label={`View ${certification.ciscoCredential.credentialName} digital badging information on Certiport`}
+                  aria-label={`Official ${certification.ciscoCredential.credentialName} credential`}
                 >
-                  {/* Official digital-badging representation from Certiport's current Cisco CCST listing. */}
+                  {/* Official Cisco credential artwork. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={certification.ciscoCredential.imageUrl}
                     alt={certification.ciscoCredential.imageAlt}
                     className="h-auto w-full object-contain"
                   />
-                </a>
+                </div>
               ) : isIc3 && certification.ic3Credential ? (
-                <a
-                  href={certification.ic3Credential.sourceUrl}
-                  target="_blank"
-                  rel="noreferrer"
+                <div
                   className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-white p-5 transition-transform hover:scale-[1.02] sm:gap-5 sm:p-8"
-                  aria-label={`View ${certification.name} digital badging information on Certiport`}
+                  aria-label={`Official ${certification.name} digital credential`}
                 >
-                  {/* Official IC3 badge artwork from Certiport's current digital-badging listing. */}
+                  {/* Official IC3 credential artwork. */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={certification.ic3Credential.imageUrl}
@@ -126,7 +114,7 @@ export function GlobalCertificationDetailPage({ certification }: { certification
                       {certification.ic3Credential.completionWording}
                     </p>
                   </div>
-                </a>
+                </div>
               ) : (
                 <>
                   <Image
