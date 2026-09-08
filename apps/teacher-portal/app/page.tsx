@@ -2192,20 +2192,24 @@ export default function TeacherPortalPage() {
            .metric-foot, .heading-identity small, .table-caption, .course-main small, .course-side small,
            .action-row small, .module-title small, .lesson-title small, .resource-row small, .assignment-title small,
            .assignment-meta small, .assessment-title small, .assessment-meta small, .submission-course small,
-           .question-heading small, .attempt-question small, .attempt-feedback { font-size: 10px; }
+           .question-heading small, .attempt-question small, .attempt-feedback { font-size: 12px; line-height: 1.5; }
            .sidebar-label, .live-label, .help-link, .profile-trigger-copy strong, .profile-menu-item strong,
            .eyebrow, .metric-label, .heading-identity strong, .course-side em, .status-pill, .scope-note,
            .submission-body a, .submission-detail > a, .form-grid label, .grade-bar label, .attempt-grade-form label { font-size: 11px; }
-           .nav-item, .primary-button, .secondary-button, .intro, .panel-copy, .course-main strong, .action-row strong,
+           .nav-item, .primary-button, .secondary-button, .course-main strong, .action-row strong,
            .module-title strong, .lesson-title strong, .resource-row strong, .assignment-title strong,
            .assessment-title strong, .submission-course strong, .submission-body p, .submission-detail > p,
            .submission-copy, .form-grid input, .form-grid select, .form-grid textarea, .grade-bar input,
            .attempt-grade-form textarea, th, td { font-size: 12px; }
+           .intro, .panel-copy { font-size: 14px; line-height: 1.65; }
            .panel-heading h2 { font-size: 20px; }
-           .panel-subtitle, .assignment-description, .assessment-description { font-size: 11px; }
+           .panel-subtitle, .assignment-description, .assessment-description { font-size: 14px; line-height: 1.6; }
+           .state strong { font-size: 14px; }
+           .state p { font-size: 13px; line-height: 1.65; }
+           .submission-body p, .submission-detail > p, .submission-copy { font-size: 14px; line-height: 1.65; }
            .subsection-heading h3 { font-size: 14px; }
            .subsection-heading h4, .editor-heading h3 { font-size: 12px; }
-           .alert, .inline-state, .inline-alert, .workspace-note { font-size: 11px; }
+           .alert, .inline-state, .inline-alert, .workspace-note { font-size: 13px; line-height: 1.55; }
           @media (max-width: 780px) {
             .page-heading { gap: 17px; }
             .heading-actions { width: 100%; }

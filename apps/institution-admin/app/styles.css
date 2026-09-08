@@ -317,22 +317,26 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
 .brand small, .sidebar-footer span, .profile-trigger-copy small, .profile-menu-item small, .field-hint, .selected-file,
 .metric-foot, .relationship-count span { font-size: 10px; }
 .sidebar-label, .eyebrow, .environment-pill, .help-link, .profile-trigger-copy strong, .profile-menu-item strong,
-.metric-label, .filter-label, .state-box p, .relationship-add p, .relationship-empty p, .relationship-alert,
-.relationship-alert p, .submission-copy { font-size: 11px; }
+.metric-label, .filter-label { font-size: 11px; }
 .nav-link, .sidebar-footer strong, .primary-button, .secondary-button, .crumb, .breadcrumb-bar, .record-meta,
 .record-detail, .updated-detail, .row-actions button, .row-action-link, .state-box a, .text-button,
 .modal input, .modal textarea, .modal select, .modal-intro, .modal label, .relationship-controls input,
 .relationship-controls select, .relationship-controls textarea, .relationship-row, .relationship-person strong,
 .relationship-row .danger-action, .assignment-review-row a, .grade-controls input { font-size: 12px; }
-.page-heading p { font-size: 14px; }
+.page-heading p { font-size: 16px; line-height: 1.65; }
 .panel-toolbar h2 { font-size: 16px; }
-.panel-subtitle, .list-head, .status-badge { font-size: 10px; }
+.panel-subtitle { font-size: 13px; line-height: 1.55; }
+.list-head, .status-badge { font-size: 10px; }
 .record-title { font-size: 13px; }
-.relationship-heading p { font-size: 12px; }
+.record-meta, .record-detail, .updated-detail { font-size: 13px; }
+.relationship-heading p, .relationship-add p, .relationship-empty p, .relationship-alert, .relationship-alert p { font-size: 14px; line-height: 1.6; }
 .relationship-heading h2 { font-size: 20px; }
 .relationship-add h3 { font-size: 13px; }
 .relationship-list-heading { font-size: 10px; }
-.relationship-empty strong, .relationship-alert strong { font-size: 13px; }
+.relationship-empty strong, .relationship-alert strong, .state-box strong { font-size: 15px; }
+.state-box p, .submission-copy { font-size: 14px; line-height: 1.65; }
+.modal-intro { font-size: 13px; line-height: 1.6; }
+.field-hint, .selected-file { font-size: 12px; line-height: 1.55; }
 .toast { font-size: 12px; }
 
 @media (max-width: 780px) {
