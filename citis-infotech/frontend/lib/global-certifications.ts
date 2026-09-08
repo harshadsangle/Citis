@@ -31,14 +31,12 @@ export type AdobeDigitalBadging = DigitalBadging;
 export interface AppleDigitalBadge {
   name: "App Development with Swift — Certified User" | "App Development with Swift — Associate";
   imageUrl: string;
-  sourceUrl: string;
 }
 
 export interface AutodeskCredential {
   credentialName: string;
   badgeName: string;
   imageUrl: string;
-  sourceUrl: string;
 }
 
 export interface CiscoCredential {
@@ -46,14 +44,12 @@ export interface CiscoCredential {
   badgeDetails: string;
   imageUrl: string;
   imageAlt: string;
-  sourceUrl: string;
 }
 
 export interface IC3Credential {
   badgeName: string;
   imageUrl: string;
   imageAlt: string;
-  sourceUrl: string;
   completionWording: string;
 }
 
@@ -78,14 +74,12 @@ const IC3_DIGITAL_BADGING_DETAILS = {
 } satisfies Omit<DigitalBadging, "badgeName">;
 
 const IC3_BADGE_IMAGE =
-  "https://certiport.pearsonvue.com/getattachment/Certifications/IC3/Digital-Literacy-Certification/Badging/IC3-Spark/IC3_Digital_Literacy_Badge.png?lang=en-US&width=416&height=416&ext=.png";
-const IC3_BADGE_SOURCE =
-  "https://certiport.pearsonvue.com/Certifications/IC3/Digital-Literacy-Certification/Badging";
+  "/images/ic3-logo.png";
 
 const ADOBE_EXAM_DETAILS = [
   "150 hours of hands-on Adobe app experience and instruction recommended before the exam.",
-  "Live-in-the-app exams available online through OnVUE or in person at a Certiport Authorized Testing Center.",
-  "Exams available in 12 languages, with objective domains and product releases published by Adobe and Certiport.",
+  "Live-in-the-app exams are available online or in person at an authorized testing center.",
+  "Exams are available in multiple languages, with objective domains and product releases published by Adobe.",
   "A corresponding digital badge is issued after earning the certification, with verifiable credential data.",
 ];
 
