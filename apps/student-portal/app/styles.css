@@ -1,7 +1,7 @@
-:root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #102f49; background: #f4f8fb; font-synthesis: none; }
+:root { --font-lms: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif; font-family: var(--font-lms); color: #102f49; background: #f4f8fb; font-synthesis: none; }
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; }
+body { margin: 0; min-width: 320px; font-family: var(--font-lms); font-size: .9375rem; line-height: 1.55; text-rendering: optimizeLegibility; }
 button, input, textarea { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .52; }
@@ -12,13 +12,13 @@ button:disabled { cursor: not-allowed; opacity: .52; }
     radial-gradient(circle at 96% 14%, rgb(239 125 60 / .13), transparent 24%),
     #f4f8fb !important;
   color: #102f49 !important;
-  font-family: "Avenir Next", "Segoe UI", Arial, sans-serif !important;
+  font-family: var(--font-lms) !important;
   min-height: 100dvh !important;
   padding: clamp(24px, 5vw, 64px) max(18px, 4vw) 72px !important;
 }
 .student-shell > div { max-width: 1120px !important; }
 .student-shell h1, .student-shell h2, .student-shell h3, .student-shell strong {
-  font-family: "Avenir Next", "Segoe UI", Arial, sans-serif !important;
+  font-family: var(--font-lms) !important;
 }
 .student-shell h1 { color: #0a3454 !important; font-weight: 700 !important; }
 .student-shell h2 { color: #123f60 !important; font-weight: 650 !important; }
@@ -39,7 +39,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
   box-shadow: 0 10px 28px rgb(18 75 115 / .055) !important;
 }
 .student-shell article > div:first-child { gap: 24px !important; }
-.student-shell article strong[style*="fontSize: 30px"] { color: #267d76 !important; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif !important; }
+.student-shell article strong[style*="fontSize: 30px"] { color: #267d76 !important; font-family: var(--font-lms) !important; }
 .student-shell div[style*="background: rgb(230, 237, 243)"],
 .student-shell div[style*="background: #e6edf3"] {
   background: #dce8ee !important; height: 9px !important;

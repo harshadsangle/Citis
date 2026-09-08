@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
+import { Manrope } from "next/font/google";
 import "./styles.css";
+
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = { title: "CITIS Student Portal" };
 
 export default function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en-IN"><body>{children}</body></html>;
+  return <html lang="en-IN"><body className={manrope.variable}>{children}</body></html>;
 }

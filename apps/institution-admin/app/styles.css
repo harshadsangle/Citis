@@ -1,7 +1,10 @@
-:root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #172b4d; background: #f6f9fd; font-synthesis: none; }
+:root { --font-lms: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif; color: #172b4d; background: #f6f9fd; font-family: var(--font-lms); font-synthesis: none; }
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; }
+body { margin: 0; min-width: 320px; font-family: var(--font-lms); font-size: .9375rem; line-height: 1.55; text-rendering: optimizeLegibility; }
 button, input, select, textarea { font: inherit; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-lms); font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+h1 { letter-spacing: -.035em; }
+h4, h5, h6 { letter-spacing: -.015em; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: .5; }
 .admin-shell { display: flex; min-height: 100vh; background: #f6f9fd; }
@@ -245,7 +248,7 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 }
 
 /* Shared CITIS workspace finish: confident navy, warm signal colour, quiet surfaces. */
-:root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #102f49; background: #f4f8fb; }
+:root { --font-lms: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif; font-family: var(--font-lms); color: #102f49; background: #f4f8fb; }
 body { background: #f4f8fb; }
 .admin-shell { background: radial-gradient(circle at 82% 0%, #5ca6b117, transparent 27%), #f4f8fb; }
 .sidebar { background: linear-gradient(165deg, #082f50 0%, #0d4d72 62%, #0b3c60 100%); box-shadow: 14px 0 38px #0a345414; }
@@ -261,7 +264,7 @@ body { background: #f4f8fb; }
 .help-link, .crumb:hover, .crumb.current { color: #155d88; }
 .workspace-content { padding-top: 52px; }
 .eyebrow { color: #bf6731; }
-h1, .panel-toolbar h2, .relationship-heading h2, .modal h2 { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; }
+h1, .panel-toolbar h2, .relationship-heading h2, .modal h2 { font-family: var(--font-lms); }
 h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
 .page-heading p, .panel-subtitle { color: #607a8c; }
 .primary-button { color: #fffaf4; background: #ef7d3c; border-radius: 11px; box-shadow: 0 9px 20px #ef7d3c35; min-height: 44px; }
@@ -269,7 +272,7 @@ h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
 .secondary-button { color: #155d88; border-color: #c6d8e1; border-radius: 11px; background: #fbfdfe; min-height: 42px; }
 .metric-grid { gap: 15px; }
 .metric-card, .content-panel, .relationship-panel { border-color: #d3e1e8; border-radius: 15px; box-shadow: 0 12px 30px #124b7310; background: #fbfdfe; }
-.metric-card strong { color: #123f60; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; font-size: 29px; }
+.metric-card strong { color: #123f60; font-family: var(--font-lms); font-size: 29px; }
 .metric-card .green-text { color: #278a76; }
 .metric-card .amber-text { color: #c56c32; }
 .metric-card .metric-foot { color: #7d95a5; }
@@ -277,7 +280,7 @@ h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
 .record-row { min-height: 82px; }
 .record-row:hover { background: #f1f7f9; }
 .record-avatar { color: #bd6530; background: #fff0e7; }
-.record-title { color: #174c6e; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; }
+.record-title { color: #174c6e; font-family: var(--font-lms); }
 .status-badge { border: 1px solid transparent; padding: 6px 9px; }
 .status-badge.published { border-color: #bfe0d8; }
 .status-badge.draft { border-color: #f0d8c8; }

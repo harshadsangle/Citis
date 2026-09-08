@@ -1681,12 +1681,14 @@ export default function TeacherPortalPage() {
       </div>
 
       <style jsx global>{`
-         :root { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; color: #173450; background: #f6f9fd; font-synthesis: none; }
+         :root { --font-lms: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif; font-family: var(--font-lms); color: #173450; background: #f6f9fd; font-synthesis: none; }
         * { box-sizing: border-box; }
         html { scroll-behavior: smooth; }
-        body { margin: 0; min-width: 320px; line-height: 1.45; }
-        h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
-        button, input { font: inherit; }
+         body { margin: 0; min-width: 320px; font-family: var(--font-lms); font-size: .9375rem; line-height: 1.55; text-rendering: optimizeLegibility; }
+         h1, h2, h3, h4, h5, h6 { font-family: var(--font-lms); font-weight: 700; letter-spacing: -.025em; line-height: 1.15; }
+         h1 { letter-spacing: -.035em; }
+         h4, h5, h6 { letter-spacing: -.015em; }
+         button, input, select, textarea { font: inherit; }
         button { cursor: pointer; }
         button:disabled { cursor: not-allowed; opacity: .52; }
         .portal-shell { min-height: 100vh; background: #f6f9fd; }
@@ -2097,7 +2099,7 @@ export default function TeacherPortalPage() {
          .topbar { background: #fbfdfe; border-bottom-color: #d3e1e8; }
          .content { padding-top: 52px; }
          .eyebrow { color: #bf6731; }
-         h1, .panel-heading h2 { font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; }
+          h1, .panel-heading h2 { font-family: var(--font-lms); }
          h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
          .intro, .panel-copy { color: #607a8c; }
          .primary-button { color: #fffaf4; background: #ef7d3c; box-shadow: 0 9px 20px #ef7d3c35; border-radius: 11px; }
@@ -2108,7 +2110,7 @@ export default function TeacherPortalPage() {
          .metric-card { background: #fbfdfe; }
          .metric-card.accent { border-color: #bfe0d8; background: linear-gradient(145deg, #fbfdfe, #eef9f5); }
          .metric-card.warm { border-color: #f0d8c8; background: linear-gradient(145deg, #fbfdfe, #fff5ed); }
-         .metric-card strong { color: #123f60; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; font-size: 29px; }
+          .metric-card strong { color: #123f60; font-family: var(--font-lms); font-size: 29px; }
          .metric-card.accent strong { color: #278a76; }
          .metric-card.warm strong { color: #c56c32; }
          .panel-heading { padding: 25px 26px 21px; background: #fbfdfe; }
