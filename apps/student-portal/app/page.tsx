@@ -739,6 +739,53 @@ function CourseDetailsView({
   );
 }
 
+function ContinueLearning({
+  progress,
+  onContinue,
+  onDetails,
+}: {
+  progress: Progress;
+  onContinue: () => void;
+  onDetails: () => void;
+}) {
+  const category = categoryForCourse(progress.course.programme_name);
+  const narrative = parseCourseNarrative(progress.course.description);
+  const nextModule = progress.modules.find((module) => module.state !== "COMPLETED");
+  const actionLabel = progress.state === "NOT_STARTED" ? "Start learning" : "Continue learning";
+
+  return (
+    <section className="continue-learning-panel" aria-labelledby="continue-learning-title">
+      <div className="continue-learning-art" aria-hidden="true">
+        <span>Next</span>
+        <strong>{String(progress.modules.findIndex((module) => module.state !== "COMPLETED") + 1 || progress.modules.length).padStart(2, "0")}</strong>
+        <i />
+      </div>
+      <div className="continue-learning-copy">
+        <div className="continue-learning-kicker">
+          <span className="portal-eyebrow">Continue learning</span>
+          <span className="continue-learning-state">{progress.state === "NOT_STARTED" ? "Ready to start" : `${progress.percentage}% complete`}</span>
+        </div>
+        <p className="continue-learning-context">{progress.course.code} <span aria-hidden="true">·</span> {category}</p>
+        <h2 id="continue-learning-title">{progress.course.title}</h2>
+        <p className="continue-learning-description">{shortCourseDescription(narrative, progress.course.description)}</p>
+        <div className="continue-learning-meta">
+          <span><strong>{nextModule?.title || "Course complete"}</strong><small>Next module</small></span>
+          <span><strong>{progress.lessons.completed}/{progress.lessons.total}</strong><small>Lessons complete</small></span>
+        </div>
+        <div className="continue-learning-actions">
+          <button className="course-primary-button" type="button" onClick={onContinue}>{actionLabel} <span aria-hidden="true">→</span></button>
+          <button className="course-details-button" type="button" onClick={onDetails}>View course details <span aria-hidden="true">↗</span></button>
+        </div>
+      </div>
+      <div className="continue-learning-progress">
+        <div className="continue-learning-progress-heading"><span>Your progress</span><strong>{progress.percentage}%</strong></div>
+        <ProgressBar percentage={progress.percentage} />
+        <p>{progress.lessons.completed === progress.lessons.total ? "All lessons complete" : `${progress.lessons.total - progress.lessons.completed} lessons left in this course`}</p>
+      </div>
+    </section>
+  );
+}
+
 function CourseCatalogue({
   courses,
   provider,
@@ -778,6 +825,9 @@ function CourseCatalogue({
   const completedCourses = courses.filter((course) => course.state === "COMPLETED").length;
   const activeCourses = courses.filter((course) => course.state === "IN_PROGRESS").length;
   const totalModules = courses.reduce((total, course) => total + course.modules.length, 0);
+  const completedLessons = courses.reduce((total, course) => total + course.lessons.completed, 0);
+  const averageProgress = courses.length ? Math.round(courses.reduce((total, course) => total + course.percentage, 0) / courses.length) : 0;
+  const continueCourse = (courses.find((course) => course.state === "IN_PROGRESS") || courses.find((course) => course.state === "NOT_STARTED") || courses[0])!;
 
   if (learningCourseId) {
     const learningCourse = courses.find((course) => course.course.id === learningCourseId);
@@ -791,18 +841,25 @@ function CourseCatalogue({
 
   return (
     <section className="course-catalogue" id="my-learning" aria-labelledby="course-catalogue-title">
+      <ContinueLearning
+        progress={continueCourse}
+        onContinue={() => setLearningCourseId(continueCourse.course.id)}
+        onDetails={() => setDetailCourseId(continueCourse.course.id)}
+      />
       <div className="catalogue-heading">
         <div>
           <span className="catalogue-eyebrow">Your learning library</span>
-          <h2 id="course-catalogue-title">{provider ? `${providerLabel(provider)} courses` : "Courses built for your next step"}</h2>
-           <p>Pick up where you left off, explore your curriculum, and keep building momentum across your CITIS learning journey.</p>
+          <h2 id="course-catalogue-title">{provider ? `${providerLabel(provider)} courses` : "Your enrolled courses"}</h2>
+          <p>Explore your curriculum, keep your progress moving, and turn each completed lesson into career-ready confidence.</p>
         </div>
-         <div className="catalogue-total"><strong>{courses.length}</strong><span>in My Learning</span></div>
+        <div className="catalogue-total"><strong>{courses.length}</strong><span>enrolled courses</span></div>
       </div>
       <div className="catalogue-stat-row">
         <div><span className="catalogue-stat-icon">◎</span><span><strong>{activeCourses}</strong><small>In progress</small></span></div>
         <div><span className="catalogue-stat-icon">✓</span><span><strong>{completedCourses}</strong><small>Completed</small></span></div>
         <div><span className="catalogue-stat-icon">▦</span><span><strong>{totalModules}</strong><small>Learning modules</small></span></div>
+        <div><span className="catalogue-stat-icon">↗</span><span><strong>{averageProgress}%</strong><small>Average progress</small></span></div>
+        <div><span className="catalogue-stat-icon">◷</span><span><strong>{completedLessons}</strong><small>Lessons completed</small></span></div>
       </div>
       <div className="catalogue-toolbar">
         <label className="catalogue-search">
@@ -1110,36 +1167,38 @@ export default function StudentPortalPage() {
   }
 
   return (
-    <main className="student-shell" style={{ background: "#f5f8fb", color: "#12304a", fontFamily: "Arial, sans-serif", minHeight: "100vh", padding: "48px 24px" }}>
+    <main className="student-shell">
       <div className="student-container">
-          <div className="portal-topbar">
-          <div className="portal-brand"><span className="portal-brand-citis">CITIS</span><span className="portal-brand-infot">InfoTech</span><span className="portal-brand-divider" /><span className="portal-brand-label">Learning portal</span></div>
-          <div className="portal-actions"><span className="portal-session">Student space</span><button className="portal-signout" onClick={() => void logout()} disabled={loggingOut} type="button">{loggingOut ? "Signing out…" : "Sign out"} <span aria-hidden="true">↗</span></button></div>
+        <div className="portal-topbar">
+          <div className="portal-brand"><span className="portal-brand-mark" aria-hidden="true">C</span><span><span className="portal-brand-citis">CITIS</span><span className="portal-brand-infot">InfoTech</span></span><span className="portal-brand-divider" /><span className="portal-brand-label">Learning portal</span></div>
+          <div className="portal-actions"><span className="portal-session">Student space</span><button className="portal-signout" onClick={() => void logout()} disabled={loggingOut} type="button"><span className="portal-signout-icon" aria-hidden="true">↗</span>{loggingOut ? "Signing out…" : "Sign out"}</button></div>
         </div>
-          <nav className="learner-nav" aria-label="Learner navigation">
-            <a className="is-active" href="#my-learning">My Learning</a>
-            <a href="#assessments">Assessments</a>
-            <a href="#assignments">Assignments</a>
-            <a href="#certificates">Certificates</a>
-          </nav>
+        <nav className="learner-nav" aria-label="Learner navigation">
+          <a className="is-active" href="#my-learning"><span aria-hidden="true">◈</span>My Learning</a>
+          <a href="#assessments"><span aria-hidden="true">✓</span>Assessments</a>
+          <a href="#assignments"><span aria-hidden="true">▤</span>Assignments</a>
+          <a href="#certificates"><span aria-hidden="true">✦</span>Certificates</a>
+        </nav>
         <header className="portal-hero">
           <div className="portal-hero-copy">
             <span className="portal-eyebrow">CITIS learning portal {provider && `· ${providerLabel(provider)}`}</span>
             <h1>Build momentum.<br /><em>Own your next step.</em></h1>
             <p>Explore your enrolled courses, follow the roadmap, and turn every completed lesson into career-ready confidence.</p>
+            <div className="portal-hero-proof"><span className="portal-hero-proof-mark" aria-hidden="true">✓</span><span><strong>Your progress, in one place</strong><small>Courses, assessments, assignments, and certificates stay connected.</small></span></div>
           </div>
           <div className="portal-hero-card">
-            <span className="portal-hero-card-icon">✦</span>
+            <span className="portal-hero-card-icon" aria-hidden="true">✦</span>
             <span>Today’s focus</span>
             <strong>{provider ? `${providerLabel(provider)} pathway` : "Your learning library"}</strong>
-             <small>Small steps. Visible progress.</small>
-             <a href="#my-learning">Open My Learning <span aria-hidden="true">→</span></a>
+            <small>Small steps. Visible progress.</small>
+            <a href="#my-learning">Open My Learning <span aria-hidden="true">→</span></a>
           </div>
         </header>
 
-        {loading && <section className="portal-state-card">Loading your courses…</section>}
+        {loading && <section className="portal-state-card portal-loading-card"><span className="portal-loading-mark" aria-hidden="true"><i /><i /><i /></span><strong>Loading your learning space</strong><span>Preparing your courses and progress.</span></section>}
         {!loading && error && (
           <section className="portal-state-card portal-error-card">
+            <span className="portal-state-icon portal-state-icon-error" aria-hidden="true">!</span>
             <h2>We couldn’t load your progress</h2>
             <p>{error}</p>
             <a href="/auth/login">Sign in to continue</a>
@@ -1147,7 +1206,7 @@ export default function StudentPortalPage() {
         )}
         {!loading && !error && courses.length === 0 && (
           <section className="portal-state-card">
-            <span className="portal-empty-icon">○</span>
+            <span className="portal-empty-icon" aria-hidden="true">○</span>
             <h2>No active courses yet</h2>
             <p>Your institution’s learning team will show your courses here after you are enrolled.</p>
           </section>
