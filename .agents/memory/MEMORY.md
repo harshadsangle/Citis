@@ -1,6 +1,6 @@
 - [Certificate asset rendering](certificate-assets.md) — layer raster logos and dynamic text in React rather than nesting external images inside the certificate SVG.
-- [IC3 certification sources](ic3-certification-sources.md) — Certiport’s current IC3 badge and course pages distinguish certification outcomes from Fast Track assessment.
-- [Apple badge assets](apple-badge-assets.md) — use the full-resolution Certiport Swift badge PNGs and preserve the official badge artwork in Apple previews.
+- [IC3 certification sources](ic3-certification-sources.md) — IC3 course pages distinguish certification outcomes from Fast Track assessment.
+- [Apple badge assets](apple-badge-assets.md) — preserve the square Apple credential visuals and their exact credential names in previews.
 - [NestJS runtime decorators](nestjs-runtime-decorators.md) — use a TypeScript runner that preserves parameter metadata for constructor injection.
 - [Assessment completion integrity](assessment-integrity.md) — only server-validated attempts create completion results; assignment outcomes stay on instructor grading.
 - [LMS portal session topology](lms-portal-session-topology.md) — role portals must share a cookie host; cross-app redirects need canonical or allowlisted origins.
