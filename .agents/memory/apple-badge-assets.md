@@ -3,8 +3,8 @@ name: Apple badge assets
 description: Authoritative Apple App Development with Swift badge artwork source.
 ---
 
-The official Apple App Development with Swift Certified User and Associate badge artwork is available as Certiport-hosted PNG assets. Keep the original square artwork intact and use it directly in Apple certification previews rather than recreating it or substituting a generic provider badge.
+The Apple App Development with Swift Certified User and Associate badge artwork should remain represented as separate square credential visuals in Apple certification previews rather than being substituted with a generic provider badge.
 
-**Why:** The Certiport-hosted assets contain Apple branding, the exact credential text and the intended proportions; resizing through a smaller derivative or replacing them with custom artwork reduces fidelity.
+**Why:** The original square assets contain Apple branding, exact credential text and intended proportions; replacing them with a generic visual reduces fidelity.
 
-**How to apply:** Keep Certified User and Associate as separate official badge entries, retain their exact names including the em dash, and use the Certiport Apple App Development with Swift page as the source link.
+**How to apply:** Keep Certified User and Associate as separate credential entries and retain their exact names including the em dash.
