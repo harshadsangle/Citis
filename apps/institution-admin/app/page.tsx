@@ -557,7 +557,40 @@ export default function InstitutionAdminPage() {
             <span className="environment-pill"><span className="online-dot" /> Connected workspace</span>
             <button className="icon-button" type="button" aria-label="Notifications">♢<span className="notification-dot" /></button>
             <a className="help-link" href="/auth/login">Need help?</a>
-            <button className="help-link" type="button" onClick={() => void logout()} disabled={loggingOut}>{loggingOut ? "Signing out…" : "Sign out"}</button>
+            <details className="profile-menu">
+              <summary className="profile-trigger" aria-label="Open profile menu">
+                <span className="profile-avatar">IA</span>
+                <span className="profile-trigger-copy"><strong>Profile</strong><small>Institution admin</small></span>
+                <span className="profile-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="profile-dropdown" role="menu" aria-label="Profile menu">
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Account details are managed by your institution workspace."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">◎</span><span><strong>My Account</strong><small>Manage your profile details</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Favourites will appear here when you save learning resources."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">☆</span><span><strong>Favourites</strong><small>Keep useful resources close</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Reports are available from your institution workspace."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">▥</span><span><strong>My Reports</strong><small>Review your learning activity</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Documentation is available through your institution support team."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">▤</span><span><strong>Documentation</strong><small>Find workspace guidance</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => {
+                  event.currentTarget.closest("details")?.removeAttribute("open");
+                  const destination = new URL(lmsHomepageUrl());
+                  destination.pathname = "/auth/forgot-password";
+                  destination.search = "?portal=admin";
+                  window.location.assign(destination.toString());
+                }}>
+                  <span className="profile-menu-icon" aria-hidden="true">✦</span><span><strong>Recovery Assistant</strong><small>Reset or recover account access</small></span>
+                </button>
+                <div className="profile-menu-divider" />
+                <button className="profile-menu-item profile-signout-item" type="button" onClick={() => void logout()} disabled={loggingOut}>
+                  <span className="profile-menu-icon" aria-hidden="true">↗</span><span><strong>{loggingOut ? "Signing out…" : "Sign Out"}</strong><small>End this secure session</small></span>
+                </button>
+              </div>
+            </details>
           </div>
         </header>
 

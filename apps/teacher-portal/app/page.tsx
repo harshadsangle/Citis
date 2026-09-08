@@ -1390,7 +1390,44 @@ export default function TeacherPortalPage() {
         <section className="workspace">
           <header className="topbar">
             <div className="mobile-brand"><div className="brand-mark">C</div><strong>CITIS Teaching</strong></div>
-            <div className="topbar-right"><span className="live-label"><i />Secure workspace</span><button className="help-link" type="button" onClick={() => setNotice("Need help? Contact your institution administrator.")}>Help</button><button className="help-link" type="button" onClick={() => void logout()} disabled={loggingOut}>{loggingOut ? "Signing out…" : "Sign out"}</button></div>
+            <div className="topbar-right">
+              <span className="live-label"><i />Secure workspace</span>
+              <button className="help-link" type="button" onClick={() => setNotice("Need help? Contact your institution administrator.")}>Help</button>
+              <details className="profile-menu">
+                <summary className="profile-trigger" aria-label="Open profile menu">
+                  <span className="profile-avatar">{name.slice(0, 1).toUpperCase()}</span>
+                  <span className="profile-trigger-copy"><strong>Profile</strong><small>{name}</small></span>
+                  <span className="profile-chevron" aria-hidden="true">⌄</span>
+                </summary>
+                <div className="profile-dropdown" role="menu" aria-label="Profile menu">
+                  <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setNotice("Account details are managed through your CITIS profile."); }}>
+                    <span className="profile-menu-icon" aria-hidden="true">◎</span><span><strong>My Account</strong><small>Manage your profile details</small></span>
+                  </button>
+                  <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setNotice("Favourites will appear here when you save learning resources."); }}>
+                    <span className="profile-menu-icon" aria-hidden="true">☆</span><span><strong>Favourites</strong><small>Keep useful resources close</small></span>
+                  </button>
+                  <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setNotice("Reports are available from your teaching workspace."); }}>
+                    <span className="profile-menu-icon" aria-hidden="true">▥</span><span><strong>My Reports</strong><small>Review your learning activity</small></span>
+                  </button>
+                  <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setNotice("Documentation is available through your institution support team."); }}>
+                    <span className="profile-menu-icon" aria-hidden="true">▤</span><span><strong>Documentation</strong><small>Find workspace guidance</small></span>
+                  </button>
+                  <button className="profile-menu-item" type="button" onClick={(event) => {
+                    event.currentTarget.closest("details")?.removeAttribute("open");
+                    const destination = new URL(lmsHomepageUrl());
+                    destination.pathname = "/auth/forgot-password";
+                    destination.search = "?portal=instructor";
+                    window.location.assign(destination.toString());
+                  }}>
+                    <span className="profile-menu-icon" aria-hidden="true">✦</span><span><strong>Recovery Assistant</strong><small>Reset or recover account access</small></span>
+                  </button>
+                  <div className="profile-menu-divider" />
+                  <button className="profile-menu-item profile-signout-item" type="button" onClick={() => void logout()} disabled={loggingOut}>
+                    <span className="profile-menu-icon" aria-hidden="true">↗</span><span><strong>{loggingOut ? "Signing out…" : "Sign Out"}</strong><small>End this secure session</small></span>
+                  </button>
+                </div>
+              </details>
+            </div>
           </header>
 
           <div className="content">
@@ -1680,6 +1717,27 @@ export default function TeacherPortalPage() {
         .live-label { display: flex; align-items: center; gap: 8px; color: #68809b; font-size: 11px; font-weight: 600; }
         .live-label i { width: 7px; height: 7px; border-radius: 50%; background: #39bd91; }
         .help-link { padding: 0; border: 0; color: #0a5da2; background: transparent; font-size: 11px; font-weight: 700; }
+         .profile-menu { position: relative; }
+         .profile-menu > summary { list-style: none; }
+         .profile-menu > summary::-webkit-details-marker { display: none; }
+         .profile-trigger { align-items: center; background: #f4f8fb; border: 1px solid #d3e1e8; border-radius: 999px; color: #123f60; cursor: pointer; display: flex; gap: 8px; min-height: 42px; padding: 4px 9px 4px 5px; }
+         .profile-trigger:hover { border-color: #9fc7c9; background: #eef8f7; }
+         .profile-avatar { align-items: center; background: linear-gradient(135deg, #267d76, #5ca6b1); border-radius: 50%; color: #fff; display: flex; flex: 0 0 31px; font-size: 11px; font-weight: 850; height: 31px; justify-content: center; }
+         .profile-trigger-copy { display: grid; gap: 2px; text-align: left; }
+         .profile-trigger-copy strong { font-size: 11px; }
+         .profile-trigger-copy small { color: #7890a2; font-size: 9px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+         .profile-chevron { color: #6f8998; font-size: 14px; line-height: 1; margin-left: 2px; }
+         .profile-dropdown { background: #fbfdfe; border: 1px solid #cbdde4; border-radius: 15px; box-shadow: 0 18px 42px #082f5026; min-width: 250px; padding: 7px; position: absolute; right: 0; top: calc(100% + 10px); z-index: 30; }
+         .profile-menu-item { align-items: center; background: transparent; border: 0; border-radius: 10px; color: #526f8c; display: flex; gap: 10px; padding: 10px 9px; text-align: left; width: 100%; }
+         .profile-menu-item:hover:not(:disabled) { background: #eff8f7; }
+         .profile-menu-icon { align-items: center; background: #eaf5f3; border-radius: 8px; color: #267d76; display: flex; flex: 0 0 30px; font-size: 15px; height: 30px; justify-content: center; }
+         .profile-menu-item > span:last-child { display: grid; gap: 3px; min-width: 0; }
+         .profile-menu-item strong { color: #123f60; font-size: 11px; }
+         .profile-menu-item small { color: #8196a5; font-size: 9px; }
+         .profile-menu-divider { background: #e1ebef; height: 1px; margin: 6px 4px; }
+         .profile-signout-item:hover:not(:disabled) { background: #fff2ef; }
+         .profile-signout-item .profile-menu-icon { background: #fff0ed; color: #bd625a; }
+         .profile-signout-item strong, .profile-signout-item small { color: #a95b55; }
         .content { width: min(1320px, 100%); margin: 0 auto; padding: 46px 5.2% 60px; }
         .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
         .eyebrow { margin: 0; color: #3e8b9a; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
@@ -1977,6 +2035,8 @@ export default function TeacherPortalPage() {
           .mobile-brand { display: flex; }
           .live-label, .help-link { display: none; }
           .topbar-right { gap: 0; }
+          .profile-trigger-copy { display: none; }
+          .profile-trigger { padding-right: 6px; }
           .content { padding: 29px 18px 38px; }
           .page-heading { align-items: flex-start; flex-direction: column; }
           .page-heading .primary-button { width: 100%; }

@@ -34,6 +34,27 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .icon-button { position: relative; border: 0; color: #6d86a2; background: transparent; font-size: 21px; transform: rotate(180deg); }
 .notification-dot { position: absolute; top: 1px; right: 0; width: 5px; height: 5px; background: #ef806c; }
 .help-link { color: #0a5da2; font-size: 11px; font-weight: 700; text-decoration: none; }
+.profile-menu { position: relative; }
+.profile-menu > summary { list-style: none; }
+.profile-menu > summary::-webkit-details-marker { display: none; }
+.profile-trigger { align-items: center; background: #f4f8fb; border: 1px solid #d3e1e8; border-radius: 999px; color: #123f60; cursor: pointer; display: flex; gap: 8px; min-height: 42px; padding: 4px 9px 4px 5px; }
+.profile-trigger:hover { border-color: #9fc7c9; background: #eef8f7; }
+.profile-avatar { align-items: center; background: linear-gradient(135deg, #ef9360, #ef7d3c); border-radius: 50%; color: #fff; display: flex; flex: 0 0 31px; font-size: 10px; font-weight: 850; height: 31px; justify-content: center; }
+.profile-trigger-copy { display: grid; gap: 2px; text-align: left; }
+.profile-trigger-copy strong { font-size: 11px; }
+.profile-trigger-copy small { color: #7890a2; font-size: 9px; }
+.profile-chevron { color: #6f8998; font-size: 14px; line-height: 1; margin-left: 2px; }
+.profile-dropdown { background: #fbfdfe; border: 1px solid #cbdde4; border-radius: 15px; box-shadow: 0 18px 42px #082f5026; min-width: 250px; padding: 7px; position: absolute; right: 0; top: calc(100% + 10px); z-index: 30; }
+.profile-menu-item { align-items: center; background: transparent; border: 0; border-radius: 10px; color: #526f8c; display: flex; gap: 10px; padding: 10px 9px; text-align: left; width: 100%; }
+.profile-menu-item:hover:not(:disabled) { background: #eff8f7; }
+.profile-menu-icon { align-items: center; background: #eaf5f3; border-radius: 8px; color: #267d76; display: flex; flex: 0 0 30px; font-size: 15px; height: 30px; justify-content: center; }
+.profile-menu-item > span:last-child { display: grid; gap: 3px; min-width: 0; }
+.profile-menu-item strong { color: #123f60; font-size: 11px; }
+.profile-menu-item small { color: #8196a5; font-size: 9px; }
+.profile-menu-divider { background: #e1ebef; height: 1px; margin: 6px 4px; }
+.profile-signout-item:hover:not(:disabled) { background: #fff2ef; }
+.profile-signout-item .profile-menu-icon { background: #fff0ed; color: #bd625a; }
+.profile-signout-item strong, .profile-signout-item small { color: #a95b55; }
 .workspace-content { width: min(1320px, 100%); margin: 0 auto; padding: 48px 5.2% 44px; }
 .page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
 .eyebrow { color: #3e8b9a; font-size: 10px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
@@ -180,6 +201,9 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
   .mobile-brand { display: flex; }
   .environment-pill, .help-link { display: none; }
   .topbar-actions { gap: 11px; }
+  .profile-trigger-copy { display: none; }
+  .profile-trigger { padding-right: 6px; }
+  .profile-dropdown { right: 0; }
   .workspace-content { padding: 29px 18px 30px; }
   .page-heading { align-items: flex-start; flex-direction: column; }
   .page-heading .primary-button { width: 100%; }

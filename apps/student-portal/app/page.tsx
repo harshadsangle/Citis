@@ -1240,6 +1240,7 @@ export default function StudentPortalPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [profileNotice, setProfileNotice] = useState("");
 
   useEffect(() => {
     setProvider(normalizeLmsCourseProvider(new URLSearchParams(window.location.search).get("provider")));
@@ -1309,6 +1310,13 @@ export default function StudentPortalPage() {
     } finally {
       window.location.assign(lmsHomepageUrl());
     }
+  }
+
+  function openRecoveryAssistant() {
+    const destination = new URL(lmsHomepageUrl());
+    destination.pathname = "/auth/forgot-password";
+    destination.search = "?portal=learner";
+    window.location.assign(destination.toString());
   }
 
   async function refreshProgress() {
@@ -1500,8 +1508,39 @@ export default function StudentPortalPage() {
       <div className="student-container">
         <div className="portal-topbar">
           <div className="portal-brand"><span className="portal-brand-mark" aria-hidden="true">C</span><span><span className="portal-brand-citis">CITIS</span><span className="portal-brand-infot">InfoTech</span></span><span className="portal-brand-divider" /><span className="portal-brand-label">Learning portal</span></div>
-          <div className="portal-actions"><span className="portal-session">Student space</span><button className="portal-signout" onClick={() => void logout()} disabled={loggingOut} type="button"><span className="portal-signout-icon" aria-hidden="true">↗</span>{loggingOut ? "Signing out…" : "Sign out"}</button></div>
+          <div className="portal-actions">
+            <span className="portal-session">Student space</span>
+            <details className="profile-menu">
+              <summary className="profile-trigger" aria-label="Open profile menu">
+                <span className="profile-avatar">L</span>
+                <span className="profile-trigger-copy"><strong>Profile</strong><small>Learner account</small></span>
+                <span className="profile-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div className="profile-dropdown" role="menu" aria-label="Profile menu">
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setProfileNotice("Account details are managed through your CITIS profile."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">◎</span><span><strong>My Account</strong><small>Manage your profile details</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setProfileNotice("Favourites will appear here when you save learning resources."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">☆</span><span><strong>Favourites</strong><small>Keep useful resources close</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setProfileNotice("Your reports will appear here as they become available."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">▥</span><span><strong>My Reports</strong><small>Review your learning activity</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setProfileNotice("Documentation is available through your programme team."); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">▤</span><span><strong>Documentation</strong><small>Find learning guidance</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); openRecoveryAssistant(); }}>
+                  <span className="profile-menu-icon" aria-hidden="true">✦</span><span><strong>Recovery Assistant</strong><small>Reset or recover account access</small></span>
+                </button>
+                <div className="profile-menu-divider" />
+                <button className="profile-menu-item profile-signout-item" type="button" onClick={() => void logout()} disabled={loggingOut}>
+                  <span className="profile-menu-icon" aria-hidden="true">↗</span><span><strong>{loggingOut ? "Signing out…" : "Sign Out"}</strong><small>End this secure session</small></span>
+                </button>
+              </div>
+            </details>
+          </div>
         </div>
+        {profileNotice && <div className="profile-notice" role="status"><span>{profileNotice}</span><button type="button" onClick={() => setProfileNotice("")} aria-label="Dismiss profile notice">×</button></div>}
         <nav className="learner-nav" aria-label="Learner navigation">
           <a className="is-active" href="#my-learning"><span aria-hidden="true">◈</span>My Learning</a>
           <a href="#assessments"><span aria-hidden="true">✓</span>Assessments</a>
