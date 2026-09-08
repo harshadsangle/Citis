@@ -25,10 +25,7 @@ export async function middleware(request: NextRequest) {
   const principal = await response.json() as { data?: { roles?: Array<{ code: string }> } };
   const roles = new Set(principal.data?.roles?.map((role) => role.code) || []);
   if (roles.has("TEACHER")) return NextResponse.next();
-  if (ADMIN_ROLES.some((role) => roles.has(role))) {
-    const destination = publicPortal(request, "admin");
-    return destination ? NextResponse.redirect(destination) : new NextResponse("NEXT_PUBLIC_WEBSITE_URL is required", { status: 500 });
-  }
+  if (ADMIN_ROLES.some((role) => roles.has(role))) return NextResponse.next();
   if (roles.has("STUDENT")) {
     const destination = publicPortal(request, "learner");
     return destination ? NextResponse.redirect(destination) : new NextResponse("NEXT_PUBLIC_WEBSITE_URL is required", { status: 500 });

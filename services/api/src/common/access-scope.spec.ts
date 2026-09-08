@@ -10,7 +10,7 @@ const campusUser: AuthenticatedUser = {
   email: "campus@example.com",
   firstName: "Campus",
   lastName: "User",
-  roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
+  roles: [{ code: "TEACHER", name: "Teacher" }],
   permissions: [],
   scopes: [{ institutionId: "institution-1", campusId: "campus-1" }],
 };
@@ -42,4 +42,9 @@ test("scope failures use write and read-safe exceptions", () => {
 test("platform super admin is unrestricted", () => {
   const platformUser = { ...campusUser, roles: [{ code: "CITIS_SUPER_ADMIN", name: "CITIS Super Admin" }], scopes: [] };
   assert.equal(canAccessScope(platformUser, "institution-2", "campus-9"), true);
+});
+
+test("LMS administrator is unrestricted across institution and campus scopes", () => {
+  const administrator = { ...campusUser, roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }], scopes: [] };
+  assert.equal(canAccessScope(administrator, "institution-2", "campus-9"), true);
 });

@@ -43,6 +43,7 @@ export function normalizeLmsPortal(value?: string | null): LmsPortal | null {
 
 export function canAccessLmsPortal(principal: LmsPrincipal, portal: LmsPortal): boolean {
   const codes = new Set((principal.roles ?? []).map((role) => role.code));
+  if (LMS_PORTALS.admin.roleCodes.some((code) => codes.has(code))) return true;
   return LMS_PORTALS[portal].roleCodes.some((code) => codes.has(code));
 }
 

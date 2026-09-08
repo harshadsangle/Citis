@@ -26,6 +26,12 @@ test("permission guard allows the platform super admin role", () => {
   assert.equal(guard.canActivate(context({ roles: [{ code: "CITIS_SUPER_ADMIN", name: "CITIS Super Admin" }], permissions: [] })), true);
 });
 
+test("permission guard allows every LMS administrator role without stored permissions", () => {
+  for (const code of ["CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"]) {
+    assert.equal(guard.canActivate(context({ roles: [{ code, name: code }], permissions: [] })), true);
+  }
+});
+
 test("permission guard rejects missing permissions", () => {
   assert.throws(() => guard.canActivate(context({ roles: [], permissions: [] })), ForbiddenException);
 });

@@ -25,10 +25,7 @@ export async function middleware(request: NextRequest) {
   const roles = new Set(principal.data?.roles?.map((role) => role.code) || []);
   if (roles.has("STUDENT")) return NextResponse.next();
   const isAdmin = ["CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].some((role) => roles.has(role));
-  if (isAdmin) {
-    const destination = publicPortal(request, "admin");
-    return destination ? NextResponse.redirect(destination) : new NextResponse("NEXT_PUBLIC_WEBSITE_URL is required", { status: 500 });
-  }
+  if (isAdmin) return NextResponse.next();
   if (roles.has("TEACHER")) {
     const destination = publicPortal(request, "instructor");
     return destination ? NextResponse.redirect(destination) : new NextResponse("NEXT_PUBLIC_WEBSITE_URL is required", { status: 500 });
