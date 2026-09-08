@@ -1121,18 +1121,30 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .lesson-resource-watch-status > span, .lesson-resource-kicker, .lesson-resource-select span,
 .course-detail-side-card > p, .course-detail-side-list b, .detail-curriculum-list summary small,
 .detail-curriculum-list details > div > span { font-size: 11px; }
-.portal-hero-copy > p { font-size: 18px; }
+.portal-hero-copy > p { font-size: 20px; line-height: 1.65; }
 .portal-hero-card > span:not(.portal-hero-card-icon), .portal-hero-card small,
 .course-short-description, .course-detail-section p, .course-detail-intro, .course-bullet-list li,
 .catalogue-empty p, .learning-course-heading p, .assignment-description, .assignment-instructions,
 .submission-text, .submission-feedback, .assessment-history-feedback, .assessment-list-copy p,
 .assessment-result-hero p, .assessment-review-copy p, .lesson-content-card p,
-.lesson-resource-link-card p, .lesson-resource-empty p, .course-complete-banner p { font-size: 14px; }
+.lesson-resource-link-card p, .lesson-resource-empty p, .course-complete-banner p { font-size: 16px; line-height: 1.65; }
 .course-card-meta, .course-card-meta strong, .course-progress-label, .course-module-name strong,
 .course-lesson strong, .learning-module-heading strong, .learning-lesson-item strong,
 .lesson-navigation button strong, .lesson-resource-footer strong, .portal-hero-proof strong,
 .portal-loading-card > strong, .certificates-empty strong, .assignment-empty strong,
-.assignment-card-status p, .assignment-card-status strong, .assignment-submission-state strong { font-size: 13px; }
+.assignment-card-status p, .assignment-card-status strong, .assignment-submission-state strong { font-size: 15px; }
+.course-card-meta, .course-progress-label, .course-progress-caption, .course-module-progress,
+.module-progress-line, .course-lesson small, .learning-header-progress-bottomline,
+.learning-module-heading small, .learning-lesson-item small, .certificate-meta, .certificate-number,
+.assignment-card-meta, .assignment-detail-meta, .assignment-card-meta small, .assignment-detail-meta small,
+.submission-date, .assignment-form-help { font-size: 13px; line-height: 1.5; }
+.course-card-meta, .course-progress-label, .course-module-name strong, .course-lesson strong,
+.learning-module-heading strong, .learning-lesson-item strong, .lesson-navigation button strong,
+.lesson-resource-footer strong { line-height: 1.5; }
+.certificates-empty span:last-child, .assignment-empty span:last-child { font-size: 15px; line-height: 1.65; }
+.portal-state-card p, .portal-loading-card > span:last-child { font-size: 17px; line-height: 1.65; }
+.catalogue-empty p, .lesson-content-card p, .assignment-description, .assignment-instructions { font-size: 16px; }
+.lesson-video-gate p, .lesson-completion-card p, .continue-learning-progress p { font-size: 14px; line-height: 1.6; }
 .course-detail-heading h4, .course-roadmap-heading h4, .learning-roadmap-heading h3,
 .assessment-review-heading h4 { font-size: 23px; }
 .course-detail-side-list span, .detail-curriculum-list details > div > span { font-size: 13px; }
