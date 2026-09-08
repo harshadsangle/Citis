@@ -1,0 +1,46 @@
+Implement ONLY the learner video completion and lesson-locking behavior.
+
+Do not change unrelated LMS functionality, APIs, database structure, authentication, navigation, or course content.
+
+VIDEO RULES:
+
+* If a lesson contains a video, the learner must watch the video until it reaches 100% completion before the lesson can be marked as Done.
+* Do not allow "Mark as Done" before the video is fully watched.
+* Track video playback progress reliably.
+* If the learner seeks/skips forward, do not count skipped portions as watched.
+* Once the video reaches 100%, enable "Mark as Done".
+* After the lesson is marked Done, unlock the Next Lesson/Next Chapter option.
+* Before completion, Next Lesson/Next Chapter must remain unavailable/hidden.
+* Preserve progress if the learner leaves and returns to the lesson.
+* Make the locked state visually clear with a professional message explaining what is required.
+
+CONTENT PROTECTION:
+
+* Disable video download controls.
+* Disable right-click/context menu on the video/player where practical.
+* Prevent exposing obvious direct download controls or download buttons.
+* Prevent common save/download actions where technically possible.
+* Add appropriate browser-level protections against casual copying/saving.
+* Do NOT claim that screenshots or screen recording can be completely prevented in a normal web browser; implement reasonable deterrence only.
+* Do not break normal video playback.
+
+IMPORTANT:
+
+* Apply this specifically to video lessons.
+* Non-video lessons should continue using the existing completion behavior.
+* Keep the existing CITIS premium UI style.
+* Make the locked/unlocked states attractive and intuitive.
+* Do not add unnecessary tabs.
+
+After implementation:
+
+1. Run frontend lint.
+2. Run TypeScript check.
+3. Run production build.
+4. Test a video lesson:
+
+   * Before 100% → Done unavailable and Next unavailable.
+   * At 100% → Done becomes available.
+   * After Done → Next lesson becomes available.
+   * Leave and return → progress is preserved.
+     Report all verification results.

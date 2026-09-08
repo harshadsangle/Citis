@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
 
 async function fetchDashboardList<T>(path: string): Promise<T[]> {
@@ -44,6 +44,20 @@ type LearningResource = {
   duration?: number | null;
   sequence: number;
   status?: string;
+};
+
+type VideoWatchState = {
+  duration: number;
+  watchedRanges: Array<[number, number]>;
+  completed: boolean;
+};
+
+type VideoRequirementState = {
+  hasVideo: boolean;
+  completed: boolean;
+  percentage: number;
+  watchedSeconds: number;
+  totalSeconds: number;
 };
 
 type Assignment = {
@@ -447,13 +461,166 @@ function resourceIsDocument(resource: LearningResource) {
   return type.includes("PDF") || type.includes("DOCUMENT") || type === "FILE";
 }
 
-function LearningResourceViewer({ resources, loading, error }: { resources: LearningResource[]; loading: boolean; error: string }) {
+function videoProgressStorageKey(lessonId: string, resourceId: string) {
+  return `citis:learner-video-progress:v1:${lessonId}:${resourceId}`;
+}
+
+function emptyVideoWatchState(duration = 0): VideoWatchState {
+  return { duration: Math.max(0, duration), watchedRanges: [], completed: false };
+}
+
+function readVideoWatchState(lessonId: string, resource: LearningResource) {
+  const fallback = emptyVideoWatchState(resource.duration || 0);
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(videoProgressStorageKey(lessonId, resource.id)) || "null") as Partial<VideoWatchState> | null;
+    if (!stored || !Array.isArray(stored.watchedRanges)) return fallback;
+    return {
+      duration: Math.max(Number(stored.duration) || 0, resource.duration || 0),
+      watchedRanges: stored.watchedRanges
+        .filter((range): range is [number, number] => Array.isArray(range) && range.length === 2 && Number.isFinite(range[0]) && Number.isFinite(range[1]) && range[1] > range[0])
+        .map(([start, end]) => [Math.max(0, start), Math.max(0, end)]),
+      completed: stored.completed === true,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function mergeWatchedRange(state: VideoWatchState, start: number, end: number, duration?: number) {
+  const safeStart = Math.max(0, Math.min(start, end));
+  const safeEnd = Math.max(safeStart, end);
+  if (safeEnd - safeStart < 0.05) return state;
+  const ranges = [...state.watchedRanges, [safeStart, safeEnd] as [number, number]]
+    .sort((left, right) => left[0] - right[0])
+    .reduce<Array<[number, number]>>((merged, range) => {
+      const previous = merged[merged.length - 1];
+      if (previous && range[0] <= previous[1] + 0.25) {
+        previous[1] = Math.max(previous[1], range[1]);
+      } else {
+        merged.push([...range]);
+      }
+      return merged;
+    }, []);
+  const nextDuration = Math.max(state.duration, duration || 0, safeEnd);
+  const watchedSeconds = ranges.reduce((total, [rangeStart, rangeEnd]) => total + (rangeEnd - rangeStart), 0);
+  return {
+    duration: nextDuration,
+    watchedRanges: ranges,
+    completed: nextDuration > 0 && watchedSeconds >= nextDuration - 0.5,
+  };
+}
+
+function watchedSeconds(state?: VideoWatchState) {
+  return state?.watchedRanges.reduce((total, [start, end]) => total + (end - start), 0) || 0;
+}
+
+function LearningResourceViewer({
+  lessonId,
+  resources,
+  loading,
+  error,
+  onVideoStateChange,
+}: {
+  lessonId: string;
+  resources: LearningResource[];
+  loading: boolean;
+  error: string;
+  onVideoStateChange: (state: VideoRequirementState) => void;
+}) {
   const [activeResourceId, setActiveResourceId] = useState("");
+  const [videoStates, setVideoStates] = useState<Record<string, VideoWatchState>>({});
+  const videoTracker = useRef<{ resourceId: string; lastTime: number; seeking: boolean }>({ resourceId: "", lastTime: 0, seeking: false });
   const activeResource = resources.find((resource) => resource.id === activeResourceId) || resources[0];
 
   useEffect(() => {
     setActiveResourceId(resources[0]?.id || "");
-  }, [resources]);
+    setVideoStates(Object.fromEntries(resources.filter(resourceIsVideo).map((resource) => [resource.id, readVideoWatchState(lessonId, resource)])));
+    videoTracker.current = { resourceId: resources[0]?.id || "", lastTime: 0, seeking: false };
+  }, [lessonId, resources]);
+
+  useEffect(() => {
+    if (loading || error) return;
+    const videoResources = resources.filter(resourceIsVideo);
+    const states = videoResources.map((resource) => videoStates[resource.id] || emptyVideoWatchState(resource.duration || 0));
+    const totalSeconds = states.reduce((total, state) => total + state.duration, 0);
+    const watched = states.reduce((total, state) => total + watchedSeconds(state), 0);
+    const completed = videoResources.length > 0 && states.every((state) => state.completed);
+    onVideoStateChange({
+      hasVideo: videoResources.length > 0,
+      completed: videoResources.length === 0 || completed,
+      percentage: totalSeconds > 0 ? Math.min(100, Math.round((watched / totalSeconds) * 100)) : completed ? 100 : 0,
+      watchedSeconds: watched,
+      totalSeconds,
+    });
+  }, [error, loading, onVideoStateChange, resources, videoStates]);
+
+  function persistVideoState(resourceId: string, state: VideoWatchState) {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(videoProgressStorageKey(lessonId, resourceId), JSON.stringify(state));
+    } catch {
+      // Browser storage may be unavailable; the in-memory state still gates completion.
+    }
+  }
+
+  function recordVideoProgress(resourceId: string, currentTime: number, duration: number) {
+    setVideoStates((current) => {
+      const nextState = mergeWatchedRange(current[resourceId] || emptyVideoWatchState(duration), videoTracker.current.lastTime, currentTime, duration);
+      persistVideoState(resourceId, nextState);
+      return { ...current, [resourceId]: nextState };
+    });
+  }
+
+  function activeVideoState() {
+    if (!activeResource || !resourceIsVideo(activeResource)) return undefined;
+    return videoStates[activeResource.id] || emptyVideoWatchState(activeResource.duration || 0);
+  }
+
+  function handleVideoTimeUpdate(event: React.SyntheticEvent<HTMLVideoElement>) {
+    const video = event.currentTarget;
+    const resourceId = activeResource?.id || "";
+    if (!resourceId || videoTracker.current.resourceId !== resourceId) {
+      videoTracker.current = { resourceId, lastTime: video.currentTime, seeking: false };
+      return;
+    }
+    const previousTime = videoTracker.current.lastTime;
+    const delta = video.currentTime - previousTime;
+    if (!videoTracker.current.seeking && delta >= 0 && delta <= 1.5) {
+      recordVideoProgress(resourceId, video.currentTime, video.duration);
+    }
+    videoTracker.current.lastTime = video.currentTime;
+    videoTracker.current.seeking = false;
+  }
+
+  function handleVideoLoadedMetadata(event: React.SyntheticEvent<HTMLVideoElement>) {
+    const video = event.currentTarget;
+    const resourceId = activeResource?.id || "";
+    if (!resourceId) return;
+    videoTracker.current = { resourceId, lastTime: video.currentTime, seeking: false };
+    setVideoStates((current) => {
+      const existing = current[resourceId] || emptyVideoWatchState();
+      const nextState = {
+        ...existing,
+        duration: Math.max(existing.duration, video.duration || 0),
+        completed: existing.completed || (video.duration > 0 && watchedSeconds(existing) >= video.duration - 0.5),
+      };
+      persistVideoState(resourceId, nextState);
+      return { ...current, [resourceId]: nextState };
+    });
+  }
+
+  function handleVideoSeeked(event: React.SyntheticEvent<HTMLVideoElement>) {
+    videoTracker.current.lastTime = event.currentTarget.currentTime;
+    videoTracker.current.seeking = false;
+  }
+
+  function handleVideoEnded(event: React.SyntheticEvent<HTMLVideoElement>) {
+    const video = event.currentTarget;
+    if (!videoTracker.current.seeking && videoTracker.current.lastTime >= video.duration - 1.5) {
+      recordVideoProgress(activeResource?.id || "", video.duration, video.duration);
+    }
+  }
 
   if (loading) {
     return <div className="lesson-resource-loading"><span className="resource-loading-dot" /> Loading lesson media…</div>;
@@ -472,14 +639,40 @@ function LearningResourceViewer({ resources, loading, error }: { resources: Lear
 
   const url = resourceUrl(activeResource);
   const isEmbed = resourceIsVideo(activeResource) && /^https?:\/\//i.test(url) && !/\.(mp4|webm|ogg)(?:$|\?)/i.test(url);
+  const currentVideoState = activeVideoState();
+  const currentVideoPercentage = currentVideoState?.duration ? Math.min(100, Math.round((watchedSeconds(currentVideoState) / currentVideoState.duration) * 100)) : currentVideoState?.completed ? 100 : 0;
 
   return (
     <div className="lesson-resource">
-      <div className="lesson-resource-frame">
+      <div
+        className="lesson-resource-frame"
+        onContextMenu={(event) => event.preventDefault()}
+        onKeyDown={(event) => {
+          if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "s") event.preventDefault();
+        }}
+        tabIndex={-1}
+      >
         {resourceIsVideo(activeResource) && (isEmbed ? (
-          <iframe title={activeResource.title} src={videoEmbedUrl(url)} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
+          <iframe title={activeResource.title} src={videoEmbedUrl(url)} allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
         ) : (
-          <video controls preload="metadata" src={url}>
+          <video
+            controls
+            controlsList="nodownload noplaybackrate"
+            disablePictureInPicture
+            draggable={false}
+            playsInline
+            preload="metadata"
+            src={url}
+            onContextMenu={(event) => event.preventDefault()}
+            onEnded={handleVideoEnded}
+            onLoadedMetadata={handleVideoLoadedMetadata}
+            onPlay={(event) => {
+              videoTracker.current = { resourceId: activeResource.id, lastTime: event.currentTarget.currentTime, seeking: false };
+            }}
+            onSeeking={() => { videoTracker.current.seeking = true; }}
+            onSeeked={handleVideoSeeked}
+            onTimeUpdate={handleVideoTimeUpdate}
+          >
             Your browser does not support embedded video.
           </video>
         ))}
@@ -494,6 +687,7 @@ function LearningResourceViewer({ resources, loading, error }: { resources: Lear
       </div>
       <div className="lesson-resource-footer">
         <div><span className="lesson-resource-kicker">{resourceTypeLabel(activeResource.resource_type)}</span><strong>{activeResource.title}</strong></div>
+        {resourceIsVideo(activeResource) && <div className="lesson-resource-watch-status"><span>{isEmbed ? "Watch in full to continue" : `${currentVideoPercentage}% watched`}</span><div className="lesson-resource-watch-track"><span style={{ width: `${currentVideoPercentage}%` }} /></div></div>}
         {resources.length > 1 && (
           <label className="lesson-resource-select"><span>Lesson resource</span><select value={activeResource.id} onChange={(event) => setActiveResourceId(event.target.value)}>{resources.map((resource) => <option key={resource.id} value={resource.id}>{resource.title}</option>)}</select></label>
         )}
