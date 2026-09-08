@@ -721,6 +721,14 @@ function CourseLearningView({
   const [resources, setResources] = useState<LearningResource[]>([]);
   const [resourcesLoading, setResourcesLoading] = useState(false);
   const [resourcesError, setResourcesError] = useState("");
+  const [videoRequirement, setVideoRequirement] = useState<VideoRequirementState>({
+    hasVideo: false,
+    completed: true,
+    percentage: 100,
+    watchedSeconds: 0,
+    totalSeconds: 0,
+  });
+  const [videoRequirementReady, setVideoRequirementReady] = useState(false);
   const activeIndex = Math.max(0, allLessons.findIndex((item) => item.lesson.id === activeLessonId));
   const activeItem = allLessons[activeIndex] || allLessons[0];
   const completedCount = allLessons.filter(({ lesson, module }) => completedLessonIds.has(lesson.id) || module.state === "COMPLETED" || module.lessonItems.indexOf(lesson) < module.lessons.completed).length;
@@ -730,6 +738,7 @@ function CourseLearningView({
   useEffect(() => {
     if (!activeLessonResourceId) return;
     const controller = new AbortController();
+    setResources([]);
     setResourcesLoading(true);
     setResourcesError("");
     fetch(`/api/v1/learning-resources?lessonId=${encodeURIComponent(activeLessonResourceId)}&pageSize=100`, { credentials: "include", signal: controller.signal })
@@ -749,6 +758,11 @@ function CourseLearningView({
     return () => controller.abort();
   }, [activeLessonResourceId]);
 
+  const handleVideoRequirementChange = useCallback((state: VideoRequirementState) => {
+    setVideoRequirement(state);
+    setVideoRequirementReady(true);
+  }, []);
+
   if (!activeItem) {
     return (
       <section className="learning-page">
@@ -762,10 +776,11 @@ function CourseLearningView({
   const previous = allLessons[activeIndex - 1];
   const next = allLessons[activeIndex + 1];
   const isCompleted = completedLessonIds.has(activeLesson.id) || activeModule.state === "COMPLETED" || activeModule.lessonItems.indexOf(activeLesson) < activeModule.lessons.completed;
+  const videoCompletionBlocked = !isCompleted && (!videoRequirementReady || (videoRequirement.hasVideo && !videoRequirement.completed));
   const category = categoryForCourse(progress.course.programme_name);
 
   async function completeCurrentLesson() {
-    if (isCompleted || busyLessonId) return;
+    if (isCompleted || busyLessonId || videoCompletionBlocked) return;
     setBusyLessonId(activeLesson.id);
     setLessonError("");
     try {
@@ -780,6 +795,8 @@ function CourseLearningView({
 
   function selectLesson(lessonId: string) {
     setActiveLessonId(lessonId);
+    setVideoRequirementReady(false);
+    setVideoRequirement({ hasVideo: false, completed: true, percentage: 100, watchedSeconds: 0, totalSeconds: 0 });
     setLessonError("");
     window.setTimeout(() => document.getElementById("lesson-content")?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
   }
@@ -829,15 +846,34 @@ function CourseLearningView({
             <div className="lesson-article-kicker">{isCompleted ? "Completed lesson" : "Now learning"}</div>
             <h3>{activeLesson.title}</h3>
             <p className="lesson-lede">{activeLesson.description || "Work through this lesson to build the next part of your CITIS learning pathway."}</p>
-            <LearningResourceViewer resources={resources} loading={resourcesLoading} error={resourcesError} />
+             <LearningResourceViewer
+               lessonId={activeLesson.id}
+               resources={resources}
+               loading={resourcesLoading}
+               error={resourcesError}
+               onVideoStateChange={handleVideoRequirementChange}
+             />
             <div className="lesson-content-card">
               <span className="course-detail-label">Lesson overview</span>
               {(activeLesson.description || "This lesson is part of your guided CITIS course roadmap.").split(/\r?\n+/).filter(Boolean).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
             </div>
-            <div className={`lesson-completion-card ${isCompleted ? "is-completed" : ""}`}>
+             {videoRequirementReady && videoRequirement.hasVideo && !isCompleted && (
+               <div className="lesson-video-gate" role="status">
+                 <span className="lesson-video-gate-icon" aria-hidden="true">▶</span>
+                 <div>
+                   <strong>{videoRequirement.completed ? "Video complete" : "Finish the video to unlock completion"}</strong>
+                   <p>{videoRequirement.completed ? "You watched the required video. You can now save this lesson as complete." : "Watch every part of this video from start to finish. Skipping ahead will not count as watched."}</p>
+                   <div className="lesson-video-gate-progress">
+                     <span><b>{videoRequirement.percentage}%</b> watched</span>
+                     <div><span style={{ width: `${videoRequirement.percentage}%` }} /></div>
+                   </div>
+                 </div>
+               </div>
+             )}
+             <div className={`lesson-completion-card ${isCompleted ? "is-completed" : ""} ${videoCompletionBlocked ? "is-locked" : ""}`}>
               <span className="lesson-completion-icon" aria-hidden="true">{isCompleted ? "✓" : "○"}</span>
-              <div><strong>{isCompleted ? "Lesson complete" : "Ready to mark this lesson complete?"}</strong><p>{isCompleted ? "Your progress is saved. Continue to the next lesson when you’re ready." : "Mark this lesson complete after you have finished reviewing the content."}</p></div>
-              {!isCompleted && <button className="course-primary-button" type="button" onClick={() => void completeCurrentLesson()} disabled={busyLessonId === activeLesson.id}>{busyLessonId === activeLesson.id ? "Saving…" : "Mark as complete"}</button>}
+               <div><strong>{isCompleted ? "Lesson complete" : videoCompletionBlocked ? "Lesson completion is locked" : "Ready to mark this lesson complete?"}</strong><p>{isCompleted ? "Your progress is saved. Continue to the next lesson when you’re ready." : videoCompletionBlocked ? "Complete the full video above before saving this lesson. Your watched progress is preserved if you leave and return." : "Mark this lesson complete after you have finished reviewing the content."}</p></div>
+               {!isCompleted && <button className="course-primary-button" type="button" onClick={() => void completeCurrentLesson()} disabled={busyLessonId === activeLesson.id || videoCompletionBlocked}>{busyLessonId === activeLesson.id ? "Saving…" : videoCompletionBlocked ? "Watch video first" : "Mark as complete"}</button>}
             </div>
             {lessonError && <div className="lesson-error" role="alert">{lessonError}</div>}
             {progress.state === "COMPLETED" && (
@@ -850,7 +886,7 @@ function CourseLearningView({
           </article>
           <nav className="lesson-navigation" aria-label="Lesson navigation">
             <button type="button" onClick={() => previous && selectLesson(previous.lesson.id)} disabled={!previous}><span>← Previous lesson</span><strong>{previous?.lesson.title || "Start of course"}</strong></button>
-            <button type="button" onClick={() => next && selectLesson(next.lesson.id)} disabled={!next}><span>Next lesson →</span><strong>{next?.lesson.title || "Course complete"}</strong></button>
+             <button type="button" onClick={() => next && selectLesson(next.lesson.id)} disabled={!next || videoCompletionBlocked} aria-disabled={videoCompletionBlocked}><span>{videoCompletionBlocked ? "Next lesson locked" : "Next lesson →"}</span><strong>{videoCompletionBlocked ? "Watch the full video and mark this lesson complete" : next?.lesson.title || "Course complete"}</strong></button>
           </nav>
         </main>
       </div>
