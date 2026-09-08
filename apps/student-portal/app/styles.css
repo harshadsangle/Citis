@@ -709,7 +709,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .detail-curriculum-list details > div > span:last-child { border-bottom: 0; }
 .detail-curriculum-list details > div b { color: #5ca6b1; font-size: 14px; }
 .course-detail-side-card {
-  border: 1px solid #d5e2e8; border-radius: 22px; box-shadow: 0 14px 30px rgb(18 75 115 / .06); padding: 22px; top: 76px;
+  border: 1px solid #d5e2e8; border-radius: 22px; box-shadow: 0 14px 30px rgb(18 75 115 / .06); padding: 22px; position: relative; top: 76px;
 }
 .course-detail-side-card::before { background: #e8f5f2; border-radius: 50%; content: ""; height: 95px; position: absolute; right: -36px; top: -42px; width: 95px; }
 .course-detail-side-card { overflow: hidden; }
