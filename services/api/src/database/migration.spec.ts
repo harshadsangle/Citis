@@ -22,6 +22,7 @@ const resourceProgressMigration = readFileSync(resolve(process.cwd(), "../../pac
 const resourceProgressPermissionMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/019_lms_resource_progress_permission.sql"), "utf8");
 const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/020_lms_foundation_roles_profiles.sql"), "utf8");
 const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/021_college_student_csv_onboarding.sql"), "utf8");
+const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -211,4 +212,12 @@ test("Step 3 migration defines safe college student imports without requiring co
   assert.match(collegeStudentMigration, /lms\.student_import\.create/);
   assert.match(collegeStudentMigration, /ALTER TABLE users DROP CONSTRAINT/);
   assert.match(collegeStudentMigration, /021_college_student_csv_onboarding/);
+});
+
+test("Step 4 migration extends OTP challenges for direct student registration", () => {
+  assert.match(directStudentMigration, /ADD COLUMN IF NOT EXISTS contact text/);
+  assert.match(directStudentMigration, /registration_password_hash text/);
+  assert.match(directStudentMigration, /purpose IN \('LOGIN', 'VERIFY', 'REGISTER'\)/);
+  assert.match(directStudentMigration, /channel IN \('EMAIL', 'SMS'\)/);
+  assert.match(directStudentMigration, /022_direct_student_registration_otp/);
 });
