@@ -718,7 +718,9 @@ export class AssessmentService {
     if (!attempt) throw new NotFoundException("Assessment attempt not found.");
     attempt.institution_id = attempt.course_institution_id ?? attempt.institution_id;
     attempt.campus_id = attempt.course_campus_id ?? attempt.campus_id;
-    assertScopeForRead(user, String(attempt.institution_id), attempt.campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(attempt.institution_id), attempt.campus_id as string | null | undefined);
+    }
     return attempt;
   }
 
