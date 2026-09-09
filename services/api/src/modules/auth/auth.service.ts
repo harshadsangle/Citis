@@ -682,7 +682,7 @@ export class AuthService {
 
   private directStudentContact(input: { email?: string; mobile?: string }) {
     const email = input.email?.trim().toLowerCase() || null;
-    const mobile = input.mobile?.trim() || null;
+    const mobile = input.mobile?.trim().replace(/[()\s-]/g, "") || null;
     if ((email ? 1 : 0) + (mobile ? 1 : 0) !== 1) {
       throw new BadRequestException("Choose either an email address or a phone number.");
     }
@@ -761,7 +761,7 @@ export class AuthService {
       `SELECT 1 FROM users
        WHERE tenant_id = $1 AND status <> 'ARCHIVED'
          AND (($2::text IS NOT NULL AND lower(email) = lower($2))
-           OR ($3::text IS NOT NULL AND mobile = $3))
+           OR ($3::text IS NOT NULL AND regexp_replace(coalesce(mobile, ''), '[^0-9+]', '', 'g') = $3))
        LIMIT 1`,
       [tenantId, contact.email, contact.mobile],
     );
@@ -885,7 +885,7 @@ export class AuthService {
         `SELECT id FROM users
          WHERE tenant_id = $1 AND status <> 'ARCHIVED'
            AND (($2::text IS NOT NULL AND lower(email) = lower($2))
-             OR ($3::text IS NOT NULL AND mobile = $3))
+             OR ($3::text IS NOT NULL AND regexp_replace(coalesce(mobile, ''), '[^0-9+]', '', 'g') = $3))
          LIMIT 1`,
         [tenantId, contact.email, contact.mobile],
       );
