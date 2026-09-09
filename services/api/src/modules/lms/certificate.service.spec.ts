@@ -54,7 +54,7 @@ test("eligible completion creates one review candidate without issuing a certifi
   const row = certificateRow({ status: "ELIGIBLE_FOR_REVIEW", eligible_at: "2026-08-31T00:00:00.000Z" });
   const db = {
     query: async (text: string) => {
-      if (text.startsWith("SELECT e.id AS enrollment_id")) return { rows: [{ enrollment_id: "enrollment-1" }] };
+      if (text.includes("ORDER BY e.enrolled_at")) return { rows: [{ enrollment_id: "enrollment-1" }] };
       if (text.includes("CASE WHEN NOT EXISTS")) {
         return { rows: [{
           enrollment_id: "enrollment-1",
@@ -88,7 +88,7 @@ test("incomplete eligibility does not attempt certificate insertion", async () =
   let inserted = false;
   const db = {
     query: async (text: string) => {
-      if (text.startsWith("SELECT e.id AS enrollment_id")) return { rows: [] };
+      if (text.includes("ORDER BY e.enrolled_at")) return { rows: [] };
       if (text.startsWith("INSERT INTO lms_certificates")) inserted = true;
       return { rows: [] };
     },
