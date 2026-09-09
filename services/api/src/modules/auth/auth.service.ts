@@ -154,7 +154,9 @@ export class AuthService {
       status: "PENDING",
       role: input.role,
       requiresApproval: input.role !== "learner",
-       ...(process.env.AUTH_EXPOSE_DEV_TOKENS === "true" ? { developmentVerificationToken: verificationToken } : {}),
+       ...(process.env.NODE_ENV !== "production" && process.env.AUTH_EXPOSE_DEV_TOKENS === "true"
+         ? { developmentVerificationToken: verificationToken }
+         : {}),
     };
   }
 
@@ -198,7 +200,9 @@ export class AuthService {
 
     return {
       accepted: true,
-      ...(process.env.AUTH_EXPOSE_DEV_TOKENS === "true" ? { developmentResetToken: rawToken } : {}),
+      ...(process.env.NODE_ENV !== "production" && process.env.AUTH_EXPOSE_DEV_TOKENS === "true"
+        ? { developmentResetToken: rawToken }
+        : {}),
     };
   }
 
@@ -351,6 +355,12 @@ export class AuthService {
     if (!tenant.rows[0]) throw new UnauthorizedException("The requested institution is not available.");
     const code = randomBytes(3).toString("hex").slice(0, 6);
     await this.db.query(
+      `UPDATE auth_challenges
+       SET consumed_at = now()
+       WHERE tenant_id = $1 AND mobile = $2 AND purpose = 'LOGIN' AND consumed_at IS NULL`,
+      [tenant.rows[0].id, input.mobile.trim()],
+    );
+    await this.db.query(
       `INSERT INTO auth_challenges (tenant_id, mobile, purpose, code_hash, expires_at)
        VALUES ($1, $2, 'LOGIN', $3, now() + interval '10 minutes')`,
       [tenant.rows[0].id, input.mobile.trim(), hashToken(code)],
@@ -367,12 +377,20 @@ export class AuthService {
       `SELECT c.id, u.id AS user_id
        FROM auth_challenges c
        JOIN users u ON u.tenant_id = c.tenant_id AND u.mobile = c.mobile
+       JOIN tenants t ON t.id = c.tenant_id
        WHERE c.mobile = $1 AND c.code_hash = $2 AND c.purpose = 'LOGIN'
-         AND c.consumed_at IS NULL AND c.expires_at > now() AND u.status = 'ACTIVE'
+         AND t.slug = $3
+         AND c.consumed_at IS NULL AND c.expires_at > now() AND c.attempts < 5 AND u.status = 'ACTIVE'
        ORDER BY c.created_at DESC LIMIT 1`,
-      [input.mobile.trim(), hashToken(input.code)],
+      [input.mobile.trim(), hashToken(input.code), input.tenantSlug.trim()],
     );
     if (!result.rows[0]) {
+      await this.db.query(
+        `UPDATE auth_challenges
+         SET attempts = attempts + 1
+         WHERE mobile = $1 AND purpose = 'LOGIN' AND consumed_at IS NULL AND expires_at > now()`,
+        [input.mobile.trim()],
+      );
       this.rateLimiter.record("otp-verify-ip", ipKey, OTP_WINDOW_MS);
       this.rateLimiter.record("otp-verify-mobile", mobileKey, OTP_WINDOW_MS);
       throw new UnauthorizedException("Invalid or expired verification code.");
