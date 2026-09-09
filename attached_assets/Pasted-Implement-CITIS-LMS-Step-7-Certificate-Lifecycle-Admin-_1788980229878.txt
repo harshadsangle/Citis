@@ -1,0 +1,405 @@
+Implement **CITIS LMS Step 7 — Certificate Lifecycle, Admin Approval & Reporting**.
+
+Use completed Steps 1–6 as the source of truth.
+
+### 1. Certificate Eligibility
+
+A student becomes **eligible for certificate review** only when all required course completion conditions are satisfied:
+
+* Required lessons completed
+* Required assessments passed
+* Required assignments completed
+* Required assignments passed
+* Overall course completion verified server-side
+
+Do NOT issue a certificate automatically.
+
+Create a clear certificate status lifecycle such as:
+
+* `NOT_ELIGIBLE`
+* `ELIGIBLE_FOR_REVIEW`
+* `APPROVED`
+* `REJECTED`
+* `ISSUED`
+* `REVOKED`
+
+Use the existing certificate architecture where possible.
+
+### 2. Admin Approval
+
+Only `CITIS_ADMIN` can approve/reject certificates.
+
+Admin must be able to:
+
+* View certificate-eligible students
+* Review course completion
+* Review assessment results
+* Review assignment results
+* Approve certificate
+* Reject certificate
+* Add approval/rejection notes
+* Record reviewer and timestamp
+
+Instructor must NOT approve, reject, issue, revoke, or modify certificates.
+
+Student must NOT approve or generate their own certificate.
+
+### 3. Certificate Generation
+
+After Admin approval:
+
+* Generate the certificate using the existing certificate system.
+* Certificate must reference:
+
+  * Student
+  * Course
+  * Completion date
+  * Certificate ID
+  * Issued date
+* Certificate ID must be unique.
+* Do not generate duplicate certificates for the same approved completion unless explicitly required.
+* Preserve certificate history.
+
+If a PDF certificate is generated, store it using the existing secure file/storage architecture.
+
+Do not expose private storage credentials.
+
+### 4. Certificate Verification
+
+Implement a public certificate verification mechanism.
+
+A person with a valid Certificate ID should be able to verify:
+
+* Certificate is valid/invalid
+* Student name as appropriate
+* Course name
+* Issue date
+* Certificate status
+
+Do NOT expose:
+
+* Student login credentials
+* Email
+* Phone number
+* Private activity
+* Payment information
+* Assignment files
+* Assessment answers
+* Other private data
+
+Revoked certificates must show the correct revoked status.
+
+### 5. Certificate APIs
+
+Add/extend APIs for:
+
+* Certificate eligibility
+* Admin certificate review
+* Certificate approval
+* Certificate rejection
+* Certificate issuance
+* Certificate lookup
+* Certificate verification
+* Certificate revocation where required
+
+Enforce role-based authorization on every endpoint.
+
+### 6. Student Certificate Access
+
+Students should be able to see their own certificate status:
+
+* Not eligible
+* Eligible for review
+* Under review where supported
+* Approved
+* Issued
+* Rejected
+* Revoked
+
+Students can access/download their own issued certificates where supported.
+
+A student must never access another student's certificate.
+
+### 7. Reporting System
+
+Implement Admin reporting using the existing database and activity structures.
+
+Only `CITIS_ADMIN` can access global reports.
+
+Reports should support filters where appropriate, including:
+
+* Date range
+* College/institution
+* Student type
+* Student
+* Course
+* Instructor
+* Completion status
+* Assignment status
+* Assessment status
+* Certificate status
+* Payment status
+
+### 8. Required Admin Reports
+
+Provide report/export support for:
+
+#### Students
+
+* Student list
+* Student type
+* College/institution
+* Active/inactive status
+* Registration information
+
+#### Login & Activity
+
+* Login history
+* Last login
+* Last active
+* Activity events
+* Activity dates/times
+
+#### Course Progress
+
+* Student
+* Course
+* Enrollment
+* Start date
+* Completion date
+* Progress percentage
+* Last lesson
+* Lessons completed
+
+#### Assessments
+
+* Student
+* Course
+* Assessment
+* Attempts
+* Scores
+* Pass/fail
+* Dates
+
+#### Assignments
+
+* Student
+* Course
+* Assignment
+* Submission date
+* Review status
+* Marks
+* Pass/fail
+* Reviewer
+* Review date
+
+#### Certificates
+
+* Student
+* Course
+* Certificate ID
+* Eligibility
+* Approval status
+* Issue date
+* Revocation status
+
+#### Payments
+
+* Direct Student
+* Course
+* Payment/order ID
+* Amount
+* Currency
+* Payment status
+* Payment date
+
+#### Refunds
+
+* Student
+* Course
+* Original payment
+* Refund amount
+* Refund status
+* Reason
+* Refund date
+
+### 9. CSV Export
+
+Admin must be able to export filtered report data as CSV.
+
+Requirements:
+
+* Export only filtered/authorized records.
+* Correct CSV headers.
+* Safe CSV escaping.
+* Consistent date/time formatting.
+* Do not export passwords, OTPs, secrets, or sensitive authentication data.
+* Do not expose unnecessary private information.
+
+Large exports should be handled safely according to the existing architecture.
+
+### 10. Multi-Tenant Security
+
+Strictly enforce existing access rules.
+
+`CITIS_ADMIN`:
+
+* Global access.
+
+`INSTRUCTOR`:
+
+* No global reporting access.
+* Only authorized assigned-college/student information where the existing instructor permissions allow it.
+
+`STUDENT`:
+
+* Only their own certificate/status information.
+* No global reports.
+
+College A data must never appear in College B scoped results.
+
+### 11. Audit Trail
+
+Record important certificate actions:
+
+* Eligibility calculated
+* Admin review started
+* Certificate approved
+* Certificate rejected
+* Certificate issued
+* Certificate revoked
+
+Record:
+
+* Actor
+* Timestamp
+* Student
+* Course
+* Certificate
+* Action
+
+Do not store unnecessary sensitive data.
+
+### 12. Existing Data & Course Catalogue
+
+This is critical:
+
+Use the **existing LMS course catalogue and existing learning content**.
+
+Do NOT:
+
+* Create duplicate courses
+* Create dummy courses
+* Duplicate modules
+* Duplicate lessons
+* Duplicate PDFs/DOCX
+* Replace existing resources
+* Delete existing content
+
+Certificates and reports must reference the existing course/enrollment/assessment/assignment records.
+
+Do not modify existing course content.
+
+### 13. Database
+
+Add only required migration(s).
+
+Preserve existing:
+
+* Users
+* Student profiles
+* Institutions
+* Courses
+* Modules
+* Lessons
+* Resources
+* Assessments
+* Assignments
+* Enrollments
+* Payments
+* Refunds
+* Progress
+* Activity
+* Existing certificates
+
+Use the existing migration conventions.
+
+### 14. Security
+
+Verify:
+
+* Only Admin can approve certificates.
+* Only Admin can revoke certificates.
+* Certificate IDs cannot be guessed to expose private data.
+* Student certificate access is ownership-checked.
+* Reports are authorization-protected.
+* CSV exports cannot leak sensitive information.
+* Cross-tenant data access is blocked.
+* Certificate eligibility cannot be manipulated from the client.
+* Certificate issuance cannot be triggered by the client without Admin approval.
+
+### 15. DO NOT IMPLEMENT
+
+Do NOT implement:
+
+* Major LMS UI redesign
+* Tutedude-style UI redesign
+* New authentication methods
+* New payment methods
+* Unrelated features
+
+The full UI/UX redesign remains **Step 8**.
+
+### 16. Verification
+
+Test at minimum:
+
+1. Incomplete course is not certificate-eligible.
+2. Failed assessment prevents required completion.
+3. Failed assignment prevents certificate eligibility.
+4. Completed course becomes eligible for Admin review.
+5. Student cannot approve certificate.
+6. Instructor cannot approve certificate.
+7. Admin can approve certificate.
+8. Admin can reject certificate.
+9. Approval records reviewer and timestamp.
+10. Certificate ID is unique.
+11. Duplicate certificate issuance is prevented.
+12. Issued certificate can be verified.
+13. Revoked certificate shows revoked status.
+14. Student can see only their own certificate.
+15. Cross-student certificate access is blocked.
+16. Cross-tenant report access is blocked.
+17. Admin can filter reports.
+18. Admin CSV exports contain only authorized filtered data.
+19. CSV export does not contain passwords, OTPs or secrets.
+20. Student/instructor cannot access global reports.
+21. Existing payment/refund data remains intact.
+22. Existing course catalogue remains intact.
+23. Existing progress/assessment/assignment data remains intact.
+24. Database migration succeeds.
+25. API build succeeds.
+26. Full API test suite passes.
+27. Add focused certificate and reporting tests.
+
+### Final Report
+
+Report:
+
+* Files changed
+* Migrations added
+* Certificate lifecycle
+* Admin approval workflow
+* Certificate verification
+* Report APIs
+* CSV exports
+* Security/tenant controls
+* Tests and results
+* Build status
+* Any remaining limitations
+
+Important:
+
+**Actually implement the code, database changes, APIs, certificate workflow, verification, reporting and tests. Do not only create documentation or a plan.**
+
+**Do not redesign the LMS UI in this step.**
