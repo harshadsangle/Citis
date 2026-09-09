@@ -121,6 +121,7 @@ test("enrolled learners can list and read content only through their active cour
 
   const listQueries = queries.filter(({ text }) => text.includes("ORDER BY x.sequence"));
   assert.equal(listQueries.length, 3);
+  console.log(listQueries.map(({ text }) => text));
   assert.ok(listQueries.every(({ text }) => text.includes("lms_enrollments")));
   assert.ok(listQueries.every(({ values }) => values.includes(learner.id)));
 });
