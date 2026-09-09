@@ -14,6 +14,9 @@ import type {
   ChangePasswordDto,
   MfaChallengeDto,
   MfaEnrollmentDto,
+  DirectStudentContactDto,
+  DirectStudentOtpVerifyDto,
+  DirectStudentRegistrationDto,
 } from "./auth.dto";
 import type { CollegeStudentLoginDto } from "../college-students/college-students.dto";
 import { hashPassword, verifyPassword } from "./password-security";
@@ -43,6 +46,7 @@ function toPrincipal(row: {
   email: string | null;
   first_name: string;
   last_name: string;
+  student_type?: "COLLEGE_STUDENT" | "DIRECT_STUDENT" | null;
   roles: Array<{ code: string; name: string }> | null;
   permissions: string[] | null;
   scopes: AccessScope[] | null;
@@ -53,6 +57,7 @@ function toPrincipal(row: {
     email: row.email,
     firstName: row.first_name,
     lastName: row.last_name,
+    studentType: row.student_type ?? null,
     roles: row.roles ?? [],
     permissions: row.permissions ?? [],
     scopes: row.scopes ?? [],

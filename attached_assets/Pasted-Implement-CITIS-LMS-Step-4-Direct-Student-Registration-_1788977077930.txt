@@ -1,0 +1,171 @@
+Implement **CITIS LMS Step 4 — Direct Student Registration + Email/Phone OTP**.
+
+Use Step 1 architecture and completed Steps 2–3 as the source of truth.
+
+### Goal
+
+Implement production-ready Direct Student registration where a student can register using **either Email OR Phone Number**, verify through OTP, and create a `DIRECT_STUDENT` account.
+
+### Requirements
+
+1. **Registration**
+
+* Student chooses either:
+
+  * Email
+  * Phone Number
+* The other field is NOT mandatory.
+* Do not require both.
+* Validate email/phone format.
+* Prevent duplicate active accounts for the same verified email/phone.
+* Direct Students must have:
+
+  * `student_type = DIRECT_STUDENT`
+  * No college/institution association.
+
+2. **OTP**
+
+* Send OTP to the selected email or mobile/SMS.
+* OTP must be securely generated and stored.
+* Never store plaintext OTP unnecessarily.
+* OTP must expire.
+* OTP must be single-use.
+* Old OTP becomes invalid when a new OTP is generated.
+* Rate-limit OTP requests and verification attempts.
+* Apply both IP-level and account/contact-level throttling.
+* Prevent OTP enumeration and abuse.
+* Do not expose whether an email/phone already belongs to another account beyond the existing safe auth behavior.
+
+3. **Account Creation**
+   Only create/activate the Direct Student account after successful OTP verification.
+
+* Assign `DIRECT_STUDENT`
+* Assign `STUDENT` role
+* Do not assign an institution.
+* Preserve existing college student accounts.
+* Do not convert `COLLEGE_STUDENT` accounts into Direct Students.
+
+4. **Authentication**
+   After successful verification:
+
+* Create the normal secure LMS session using the existing authentication/session system.
+* `/auth/me` must correctly return the Direct Student identity, role and student type.
+* Existing College User ID + Password login must continue working.
+
+5. **MFA Compatibility**
+   Keep the existing MFA policy:
+
+Allowed:
+
+* Email OTP
+* Mobile/SMS OTP
+
+Do NOT add:
+
+* TOTP
+* Google Authenticator
+* Microsoft Authenticator
+* Authenticator apps
+* QR-code MFA
+* Backup/recovery codes
+
+Do not weaken existing MFA or authentication security.
+
+6. **Security**
+   Ensure:
+
+* Tenant isolation remains enforced.
+* Direct Students cannot access college student data.
+* Students can only access their own profile/account data.
+* OTP cannot be reused.
+* Expired OTP cannot be accepted.
+* Brute-force attempts are throttled.
+* Sensitive OTP/account information is not leaked in API responses or logs.
+
+7. **APIs**
+
+Implement APIs according to the existing architecture, for example:
+
+* Direct Student registration
+* Send/resend OTP
+* Verify OTP
+* Registration status/session creation
+
+Follow existing API naming, validation and error-handling conventions instead of creating unnecessary duplicate auth systems.
+
+8. **Database**
+
+Add only the required migration/schema changes.
+
+Preserve:
+
+* Existing users
+* Existing passwords
+* Existing sessions
+* College students
+* Direct students
+* Courses
+* Enrollments
+* Certificates
+* Learning materials
+
+Use existing migration conventions.
+
+9. **DO NOT IMPLEMENT IN THIS STEP**
+
+Do NOT implement:
+
+* Razorpay/payment
+* Refunds
+* Course purchase flow
+* Certificate approval
+* Assignment review workflow
+* Major UI redesign
+* Tutedude-style UI redesign
+* Unrelated features
+
+### Verification
+
+Test all of these:
+
+1. Registration using email only.
+2. Registration using phone only.
+3. Email OTP delivery/verification.
+4. SMS OTP delivery/verification.
+5. Invalid OTP rejected.
+6. Expired OTP rejected.
+7. OTP cannot be reused.
+8. Old OTP invalid after resend.
+9. OTP brute-force/rate limiting.
+10. Duplicate verified email rejected safely.
+11. Duplicate verified phone rejected safely.
+12. Direct Student gets `DIRECT_STUDENT`.
+13. Direct Student has no institution association.
+14. College Student accounts remain unchanged.
+15. College User ID login still works.
+16. `/auth/me` returns correct Direct Student identity.
+17. Tenant isolation remains intact.
+18. Existing MFA behavior remains intact.
+19. API build succeeds.
+20. Full existing API test suite passes.
+21. Add focused tests for registration, OTP, throttling and security.
+
+### Final Report
+
+Report:
+
+* Files changed
+* Migrations added
+* APIs added/changed
+* OTP implementation
+* Registration flow
+* Security/rate-limiting changes
+* Tests and results
+* Build status
+* Any limitations
+
+Important:
+
+**Actually implement the code, database changes, APIs and tests. Do not only create documentation or a plan.**
+
+**Do not redesign the LMS UI in this step.**

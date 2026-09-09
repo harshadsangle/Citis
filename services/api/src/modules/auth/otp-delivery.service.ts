@@ -1,7 +1,7 @@
 import { Injectable, ServiceUnavailableException } from "@nestjs/common";
 
 export type OtpChannel = "EMAIL" | "SMS";
-export type OtpPurpose = "LOGIN" | "ENROLL" | "DISABLE" | "RESET";
+export type OtpPurpose = "LOGIN" | "ENROLL" | "DISABLE" | "RESET" | "REGISTER";
 
 type OtpDeliveryInput = {
   channel: OtpChannel;

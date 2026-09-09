@@ -9,6 +9,7 @@ export interface AuthenticatedUser {
   firstName: string;
   lastName: string;
   roles: Array<{ code: string; name: string }>;
+  studentType?: "COLLEGE_STUDENT" | "DIRECT_STUDENT" | null;
   permissions: string[];
   scopes: AccessScope[];
 }

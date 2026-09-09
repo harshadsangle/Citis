@@ -130,6 +130,65 @@ export class OtpVerifyDto extends OtpRequestDto {
   code!: string;
 }
 
+export class DirectStudentRegistrationDto {
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(8, 20)
+  mobile?: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  @Matches(STRONG_PASSWORD_PATTERN, {
+    message: "Password must be 8–128 characters and include uppercase, lowercase, and a number.",
+  })
+  password!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  @Matches(/\S/, { message: "First name cannot be blank." })
+  firstName!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  tenantSlug?: string;
+}
+
+export class DirectStudentContactDto {
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(254)
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(8, 20)
+  mobile?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  tenantSlug?: string;
+}
+
+export class DirectStudentOtpVerifyDto extends DirectStudentContactDto {
+  @IsString()
+  @Matches(/^\d{6}$/, { message: "Verification code must be exactly 6 digits." })
+  code!: string;
+}
+
 export class ProviderDto {
   @IsIn(["google", "microsoft", "sso"])
   provider!: "google" | "microsoft" | "sso";
