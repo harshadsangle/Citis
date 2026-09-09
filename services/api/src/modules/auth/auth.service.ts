@@ -771,7 +771,7 @@ export class AuthService {
       return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
     }
 
-    const code = randomBytes(3).toString("hex").slice(0, 6);
+    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
     const passwordHash = await hashPassword(input.password);
     await this.db.query(
       `UPDATE auth_challenges
@@ -822,7 +822,7 @@ export class AuthService {
     );
     if (!pending.rows[0]) return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
 
-    const code = randomBytes(3).toString("hex").slice(0, 6);
+    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
     await this.db.query(
       "UPDATE auth_challenges SET consumed_at = now() WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER' AND consumed_at IS NULL",
       [tenantId, contact.contact],
