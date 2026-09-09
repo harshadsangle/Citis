@@ -10,6 +10,7 @@ import { CollegeStudentsModule } from "./modules/college-students/college-studen
 import { InstitutionsModule } from "./modules/institutions/institutions.module";
 import { LmsModule } from "./modules/lms/lms.module";
 import { ModulesModule } from "./modules/modules/modules.module";
+import { PaymentsModule } from "./modules/payments/payments.module";
 import { RbacModule } from "./modules/rbac/rbac.module";
 import { TenantsModule } from "./modules/tenants/tenants.module";
 import { UsersModule } from "./modules/users/users.module";
@@ -27,6 +28,7 @@ import { UsersModule } from "./modules/users/users.module";
     UsersModule,
     RbacModule,
     ModulesModule,
+    PaymentsModule,
     LmsModule,
     AuditModule,
   ],

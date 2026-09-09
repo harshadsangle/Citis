@@ -9,7 +9,7 @@ import { ApiExceptionFilter } from "./common/errors.filter";
 import { requestContextMiddleware } from "./common/request-context";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.setGlobalPrefix("api/v1");
   app.getHttpAdapter().getInstance().set("trust proxy", 1);
   app.use(requestContextMiddleware);

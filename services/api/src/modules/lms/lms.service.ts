@@ -236,9 +236,9 @@ export class LmsService {
         `EXISTS (
           SELECT 1 FROM lms_enrollments e
           WHERE e.tenant_id = c.tenant_id
-            AND e.institution_id = c.institution_id
+            AND (e.institution_id = c.institution_id OR e.institution_id IS NULL)
             AND e.course_id = c.id
-            AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+            AND (e.institution_id IS NULL OR e.campus_id IS NOT DISTINCT FROM c.campus_id)
             AND e.learner_id = $${values.length}
             AND e.status = 'ACTIVE'
         )`,
@@ -442,9 +442,9 @@ export class LmsService {
         SELECT 1
         FROM lms_enrollments e
         WHERE e.tenant_id = x.tenant_id
-          AND e.institution_id = p.institution_id
+          AND (e.institution_id = p.institution_id OR e.institution_id IS NULL)
           AND e.course_id = c.id
-          AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+          AND (e.institution_id IS NULL OR e.campus_id IS NOT DISTINCT FROM c.campus_id)
           AND e.learner_id = $${values.length}
           AND e.status = 'ACTIVE'
       )`);
@@ -930,8 +930,12 @@ export class LmsService {
     const result = await this.db.query(
       `SELECT 1
        FROM lms_enrollments
-       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
-         AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+       WHERE tenant_id = $1 AND course_id = $3 AND learner_id = $4
+         AND status = 'ACTIVE'
+         AND (
+           (institution_id = $2 AND campus_id IS NOT DISTINCT FROM $5)
+           OR (institution_id IS NULL AND campus_id IS NULL)
+         )
        LIMIT 1`,
       [user.tenantId, institutionId, courseId, user.id, campusId ?? null],
     );
