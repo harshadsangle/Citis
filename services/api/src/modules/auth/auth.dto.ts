@@ -1,4 +1,5 @@
 import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { STRONG_PASSWORD_PATTERN } from "./password-security";
 
 export class LoginDto {
   @IsEmail()
@@ -16,8 +17,6 @@ export class LoginDto {
   tenantSlug?: string;
 }
 
-const strongPasswordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,128}$/;
-
 export class RegisterDto {
   @IsEmail()
   @MaxLength(254)
@@ -26,7 +25,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   @MaxLength(128)
-  @Matches(strongPasswordPattern, {
+  @Matches(STRONG_PASSWORD_PATTERN, {
     message: "Password must be 8–128 characters and include uppercase, lowercase, and a number.",
   })
   password!: string;
@@ -65,10 +64,25 @@ export class ResetPasswordDto {
   @IsString()
   @MinLength(8)
   @MaxLength(128)
-  @Matches(strongPasswordPattern, {
+  @Matches(STRONG_PASSWORD_PATTERN, {
     message: "Password must be 8–128 characters and include uppercase, lowercase, and a number.",
   })
   password!: string;
+}
+
+export class ChangePasswordDto {
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  currentPassword!: string;
+
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  @Matches(STRONG_PASSWORD_PATTERN, {
+    message: "New password must be 8–128 characters and include uppercase, lowercase, and a number.",
+  })
+  newPassword!: string;
 }
 
 export class OtpRequestDto {

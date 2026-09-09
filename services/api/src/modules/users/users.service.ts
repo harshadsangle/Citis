@@ -1,11 +1,11 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import * as bcrypt from "bcryptjs";
 import { AuditService } from "../../common/audit.service";
 import { assertScope, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import type { AssignRoleDto, CreateUserDto, UpdateUserDto } from "./user.dto";
+import { hashPassword } from "../auth/password-security";
 
 @Injectable()
 export class UsersService {
@@ -48,7 +48,7 @@ export class UsersService {
     const actor = request.context.user!;
     const tenantId = this.platform(actor) ? input.tenantId : actor.tenantId;
     if (!tenantId) throw new NotFoundException("A tenant scope is required.");
-    const passwordHash = input.password ? await bcrypt.hash(input.password, 12) : null;
+    const passwordHash = input.password ? await hashPassword(input.password) : null;
     const result = await this.db.query(
       `INSERT INTO users (tenant_id, email, mobile, password_hash, first_name, last_name, created_by, updated_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)

@@ -1,4 +1,5 @@
-import { IsEmail, IsOptional, IsString, IsUUID, Length, MinLength } from "class-validator";
+import { IsEmail, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, MinLength } from "class-validator";
+import { STRONG_PASSWORD_PATTERN } from "../auth/password-security";
 
 export class CreateUserDto {
   @IsOptional()
@@ -26,6 +27,10 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   @MinLength(8)
+  @MaxLength(128)
+  @Matches(STRONG_PASSWORD_PATTERN, {
+    message: "Password must be 8–128 characters and include uppercase, lowercase, and a number.",
+  })
   password?: string;
 }
 

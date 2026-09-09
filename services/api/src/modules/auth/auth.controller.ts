@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, Param, Post, Req, Res, UnauthorizedException, UseGuards } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { successResponse } from "../../common/response";
 import type { ContextRequest } from "../../common/request-context";
@@ -6,6 +6,7 @@ import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
 import {
   ForgotPasswordDto,
+  ChangePasswordDto,
   LoginDto,
   OtpRequestDto,
   OtpVerifyDto,
@@ -60,6 +61,20 @@ export class AuthController {
   @HttpCode(200)
   async resetPassword(@Param("token") token: string, @Body() input: ResetPasswordDto, @Req() request: ContextRequest) {
     return successResponse(await this.auth.resetPassword(token, input), request);
+  }
+
+  @Post("change-password")
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  async changePassword(@Body() input: ChangePasswordDto, @Req() request: ContextRequest) {
+    const token = AuthGuard.tokenFrom(request);
+    if (!token || !request.context.user) {
+      throw new UnauthorizedException("Authentication is required.");
+    }
+    return successResponse(
+      await this.auth.changePassword(request.context.user.id, input, request.context, token),
+      request,
+    );
   }
 
   @Get("verify-email/:token")

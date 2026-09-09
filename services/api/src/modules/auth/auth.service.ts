@@ -1,6 +1,5 @@
 import { createHash, randomBytes } from "node:crypto";
 import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
-import * as bcrypt from "bcryptjs";
 import { DatabaseService } from "../../database/database.service";
 import type { AuthenticatedUser } from "../../common/request-context";
 import type { AccessScope } from "../../common/access-scope";
@@ -12,7 +11,9 @@ import type {
   OtpVerifyDto,
   RegisterDto,
   ResetPasswordDto,
+  ChangePasswordDto,
 } from "./auth.dto";
+import { hashPassword, verifyPassword } from "./password-security";
 
 const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 const SESSION_DAYS = 7;
@@ -22,6 +23,7 @@ const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const RESET_WINDOW_MS = 60 * 60 * 1000;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 const OTP_WINDOW_MS = 10 * 60 * 1000;
+const PASSWORD_CHANGE_WINDOW_MS = 15 * 60 * 1000;
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function hashToken(token: string) {
@@ -85,7 +87,7 @@ export class AuthService {
        [email, input.tenantSlug?.trim() || null],
     );
     const user = result.rows.length === 1 ? result.rows[0] : undefined;
-    if (!user || user.status !== "ACTIVE" || !user.password_hash || !(await bcrypt.compare(input.password, user.password_hash))) {
+    if (!user || user.status !== "ACTIVE" || !user.password_hash || !(await verifyPassword(input.password, user.password_hash))) {
       this.rateLimiter.record("login-ip", ipKey, LOGIN_WINDOW_MS);
       this.rateLimiter.record("login-account", accountKey, LOGIN_WINDOW_MS);
       throw new UnauthorizedException("Invalid email or password.");
@@ -115,7 +117,7 @@ export class AuthService {
     if (!tenant.rows[0]) throw new BadRequestException("The requested institution is not available.");
 
     const email = input.email.trim().toLowerCase();
-    const passwordHash = await bcrypt.hash(input.password, 12);
+    const passwordHash = await hashPassword(input.password);
     const verificationToken = randomBytes(32).toString("base64url");
     const tokenHash = hashToken(verificationToken);
     await this.db.transaction(async (client) => {
@@ -208,7 +210,7 @@ export class AuthService {
 
   async resetPassword(token: string, input: ResetPasswordDto) {
     if (!TOKEN_PATTERN.test(token)) throw new BadRequestException("This password reset link is invalid or has expired.");
-    const passwordHash = await bcrypt.hash(input.password, 12);
+    const passwordHash = await hashPassword(input.password);
     return this.db.transaction(async (client) => {
       const result = await client.query<{ id: string; user_id: string }>(
         `SELECT t.id, t.user_id
@@ -235,6 +237,52 @@ export class AuthService {
       );
       return { reset: true };
     });
+  }
+
+  async changePassword(
+    userId: string,
+    input: ChangePasswordDto,
+    metadata: { ipAddress?: string },
+    currentSessionToken: string,
+  ) {
+    const ipKey = metadata.ipAddress || "unknown";
+    const limiterKey = `${ipKey}:${userId}`;
+    this.rateLimiter.assertAllowed("password-change", limiterKey, 5, PASSWORD_CHANGE_WINDOW_MS);
+
+    const current = await this.db.query<{ password_hash: string | null }>(
+      "SELECT password_hash FROM users WHERE id = $1 AND status = 'ACTIVE' LIMIT 1",
+      [userId],
+    );
+    const currentHash = current.rows[0]?.password_hash;
+    if (!currentHash || !(await verifyPassword(input.currentPassword, currentHash))) {
+      this.rateLimiter.record("password-change", limiterKey, PASSWORD_CHANGE_WINDOW_MS);
+      throw new UnauthorizedException("Current password is incorrect.");
+    }
+    if (await verifyPassword(input.newPassword, currentHash)) {
+      throw new BadRequestException("Choose a new password that is different from the current password.");
+    }
+
+    const passwordHash = await hashPassword(input.newPassword);
+    const sessionHash = hashToken(currentSessionToken);
+    await this.db.transaction(async (client) => {
+      const updated = await client.query(
+        `UPDATE users
+         SET password_hash = $1, updated_at = now()
+         WHERE id = $2 AND status = 'ACTIVE' AND password_hash = $3`,
+        [passwordHash, userId, currentHash],
+      );
+      if (!updated.rowCount) {
+        throw new ConflictException("The password changed before this request completed. Please sign in again.");
+      }
+      await client.query(
+        `UPDATE auth_sessions
+         SET revoked_at = now()
+         WHERE user_id = $1 AND revoked_at IS NULL AND token_hash <> $2`,
+        [userId, sessionHash],
+      );
+    });
+    this.rateLimiter.clear("password-change", limiterKey);
+    return { changed: true };
   }
 
   async verifyEmail(token: string) {
