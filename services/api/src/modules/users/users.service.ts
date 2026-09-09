@@ -98,11 +98,12 @@ export class UsersService {
     const user = userResult.rows[0];
     const role = await this.db.query<{ id: string; code: string }>("SELECT id, code FROM roles WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'", [input.roleId, user.tenant_id]);
     if (!role.rows[0]) throw new NotFoundException("Role not found in the user tenant.");
-    const platformRole = role.rows[0].code === "CITIS_SUPER_ADMIN" || role.rows[0].code === "CITIS_PLATFORM_SUPPORT";
+    const platformRole = ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT"].includes(role.rows[0].code);
     if (platformRole && (input.institutionId || input.campusId)) {
       throw new BadRequestException("Platform roles cannot be assigned to an institution or campus.");
     }
-    if (!platformRole && !input.institutionId) {
+    const requiresInstitution = !platformRole && role.rows[0].code !== "STUDENT";
+    if (requiresInstitution && !input.institutionId) {
       throw new BadRequestException("An institution is required for a scoped role.");
     }
     if (input.campusId && !input.institutionId) {

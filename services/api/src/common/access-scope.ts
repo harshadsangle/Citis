@@ -7,6 +7,7 @@ export interface AccessScope {
 }
 
 export const LMS_ADMIN_ROLE_CODES = [
+  "CITIS_ADMIN",
   "CITIS_SUPER_ADMIN",
   "CITIS_PLATFORM_SUPPORT",
   "INSTITUTION_ADMINISTRATOR",
@@ -19,7 +20,7 @@ export function isLmsAdministrator(user: AuthenticatedUser) {
 }
 
 export function isPlatformUser(user: AuthenticatedUser) {
-  return user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT");
+  return user.roles.some((role) => role.code === "CITIS_ADMIN" || role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT");
 }
 
 export function canAccessScope(user: AuthenticatedUser, institutionId: string, campusId?: string | null) {
