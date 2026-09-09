@@ -21,7 +21,7 @@ const certificateSelect = `
 `;
 
 function staffRole(user: AuthenticatedUser) {
-  return isLmsAdministrator(user) || user.roles.some((role) => role.code === "TEACHER");
+  return isLmsAdministrator(user) || user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR");
 }
 
 function learnerName(row: Record<string, unknown>) {
@@ -63,12 +63,16 @@ export class CertificateService {
     if (row.learner_id === user.id) return;
     if (isPlatformUser(user)) return;
     if (!staffRole(user)) throw new NotFoundException("Certificate not found.");
-    if (user.roles.some((role) => role.code === "TEACHER") && !isLmsAdministrator(user)) {
+    if (user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR") && !isLmsAdministrator(user)) {
       const assigned = await this.db.query(
         `SELECT 1 FROM lms_instructor_assignments
          WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3
            AND (campus_id IS NULL OR $4::uuid IS NULL OR campus_id = $4)
            AND instructor_id = $5 AND status = 'ACTIVE'
+         UNION ALL
+         SELECT 1 FROM lms_instructor_colleges ic
+         WHERE ic.tenant_id = $1 AND ic.institution_id = $2
+           AND ic.instructor_id = $5 AND ic.status = 'ACTIVE'
          LIMIT 1`,
         [user.tenantId, row.institution_id, row.course_id, row.campus_id ?? null, user.id],
       );
@@ -96,7 +100,7 @@ export class CertificateService {
     const values: unknown[] = [user.tenantId];
     const clauses = ["cert.tenant_id = $1", "cert.status = 'ISSUED'"];
     const administrator = isLmsAdministrator(user);
-    const instructor = user.roles.some((role) => role.code === "TEACHER");
+    const instructor = user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR");
     const staffCertificateViewer = administrator || isPlatformUser(user) || instructor;
 
     if (!staffCertificateViewer) {
@@ -110,14 +114,20 @@ export class CertificateService {
       values.push(query.courseId);
       clauses.push(`cert.course_id = $${values.length}`);
     }
-    if (!isPlatformUser(user) && user.roles.some((role) => role.code === "TEACHER") && !administrator) {
+    if (!isPlatformUser(user) && user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR") && !administrator) {
       values.push(user.id);
       clauses.push(`EXISTS (
         SELECT 1 FROM lms_instructor_assignments ia
         WHERE ia.tenant_id = cert.tenant_id AND ia.institution_id = cert.institution_id
           AND ia.course_id = cert.course_id
           AND (ia.campus_id IS NULL OR ia.campus_id IS NOT DISTINCT FROM cert.campus_id)
-          AND ia.instructor_id = $${values.length} AND ia.status = 'ACTIVE'
+           AND ia.instructor_id = $${values.length} AND ia.status = 'ACTIVE'
+         UNION ALL
+         SELECT 1 FROM lms_instructor_colleges ic
+         WHERE ic.tenant_id = cert.tenant_id
+           AND ic.institution_id = cert.institution_id
+           AND ic.instructor_id = $${values.length}
+           AND ic.status = 'ACTIVE'
       )`);
     }
     const result = await this.db.query<Record<string, unknown>>(

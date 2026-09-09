@@ -91,14 +91,22 @@ export class AssessmentService {
          AND r.status = 'ACTIVE'
          AND (
            r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
-           OR (
-             r.code = 'TEACHER'
+            OR (
+              r.code IN ('TEACHER', 'INSTRUCTOR')
              AND EXISTS (
                SELECT 1 FROM lms_instructor_assignments ia
                WHERE ia.tenant_id = $2 AND ia.institution_id = $3 AND ia.course_id = $4
                   AND (ia.campus_id IS NULL OR ia.campus_id = $5)
                  AND ia.instructor_id = ur.user_id AND ia.status = 'ACTIVE'
              )
+            )
+            OR (
+              r.code IN ('TEACHER', 'INSTRUCTOR')
+              AND EXISTS (
+                SELECT 1 FROM lms_instructor_colleges ic
+                WHERE ic.tenant_id = $2 AND ic.institution_id = $3
+                  AND ic.instructor_id = ur.user_id AND ic.status = 'ACTIVE'
+              )
            )
          )
        LIMIT 1`,
@@ -250,7 +258,7 @@ export class AssessmentService {
     }
     clauses.push("a.assessment_type <> 'ASSIGNMENT'");
     const isPlatform = isPlatformUser(user);
-    const isTeacher = user.roles.some((role) => role.code === "TEACHER");
+    const isTeacher = user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR");
     const isAdministrator = isLmsAdministrator(user);
     const isStudent = user.roles.some((role) => role.code === "STUDENT");
     if (!courseIds && !isPlatform && !isTeacher && !isAdministrator && !isStudent) {
@@ -264,8 +272,14 @@ export class AssessmentService {
           AND ia.institution_id = a.institution_id
           AND ia.course_id = a.course_id
            AND (ia.campus_id IS NULL OR ia.campus_id = a.campus_id)
-          AND ia.instructor_id = $${values.length}
-          AND ia.status = 'ACTIVE'
+           AND ia.instructor_id = $${values.length}
+           AND ia.status = 'ACTIVE'
+         UNION ALL
+         SELECT 1 FROM lms_instructor_colleges ic
+         WHERE ic.tenant_id = a.tenant_id
+           AND ic.institution_id = a.institution_id
+           AND ic.instructor_id = $${values.length}
+           AND ic.status = 'ACTIVE'
       )`);
     }
     if (query.status) {

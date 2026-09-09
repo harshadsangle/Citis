@@ -15,7 +15,7 @@ export class TenantsService {
   ) {}
 
   private scopedTenantId(user: AuthenticatedUser, requested?: string) {
-    return user.roles.some((role) => role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT")
+    return user.roles.some((role) => role.code === "CITIS_ADMIN" || role.code === "CITIS_SUPER_ADMIN" || role.code === "CITIS_PLATFORM_SUPPORT")
       ? requested
       : user.tenantId;
   }
@@ -50,7 +50,7 @@ export class TenantsService {
       await client.query(
         `INSERT INTO roles (tenant_id, name, code, description)
          SELECT $1, name, code, description FROM roles
-         WHERE tenant_id = $2 AND code NOT IN ('CITIS_SUPER_ADMIN', 'CITIS_PLATFORM_SUPPORT')
+          WHERE tenant_id = $2 AND code NOT IN ('CITIS_ADMIN', 'CITIS_SUPER_ADMIN', 'CITIS_PLATFORM_SUPPORT')
          ON CONFLICT (tenant_id, code) DO NOTHING`,
         [tenant.id, PLATFORM_TENANT_ID],
       );
@@ -60,7 +60,7 @@ export class TenantsService {
          FROM role_permissions rp
          JOIN roles source_role ON source_role.id = rp.role_id AND source_role.tenant_id = $2
          JOIN roles target_role ON target_role.tenant_id = $1 AND target_role.code = source_role.code
-         WHERE source_role.code NOT IN ('CITIS_SUPER_ADMIN', 'CITIS_PLATFORM_SUPPORT')
+          WHERE source_role.code NOT IN ('CITIS_ADMIN', 'CITIS_SUPER_ADMIN', 'CITIS_PLATFORM_SUPPORT')
          ON CONFLICT (role_id, permission_id) DO NOTHING`,
         [tenant.id, PLATFORM_TENANT_ID],
       );
