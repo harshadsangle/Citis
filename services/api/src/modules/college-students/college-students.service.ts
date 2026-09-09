@@ -72,7 +72,7 @@ export class CollegeStudentsService {
 
   private headerIndexes(headers: string[]) {
     const indexes = new Map(headers.map((header, index) => [normalizedHeader(header), index]));
-    const find = (...names: string[]) => names.map(normalizedHeader).find((name) => indexes.has(name));
+    const find = (...names: string[]) => names.map(normalizedHeader).map((name) => indexes.get(name)).find((index) => index !== undefined);
     const required = {
       collegeName: find("College/University", "College University", "Institution"),
       collegeUserId: find("College User ID", "College UserID", "User ID", "Student ID"),
@@ -87,14 +87,14 @@ export class CollegeStudentsService {
       throw new BadRequestException(`CSV is missing required columns: ${missing.join(", ")}.`);
     }
     return {
-      ...required as { [K in keyof typeof required]: string },
+      ...required as { [K in keyof typeof required]: number },
       email: find("Email", "Email optional"),
       mobile: find("Phone", "Mobile", "Phone optional"),
     };
   }
 
   private parseStudent(record: CsvRecord, indexes: ReturnType<CollegeStudentsService["headerIndexes"]>) {
-    const cell = (index: string | undefined) => (index === undefined ? "" : (record.row[Number(index)] ?? "").trim());
+    const cell = (index: number | undefined) => (index === undefined ? "" : (record.row[index] ?? "").trim());
     const collegeName = cell(indexes.collegeName);
     const collegeUserId = cell(indexes.collegeUserId);
     const studentName = cell(indexes.studentName);

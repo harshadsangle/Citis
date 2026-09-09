@@ -17,6 +17,7 @@ import {
   RegisterDto,
   ResetPasswordDto,
 } from "./auth.dto";
+import { CollegeStudentLoginDto } from "../college-students/college-students.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -26,6 +27,24 @@ export class AuthController {
   @HttpCode(200)
   async login(@Body() input: LoginDto, @Req() request: ContextRequest, @Res({ passthrough: true }) response: Response) {
     const session = await this.auth.login(input, request.context);
+    if ("mfaRequired" in session) {
+      response.setHeader("Cache-Control", "no-store");
+      return successResponse(session, request);
+    }
+    response.cookie("citis_session", session.token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: session.expiresAt,
+      path: "/",
+    });
+    return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
+  }
+
+  @Post("college-login")
+  @HttpCode(200)
+  async collegeLogin(@Body() input: CollegeStudentLoginDto, @Req() request: ContextRequest, @Res({ passthrough: true }) response: Response) {
+    const session = await this.auth.collegeStudentLogin(input, request.context);
     if ("mfaRequired" in session) {
       response.setHeader("Cache-Control", "no-store");
       return successResponse(session, request);

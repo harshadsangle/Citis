@@ -15,6 +15,7 @@ import type {
   MfaChallengeDto,
   MfaEnrollmentDto,
 } from "./auth.dto";
+import type { CollegeStudentLoginDto } from "../college-students/college-students.dto";
 import { hashPassword, verifyPassword } from "./password-security";
 import { OtpDeliveryService, type OtpChannel, type OtpPurpose } from "./otp-delivery.service";
 
@@ -111,6 +112,49 @@ export class AuthService {
       };
     }
     return this.completeLogin(user.id, user.tenant_id, metadata);
+  }
+
+  async collegeStudentLogin(input: CollegeStudentLoginDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const collegeUserId = input.collegeUserId.trim();
+    const ipKey = metadata.ipAddress || "unknown";
+    const accountKey = `${ipKey}:college:${input.tenantSlug?.trim() || "citis-platform"}:${collegeUserId.toLowerCase()}`;
+    this.rateLimiter.assertAllowed("login-ip", ipKey, 30, LOGIN_WINDOW_MS);
+    this.rateLimiter.assertAllowed("login-account", accountKey, 10, LOGIN_WINDOW_MS);
+    const result = await this.db.query<{
+      id: string;
+      tenant_id: string;
+      email: string | null;
+      password_hash: string | null;
+      mfa_enabled: boolean;
+      mfa_channel: OtpChannel | null;
+    }>(
+      `SELECT u.id, u.tenant_id, u.email, u.password_hash, u.mfa_enabled, u.mfa_channel
+       FROM lms_student_profiles sp
+       JOIN users u ON u.tenant_id = sp.tenant_id AND u.id = sp.user_id
+       JOIN tenants t ON t.id = sp.tenant_id
+       WHERE lower(sp.college_user_id) = lower($1)
+         AND sp.student_type = 'COLLEGE_STUDENT'
+         AND sp.status = 'ACTIVE'
+         AND u.status = 'ACTIVE'
+         AND t.status = 'ACTIVE'
+         AND ($2::text IS NULL OR t.slug = $2)
+       LIMIT 2`,
+      [collegeUserId, input.tenantSlug?.trim() || null],
+    );
+    const student = result.rows.length === 1 ? result.rows[0] : undefined;
+    if (!student || !student.password_hash || !(await verifyPassword(input.password, student.password_hash))) {
+      this.rateLimiter.record("login-ip", ipKey, LOGIN_WINDOW_MS);
+      this.rateLimiter.record("login-account", accountKey, LOGIN_WINDOW_MS);
+      throw new UnauthorizedException("Invalid College User ID or password.");
+    }
+    this.rateLimiter.clear("login-account", accountKey);
+    if (student.mfa_enabled && student.mfa_channel) {
+      return {
+        mfaRequired: true as const,
+        ...(await this.createMfaChallenge(student.id, student.mfa_channel, "LOGIN", metadata)),
+      };
+    }
+    return this.completeLogin(student.id, student.tenant_id, metadata);
   }
 
   async register(input: RegisterDto, metadata: { ipAddress?: string; userAgent?: string }) {
