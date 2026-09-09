@@ -207,7 +207,7 @@ test("only assigned teachers can create nested course content", async () => {
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
   let inserted = false;
   const { service } = serviceWith(async (text) => {
-    if (text.includes("FROM course_modules x")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    if (text.includes("FROM courses c")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
     if (text.startsWith("SELECT id FROM courses")) return { rows: [{ id: "course-1" }] };
     if (text.startsWith("SELECT institution_id, campus_id FROM courses")) return { rows: [{ institution_id: "institution-1", campus_id: null }] };
     if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
@@ -223,7 +223,7 @@ test("only assigned teachers can create nested course content", async () => {
   assert.equal(inserted, true);
 
   const { service: blockedService } = serviceWith(async (text) => {
-    if (text.includes("FROM course_modules x")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    if (text.includes("FROM courses c")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
     if (text.startsWith("SELECT id FROM courses")) return { rows: [{ id: "course-1" }] };
     if (text.startsWith("SELECT institution_id, campus_id FROM courses")) return { rows: [{ institution_id: "institution-1", campus_id: null }] };
     if (text.startsWith("SELECT 1")) return { rows: [] };
