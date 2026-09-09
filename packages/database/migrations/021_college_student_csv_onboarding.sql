@@ -37,6 +37,19 @@ CREATE TABLE IF NOT EXISTS lms_student_imports (
 CREATE INDEX IF NOT EXISTS lms_student_imports_tenant_created_idx
   ON lms_student_imports (tenant_id, created_at DESC);
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = 'lms_student_imports'::regclass
+      AND conname = 'lms_student_imports_tenant_id_id_key'
+  ) THEN
+    ALTER TABLE lms_student_imports
+      ADD CONSTRAINT lms_student_imports_tenant_id_id_key UNIQUE (tenant_id, id);
+  END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS lms_student_import_rows (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
