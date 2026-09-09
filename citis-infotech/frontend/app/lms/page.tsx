@@ -1,18 +1,15 @@
 import Link from "next/link";
 import {
   ArrowRight,
-  BookOpenCheck,
   CheckCircle2,
   Compass,
-  GraduationCap,
   Layers3,
-  ShieldCheck,
   Sparkles,
   UsersRound,
 } from "lucide-react";
 import { generatePageMetadata } from "@/lib/seo";
 import { redirectToLmsPortal } from "@/lib/lms-portal";
-import { LMS_PORTALS, normalizeLmsPortal, type LmsPortal } from "@/lib/lms-roles";
+import { normalizeLmsPortal } from "@/lib/lms-roles";
 import { LMS_COURSE_CATEGORIES, normalizeLmsCourseProvider } from "@/lib/lms-catalog";
 import { ProfessionalProgramsCatalogue } from "@/components/marketing/ProfessionalProgramsCatalogue";
 import { LmsCourseCatalogue } from "@/components/marketing/LmsCourseCatalogue";
@@ -39,12 +36,6 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
     : LMS_COURSE_CATEGORIES;
   const courseCount = courseCategories.reduce((total, category) => total + category.courses.length, 0);
 
-  const icons: Record<LmsPortal, typeof ShieldCheck> = {
-    admin: ShieldCheck,
-    instructor: BookOpenCheck,
-    learner: GraduationCap,
-  };
-
   return (
     <>
       <main className="lms-page">
@@ -62,8 +53,8 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
                   <Link href="#global-certifications" className="lms-primary-cta">
                     Explore the catalogue <ArrowRight className="size-4" />
                   </Link>
-                  <Link href="/lms/login?portal=learner" className="lms-secondary-cta">
-                    Enter learner portal
+                  <Link href="#professional-programs" className="lms-secondary-cta">
+                    View professional programmes
                   </Link>
                 </div>
                 <div className="lms-hero-proof">
@@ -103,31 +94,6 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
             <div><strong>{courseCategories.length}</strong><span>recognised pathways</span></div>
             <div><strong>01</strong><span>learning workspace</span></div>
             <div className="lms-stat-note"><UsersRound className="size-5 text-accent" /><span>For learners, educators, and institution teams</span></div>
-          </div>
-        </section>
-
-        <section className="lms-portal-section">
-          <div className="container-site">
-            <div className="lms-section-heading">
-              <div><p className="lms-kicker"><span className="lms-kicker-line" />Your learning workspace</p><h2>Everything you need to keep moving.</h2></div>
-              <p>Choose your workspace and step into a focused experience designed around your role.</p>
-            </div>
-            <div className="lms-portal-grid">
-              {(Object.keys(LMS_PORTALS) as LmsPortal[]).map((key, index) => {
-                const portalOption = LMS_PORTALS[key];
-                const Icon = icons[key];
-                return (
-                  <article key={key} className={`lms-portal-card lms-portal-card-${index + 1}`}>
-                    <div className="lms-portal-card-header"><span className="lms-portal-icon"><Icon className="size-5" /></span><span className="lms-portal-number">0{index + 1}</span></div>
-                    <p>{portalOption.eyebrow}</p>
-                    <h3>{portalOption.label}</h3>
-                    <span className="lms-portal-description">{portalOption.description}</span>
-                    <Link href={`/lms/login?portal=${key}${providerQuery}`} className="lms-portal-link">Continue as {key === "admin" ? "administrator" : key}<ArrowRight className="size-4" /></Link>
-                  </article>
-                );
-              })}
-            </div>
-            <div className="lms-portal-footnote"><span>Not sure which workspace is right for you?</span><Link href="/certificate-verification">Verify a CITIS certificate <ArrowRight className="size-3.5" /></Link></div>
           </div>
         </section>
 
