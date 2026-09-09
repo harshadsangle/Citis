@@ -151,7 +151,9 @@ export class LmsService {
       ),
       this.db.query<{ count: string }>(`SELECT count(*)::text AS count FROM programmes p WHERE p.tenant_id = $1${statusParam}`, values.slice(0, filter.values.length ? 2 : 1)),
     ]);
-    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
+    const visible = this.isDirectStudentLearner(user)
+      ? rows.rows as Array<Record<string, unknown>>
+      : filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
@@ -164,7 +166,9 @@ export class LmsService {
       [id, user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("Programme not found.");
-    assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    }
     return result.rows[0];
   }
 
@@ -274,7 +278,9 @@ export class LmsService {
         values.slice(0, -2),
       ),
     ]);
-    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
+    const visible = this.isDirectStudentLearner(user)
+      ? rows.rows as Array<Record<string, unknown>>
+      : filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
@@ -297,7 +303,9 @@ export class LmsService {
         result.rows[0].campus_id as string | null | undefined,
       );
     } else {
-      assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+      if (!this.isDirectStudentLearner(user)) {
+        assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+      }
     }
     if (this.isLearnerOnly(user)) {
       if (
@@ -491,13 +499,17 @@ export class LmsService {
     ]);
     void parentTable;
     void resource;
-    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
+    const visible = this.isDirectStudentLearner(user)
+      ? rows.rows as Array<Record<string, unknown>>
+      : filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
   async getChild(id: string, table: LmsTable, user: AuthenticatedUser) {
     const scope = await this.contentScope(id, table, user);
-    assertScopeForRead(user, String(scope.institution_id), scope.campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(scope.institution_id), scope.campus_id as string | null | undefined);
+    }
     if (scope.course_id) await this.assertLearnerCourseAccess(user, String(scope.course_id), String(scope.institution_id), scope.campus_id as string | null | undefined);
     if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id as string | null | undefined);
     if (this.isLearnerOnly(user)) {
@@ -923,6 +935,10 @@ export class LmsService {
     return user.roles.some((role) => role.code === "STUDENT")
       && !isLmsAdministrator(user)
       && !user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR");
+  }
+
+  private isDirectStudentLearner(user: AuthenticatedUser) {
+    return this.isLearnerOnly(user) && user.studentType === "DIRECT_STUDENT";
   }
 
   private async assertLearnerCourseAccess(user: AuthenticatedUser, courseId: string, institutionId: string, campusId?: string | null) {
