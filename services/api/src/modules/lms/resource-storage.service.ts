@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { createReadStream } from "node:fs";
+import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, normalize, posix, relative, resolve } from "node:path";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import unzipper from "unzipper";
@@ -166,6 +167,16 @@ export class ResourceStorageService {
   async read(storageKey: string) {
     const { destination } = safeStorageKey(storageKey);
     return readFile(destination);
+  }
+
+  async fileStat(storageKey: string) {
+    const { destination } = safeStorageKey(storageKey);
+    return stat(destination);
+  }
+
+  createReadStreamForKey(storageKey: string, options?: { start?: number; end?: number }) {
+    const { destination } = safeStorageKey(storageKey);
+    return createReadStream(destination, options);
   }
 
   async readScormAsset(storageKey: string, assetPath: string) {
