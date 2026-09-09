@@ -1,4 +1,4 @@
-import { TooManyRequestsException } from "@nestjs/common";
+import { HttpException, HttpStatus } from "@nestjs/common";
 
 type Bucket = {
   count: number;
@@ -19,10 +19,10 @@ export class AuthRateLimiter {
     if (bucket.count < limit) return;
 
     const retryAfterSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
-    throw new TooManyRequestsException({
+    throw new HttpException({
       message: "Too many authentication attempts. Please try again later.",
       retryAfterSeconds,
-    });
+    }, HttpStatus.TOO_MANY_REQUESTS);
   }
 
   record(scope: string, key: string, windowMs: number, now = Date.now()) {

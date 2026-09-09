@@ -3,6 +3,7 @@ import "./config/load-env";
 import { ValidationPipe } from "@nestjs/common";
 import { NestFactory } from "@nestjs/core";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import type { NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./common/errors.filter";
 import { requestContextMiddleware } from "./common/request-context";
@@ -10,7 +11,7 @@ import { requestContextMiddleware } from "./common/request-context";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix("api/v1");
-  app.set("trust proxy", 1);
+  app.getHttpAdapter().getInstance().set("trust proxy", 1);
   app.use(requestContextMiddleware);
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -18,7 +19,7 @@ async function bootstrap() {
     transform: true,
   }));
   app.useGlobalFilters(new ApiExceptionFilter());
-  app.use((_request, response, next) => {
+  app.use((_request: Request, response: Response, next: NextFunction) => {
     response.setHeader("X-Content-Type-Options", "nosniff");
     response.setHeader("X-Frame-Options", "DENY");
     response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -38,7 +39,7 @@ async function bootstrap() {
   const allowedOriginSet = new Set(allowedOrigins);
   app.enableCors({
     origin: allowedOrigins.length
-      ? (origin, callback) => callback(null, !origin || allowedOriginSet.has(origin))
+      ? (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => callback(null, !origin || allowedOriginSet.has(origin))
       : true,
     credentials: true,
   });
