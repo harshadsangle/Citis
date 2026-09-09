@@ -378,6 +378,22 @@ export class LmsController {
     return successResponse(await this.lms.listLearnerProgress(request.context.user!), request);
   }
 
+  @Get("progress/resources/:resourceId")
+  @RequirePermission("lms.course_progress.view")
+  async resourceProgress(@Param("resourceId") resourceId: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.getResourceProgress(resourceId, request), request);
+  }
+
+  @Patch("progress/resources/:resourceId")
+  @RequirePermission("lms.course_progress.view")
+  async updateResourceProgress(
+    @Param("resourceId") resourceId: string,
+    @Body() input: UpdateLearningResourceProgressDto,
+    @Req() request: ContextRequest,
+  ) {
+    return successResponse(await this.lms.updateResourceProgress(resourceId, input, request), request);
+  }
+
   @Get("progress/courses/:courseId")
   @RequirePermission("lms.course_progress.view")
   async courseProgress(@Param("courseId") courseId: string, @Req() request: ContextRequest, @Query() query: ProgressViewerQueryDto) {

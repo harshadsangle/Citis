@@ -1321,6 +1321,68 @@ export class LmsService {
     return this.calculateCourseProgress(course, learnerId, user);
   }
 
+  async getResourceProgress(resourceId: string, request: ContextRequest) {
+    const user = request.context.user!;
+    const resource = await this.resourceFor(resourceId, user);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, resource_id, learner_id, position_seconds, duration_seconds, progress_percent,
+              completed, last_accessed_at, updated_at
+       FROM lms_resource_progress
+       WHERE tenant_id = $1 AND resource_id = $2 AND learner_id = $3`,
+      [user.tenantId, resourceId, user.id],
+    );
+    return result.rows[0] || {
+      resource_id: resourceId,
+      learner_id: user.id,
+      position_seconds: 0,
+      duration_seconds: 0,
+      progress_percent: 0,
+      completed: false,
+      last_accessed_at: null,
+      updated_at: null,
+    };
+  }
+
+  async updateResourceProgress(resourceId: string, input: UpdateLearningResourceProgressDto, request: ContextRequest) {
+    const user = request.context.user!;
+    this.rateLimitProtectedContent(request, "resource-progress", 60);
+    const resource = await this.resourceFor(resourceId, user);
+    const duration = Math.max(0, Number(input.durationSeconds));
+    const position = Math.min(Math.max(0, Number(input.positionSeconds)), duration || Number(input.positionSeconds));
+    const percentage = duration > 0 ? Math.min(100, Math.round((position / duration) * 10000) / 100) : (input.completed ? 100 : 0);
+    const completed = Boolean(input.completed) || percentage >= 99.5;
+    const result = await this.db.query<Record<string, unknown>>(
+      `INSERT INTO lms_resource_progress
+         (tenant_id, institution_id, campus_id, course_id, module_id, lesson_id, resource_id, learner_id,
+          position_seconds, duration_seconds, progress_percent, completed, last_accessed_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, now())
+       ON CONFLICT (tenant_id, resource_id, learner_id)
+       DO UPDATE SET position_seconds = EXCLUDED.position_seconds,
+                     duration_seconds = EXCLUDED.duration_seconds,
+                     progress_percent = EXCLUDED.progress_percent,
+                     completed = EXCLUDED.completed,
+                     last_accessed_at = now(),
+                     updated_at = now()
+       RETURNING id, resource_id, learner_id, position_seconds, duration_seconds, progress_percent,
+                 completed, last_accessed_at, updated_at`,
+      [
+        user.tenantId,
+        resource.institution_id,
+        resource.campus_id ?? null,
+        resource.course_id,
+        resource.module_id,
+        resource.lesson_id,
+        resourceId,
+        user.id,
+        position,
+        duration,
+        percentage,
+        completed,
+      ],
+    );
+    return result.rows[0];
+  }
+
   async completeLesson(lessonId: string, request: ContextRequest) {
     const user = request.context.user!;
     const result = await this.db.query<Record<string, unknown>>(
