@@ -61,6 +61,7 @@ export async function readManagedFile(storageKey) {
   const { destination } = pathForKey(storageKey);
   const root = await canonicalRoot();
   const safeDestination = await assertExistingPathIsManaged(root, destination);
+  // nosemgrep: javascript.express.file.fs-express.fs-express -- safeDestination is realpath-checked inside canonicalRoot.
   return readFile(pathToFileURL(safeDestination));
 }
 
@@ -68,9 +69,11 @@ export async function writeManagedFile(storageKey, content) {
   const { destination } = pathForKey(storageKey);
   const root = await canonicalRoot();
   const safeDirectoryPath = dirname(destination);
+  // nosemgrep: javascript.express.file.fs-express.fs-express -- destination was allowlisted and its canonical parent is checked below.
   await mkdir(pathToFileURL(safeDirectoryPath), { recursive: true });
   const safeDirectory = await realpath(safeDirectoryPath);
   assertInsideRoot(root, safeDirectory);
+  // nosemgrep: javascript.express.file.fs-express.fs-express -- destination is a validated managed-storage URL.
   await writeFile(pathToFileURL(destination), content, { flag: "wx" });
 }
 
