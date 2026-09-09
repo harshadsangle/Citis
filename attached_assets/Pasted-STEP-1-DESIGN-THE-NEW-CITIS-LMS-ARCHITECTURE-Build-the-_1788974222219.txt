@@ -1,0 +1,165 @@
+STEP 1 — DESIGN THE NEW CITIS LMS ARCHITECTURE
+
+Build the technical architecture and workflow plan ONLY for the newly approved CITIS LMS requirements below.
+
+IMPORTANT:
+
+* Do NOT implement anything yet.
+* Do NOT modify existing code.
+* Do NOT delete anything.
+* Do NOT migrate or change the database.
+* Do NOT install packages.
+* This step is DESIGN/PLANNING ONLY.
+
+### 1. Student Types
+
+Design the LMS for two student types:
+
+A. COLLEGE/UNIVERSITY STUDENT
+
+* College provides student CSV to CITIS.
+* CSV contains Student Name, College User ID, Password and available student details.
+* CITIS Admin imports the CSV.
+* Only imported/active students can log in.
+* Every student belongs to a specific college/university.
+* CITIS Admin individually assigns courses to each student.
+* Student can access only their assigned courses.
+
+B. DIRECT STUDENT
+
+* Student visits CITIS website.
+* Selects a course and clicks Enroll Now.
+* Registers using Email OR Phone Number.
+* OTP verification.
+* Pays through Razorpay.
+* Successful payment immediately unlocks the course.
+* Failed/cancelled payment must not create active enrollment.
+* Refund handling must be supported.
+
+### 2. Roles
+
+CITIS ADMIN:
+
+* Full access to everything.
+* Manage colleges/universities.
+* Manage students and instructors.
+* Import CSV.
+* Create/edit/manage courses.
+* Individually assign courses.
+* View all student activity.
+* Review assignments and assessments.
+* Manage payments/refunds.
+* Approve certificates.
+* Download CSV reports.
+
+INSTRUCTOR:
+
+* Cannot create/edit courses.
+* Can view students only from their assigned college/university.
+* Can view student login/activity, lessons viewed, progress, assessments and assignments.
+* Must never access another college's student data.
+
+STUDENT:
+
+* Access only their own account and authorized courses.
+
+### 3. Learning Workflow
+
+Design this flow:
+
+Course → Modules → Lessons → Learning Resources → Assessments/Quizzes → Assignments → Completion
+
+Track progress separately for every student.
+
+### 4. Activity Tracking
+
+Design tracking for:
+
+* Login history
+* Login date/time
+* Last login
+* Last active
+* Course start date
+* Course progress
+* Lessons viewed/completed
+* Assessment attempts/scores
+* Assignment submission/status
+* Course completion
+* Certificate status
+
+Provide a student activity timeline for Admin and permitted Instructor users.
+
+### 5. Assignment & Certificate Workflow
+
+Student submits assignment.
+
+CITIS Admin reviews:
+
+* Assignment
+* Assessment results
+* Course completion
+* Required learning activities
+
+Admin can provide marks/feedback and approve/reject.
+
+Certificate must NOT be automatically issued.
+
+Flow:
+
+Course + Assessments + Assignments completed
+→ Admin verification
+→ Admin approval
+→ Certificate generated/issued
+
+### 6. Multi-Tenant Security
+
+Design strict college/university tenant isolation.
+
+* Student A cannot access Student B's private data.
+* College A students cannot access College B data.
+* Instructor A can only access students from their assigned college/university.
+* CITIS Admin has global access.
+* Enforce permissions at API/backend level, not only in the UI.
+
+### 7. Reporting
+
+Design Admin CSV export for:
+
+* Students
+* Colleges/universities
+* Login/activity history
+* Course assignments
+* Course progress
+* Assessments
+* Assignments
+* Certificates
+* Payments
+* Refunds
+
+Support filtering before CSV download.
+
+### 8. Architecture Output Required
+
+Prepare a clear technical design showing:
+
+* System architecture
+* User/role model
+* Student-type model
+* College/tenant model
+* Authentication flow
+* Course/enrollment model
+* Assignment/assessment flow
+* Certificate flow
+* Payment/refund flow
+* Activity tracking model
+* CSV import/export flow
+* Permission/authorization model
+* Recommended database entities/tables
+* API/module boundaries
+* Frontend portal boundaries
+* Implementation sequence
+
+IMPORTANT:
+Do not write or modify production code in this step.
+
+The output must be a complete technical blueprint that can be used for Step 2 implementation.
