@@ -121,6 +121,21 @@ export class CreateCourseDto {
   @IsUrl({ require_tld: false })
   @Max(2048)
   thumbnail?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(1000000000)
+  priceMinor?: number;
+
+  @IsOptional()
+  @IsIn(["INR"])
+  currency?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  purchasable?: boolean;
 }
 
 export class UpdateCourseDto {
@@ -138,6 +153,17 @@ export class UpdateCourseDto {
   @IsUrl({ require_tld: false })
   @Max(2048)
   thumbnail?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(1000000000)
+  priceMinor?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  purchasable?: boolean;
 }
 
 export class CreateCourseModuleDto {

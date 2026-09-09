@@ -257,7 +257,7 @@ export class LmsService {
     const [rows, total] = await Promise.all([
       this.db.query(
         `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
-                c.created_at, c.updated_at
+                 c.price_minor, c.currency, c.purchasable, c.created_at, c.updated_at
          FROM courses c
          JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
          JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
@@ -280,8 +280,8 @@ export class LmsService {
 
   async getCourse(id: string, user: AuthenticatedUser) {
     const result = await this.db.query(
-      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
-              c.created_at, c.updated_at, p.status AS programme_status, i.status AS institution_status
+       `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
+               c.price_minor, c.currency, c.purchasable, c.created_at, c.updated_at, p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
        JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
@@ -324,10 +324,26 @@ export class LmsService {
     const campusId = await this.campusFor(user, parent.rows[0].institution_id, input.campusId ?? parent.rows[0].campus_id);
     return this.run(async () => {
       const result = await this.db.query(
-        `INSERT INTO courses (tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
-         RETURNING id, tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`,
-        [user.tenantId, parent.rows[0].institution_id, campusId, input.programmeId, input.title.trim(), input.code.trim().toUpperCase(), input.description?.trim() || null, input.thumbnail?.trim() || null, user.id],
+       `INSERT INTO courses
+          (tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail,
+           price_minor, currency, purchasable, created_by, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+          RETURNING id, tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail,
+                    price_minor, currency, purchasable, status, created_at, updated_at`,
+        [
+          user.tenantId,
+          parent.rows[0].institution_id,
+          campusId,
+          input.programmeId,
+          input.title.trim(),
+          input.code.trim().toUpperCase(),
+          input.description?.trim() || null,
+          input.thumbnail?.trim() || null,
+          input.priceMinor ?? 0,
+          input.currency ?? "INR",
+          input.purchasable ?? false,
+          user.id,
+        ],
       );
       const row = result.rows[0];
       await this.auditMutation(request, "course", "CREATE", row);
@@ -339,12 +355,23 @@ export class LmsService {
     const before = await this.getCourse(id, request.context.user!);
     return this.run(async () => {
       const result = await this.db.query(
-        `UPDATE courses
-         SET title = COALESCE($3, title), description = COALESCE($4, description), thumbnail = COALESCE($5, thumbnail),
-             updated_by = $2, updated_at = now()
-         WHERE id = $1 AND tenant_id = $6
-          RETURNING id, tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail, status, created_at, updated_at`,
-        [id, request.context.user!.id, input.title?.trim() || null, input.description?.trim() || null, input.thumbnail?.trim() || null, request.context.user!.tenantId],
+         `UPDATE courses
+          SET title = COALESCE($3, title), description = COALESCE($4, description), thumbnail = COALESCE($5, thumbnail),
+              price_minor = COALESCE($6, price_minor), purchasable = COALESCE($7, purchasable),
+              updated_by = $2, updated_at = now()
+          WHERE id = $1 AND tenant_id = $8
+           RETURNING id, tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail,
+                     price_minor, currency, purchasable, status, created_at, updated_at`,
+        [
+          id,
+          request.context.user!.id,
+          input.title?.trim() || null,
+          input.description?.trim() || null,
+          input.thumbnail?.trim() || null,
+          input.priceMinor ?? null,
+          input.purchasable ?? null,
+          request.context.user!.tenantId,
+        ],
       );
       if (!result.rows[0]) throw new NotFoundException("Course not found.");
       await this.auditMutation(request, "course", "UPDATE", result.rows[0], before);
