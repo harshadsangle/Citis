@@ -98,5 +98,20 @@
     "eslint-config-next": "^15.5.24",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@eslint/eslintrc": {
+      "js-yaml": "4.3.2"
+    },
+    "@nestjs/platform-express": {
+      "multer": "2.3.0"
+    },
+    "next": {
+      "postcss": "8.5.18",
+      "sharp": "0.35.4"
+    },
+    "postcss": {
+      "nanoid": "3.3.18"
+    }
   }
 }
