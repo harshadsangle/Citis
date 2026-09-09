@@ -36,7 +36,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
 
   return (
     <>
-      <section className="relative isolate overflow-hidden border-b border-primary/10 py-16 sm:py-24">
+       <section className="lms-entry-hero relative isolate overflow-hidden border-b border-primary/10 py-16 sm:py-24">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_14%,rgba(92,166,177,.18),transparent_30%),radial-gradient(circle_at_90%_80%,rgba(239,125,60,.13),transparent_26%),linear-gradient(145deg,#f7fbfd_0%,#edf5f8_55%,#fff7ed_100%)] dark:bg-[linear-gradient(145deg,#071526_0%,#10233e_60%,#241b0d_100%)]" />
       <div className="container-site">
         <div className="mx-auto max-w-3xl text-center">
@@ -44,12 +44,12 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
           <h1 className="mt-5 font-heading text-4xl font-semibold tracking-tight sm:text-6xl">Learning with a clear next step.</h1>
           <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground">Select the option that matches your role. Your account permissions are checked securely after sign-in.</p>
         </div>
-        <div className="mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
+         <div className="lms-portal-grid mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
           {(Object.keys(LMS_PORTALS) as LmsPortal[]).map((key) => {
             const portalOption = LMS_PORTALS[key];
             const Icon = icons[key];
-            return (
-              <article key={key} className="surface group relative flex min-h-72 flex-col overflow-hidden rounded-[1.6rem] p-7 transition duration-200 hover:-translate-y-1 hover:shadow-xl sm:p-8">
+              return (
+               <article key={key} className="lms-portal-card surface group relative flex min-h-72 flex-col overflow-hidden rounded-[1.6rem] p-7 transition duration-200 hover:-translate-y-1 hover:shadow-xl sm:p-8">
                 <span className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-secondary/10" aria-hidden="true" />
                 <span className="relative grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[0_10px_25px_rgba(18,75,115,.2)]"><Icon className="size-6" /></span>
                 <p className="mt-7 text-xs font-bold tracking-[0.14em] text-primary uppercase">{portalOption.eyebrow}</p>
@@ -63,8 +63,10 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
             );
           })}
         </div>
-        <p className="mt-8 text-center text-sm text-muted-foreground">Not sure which portal to use? Contact your institution or programme team.</p>
-        <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
+         <div className="lms-entry-aux mt-8">
+           <p className="text-center text-sm text-muted-foreground">Not sure which portal to use? Contact your institution or programme team.</p>
+           <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
+         </div>
       </div>
       </section>
       <LmsCourseCatalogue categories={courseCategories} provider={provider} providerQuery={providerQuery} />
