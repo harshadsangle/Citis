@@ -21,6 +21,7 @@ const emailSmsMfaMigration = readFileSync(resolve(process.cwd(), "../../packages
 const resourceProgressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/018_lms_resource_progress.sql"), "utf8");
 const resourceProgressPermissionMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/019_lms_resource_progress_permission.sql"), "utf8");
 const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/020_lms_foundation_roles_profiles.sql"), "utf8");
+const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/021_college_student_csv_onboarding.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -201,4 +202,13 @@ test("Step 2 foundation migration defines student types, college relationships, 
   assert.match(foundationRolesMigration, /'CITIS_ADMIN'/);
   assert.match(foundationRolesMigration, /'INSTRUCTOR'/);
   assert.match(foundationRolesMigration, /020_lms_foundation_roles_profiles/);
+});
+
+test("Step 3 migration defines safe college student imports without requiring contact fields", () => {
+  assert.match(collegeStudentMigration, /CREATE TABLE IF NOT EXISTS lms_student_imports\b/);
+  assert.match(collegeStudentMigration, /CREATE TABLE IF NOT EXISTS lms_student_import_rows\b/);
+  assert.match(collegeStudentMigration, /lower\(college_user_id\)/);
+  assert.match(collegeStudentMigration, /lms\.student_import\.create/);
+  assert.match(collegeStudentMigration, /ALTER TABLE users DROP CONSTRAINT/);
+  assert.match(collegeStudentMigration, /021_college_student_csv_onboarding/);
 });

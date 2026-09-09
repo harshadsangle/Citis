@@ -74,3 +74,7 @@ FROM roles r
 JOIN permissions p ON p.code IN ('lms.student_import.view', 'lms.student_import.create', 'lms.student_import.update')
 WHERE r.code IN ('CITIS_ADMIN', 'CITIS_SUPER_ADMIN')
 ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+INSERT INTO schema_migrations (version)
+VALUES ('021_college_student_csv_onboarding')
+ON CONFLICT (version) DO NOTHING;
