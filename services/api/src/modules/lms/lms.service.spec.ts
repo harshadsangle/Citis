@@ -119,8 +119,9 @@ test("enrolled learners can list and read content only through their active cour
   await service.listLessons(learner, 1, 20, 0, {}, "module-1");
   await service.listResources(learner, 1, 20, 0, {}, "lesson-1");
 
-  const listQueries = queries.filter(({ text }) => text.includes("lms_enrollments") && text.includes("LIMIT"));
+  const listQueries = queries.filter(({ text }) => text.includes("ORDER BY x.sequence"));
   assert.equal(listQueries.length, 3);
+  assert.ok(listQueries.every(({ text }) => text.includes("lms_enrollments")));
   assert.ok(listQueries.every(({ values }) => values.includes(learner.id)));
 });
 
