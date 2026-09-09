@@ -61,11 +61,10 @@ CREATE INDEX IF NOT EXISTS lms_certificates_review_scope_idx
 
 WITH permission_seed(module, resource, action, description) AS (
   VALUES
-    ('lms', 'certificate', 'REVIEW', 'Review eligible LMS certificates'),
+    ('lms', 'certificate', 'UPDATE', 'Review eligible LMS certificates'),
     ('lms', 'certificate', 'APPROVE', 'Approve LMS certificates'),
     ('lms', 'certificate', 'REJECT', 'Reject LMS certificates'),
-    ('lms', 'certificate', 'ISSUE', 'Issue approved LMS certificates'),
-    ('lms', 'certificate', 'REVOKE', 'Revoke issued LMS certificates'),
+    ('lms', 'certificate', 'UPDATE', 'Issue or revoke approved LMS certificates'),
     ('lms', 'report', 'VIEW', 'View global LMS reports'),
     ('lms', 'report', 'EXPORT', 'Export global LMS reports')
 )
@@ -81,11 +80,10 @@ CROSS JOIN permissions p
 WHERE r.tenant_id = '00000000-0000-0000-0000-000000000001'
   AND r.code = 'CITIS_ADMIN'
   AND p.code IN (
-    'lms.certificate.review',
+    'lms.certificate.update',
     'lms.certificate.approve',
     'lms.certificate.reject',
-    'lms.certificate.issue',
-    'lms.certificate.revoke',
+    'lms.certificate.update',
     'lms.report.view',
     'lms.report.export'
   )
