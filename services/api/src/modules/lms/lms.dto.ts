@@ -306,6 +306,14 @@ export class EnrollLearnerDto {
   learnerId!: string;
 }
 
+export class AssignInstructorCollegeDto {
+  @IsUUID()
+  instructorId!: string;
+
+  @IsUUID()
+  institutionId!: string;
+}
+
 export class AssignInstructorDto {
   @IsUUID()
   instructorId!: string;
