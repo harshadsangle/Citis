@@ -390,7 +390,7 @@ export class PaymentsService {
         amount,
         notes: { reason: input.reason.trim(), paymentReference: id },
       });
-      return await this.markRefundProcessed(String(providerRefund.id), Number(providerRefund.amount), refund.rows[0].id);
+      return await this.markRefundProcessed(String(providerRefund.id), Number(providerRefund.amount), String(refund.rows[0].id));
     } catch (error) {
       await this.db.query(
         "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE id = $1",

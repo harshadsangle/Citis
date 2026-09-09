@@ -84,7 +84,7 @@ export class RazorpayClient {
     return expectedBuffer.length === actualBuffer.length && timingSafeEqual(expectedBuffer, actualBuffer);
   }
 
-  private async request<T>(
+  private async request<T extends object>(
     path: string,
     input: {
       method: "GET" | "POST";

@@ -16,6 +16,9 @@ END $$;
 ALTER TABLE lms_enrollments
   ALTER COLUMN institution_id DROP NOT NULL;
 
+CREATE UNIQUE INDEX IF NOT EXISTS courses_tenant_id_key
+  ON courses (tenant_id, id);
+
 CREATE UNIQUE INDEX IF NOT EXISTS lms_enrollments_direct_active_unique_idx
   ON lms_enrollments (tenant_id, course_id, learner_id)
   WHERE status = 'ACTIVE' AND assignment_source = 'DIRECT';
