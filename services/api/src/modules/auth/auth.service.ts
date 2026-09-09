@@ -297,6 +297,231 @@ export class AuthService {
     return { changed: true };
   }
 
+  private async completeLogin(userId: string, tenantId: string, metadata: { ipAddress?: string; userAgent?: string }) {
+    await this.db.query("UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2", [
+      userId,
+      tenantId,
+    ]);
+    return this.startSession(userId, metadata);
+  }
+
+  async mfaStatus(userId: string) {
+    const result = await this.db.query<{ mfa_enabled: boolean; mfa_channel: OtpChannel | null }>(
+      "SELECT mfa_enabled, mfa_channel FROM users WHERE id = $1 AND status = 'ACTIVE' LIMIT 1",
+      [userId],
+    );
+    return {
+      enabled: Boolean(result.rows[0]?.mfa_enabled),
+      channel: result.rows[0]?.mfa_enabled ? result.rows[0]?.mfa_channel ?? null : null,
+    };
+  }
+
+  async beginMfaEnrollment(userId: string, input: MfaEnrollmentDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const user = await this.getMfaUser(userId);
+    if (!user.password_hash || !(await verifyPassword(input.currentPassword, user.password_hash))) {
+      this.rateLimiter.record("mfa-setup", `${metadata.ipAddress || "unknown"}:${userId}`, MFA_WINDOW_MS);
+      throw new UnauthorizedException("Current password is incorrect.");
+    }
+    if (user.mfa_enabled) {
+      throw new BadRequestException("MFA is already enabled. Use the reset flow to change its delivery method.");
+    }
+    return this.createMfaChallenge(userId, input.channel, "ENROLL", metadata);
+  }
+
+  async verifyMfaEnrollment(userId: string, input: MfaChallengeDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const challenge = await this.consumeMfaChallenge(input, "ENROLL", userId, metadata);
+    await this.db.query(
+      "UPDATE users SET mfa_enabled = true, mfa_channel = $1, updated_at = now() WHERE id = $2",
+      [challenge.channel, userId],
+    );
+    return { enabled: true, channel: challenge.channel };
+  }
+
+  async beginMfaReset(userId: string, input: MfaEnrollmentDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const user = await this.getMfaUser(userId);
+    if (!user.password_hash || !(await verifyPassword(input.currentPassword, user.password_hash))) {
+      this.rateLimiter.record("mfa-reset", `${metadata.ipAddress || "unknown"}:${userId}`, MFA_WINDOW_MS);
+      throw new UnauthorizedException("Current password is incorrect.");
+    }
+    return this.createMfaChallenge(userId, input.channel, "RESET", metadata);
+  }
+
+  async verifyMfaReset(userId: string, input: MfaChallengeDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const challenge = await this.consumeMfaChallenge(input, "RESET", userId, metadata);
+    await this.db.query(
+      "UPDATE users SET mfa_enabled = true, mfa_channel = $1, updated_at = now() WHERE id = $2",
+      [challenge.channel, userId],
+    );
+    return { enabled: true, channel: challenge.channel };
+  }
+
+  async beginMfaDisable(userId: string, currentPassword: string, metadata: { ipAddress?: string; userAgent?: string }) {
+    const user = await this.getMfaUser(userId);
+    if (!user.mfa_enabled || !user.mfa_channel) {
+      throw new BadRequestException("MFA is not enabled.");
+    }
+    if (!user.password_hash || !(await verifyPassword(currentPassword, user.password_hash))) {
+      this.rateLimiter.record("mfa-disable", `${metadata.ipAddress || "unknown"}:${userId}`, MFA_WINDOW_MS);
+      throw new UnauthorizedException("Current password is incorrect.");
+    }
+    return this.createMfaChallenge(userId, user.mfa_channel, "DISABLE", metadata);
+  }
+
+  async verifyMfaDisable(userId: string, input: MfaChallengeDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    await this.consumeMfaChallenge(input, "DISABLE", userId, metadata);
+    await this.db.query("UPDATE users SET mfa_enabled = false, mfa_channel = NULL, updated_at = now() WHERE id = $1", [userId]);
+    return { enabled: false };
+  }
+
+  async verifyMfaLogin(input: MfaChallengeDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const challenge = await this.consumeMfaChallenge(input, "LOGIN", undefined, metadata);
+    const user = await this.db.query<{ tenant_id: string }>(
+      "SELECT tenant_id FROM users WHERE id = $1 AND status = 'ACTIVE' LIMIT 1",
+      [challenge.userId],
+    );
+    if (!user.rows[0]) throw new UnauthorizedException("The MFA challenge is no longer valid.");
+    return this.completeLogin(challenge.userId, user.rows[0].tenant_id, metadata);
+  }
+
+  private async getMfaUser(userId: string) {
+    const result = await this.db.query<{
+      id: string;
+      email: string | null;
+      mobile: string | null;
+      password_hash: string | null;
+      mfa_enabled: boolean;
+      mfa_channel: OtpChannel | null;
+    }>(
+      `SELECT id, email, mobile, password_hash, mfa_enabled, mfa_channel
+       FROM users WHERE id = $1 AND status = 'ACTIVE' LIMIT 1`,
+      [userId],
+    );
+    if (!result.rows[0]) throw new UnauthorizedException("The authenticated account is no longer active.");
+    return result.rows[0];
+  }
+
+  private async createMfaChallenge(
+    userId: string,
+    channel: OtpChannel,
+    purpose: OtpPurpose,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    const user = await this.getMfaUser(userId);
+    const destination = channel === "EMAIL" ? user.email : user.mobile;
+    if (!destination) {
+      throw new BadRequestException(
+        channel === "EMAIL"
+          ? "An email address is required for email MFA."
+          : "A mobile number is required for SMS MFA.",
+      );
+    }
+
+    const ipKey = metadata.ipAddress || "unknown";
+    const userKey = `${ipKey}:${userId}:${channel}:${purpose}`;
+    this.rateLimiter.assertAllowed("mfa-request-ip", ipKey, 20, MFA_WINDOW_MS);
+    this.rateLimiter.assertAllowed("mfa-request-user", userKey, 5, MFA_WINDOW_MS);
+    this.rateLimiter.record("mfa-request-ip", ipKey, MFA_WINDOW_MS);
+    this.rateLimiter.record("mfa-request-user", userKey, MFA_WINDOW_MS);
+
+    const challengeToken = randomBytes(32).toString("base64url");
+    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+    await this.db.transaction(async (client) => {
+      await client.query(
+        `UPDATE auth_mfa_challenges
+         SET consumed_at = now()
+         WHERE user_id = $1 AND purpose = $2 AND consumed_at IS NULL`,
+        [userId, purpose],
+      );
+      await client.query(
+        `INSERT INTO auth_mfa_challenges
+          (user_id, challenge_token_hash, channel, purpose, code_hash, expires_at, requested_ip, requested_user_agent)
+         VALUES ($1, $2, $3, $4, $5, now() + interval '${MFA_CHALLENGE_MINUTES} minutes', $6, $7)`,
+        [
+          userId,
+          hashToken(challengeToken),
+          channel,
+          purpose,
+          hashToken(code),
+          metadata.ipAddress ?? null,
+          metadata.userAgent ?? null,
+        ],
+      );
+    });
+
+    try {
+      await this.otpDelivery.deliver({ channel, destination, code, purpose });
+    } catch (error) {
+      await this.db.query(
+        "UPDATE auth_mfa_challenges SET consumed_at = now() WHERE challenge_token_hash = $1 AND consumed_at IS NULL",
+        [hashToken(challengeToken)],
+      );
+      throw error;
+    }
+
+    return {
+      challengeToken,
+      channel,
+      expiresInSeconds: MFA_CHALLENGE_MINUTES * 60,
+    };
+  }
+
+  private async consumeMfaChallenge(
+    input: MfaChallengeDto,
+    purpose: OtpPurpose,
+    expectedUserId: string | undefined,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    if (!TOKEN_PATTERN.test(input.challengeToken)) {
+      throw new UnauthorizedException("Invalid or expired MFA challenge.");
+    }
+    const ipKey = metadata.ipAddress || "unknown";
+    this.rateLimiter.assertAllowed("mfa-verify-ip", ipKey, 20, MFA_WINDOW_MS);
+    this.rateLimiter.assertAllowed("mfa-verify-token", input.challengeToken, MFA_MAX_ATTEMPTS, MFA_WINDOW_MS);
+
+    const result = await this.db.transaction(async (client) => {
+      const challenge = await client.query<{
+        id: string;
+        user_id: string;
+        channel: OtpChannel;
+        code_hash: string;
+        attempts: number;
+      }>(
+        `SELECT id, user_id, channel, code_hash, attempts
+         FROM auth_mfa_challenges
+         WHERE challenge_token_hash = $1
+           AND purpose = $2
+           AND consumed_at IS NULL
+           AND expires_at > now()
+           AND ($3::uuid IS NULL OR user_id = $3)
+         FOR UPDATE`,
+        [hashToken(input.challengeToken), purpose, expectedUserId ?? null],
+      );
+      const row = challenge.rows[0];
+      if (!row || row.attempts >= MFA_MAX_ATTEMPTS) return { valid: false as const };
+      if (row.code_hash !== hashToken(input.code)) {
+        await client.query(
+          `UPDATE auth_mfa_challenges
+           SET attempts = attempts + 1,
+               consumed_at = CASE WHEN attempts + 1 >= $2 THEN now() ELSE consumed_at END
+           WHERE id = $1`,
+          [row.id, MFA_MAX_ATTEMPTS],
+        );
+        return { valid: false as const };
+      }
+      await client.query("UPDATE auth_mfa_challenges SET consumed_at = now() WHERE id = $1", [row.id]);
+      return { valid: true as const, userId: row.user_id, channel: row.channel };
+    });
+
+    if (!result.valid) {
+      this.rateLimiter.record("mfa-verify-ip", ipKey, MFA_WINDOW_MS);
+      this.rateLimiter.record("mfa-verify-token", input.challengeToken, MFA_WINDOW_MS);
+      throw new UnauthorizedException("Invalid or expired MFA code.");
+    }
+    this.rateLimiter.clear("mfa-verify-ip", ipKey);
+    this.rateLimiter.clear("mfa-verify-token", input.challengeToken);
+    return result;
+  }
+
   async verifyEmail(token: string) {
     if (!TOKEN_PATTERN.test(token)) throw new BadRequestException("This verification link is invalid or has expired.");
     return this.db.transaction(async (client) => {
