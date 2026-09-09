@@ -96,8 +96,10 @@ export class CertificateService {
     const values: unknown[] = [user.tenantId];
     const clauses = ["cert.tenant_id = $1", "cert.status = 'ISSUED'"];
     const administrator = isLmsAdministrator(user);
+    const instructor = user.roles.some((role) => role.code === "TEACHER");
+    const staffCertificateViewer = administrator || isPlatformUser(user) || instructor;
 
-    if (!staffRole(user) || (!administrator && !isPlatformUser(user))) {
+    if (!staffCertificateViewer) {
       values.push(user.id);
       clauses.push(`cert.learner_id = $${values.length}`);
     } else if (query.learnerId) {
