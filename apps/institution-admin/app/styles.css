@@ -324,6 +324,72 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
 .relationship-controls select, .relationship-controls textarea, .relationship-row, .relationship-person strong,
 .relationship-row .danger-action, .assignment-review-row a, .grade-controls input { font-size: 12px; }
 .page-heading p { font-size: 16px; line-height: 1.65; }
+
+/* Step 8 institution workspace finish: clearer hierarchy and robust touch layouts. */
+.admin-shell {
+  background:
+    radial-gradient(circle at 83% 0%, rgb(92 166 177 / .12), transparent 27%),
+    linear-gradient(180deg, #f8fbfc 0%, #f1f6f8 100%);
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  max-height: 100dvh;
+  box-shadow: 18px 0 42px rgb(10 52 84 / .1);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: rgb(251 253 254 / .9);
+  backdrop-filter: blur(14px);
+}
+
+.content-panel,
+.relationship-panel,
+.metric-card {
+  box-shadow: 0 16px 38px rgb(18 75 115 / .07);
+}
+
+.record-row,
+.relationship-row {
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.record-row:hover,
+.relationship-row:hover {
+  transform: translateX(2px);
+}
+
+.primary-button,
+.secondary-button,
+.nav-link,
+.row-actions button,
+.profile-menu-item {
+  min-height: 42px;
+}
+
+.modal-backdrop {
+  padding: clamp(12px, 4vw, 28px);
+}
+
+@media (max-width: 780px) {
+  .sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  .topbar {
+    position: sticky;
+  }
+
+  .record-row:hover,
+  .relationship-row:hover {
+    transform: none;
+  }
+}
 .panel-toolbar h2 { font-size: 16px; }
 .panel-subtitle { font-size: 13px; line-height: 1.55; }
 .list-head, .status-badge { font-size: 10px; }
