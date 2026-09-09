@@ -630,7 +630,9 @@ export class LmsService {
       [id, user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("Learning resource not found.");
-    assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    }
     await this.assertLearnerCourseAccess(
       user,
       String(result.rows[0].course_id),
@@ -1469,7 +1471,9 @@ export class LmsService {
     );
     const course = result.rows[0];
     if (!course) throw new NotFoundException("Course not found in the current tenant.");
-    assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
+    }
     if (course.status !== "PUBLISHED") throw new BadRequestException("Progress is available only for published courses.");
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution or programme is not active.");
@@ -1795,7 +1799,9 @@ export class LmsService {
     );
     const course = result.rows[0];
     if (!course) throw new NotFoundException("Course not found in the current tenant.");
-    assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
+    }
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE" || course.status === "ARCHIVED") {
       throw new BadRequestException("The course institution, programme, or course is not active.");
     }
@@ -1863,7 +1869,9 @@ export class LmsService {
     );
     const assignment = result.rows[0];
     if (!assignment) throw new NotFoundException("Assignment not found in the current tenant.");
-    assertScopeForRead(user, String(assignment.institution_id), assignment.campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(assignment.institution_id), assignment.campus_id as string | null | undefined);
+    }
     return assignment;
   }
 
