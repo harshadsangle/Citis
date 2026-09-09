@@ -397,6 +397,12 @@ export class LmsService {
           AND e.learner_id = $${values.length}
           AND e.status = 'ACTIVE'
       )`);
+      clauses.push(
+        "x.status = 'PUBLISHED'",
+        "c.status = 'PUBLISHED'",
+        "p.status = 'PUBLISHED'",
+        "i.status = 'ACTIVE'",
+      );
     }
     const pageParam = values.length + 1;
     values.push(pageSize, offset);
@@ -411,15 +417,18 @@ export class LmsService {
          JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = x.tenant_id
          JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
          JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+         JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = x.tenant_id
          LEFT JOIN managed_files m ON m.resource_id = x.id AND m.tenant_id = x.tenant_id`
       : table === "lessons"
         ? `${table} x
            JOIN course_modules cm ON cm.id = x.module_id AND cm.tenant_id = x.tenant_id
            JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
-           JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id`
+           JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+           JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = x.tenant_id`
         : `${table} x
            JOIN courses c ON c.id = x.course_id AND c.tenant_id = x.tenant_id
-           JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id`;
+           JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+           JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = x.tenant_id`;
     const [rows, total] = await Promise.all([
       this.db.query(
         `SELECT ${selection} FROM ${fromClause}
@@ -440,6 +449,17 @@ export class LmsService {
     assertScopeForRead(user, scope.institution_id, scope.campus_id);
     if (scope.course_id) await this.assertLearnerCourseAccess(user, String(scope.course_id), String(scope.institution_id), scope.campus_id);
     if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id);
+    if (
+      this.isLearnerOnly(user)
+      && (
+        scope.content_status !== "PUBLISHED"
+        || scope.course_status !== "PUBLISHED"
+        || scope.module_status !== "PUBLISHED"
+        || scope.lesson_status !== "PUBLISHED"
+        || scope.programme_status !== "PUBLISHED"
+        || scope.institution_status !== "ACTIVE"
+      )
+    ) throw new NotFoundException("LMS content not found.");
     const result = await this.db.query(
       `SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`,
       [id, user.tenantId],
