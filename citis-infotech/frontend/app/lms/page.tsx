@@ -1,5 +1,15 @@
 import Link from "next/link";
-import { ArrowRight, BookOpenCheck, GraduationCap, ShieldCheck } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpenCheck,
+  CheckCircle2,
+  Compass,
+  GraduationCap,
+  Layers3,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+} from "lucide-react";
 import { generatePageMetadata } from "@/lib/seo";
 import { redirectToLmsPortal } from "@/lib/lms-portal";
 import { LMS_PORTALS, normalizeLmsPortal, type LmsPortal } from "@/lib/lms-roles";
@@ -27,6 +37,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
   const courseCategories = provider
     ? LMS_COURSE_CATEGORIES.filter((category) => category.id === provider)
     : LMS_COURSE_CATEGORIES;
+  const courseCount = courseCategories.reduce((total, category) => total + category.courses.length, 0);
 
   const icons: Record<LmsPortal, typeof ShieldCheck> = {
     admin: ShieldCheck,
@@ -36,41 +47,93 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
 
   return (
     <>
-       <section className="lms-entry-hero relative isolate overflow-hidden border-b border-primary/10 py-16 sm:py-24">
-      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_14%,rgba(92,166,177,.18),transparent_30%),radial-gradient(circle_at_90%_80%,rgba(239,125,60,.13),transparent_26%),linear-gradient(145deg,#f7fbfd_0%,#edf5f8_55%,#fff7ed_100%)] dark:bg-[linear-gradient(145deg,#071526_0%,#10233e_60%,#241b0d_100%)]" />
-      <div className="container-site">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="section-eyebrow"><span className="h-px w-8 bg-accent" />CITIS learning management system</p>
-          <h1 className="mt-5 font-heading text-4xl font-semibold tracking-tight sm:text-6xl">Learning with a clear next step.</h1>
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-muted-foreground">Select the option that matches your role. Your account permissions are checked securely after sign-in.</p>
-        </div>
-         <div className="lms-portal-grid mx-auto mt-12 grid max-w-6xl gap-5 lg:grid-cols-3">
-          {(Object.keys(LMS_PORTALS) as LmsPortal[]).map((key) => {
-            const portalOption = LMS_PORTALS[key];
-            const Icon = icons[key];
-              return (
-               <article key={key} className="lms-portal-card surface group relative flex min-h-72 flex-col overflow-hidden rounded-[1.6rem] p-7 transition duration-200 hover:-translate-y-1 hover:shadow-xl sm:p-8">
-                <span className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-secondary/10" aria-hidden="true" />
-                <span className="relative grid size-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-[0_10px_25px_rgba(18,75,115,.2)]"><Icon className="size-6" /></span>
-                <p className="mt-7 text-xs font-bold tracking-[0.14em] text-primary uppercase">{portalOption.eyebrow}</p>
-                <h2 className="mt-3 font-heading text-2xl font-semibold">{portalOption.label}</h2>
-                <p className="mt-3 flex-1 text-sm leading-6 text-muted-foreground">{portalOption.description}</p>
-                <Link href={`/lms/login?portal=${key}${providerQuery}`} className="mt-7 inline-flex items-center justify-between rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition group-hover:bg-primary/90">
-                  Continue as {key === "admin" ? "administrator" : key}
-                  <ArrowRight className="size-4" />
-                </Link>
-              </article>
-            );
-          })}
-        </div>
-         <div className="lms-entry-aux mt-8">
-           <p className="text-center text-sm text-muted-foreground">Not sure which portal to use? Contact your institution or programme team.</p>
-           <p className="mt-4 text-center text-sm"><Link href="/certificate-verification" className="font-semibold text-primary hover:underline">Verify a CITIS certificate →</Link></p>
-         </div>
-      </div>
-      </section>
-      <LmsCourseCatalogue categories={courseCategories} provider={provider} providerQuery={providerQuery} />
-      <ProfessionalProgramsCatalogue compact />
+      <main className="lms-page">
+        <section className="lms-hero relative isolate overflow-hidden">
+          <div className="lms-hero-grid absolute inset-0 -z-10" aria-hidden="true" />
+          <div className="container-site">
+            <div className="lms-hero-layout">
+              <div className="lms-hero-copy">
+                <p className="lms-kicker"><Sparkles className="size-4" />CITIS Skills Excellence Centre</p>
+                <h1>Learn skills that move <span>your future forward.</span></h1>
+                <p className="lms-hero-lede">
+                  Discover objective-led certifications and career-focused programmes built to turn curiosity into capability.
+                </p>
+                <div className="lms-hero-actions">
+                  <Link href="#global-certifications" className="lms-primary-cta">
+                    Explore the catalogue <ArrowRight className="size-4" />
+                  </Link>
+                  <Link href="/lms/login?portal=learner" className="lms-secondary-cta">
+                    Enter learner portal
+                  </Link>
+                </div>
+                <div className="lms-hero-proof">
+                  <span className="lms-avatar-stack" aria-hidden="true">
+                    <span>CS</span><span>AI</span><span>IT</span>
+                  </span>
+                  <span><strong>Built for purposeful progress</strong><small>Learn with structure, support, and a next step in view.</small></span>
+                </div>
+              </div>
+
+              <div className="lms-hero-visual" aria-label="CITIS learning platform highlights">
+                <div className="lms-hero-orbit lms-hero-orbit-one" />
+                <div className="lms-hero-orbit lms-hero-orbit-two" />
+                <div className="lms-hero-dashboard">
+                  <div className="lms-dashboard-topline"><span>YOUR LEARNING PATH</span><span className="lms-live-dot">LIVE</span></div>
+                  <div className="lms-dashboard-title">Make your next<br /><em>skill</em> count.</div>
+                  <div className="lms-dashboard-progress">
+                    <div><span>Certification pathways</span><strong>{courseCategories.length} providers</strong></div>
+                    <span className="lms-progress-track"><span style={{ width: "72%" }} /></span>
+                  </div>
+                  <div className="lms-dashboard-chips">
+                    <span><Layers3 className="size-4" />{courseCount} courses</span>
+                    <span><CheckCircle2 className="size-4" />Official objectives</span>
+                  </div>
+                  <div className="lms-dashboard-footer"><span className="lms-mini-mark">C</span><span>CITIS learning workspace</span><ArrowRight className="ml-auto size-4" /></div>
+                </div>
+                <span className="lms-float-card lms-float-card-top"><Compass className="size-4" /><span><strong>Find your direction</strong><small>Explore by interest</small></span></span>
+                <span className="lms-float-card lms-float-card-bottom"><span className="lms-float-number">01</span><span><strong>Start where you are</strong><small>Build from foundations</small></span></span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="lms-stat-strip" aria-label="Learning platform highlights">
+          <div className="container-site lms-stat-grid">
+            <div><strong>{courseCount}</strong><span>certification courses</span></div>
+            <div><strong>{courseCategories.length}</strong><span>recognised pathways</span></div>
+            <div><strong>01</strong><span>learning workspace</span></div>
+            <div className="lms-stat-note"><UsersRound className="size-5 text-accent" /><span>For learners, educators, and institution teams</span></div>
+          </div>
+        </section>
+
+        <section className="lms-portal-section">
+          <div className="container-site">
+            <div className="lms-section-heading">
+              <div><p className="lms-kicker"><span className="lms-kicker-line" />Your learning workspace</p><h2>Everything you need to keep moving.</h2></div>
+              <p>Choose your workspace and step into a focused experience designed around your role.</p>
+            </div>
+            <div className="lms-portal-grid">
+              {(Object.keys(LMS_PORTALS) as LmsPortal[]).map((key, index) => {
+                const portalOption = LMS_PORTALS[key];
+                const Icon = icons[key];
+                return (
+                  <article key={key} className={`lms-portal-card lms-portal-card-${index + 1}`}>
+                    <div className="lms-portal-card-header"><span className="lms-portal-icon"><Icon className="size-5" /></span><span className="lms-portal-number">0{index + 1}</span></div>
+                    <p>{portalOption.eyebrow}</p>
+                    <h3>{portalOption.label}</h3>
+                    <span className="lms-portal-description">{portalOption.description}</span>
+                    <Link href={`/lms/login?portal=${key}${providerQuery}`} className="lms-portal-link">Continue as {key === "admin" ? "administrator" : key}<ArrowRight className="size-4" /></Link>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="lms-portal-footnote"><span>Not sure which workspace is right for you?</span><Link href="/certificate-verification">Verify a CITIS certificate <ArrowRight className="size-3.5" /></Link></div>
+          </div>
+        </section>
+
+        <LmsCourseCatalogue categories={courseCategories} provider={provider} providerQuery={providerQuery} />
+        <ProfessionalProgramsCatalogue compact />
+      </main>
     </>
   );
 }
