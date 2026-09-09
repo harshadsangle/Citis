@@ -1,5 +1,6 @@
 import { mkdir, readFile, realpath, stat, unlink, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, pathToFileURL, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const STORAGE_KEY_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
