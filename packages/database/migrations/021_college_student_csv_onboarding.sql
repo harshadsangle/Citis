@@ -88,6 +88,13 @@ JOIN permissions p ON p.code IN ('lms.student_import.view', 'lms.student_import.
 WHERE r.code IN ('CITIS_ADMIN', 'CITIS_SUPER_ADMIN')
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.code = 'lms.activity.view'
+WHERE r.code IN ('STUDENT')
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
 INSERT INTO schema_migrations (version)
 VALUES ('021_college_student_csv_onboarding')
 ON CONFLICT (version) DO NOTHING;

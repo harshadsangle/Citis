@@ -464,4 +464,14 @@ export class CollegeStudentsService {
     );
     return result.rows;
   }
+
+  async listOwnActivity(user: AuthenticatedUser) {
+    const profile = await this.db.query<{ id: string }>(
+      `SELECT id FROM lms_student_profiles
+       WHERE tenant_id = $1 AND user_id = $2 AND student_type = 'COLLEGE_STUDENT'`,
+      [user.tenantId, user.id],
+    );
+    if (!profile.rows[0]) throw new NotFoundException("College student profile not found.");
+    return this.listActivity(profile.rows[0].id, user);
+  }
 }

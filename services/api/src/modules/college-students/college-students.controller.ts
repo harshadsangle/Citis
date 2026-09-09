@@ -55,8 +55,14 @@ export class CollegeStudentsController {
   }
 
   @Get(":id/activity")
-  @RequirePermission("lms.student_import.view")
+  @RequirePermission("lms.activity.view")
   async activity(@Param("id", ParseUUIDPipe) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.students.listActivity(id, request.context.user!), request);
+  }
+
+  @Get("me/activity")
+  @RequirePermission("lms.activity.view")
+  async ownActivity(@Req() request: ContextRequest) {
+    return successResponse(await this.students.listOwnActivity(request.context.user!), request);
   }
 }
