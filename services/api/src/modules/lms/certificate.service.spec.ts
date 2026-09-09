@@ -142,7 +142,7 @@ test("certificate reads cannot cross learner scope", async () => {
 });
 
 test("only CITIS Admin can approve an eligible certificate and issuance is audited", async () => {
-  const row = certificateRow({ status: "ELIGIBLE_FOR_REVIEW", learner_id: "learner-1" });
+  let row = certificateRow({ status: "ELIGIBLE_FOR_REVIEW", learner_id: "learner-1" });
   const actions: string[] = [];
   const db = {
     query: async (text: string) => {
@@ -158,7 +158,10 @@ test("only CITIS Admin can approve an eligible certificate and issuance is audit
           eligible: true,
         }] };
       }
-      if (text.startsWith("UPDATE lms_certificates")) return { rows: [{ id: "certificate-1" }] };
+      if (text.startsWith("UPDATE lms_certificates")) {
+        row = { ...row, status: "ISSUED", issue_date: "2026-09-01T00:00:00.000Z" };
+        return { rows: [{ id: "certificate-1" }] };
+      }
       return { rows: [row] };
     },
   };

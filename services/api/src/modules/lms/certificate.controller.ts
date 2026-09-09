@@ -56,7 +56,7 @@ export class CertificateController {
   }
 
   @Get("certificate-review")
-  @RequirePermission("lms.certificate.review")
+  @RequirePermission("lms.certificate_review.update")
   async review(@Query() query: CertificateReportQueryDto, @Req() request: ContextRequest) {
     return successResponse(await this.certificates.listReview(query, request.context.user!), request);
   }
@@ -74,13 +74,13 @@ export class CertificateController {
   }
 
   @Post("certificates/:id/issue")
-  @RequirePermission("lms.certificate.issue")
+  @RequirePermission("lms.certificate_issue.update")
   async issue(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.certificates.issue(id, request), request);
   }
 
   @Post("certificates/:id/revoke")
-  @RequirePermission("lms.certificate.revoke")
+  @RequirePermission("lms.certificate_revoke.update")
   async revoke(@Param("id") id: string, @Body() input: CertificateReviewDecisionDto, @Req() request: ContextRequest) {
     return successResponse(await this.certificates.revoke(id, input, request), request);
   }
