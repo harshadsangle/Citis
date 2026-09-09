@@ -1,0 +1,69 @@
+Audit the existing CITIS LMS against the approved project requirements.
+
+IMPORTANT: This step is AUDIT ONLY.
+
+DO NOT:
+
+* modify code
+* delete anything
+* refactor anything
+* change database/schema
+* run migrations
+* install packages
+* change existing data
+
+Audit these areas:
+
+1. Admin, Instructor, Learner and Public Website architecture
+2. Database schema/models and existing LMS data
+3. Authentication, roles and tenant permissions
+4. College, student and instructor management
+5. Course, enrollment, lesson, quiz and assignment systems
+6. Certificate system
+7. Payment and enrollment system
+8. Login, activity and progress tracking
+9. CSV import/export
+10. Security and college/tenant data isolation
+
+Compare the current system with our approved requirements:
+
+* Central CITIS Admin with full access
+* No separate College Admin dashboard
+* College students imported through CSV
+* College provides Student User ID + Password in CSV
+* Only imported/active students can log in
+* Students belong to a specific college/university
+* Courses assigned individually to students
+* Instructor can view only students from their assigned college/university
+* CITIS Admin manages all courses
+* Direct students register using Email OR Phone
+* Razorpay payment
+* Successful payment immediately unlocks the course
+* Refund handling
+* Student login/activity tracking
+* Progress, lessons, assessments and assignments tracking
+* Admin-only assignment review
+* Admin approval required before certificate issuance
+* CSV reports/downloads
+
+For every existing feature, classify it as:
+
+KEEP
+MODIFY
+REPLACE
+REMOVE
+MISSING
+
+Also identify:
+
+* Required database changes
+* Required API changes
+* Required frontend/portal changes
+* Security/permission gaps
+* Dependencies between implementation steps
+* Recommended implementation order
+
+IMPORTANT:
+Preserve all existing working functionality and data unless the audit identifies a clear conflict with the approved requirements.
+
+STOP after producing the audit report. Do not implement anything in Step 1.
