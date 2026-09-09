@@ -128,12 +128,13 @@ export class ReportService {
                     a.course_id, c.title AS course_title, a.id AS assessment_id,
                     a.title AS assessment_title, at.id AS attempt_id, at.status AS attempt_status,
                     at.score, at.passed, at.submitted_at,
-                    at.tenant_id AS report_tenant_id, c.institution_id,
+                    at.tenant_id AS report_tenant_id, p.institution_id,
                     a.course_id AS report_course_id, sp.student_type,
                     at.submitted_at AS report_date
              FROM lms_assessment_attempts at
              JOIN lms_assessments a ON a.tenant_id = at.tenant_id AND a.id = at.assessment_id
              JOIN courses c ON c.tenant_id = a.tenant_id AND c.id = a.course_id
+             JOIN programmes p ON p.tenant_id = c.tenant_id AND p.id = c.programme_id
              JOIN users u ON u.tenant_id = at.tenant_id AND u.id = at.learner_id
              LEFT JOIN lms_student_profiles sp ON sp.tenant_id = at.tenant_id AND sp.user_id = at.learner_id
              WHERE 1=1`;

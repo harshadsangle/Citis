@@ -22,9 +22,14 @@ SET issued_at = COALESCE(issued_at, issue_date),
     completion_date = COALESCE(completion_date, issue_date)
 WHERE status = 'ISSUED';
 
-ALTER TABLE lms_certificates
-  ADD CONSTRAINT lms_certificates_status_check
-  CHECK (status IN ('NOT_ELIGIBLE', 'ELIGIBLE_FOR_REVIEW', 'APPROVED', 'REJECTED', 'ISSUED', 'REVOKED'));
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_certificates_status_check') THEN
+    ALTER TABLE lms_certificates
+      ADD CONSTRAINT lms_certificates_status_check
+      CHECK (status IN ('NOT_ELIGIBLE', 'ELIGIBLE_FOR_REVIEW', 'APPROVED', 'REJECTED', 'ISSUED', 'REVOKED'));
+  END IF;
+END $$;
 
 ALTER TABLE lms_certificates
   DROP CONSTRAINT IF EXISTS lms_certificates_enrollment_scope_fk;
@@ -35,23 +40,39 @@ ALTER TABLE lms_certificates
 CREATE UNIQUE INDEX IF NOT EXISTS lms_enrollments_tenant_course_id_key
   ON lms_enrollments (tenant_id, course_id, id);
 
-ALTER TABLE lms_certificates
-  ADD CONSTRAINT lms_certificates_enrollment_tenant_course_fk
-  FOREIGN KEY (tenant_id, course_id, enrollment_id)
-  REFERENCES lms_enrollments (tenant_id, course_id, id);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_certificates_enrollment_tenant_course_fk') THEN
+    ALTER TABLE lms_certificates
+      ADD CONSTRAINT lms_certificates_enrollment_tenant_course_fk
+      FOREIGN KEY (tenant_id, course_id, enrollment_id)
+      REFERENCES lms_enrollments (tenant_id, course_id, id);
+  END IF;
+END $$;
 
 ALTER TABLE lms_certificates
   DROP CONSTRAINT IF EXISTS lms_certificates_approved_by_fk,
   DROP CONSTRAINT IF EXISTS lms_certificates_rejected_by_fk,
   DROP CONSTRAINT IF EXISTS lms_certificates_revoked_by_fk;
 
-ALTER TABLE lms_certificates
-  ADD CONSTRAINT lms_certificates_approved_by_fk
-    FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
-  ADD CONSTRAINT lms_certificates_rejected_by_fk
-    FOREIGN KEY (rejected_by) REFERENCES users(id) ON DELETE SET NULL,
-  ADD CONSTRAINT lms_certificates_revoked_by_fk
-    FOREIGN KEY (revoked_by) REFERENCES users(id) ON DELETE SET NULL;
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_certificates_approved_by_fk') THEN
+    ALTER TABLE lms_certificates
+      ADD CONSTRAINT lms_certificates_approved_by_fk
+      FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_certificates_rejected_by_fk') THEN
+    ALTER TABLE lms_certificates
+      ADD CONSTRAINT lms_certificates_rejected_by_fk
+      FOREIGN KEY (rejected_by) REFERENCES users(id) ON DELETE SET NULL;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_certificates_revoked_by_fk') THEN
+    ALTER TABLE lms_certificates
+      ADD CONSTRAINT lms_certificates_revoked_by_fk
+      FOREIGN KEY (revoked_by) REFERENCES users(id) ON DELETE SET NULL;
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS lms_certificates_review_status_idx
   ON lms_certificates (tenant_id, status, eligible_at DESC);
