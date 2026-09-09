@@ -3,6 +3,7 @@ import test from "node:test";
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { LmsService } from "./lms.service";
+import { LmsContentRateLimiter } from "./lms.rate-limit";
 import { ResourceStorageService } from "./resource-storage.service";
 
 const user: AuthenticatedUser = {
@@ -63,6 +64,24 @@ test("learning resources enforce URL and file requirements before insertion", as
     BadRequestException,
   );
   assert.equal(insertAttempted, false);
+});
+
+test("learning resources reject non-HTTP URL schemes", async () => {
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT id FROM lessons")) return { rows: [{ id: "lesson-1" }] };
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.createLearningResource({
+      lessonId: "lesson-1",
+      resourceType: "VIDEO",
+      title: "Unsafe video",
+      url: "javascript:alert(1)",
+      sequence: 1,
+    }, request),
+    BadRequestException,
+  );
 });
 
 test("assigned teachers can read nested course content while unassigned teachers receive not found", async () => {
@@ -252,6 +271,47 @@ test("managed file delivery is tenant-scoped and auditable", async () => {
   assert.equal(queries[1].values[1], user.tenantId);
   assert.equal(audits.at(-1)?.action, "DOWNLOAD");
   assert.equal(audits.at(-1)?.tenantId, user.tenantId);
+});
+
+test("resource progress is clamped, persisted, and rate limited", async () => {
+  const queries: Array<{ text: string; values: unknown[] }> = [];
+  const db = {
+    query: async (text: string, values: unknown[]) => {
+      queries.push({ text, values });
+      if (text.startsWith("SELECT lr.*")) {
+        return {
+          rows: [{
+            id: "resource-1",
+            tenant_id: user.tenantId,
+            institution_id: "institution-1",
+            campus_id: null,
+            course_id: "course-1",
+            module_id: "module-1",
+            lesson_id: "lesson-1",
+            resource_type: "VIDEO",
+          }],
+        };
+      }
+      return { rows: [{ resource_id: "resource-1", progress_percent: 100, completed: true, position_seconds: 120, duration_seconds: 120 }] };
+    },
+  };
+  const service = new LmsService(
+    db as never,
+    { record: async () => undefined } as never,
+    new ResourceStorageService(),
+    undefined,
+    new LmsContentRateLimiter(),
+  );
+
+  const result = await service.updateResourceProgress("resource-1", {
+    positionSeconds: 240,
+    durationSeconds: 120,
+    completed: false,
+  }, request);
+
+  assert.equal(result.completed, true);
+  assert.equal(queries.at(-1)?.values[8], 120);
+  assert.equal(queries.at(-1)?.values[10], 100);
 });
 
 test("enrollment accepts an active institution Student and audits the mutation", async () => {

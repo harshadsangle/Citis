@@ -856,6 +856,17 @@ export class LmsService {
   }
 
   private validateResource(resourceType: string, url?: string | null, filePath?: string | null) {
+    if (url) {
+      let parsed: URL;
+      try {
+        parsed = new URL(url);
+      } catch {
+        throw new BadRequestException("Learning resource URLs must be valid HTTP or HTTPS URLs.");
+      }
+      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        throw new BadRequestException("Learning resource URLs must use HTTP or HTTPS.");
+      }
+    }
     if (RESOURCE_TYPES_WITH_URL.includes(resourceType as LmsResourceType) && !url) {
       throw new BadRequestException(`${resourceType} resources require a URL.`);
     }
