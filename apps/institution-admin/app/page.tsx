@@ -5,11 +5,13 @@ import { type FormEvent, useEffect, useMemo, useState } from "react";
 import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
+import AdminInsights from "./AdminInsights";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { lmsPortalUrl } from "./lms-portal-url";
 
 type Kind = "programmes" | "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
+type InsightMode = "certificates" | "reports";
 type Status = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type ResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
 
@@ -118,6 +120,19 @@ const relationshipCopy: Record<RelationshipMode, { kicker: string; title: string
   },
 };
 
+const insightCopy: Record<InsightMode, { kicker: string; title: string; description: string }> = {
+  certificates: {
+    kicker: "Admin operations",
+    title: "Certificate review",
+    description: "Review verified completion outcomes before certificates are issued.",
+  },
+  reports: {
+    kicker: "Admin operations",
+    title: "Reports & exports",
+    description: "Explore scoped learning, activity, finance, and certificate data.",
+  },
+};
+
 function titleFor(record: ContentRecord) {
   return record.name || record.title || "Untitled";
 }
@@ -176,6 +191,7 @@ function uploadResource(id: string, file: File, resourceType: ResourceType) {
 export default function InstitutionAdminPage() {
   const [activeKind, setActiveKind] = useState<Kind>("programmes");
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
+  const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
   const [status, setStatus] = useState<"ALL" | Status>("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
@@ -194,7 +210,7 @@ export default function InstitutionAdminPage() {
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("provider"),
   ));
 
-  const currentSection = relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
+  const currentSection = insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
   const activeParentId = activeKind === "courses"
     ? ids.programmeId
@@ -220,7 +236,7 @@ export default function InstitutionAdminPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (relationshipMode) {
+      if (relationshipMode || insightMode) {
         setRecords([]);
         setLoading(false);
         return;
@@ -251,7 +267,7 @@ export default function InstitutionAdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeKind, canLoad, ids, refreshToken, relationshipMode, status]);
+  }, [activeKind, canLoad, ids, refreshToken, relationshipMode, insightMode, status]);
 
   useEffect(() => {
     if (!toast) return;
@@ -266,6 +282,7 @@ export default function InstitutionAdminPage() {
   }, [relationshipMode, trail]);
 
   function showSection(kind: Kind) {
+    setInsightMode(null);
     setRelationshipMode(null);
     setActiveKind(kind);
     setStatus("ALL");
@@ -273,6 +290,12 @@ export default function InstitutionAdminPage() {
       setTrail([]);
       setIds({ programmeId: "", courseId: "", moduleId: "", lessonId: "" });
     }
+  }
+
+  function showInsights(mode: InsightMode) {
+    setInsightMode(mode);
+    setRelationshipMode(null);
+    setError("");
   }
 
   async function logout() {
@@ -542,6 +565,12 @@ export default function InstitutionAdminPage() {
              >
                <span className="nav-icon">Q</span>Assessments
              </button>
+             <button className={`nav-link ${insightMode === "certificates" ? "active" : ""}`} type="button" onClick={() => showInsights("certificates")}>
+               <span className="nav-icon">✦</span>Certificates
+             </button>
+             <button className={`nav-link ${insightMode === "reports" ? "active" : ""}`} type="button" onClick={() => showInsights("reports")}>
+               <span className="nav-icon">▥</span>Reports
+             </button>
         </nav>
         <div className="sidebar-footer">
           <div className="avatar">IA</div>
@@ -570,7 +599,7 @@ export default function InstitutionAdminPage() {
                 <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Favourites will appear here when you save learning resources."); }}>
                   <span className="profile-menu-icon" aria-hidden="true">☆</span><span><strong>Favourites</strong><small>Keep useful resources close</small></span>
                 </button>
-                <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Reports are available from your institution workspace."); }}>
+                 <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); showInsights("reports"); }}>
                   <span className="profile-menu-icon" aria-hidden="true">▥</span><span><strong>My Reports</strong><small>Review your learning activity</small></span>
                 </button>
                 <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Documentation is available through your institution support team."); }}>
@@ -595,13 +624,13 @@ export default function InstitutionAdminPage() {
         </header>
 
         <div className="workspace-content">
-          <div className="page-heading">
+           {!insightMode && <><div className="page-heading">
             <div>
               <div className="eyebrow">{currentSection.kicker}</div>
               <h1>{currentSection.title}</h1>
               <p>{currentSection.description}</p>
-            </div>
-             <button className="primary-button" type="button" onClick={openCreate} disabled={Boolean(relationshipMode) || (activeKind !== "programmes" && !activeParentId)}>
+           </div>
+             <button className="primary-button" type="button" onClick={openCreate} disabled={Boolean(relationshipMode || insightMode) || (activeKind !== "programmes" && !activeParentId)}>
               <span>+</span> New {labelFor(activeKind).slice(0, -1)}
             </button>
           </div>
@@ -618,14 +647,16 @@ export default function InstitutionAdminPage() {
              {relationshipMode && <><span className="crumb-separator">/</span><span className="crumb current">{relationshipCopy[relationshipMode].title}</span></>}
           </div>
 
-           {!relationshipMode && <div className="metric-grid">
+            {!relationshipMode && <div className="metric-grid">
             <article className="metric-card"><span className="metric-label">Total in view</span><strong>{loading ? "—" : visibleRecords.length}</strong><span className="metric-foot">Current collection</span></article>
             <article className="metric-card"><span className="metric-label">Published</span><strong className="green-text">{loading ? "—" : publishedCount}</strong><span className="metric-foot">Ready for learners</span></article>
             <article className="metric-card"><span className="metric-label">Drafts</span><strong className="amber-text">{loading ? "—" : draftCount}</strong><span className="metric-foot">Still in progress</span></article>
             <article className="metric-card muted-metric"><span className="metric-label">Archived</span><strong>{loading ? "—" : archivedCount}</strong><span className="metric-foot">Not in active flow</span></article>
-           </div>}
+            </div>}</>}
 
-           {relationshipMode ? (
+             {insightMode ? (
+               <AdminInsights apiBase={API_BASE} mode={insightMode} onModeChange={showInsights} />
+             ) : relationshipMode ? (
              relationshipMode === "assignments"
                ? <AssignmentManager apiBase={API_BASE} courseId={ids.courseId} courseLabel={trail.at(-1)?.label || "Selected course"} />
                 : relationshipMode === "assessments"
