@@ -289,7 +289,7 @@ function CertificateDetails({ selected, detail, loading, notes, setNotes, busy, 
       {selected.status === "APPROVED" && <button className="primary-button" type="button" disabled={Boolean(busy)} onClick={() => onAction("issue")}>{busy === "issue" ? "Issuing…" : "Issue certificate"}</button>}
       {selected.status === "ISSUED" && <button className="secondary-button danger-outline" type="button" disabled={Boolean(busy)} onClick={() => onAction("revoke")}>{busy === "revoke" ? "Revoking…" : "Revoke certificate"}</button>}
     </div>
-    <div className="detail-section history-section"><div className="detail-section-heading"><h3>Review history</h3><span>{detail.history.length} recorded events</span></div>{detail.history.length === 0 ? <p className="muted-copy">No review events are available for this certificate.</p> : <ol className="review-history">{detail.history.map((entry) => <li key={entry.id}><span className="history-dot" /><div><strong>{entry.action.replaceAll("_", " ")}</strong><small>{formatDateTime(entry.created_at)}</small>{entry.new_value?.notes && <p>{String(entry.new_value.notes)}</p>}</div></li>)}</ol>}</div>
+    <div className="detail-section history-section"><div className="detail-section-heading"><h3>Review history</h3><span>{detail.history.length} recorded events</span></div>{detail.history.length === 0 ? <p className="muted-copy">No review events are available for this certificate.</p> : <ol className="review-history">{detail.history.map((entry) => <li key={entry.id}><span className="history-dot" /><div><strong>{entry.action.replaceAll("_", " ")}</strong><small>{formatDateTime(entry.created_at)}</small>{typeof entry.new_value?.notes === "string" && <p>{entry.new_value.notes}</p>}</div></li>)}</ol>}</div>
   </aside>;
 }
 
