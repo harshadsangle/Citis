@@ -3,5 +3,5 @@
   "version": "0.1.0",
   "private": true,
   "scripts": { "build": "next build", "dev": "next dev --hostname 0.0.0.0 --port 4104" },
-  "dependencies": { "next": "^15.5.22", "react": "19.1.0", "react-dom": "19.1.0" }
+  "dependencies": { "next": "^15.5.24", "react": "19.1.0", "react-dom": "19.1.0" }
 }

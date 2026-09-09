@@ -143,9 +143,7 @@ async function seedDemoStaff(target: (typeof STAFF_TARGETS)[StaffTargetName], pa
     );
 
     await client.query("COMMIT");
-    console.log(
-      `Demo ${target.roleCode} account ${action}; ACTIVE institution scope ready for ${target.email} in ${institution.name}.`,
-    );
+    console.log(`Demo ${target.roleCode} seed completed: ${action}.`);
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

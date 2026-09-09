@@ -120,9 +120,7 @@ async function seedDemoLearner(password: string) {
     );
 
     await client.query("COMMIT");
-    console.log(
-      `Demo learner ${action}; ACTIVE STUDENT scope ready for ${DEMO_LEARNER_EMAIL} in ${institution.name}.`,
-    );
+    console.log(`Demo learner seed completed: ${action}.`);
   } catch (error) {
     await client.query("ROLLBACK");
     throw error;

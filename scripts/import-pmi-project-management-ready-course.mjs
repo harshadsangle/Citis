@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
-import { basename, dirname, join, resolve } from "node:path";
+import { readFile } from "node:fs/promises";
+import { basename, resolve } from "node:path";
 import pg from "pg";
+import { managedFileExists, readManagedFile, removeManagedFile, writeManagedFile } from "./managed-file-storage.mjs";
 
 const { Pool } = pg;
 const PUBLISHED = "PUBLISHED";
@@ -22,20 +23,6 @@ const COURSE = {
     { title: "5. Ending the project", lessons: ["5.1 Verify project completion", "5.2 Describe project closing activities related to documentation"] },
   ],
 };
-
-function storagePathFor(storageKey) {
-  const root = resolve(process.env.LMS_STORAGE_DIR || join(process.cwd(), "var", "lms-storage"));
-  const destination = resolve(root, storageKey);
-  if (destination !== root && !destination.startsWith(`${root}/`)) throw new Error("Refusing to use a managed file path outside LMS storage.");
-  return destination;
-}
-
-async function exists(path) {
-  try { await stat(path); return true; } catch (error) {
-    if (error?.code === "ENOENT") return false;
-    throw error;
-  }
-}
 
 async function programme(client, institution, actorId) {
   const found = await client.query(
@@ -122,15 +109,13 @@ async function sourceResource(client, lesson, institution, actorId, pdf) {
   );
   const resource = inserted.rows[0];
   const storageKey = `${lesson.tenant_id}/${resource.id}/${COURSE.storageFilename}`;
-  const destination = storagePathFor(storageKey);
   const createdPaths = [];
-  if (await exists(destination)) {
-    const hash = createHash("sha256").update(await readFile(destination)).digest("hex");
+  if (await managedFileExists(storageKey)) {
+    const hash = createHash("sha256").update(await readManagedFile(storageKey)).digest("hex");
     if (hash !== pdf.sha256) throw new Error("The existing managed PMI PDF contains different content.");
   } else {
-    await mkdir(dirname(destination), { recursive: true });
-    await writeFile(destination, pdf.buffer, { flag: "wx" });
-    createdPaths.push(destination);
+    await writeManagedFile(storageKey, pdf.buffer);
+    createdPaths.push(storageKey);
   }
   try {
     await client.query(
@@ -139,7 +124,7 @@ async function sourceResource(client, lesson, institution, actorId, pdf) {
       [lesson.tenant_id, institution.id, institution.campus_id ?? null, resource.id, storageKey, pdf.filename, pdf.byteSize, pdf.sha256, actorId],
     );
   } catch (error) {
-    for (const path of createdPaths) await unlink(path).catch(() => {});
+    for (const storageKey of createdPaths) await removeManagedFile(storageKey).catch(() => {});
     throw error;
   }
   return { row: resource, created: true };
