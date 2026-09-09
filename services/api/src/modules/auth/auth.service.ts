@@ -680,6 +680,273 @@ export class AuthService {
     ]);
   }
 
+  private directStudentContact(input: { email?: string; mobile?: string }) {
+    const email = input.email?.trim().toLowerCase() || null;
+    const mobile = input.mobile?.trim() || null;
+    if ((email ? 1 : 0) + (mobile ? 1 : 0) !== 1) {
+      throw new BadRequestException("Choose either an email address or a phone number.");
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new BadRequestException("Email address is invalid.");
+    }
+    if (mobile && !/^\+?[0-9][0-9 ()-]{7,19}$/.test(mobile)) {
+      throw new BadRequestException("Phone number is invalid.");
+    }
+    return {
+      channel: email ? "EMAIL" as const : "SMS" as const,
+      contact: email || mobile!,
+      email,
+      mobile,
+    };
+  }
+
+  private async directStudentTenant(tenantSlug?: string) {
+    const tenant = await this.db.query<{ id: string }>(
+      "SELECT id FROM tenants WHERE slug = $1 AND status = 'ACTIVE' LIMIT 1",
+      [tenantSlug?.trim() || "citis-platform"],
+    );
+    if (!tenant.rows[0]) throw new BadRequestException("The requested institution is not available.");
+    return tenant.rows[0].id;
+  }
+
+  private directStudentRateLimit(ipAddress: string | undefined, contact: string) {
+    const ipKey = ipAddress || "unknown";
+    const contactKey = `${ipKey}:direct-registration:${contact.toLowerCase()}`;
+    this.rateLimiter.assertAllowed("direct-registration-ip", ipKey, 10, OTP_WINDOW_MS);
+    this.rateLimiter.assertAllowed("direct-registration-contact", contactKey, 5, OTP_WINDOW_MS);
+    this.rateLimiter.record("direct-registration-ip", ipKey, OTP_WINDOW_MS);
+    this.rateLimiter.record("direct-registration-contact", contactKey, OTP_WINDOW_MS);
+    return { ipKey, contactKey };
+  }
+
+  private async deliverDirectStudentOtp(
+    challengeId: string,
+    channel: OtpChannel,
+    contact: string,
+    code: string,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    try {
+      await this.otpDelivery.deliver({ channel, destination: contact, code, purpose: "REGISTER" });
+    } catch (error) {
+      await this.db.query(
+        "UPDATE auth_challenges SET consumed_at = now() WHERE id = $1 AND consumed_at IS NULL",
+        [challengeId],
+      );
+      throw error;
+    }
+    return {
+      accepted: true,
+      channel,
+      expiresInSeconds: 600,
+    };
+  }
+
+  async registerDirectStudent(
+    input: DirectStudentRegistrationDto,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    const contact = this.directStudentContact(input);
+    const tenantId = await this.directStudentTenant(input.tenantSlug);
+    const limiter = this.directStudentRateLimit(metadata.ipAddress, contact.contact);
+    const existing = await this.db.query(
+      `SELECT 1 FROM users
+       WHERE tenant_id = $1 AND status <> 'ARCHIVED'
+         AND (($2::text IS NOT NULL AND lower(email) = lower($2))
+           OR ($3::text IS NOT NULL AND mobile = $3))
+       LIMIT 1`,
+      [tenantId, contact.email, contact.mobile],
+    );
+
+    // Keep the response identical for existing and new contacts to prevent account enumeration.
+    if (existing.rows[0]) {
+      return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
+    }
+
+    const code = randomBytes(3).toString("hex").slice(0, 6);
+    const passwordHash = await hashPassword(input.password);
+    await this.db.query(
+      `UPDATE auth_challenges
+       SET consumed_at = now()
+       WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER' AND consumed_at IS NULL`,
+      [tenantId, contact.contact],
+    );
+    const challenge = await this.db.query<{ id: string }>(
+      `INSERT INTO auth_challenges
+        (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at,
+         registration_first_name, registration_last_name, registration_password_hash)
+       VALUES ($1, $2, $3, $4, 'REGISTER', $5, now() + interval '10 minutes', $6, $7, $8)
+       RETURNING id`,
+      [
+        tenantId,
+        contact.mobile,
+        contact.contact,
+        contact.channel,
+        hashToken(code),
+        input.firstName.trim(),
+        input.lastName?.trim() || "",
+        passwordHash,
+      ],
+    );
+    this.rateLimiter.clear("direct-registration-contact", limiter.contactKey);
+    return this.deliverDirectStudentOtp(challenge.rows[0].id, contact.channel, contact.contact, code, metadata);
+  }
+
+  async resendDirectStudentOtp(
+    input: DirectStudentContactDto,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    const contact = this.directStudentContact(input);
+    const tenantId = await this.directStudentTenant(input.tenantSlug);
+    this.directStudentRateLimit(metadata.ipAddress, contact.contact);
+    const pending = await this.db.query<{
+      id: string;
+      registration_first_name: string;
+      registration_last_name: string;
+      registration_password_hash: string;
+    }>(
+      `SELECT id, registration_first_name, registration_last_name, registration_password_hash
+       FROM auth_challenges
+       WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER'
+         AND consumed_at IS NULL AND expires_at > now()
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [tenantId, contact.contact],
+    );
+    if (!pending.rows[0]) return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
+
+    const code = randomBytes(3).toString("hex").slice(0, 6);
+    await this.db.query(
+      "UPDATE auth_challenges SET consumed_at = now() WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER' AND consumed_at IS NULL",
+      [tenantId, contact.contact],
+    );
+    const replacement = await this.db.query<{ id: string }>(
+      `INSERT INTO auth_challenges
+        (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at,
+         registration_first_name, registration_last_name, registration_password_hash)
+       VALUES ($1, $2, $3, $4, 'REGISTER', $5, now() + interval '10 minutes', $6, $7, $8)
+       RETURNING id`,
+      [
+        tenantId,
+        contact.mobile,
+        contact.contact,
+        contact.channel,
+        hashToken(code),
+        pending.rows[0].registration_first_name,
+        pending.rows[0].registration_last_name,
+        pending.rows[0].registration_password_hash,
+      ],
+    );
+    return this.deliverDirectStudentOtp(replacement.rows[0].id, contact.channel, contact.contact, code, metadata);
+  }
+
+  async verifyDirectStudentOtp(
+    input: DirectStudentOtpVerifyDto,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    const contact = this.directStudentContact(input);
+    const tenantId = await this.directStudentTenant(input.tenantSlug);
+    const limiter = this.directStudentRateLimit(metadata.ipAddress, contact.contact);
+    const result = await this.db.transaction(async (client) => {
+      const challenge = await client.query<{
+        id: string;
+        registration_first_name: string;
+        registration_last_name: string;
+        registration_password_hash: string;
+      }>(
+        `SELECT id, registration_first_name, registration_last_name, registration_password_hash
+         FROM auth_challenges
+         WHERE tenant_id = $1 AND contact = $2 AND channel = $3 AND purpose = 'REGISTER'
+           AND code_hash = $4 AND consumed_at IS NULL AND expires_at > now() AND attempts < 5
+         ORDER BY created_at DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [tenantId, contact.contact, contact.channel, hashToken(input.code)],
+      );
+      if (!challenge.rows[0]) {
+        await client.query(
+          `UPDATE auth_challenges
+           SET attempts = attempts + 1
+           WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER'
+             AND consumed_at IS NULL AND expires_at > now()`,
+          [tenantId, contact.contact],
+        );
+        return { valid: false as const };
+      }
+
+      const existing = await client.query(
+        `SELECT id FROM users
+         WHERE tenant_id = $1 AND status <> 'ARCHIVED'
+           AND (($2::text IS NOT NULL AND lower(email) = lower($2))
+             OR ($3::text IS NOT NULL AND mobile = $3))
+         LIMIT 1`,
+        [tenantId, contact.email, contact.mobile],
+      );
+      if (existing.rows[0]) {
+        await client.query("UPDATE auth_challenges SET consumed_at = now(), registration_password_hash = NULL WHERE id = $1", [challenge.rows[0].id]);
+        return { duplicate: true as const };
+      }
+
+      const role = await client.query<{ id: string }>(
+        "SELECT id FROM roles WHERE tenant_id = $1 AND code = 'STUDENT' AND status = 'ACTIVE' LIMIT 1",
+        [tenantId],
+      );
+      if (!role.rows[0]) throw new Error("The student role is not configured for this tenant.");
+
+      const user = await client.query<{ id: string }>(
+        `INSERT INTO users
+          (tenant_id, email, mobile, password_hash, first_name, last_name,
+           status, email_verified_at, mobile_verified_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'ACTIVE',
+                 CASE WHEN $7 = 'EMAIL' THEN now() ELSE NULL END,
+                 CASE WHEN $7 = 'SMS' THEN now() ELSE NULL END)
+         RETURNING id`,
+        [
+          tenantId,
+          contact.email,
+          contact.mobile,
+          challenge.rows[0].registration_password_hash,
+          challenge.rows[0].registration_first_name,
+          challenge.rows[0].registration_last_name,
+          contact.channel,
+        ],
+      );
+      await client.query(
+        `INSERT INTO user_roles (tenant_id, user_id, role_id)
+         VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
+        [tenantId, user.rows[0].id, role.rows[0].id],
+      );
+      await client.query(
+        `INSERT INTO lms_student_profiles (tenant_id, user_id, student_type, institution_id, status)
+         VALUES ($1, $2, 'DIRECT_STUDENT', NULL, 'ACTIVE')`,
+        [tenantId, user.rows[0].id],
+      );
+      await client.query(
+        `INSERT INTO lms_activity_events
+          (tenant_id, actor_user_id, subject_user_id, event_type, resource_type, resource_id, metadata)
+         VALUES ($1, $2, $2, 'DIRECT_STUDENT_REGISTERED', 'direct_student', $2, $3::jsonb)`,
+        [tenantId, user.rows[0].id, JSON.stringify({ channel: contact.channel })],
+      );
+      await client.query(
+        "UPDATE auth_challenges SET consumed_at = now(), registration_password_hash = NULL WHERE id = $1",
+        [challenge.rows[0].id],
+      );
+      return { valid: true as const, userId: user.rows[0].id };
+    });
+
+    if ("duplicate" in result && result.duplicate) {
+      throw new ConflictException("Registration could not be completed. Please sign in or use another contact.");
+    }
+    if (!result.valid) {
+      this.rateLimiter.record("direct-registration-ip", limiter.ipKey, OTP_WINDOW_MS);
+      this.rateLimiter.record("direct-registration-contact", limiter.contactKey, OTP_WINDOW_MS);
+      throw new UnauthorizedException("Invalid or expired verification code.");
+    }
+    this.rateLimiter.clear("direct-registration-ip", limiter.ipKey);
+    this.rateLimiter.clear("direct-registration-contact", limiter.contactKey);
+    return this.startSession(result.userId, metadata);
+  }
+
   async requestOtp(input: OtpRequestDto, metadata: { ipAddress?: string }) {
     const ipKey = metadata.ipAddress || "unknown";
     const mobileKey = `${ipKey}:${input.mobile.trim()}`;

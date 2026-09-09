@@ -7,6 +7,9 @@ import { AuthService } from "./auth.service";
 import {
   ForgotPasswordDto,
   ChangePasswordDto,
+  DirectStudentContactDto,
+  DirectStudentOtpVerifyDto,
+  DirectStudentRegistrationDto,
   LoginDto,
   MfaChallengeDto,
   MfaDisableDto,
@@ -49,6 +52,51 @@ export class AuthController {
       response.setHeader("Cache-Control", "no-store");
       return successResponse(session, request);
     }
+    response.cookie("citis_session", session.token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: session.expiresAt,
+      path: "/",
+    });
+    return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
+  }
+
+  @Post("direct-students/register")
+  @HttpCode(202)
+  async registerDirectStudent(@Body() input: DirectStudentRegistrationDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.registerDirectStudent(input, {
+        ipAddress: request.context.ipAddress,
+        userAgent: request.context.userAgent,
+      }),
+      request,
+    );
+  }
+
+  @Post("direct-students/otp/resend")
+  @HttpCode(202)
+  async resendDirectStudentOtp(@Body() input: DirectStudentContactDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.resendDirectStudentOtp(input, {
+        ipAddress: request.context.ipAddress,
+        userAgent: request.context.userAgent,
+      }),
+      request,
+    );
+  }
+
+  @Post("direct-students/otp/verify")
+  @HttpCode(200)
+  async verifyDirectStudentOtp(
+    @Body() input: DirectStudentOtpVerifyDto,
+    @Req() request: ContextRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const session = await this.auth.verifyDirectStudentOtp(input, {
+      ipAddress: request.context.ipAddress,
+      userAgent: request.context.userAgent,
+    });
     response.cookie("citis_session", session.token, {
       httpOnly: true,
       sameSite: "lax",
