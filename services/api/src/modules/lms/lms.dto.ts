@@ -42,6 +42,24 @@ export class ContentListQueryDto {
   lessonId?: string;
 }
 
+export class UpdateLearningResourceProgressDto {
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 3 })
+  @Min(0)
+  @Max(86400)
+  positionSeconds!: number;
+
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 3 })
+  @Min(0)
+  @Max(86400)
+  durationSeconds!: number;
+
+  @IsOptional()
+  @IsBoolean()
+  completed?: boolean;
+}
+
 export class CreateProgrammeDto {
   @IsUUID()
   institutionId!: string;

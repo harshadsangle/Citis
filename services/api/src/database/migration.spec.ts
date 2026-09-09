@@ -18,6 +18,7 @@ const certificateMigration = readFileSync(resolve(process.cwd(), "../../packages
 const teacherContentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/015_lms_teacher_content_management.sql"), "utf8");
 const adminAccessMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/016_lms_admin_full_access.sql"), "utf8");
 const emailSmsMfaMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/017_auth_email_sms_mfa.sql"), "utf8");
+const resourceProgressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/018_lms_resource_progress.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -38,6 +39,14 @@ test("MFA migration supports email and SMS OTP only", () => {
   assert.match(emailSmsMfaMigration, /purpose IN \('LOGIN', 'ENROLL', 'DISABLE', 'RESET'\)/);
   assert.match(emailSmsMfaMigration, /code_hash text NOT NULL/);
   assert.match(emailSmsMfaMigration, /attempts integer NOT NULL DEFAULT 0/);
+});
+
+test("resource progress migration stores bounded learner playback state", () => {
+  assert.match(resourceProgressMigration, /CREATE TABLE IF NOT EXISTS lms_resource_progress\b/);
+  assert.match(resourceProgressMigration, /UNIQUE \(tenant_id, resource_id, learner_id\)/);
+  assert.match(resourceProgressMigration, /progress_percent numeric\(5, 2\)/);
+  assert.match(resourceProgressMigration, /progress_percent >= 0 AND progress_percent <= 100/);
+  assert.match(resourceProgressMigration, /018_lms_resource_progress/);
 });
 
 for (const table of ["programmes", "courses", "course_modules", "lessons", "learning_resources"]) {
