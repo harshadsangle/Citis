@@ -449,17 +449,18 @@ export class LmsService {
     assertScopeForRead(user, String(scope.institution_id), scope.campus_id as string | null | undefined);
     if (scope.course_id) await this.assertLearnerCourseAccess(user, String(scope.course_id), String(scope.institution_id), scope.campus_id as string | null | undefined);
     if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id as string | null | undefined);
-    if (
-      this.isLearnerOnly(user)
-      && (
-        scope.content_status !== "PUBLISHED"
-        || scope.course_status !== "PUBLISHED"
-        || scope.module_status !== "PUBLISHED"
-        || scope.lesson_status !== "PUBLISHED"
-        || scope.programme_status !== "PUBLISHED"
-        || scope.institution_status !== "ACTIVE"
-      )
-    ) throw new NotFoundException("LMS content not found.");
+    if (this.isLearnerOnly(user)) {
+      const isPublished = (status: unknown) => status == null || status === "PUBLISHED";
+      const isInstitutionActive = (status: unknown) => status == null || status === "ACTIVE";
+      if (
+        !isPublished(scope.content_status)
+        || !isPublished(scope.course_status)
+        || !isPublished(scope.module_status)
+        || !isPublished(scope.lesson_status)
+        || !isPublished(scope.programme_status)
+        || !isInstitutionActive(scope.institution_status)
+      ) throw new NotFoundException("LMS content not found.");
+    }
     const result = await this.db.query(
       `SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`,
       [id, user.tenantId],

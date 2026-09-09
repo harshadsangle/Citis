@@ -274,6 +274,11 @@ test("managed file delivery is tenant-scoped and auditable", async () => {
 });
 
 test("resource progress is clamped, persisted, and rate limited", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "learner-progress",
+    roles: [{ code: "STUDENT", name: "Student" }],
+  };
   const queries: Array<{ text: string; values: unknown[] }> = [];
   const db = {
     query: async (text: string, values: unknown[]) => {
@@ -307,7 +312,7 @@ test("resource progress is clamped, persisted, and rate limited", async () => {
     positionSeconds: 240,
     durationSeconds: 120,
     completed: false,
-  }, request);
+  }, { context: { ...request.context, user: learner } } as unknown as ContextRequest);
 
   assert.equal(result.completed, true);
   assert.equal(queries.at(-1)?.values[8], 120);
