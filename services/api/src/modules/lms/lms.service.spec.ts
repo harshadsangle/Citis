@@ -105,7 +105,7 @@ test("enrolled learners can list and read content only through their active cour
     if (text.startsWith("SELECT p.institution_id")) {
       return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
     }
-    if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [{ enrolled: 1 }] };
+    if (text.includes("FROM lms_enrollments")) return { rows: [{ enrolled: 1 }] };
     if (text.startsWith("SELECT * FROM lessons")) {
       return { rows: [{ id: "lesson-1", tenant_id: learner.tenantId, module_id: "module-1", title: "Lesson one" }] };
     }
@@ -145,7 +145,7 @@ test("unenrolled learners cannot read nested content, managed files, or SCORM re
         }],
       };
     }
-    if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [] };
+    if (text.includes("FROM lms_enrollments")) return { rows: [] };
     throw new Error(`Unexpected query after denied content access: ${text}`);
   });
   const learnerRequest = { context: { ...request.context, user: learner } } as unknown as ContextRequest;
