@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, ChevronDown, Menu, X } from "lucide-react";
+import { ArrowRight, BookOpenCheck, ChevronDown, LogIn, Menu, ShieldCheck, X } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { CitisLogo } from "@/components/layout/CitisLogo";
@@ -103,6 +103,7 @@ function MobileMenuItems({
 export function Navbar() {
   const pathname = usePathname();
   const [openMenu, setOpenMenu] = useState<MegaMenuKey | null>(null);
+  const [loginOpen, setLoginOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -114,7 +115,16 @@ export function Navbar() {
   }, []);
   useEffect(() => {
     setMobileOpen(false);
+    setLoginOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setLoginOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   return (
     <header className={cn(
@@ -124,7 +134,61 @@ export function Navbar() {
         : "border-transparent bg-background/75 backdrop-blur-xl",
     )}>
       <div className="container-site flex h-full items-center justify-between">
-        <Brand />
+        <div className="flex h-full min-w-0 items-center gap-2 sm:gap-3">
+          <Brand />
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              aria-expanded={loginOpen}
+              aria-haspopup="menu"
+              aria-controls="public-login-menu"
+              onClick={() => setLoginOpen((value) => !value)}
+              className={cn(
+                "inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:h-10 sm:px-3.5 sm:text-sm",
+                loginOpen
+                  ? "border-primary/30 bg-primary text-primary-foreground shadow-sm"
+                  : "border-primary/15 bg-background/70 text-primary hover:border-primary/30 hover:bg-primary/5",
+              )}
+            >
+              <LogIn className="size-3.5 sm:size-4" />
+              Login
+              <ChevronDown className={cn("size-3 transition-transform sm:size-3.5", loginOpen && "rotate-180")} />
+            </button>
+            <AnimatePresence>
+              {loginOpen && (
+                <motion.div
+                  id="public-login-menu"
+                  role="menu"
+                  initial={{ opacity: 0, y: 7, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                  transition={{ duration: 0.16 }}
+                  className="absolute top-[calc(100%+0.6rem)] left-0 z-[60] w-56 overflow-hidden rounded-2xl border border-primary/10 bg-background/95 p-1.5 shadow-[0_18px_50px_rgba(18,75,115,0.18)] backdrop-blur-xl"
+                >
+                  <p className="px-3 pb-1.5 pt-2 text-[10px] font-bold tracking-[0.16em] text-muted-foreground uppercase">Choose your workspace</p>
+                  <Link
+                    href="/auth/login?portal=admin"
+                    role="menuitem"
+                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary"><ShieldCheck className="size-4" /></span>
+                    <span className="flex-1"><span className="block">Admin Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Manage learning spaces</span></span>
+                    <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </Link>
+                  <Link
+                    href="/auth/login?portal=instructor"
+                    role="menuitem"
+                    className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <span className="grid size-8 place-items-center rounded-lg bg-accent/15 text-accent-foreground"><BookOpenCheck className="size-4" /></span>
+                    <span className="flex-1"><span className="block">Instructor Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Teach and review work</span></span>
+                    <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
         <nav className="hidden h-full items-center gap-0.5 lg:flex" aria-label="Primary navigation" onMouseLeave={() => setOpenMenu(null)}>
           {NAV_LINKS.map((item) => {
             const menu = "megaMenu" in item ? item.megaMenu : undefined;
