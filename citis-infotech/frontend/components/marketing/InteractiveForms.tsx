@@ -207,6 +207,9 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
 export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal; provider?: LmsCourseProvider }) {
   const [show, setShow] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [mfaChallenge, setMfaChallenge] = useState<{ challengeToken: string; channel: "EMAIL" | "SMS"; expiresInSeconds: number } | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaSubmitting, setMfaSubmitting] = useState(false);
   const loginInFlightRef = useRef(false);
   const submissionIdRef = useRef(0);
   const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
@@ -217,7 +220,15 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
     let stage = "login";
     setServerError("");
     try {
-      await authService.login(values.email, values.password);
+      const login = await authService.login(values.email, values.password);
+      if (login.data.mfaRequired && login.data.challengeToken && login.data.channel) {
+        setMfaChallenge({
+          challengeToken: login.data.challengeToken,
+          channel: login.data.channel,
+          expiresInSeconds: login.data.expiresInSeconds || 600,
+        });
+        return;
+      }
       stage = "auth/me";
       try {
         const response = await authService.me();
@@ -245,6 +256,56 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
       }
     }
   };
+  const verifyMfa = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!mfaChallenge || mfaSubmitting || !/^\d{6}$/.test(mfaCode)) return;
+    setMfaSubmitting(true);
+    setServerError("");
+    try {
+      await authService.verifyMfaLogin(mfaChallenge.challengeToken, mfaCode);
+      const response = await authService.me();
+      if (!canAccessLmsPortal(response.data, portal)) {
+        const availablePortal = firstAvailableLmsPortal(response.data);
+        const availableCopy = availablePortal ? ` This account belongs in the ${LMS_PORTALS[availablePortal].label}.` : "";
+        throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
+      }
+      window.location.assign(`/lms?portal=${portal}${provider ? `&provider=${provider}` : ""}`);
+    } catch (error) {
+      await authService.logout().catch(() => undefined);
+      setServerError(error instanceof Error ? error.message : "Verification failed. Please try again.");
+    } finally {
+      setMfaSubmitting(false);
+    }
+  };
+  if (mfaChallenge) {
+    return (
+      <form onSubmit={verifyMfa} className="auth-form space-y-5" noValidate>
+        <div>
+          <Label htmlFor="login-mfa-code">Verification code</Label>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Enter the 6-digit code sent by {mfaChallenge.channel === "EMAIL" ? "email" : "SMS"}. It expires in {Math.ceil(mfaChallenge.expiresInSeconds / 60)} minutes.
+          </p>
+          <Input
+            id="login-mfa-code"
+            className="mt-2 min-h-12 rounded-xl bg-background/70 px-4 tracking-[0.35em]"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            value={mfaCode}
+            onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            autoFocus
+          />
+        </div>
+        {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+        <Button className="h-12 w-full rounded-xl text-sm shadow-[0_12px_25px_rgba(239,125,60,.2)]" variant="accent" size="lg" disabled={mfaSubmitting || mfaCode.length !== 6}>
+          {mfaSubmitting ? <LoaderCircle className="animate-spin" /> : "Verify and continue"}
+        </Button>
+        <button type="button" className="w-full text-center text-sm font-semibold text-primary hover:underline" onClick={() => { setMfaChallenge(null); setMfaCode(""); setServerError(""); }}>
+          Return to sign in
+        </button>
+      </form>
+    );
+  }
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
       <div><Label htmlFor="login-email">Email</Label><Input id="login-email" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} />{message(errors.email?.message)}</div>

@@ -249,6 +249,11 @@ export interface AuthPrincipal {
 
 export interface AuthResponse {
   user: User;
+  mfaRequired?: boolean;
+  challengeToken?: string;
+  channel?: "EMAIL" | "SMS";
+  expiresInSeconds?: number;
+  expiresAt?: string;
   token?: string;
   accessToken?: string;
   refreshToken?: string;

@@ -181,6 +181,12 @@ export const authService = {
       body: JSON.stringify({ email, password }),
       revalidate: false,
     }),
+  verifyMfaLogin: (challengeToken: string, code: string) =>
+    apiFetch<ApiResponse<{ expiresAt: string }>>("/auth/mfa/login/verify", {
+      method: "POST",
+      body: JSON.stringify({ challengeToken, code }),
+      revalidate: false,
+    }),
   logout: (token?: string) =>
     apiFetch<void>("/auth/logout", { method: "POST", token, revalidate: false }),
   me: (token?: string) =>
