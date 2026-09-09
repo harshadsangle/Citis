@@ -776,7 +776,7 @@ function LearningResourceViewer({
       }
       if (provider === "youtube" && data.event === "onStateChange" && Number(data.info) === 0) {
         if (videoTracker.current.duration > 0 && videoTracker.current.lastTime >= videoTracker.current.duration - 1.5) {
-          recordVideoProgress(resourceId, videoTracker.current.duration, videoTracker.current.duration);
+          recordVideoProgress(resourceId, videoTracker.current.duration, videoTracker.current.duration, true);
         }
       }
       if (provider === "youtube" && data.event === "onPlaybackRateChange") {
@@ -787,7 +787,7 @@ function LearningResourceViewer({
       }
       if (provider === "vimeo" && data.event === "ended") {
         if (videoTracker.current.duration > 0 && videoTracker.current.lastTime >= videoTracker.current.duration - 1.5) {
-          recordVideoProgress(resourceId, videoTracker.current.duration, videoTracker.current.duration);
+          recordVideoProgress(resourceId, videoTracker.current.duration, videoTracker.current.duration, true);
         }
       }
       if (provider === "vimeo" && data.event === "playbackratechange") {
