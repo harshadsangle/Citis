@@ -85,6 +85,28 @@ export class ChangePasswordDto {
   newPassword!: string;
 }
 
+export class MfaChannelDto {
+  @IsIn(["EMAIL", "SMS"])
+  channel!: "EMAIL" | "SMS";
+}
+
+export class MfaEnrollmentDto extends MfaChannelDto {
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  currentPassword!: string;
+}
+
+export class MfaChallengeDto {
+  @IsString()
+  @Length(43, 43)
+  challengeToken!: string;
+
+  @IsString()
+  @Matches(/^\d{6}$/, { message: "Verification code must be exactly 6 digits." })
+  code!: string;
+}
+
 export class OtpRequestDto {
   @IsString()
   @Length(8, 20)
