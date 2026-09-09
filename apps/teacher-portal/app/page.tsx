@@ -820,7 +820,7 @@ export default function TeacherPortalPage() {
     const title = resourceEditor.title.trim();
     const sequence = Number(resourceEditor.sequence);
     const duration = resourceEditor.duration.trim() ? Number(resourceEditor.duration) : undefined;
-    const needsUrl = ["VIDEO", "LINK", "SCORM", "INTERACTIVE"].includes(resourceEditor.resourceType);
+    const needsUrl = ["VIDEO", "LINK", "INTERACTIVE"].includes(resourceEditor.resourceType);
     const hasUpload = Boolean(resourceEditor.file);
     if (title.length < 2) {
       setError("Add a resource title.");
