@@ -18,6 +18,16 @@ async function bootstrap() {
     transform: true,
   }));
   app.useGlobalFilters(new ApiExceptionFilter());
+  app.use((_request, response, next) => {
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("X-Frame-Options", "DENY");
+    response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    if (process.env.NODE_ENV === "production") {
+      response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    }
+    next();
+  });
   const allowedOrigins = (process.env.WEB_ORIGIN || "")
     .split(",")
     .map((origin) => origin.trim())

@@ -90,7 +90,6 @@ export class AuthService {
       this.rateLimiter.record("login-account", accountKey, LOGIN_WINDOW_MS);
       throw new UnauthorizedException("Invalid email or password.");
     }
-    this.rateLimiter.clear("login-ip", ipKey);
     this.rateLimiter.clear("login-account", accountKey);
 
     await this.db.query("UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2", [
@@ -199,7 +198,7 @@ export class AuthService {
 
     return {
       accepted: true,
-      ...(process.env.NODE_ENV !== "production" ? { developmentResetToken: rawToken } : {}),
+      ...(process.env.AUTH_EXPOSE_DEV_TOKENS === "true" ? { developmentResetToken: rawToken } : {}),
     };
   }
 

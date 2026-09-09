@@ -2,6 +2,7 @@ import { IsEmail, IsIn, IsOptional, IsString, Length, Matches, MaxLength, MinLen
 
 export class LoginDto {
   @IsEmail()
+  @MaxLength(254)
   email!: string;
 
   @IsString()
@@ -11,6 +12,7 @@ export class LoginDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(80)
   tenantSlug?: string;
 }
 
