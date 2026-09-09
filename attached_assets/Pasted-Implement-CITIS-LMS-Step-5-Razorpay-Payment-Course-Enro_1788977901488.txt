@@ -1,0 +1,277 @@
+Implement **CITIS LMS Step 5 — Razorpay Payment + Course Enrollment + Refunds**.
+
+Use the completed Steps 1–4 as the source of truth. Do not redesign the LMS UI in this step.
+
+### 1. Direct Student Course Purchase
+
+Implement this flow for `DIRECT_STUDENT`:
+
+**Course Details → Enroll Now → Create Razorpay Order → Razorpay Payment → Server Verification → Active Enrollment → Immediate Course Access**
+
+Requirements:
+
+* Student must be authenticated.
+* Course must be published and purchasable.
+* Use the existing course/catalogue structure.
+* Price must come from the server/database, never trust a client-supplied price.
+* Create a Razorpay order server-side.
+* Store the internal payment/order reference.
+* Do not mark enrollment active merely because the frontend reports success.
+* Verify the Razorpay payment server-side using the official Razorpay signature verification mechanism.
+* Only after successful server-side verification:
+
+  * mark payment successful
+  * create/activate the enrollment
+  * unlock the purchased course immediately.
+
+### 2. Payment Failure / Cancellation
+
+If payment is:
+
+* Failed
+* Cancelled
+* Abandoned
+* Signature verification fails
+
+Then:
+
+* Do NOT activate enrollment.
+* Do NOT unlock the course.
+* Record the appropriate payment status.
+* Student must be able to retry payment safely.
+* Do not create duplicate active enrollments.
+
+### 3. Idempotency & Duplicate Protection
+
+This is important.
+
+Prevent:
+
+* Duplicate Razorpay orders for the same purchase where inappropriate.
+* Duplicate enrollment creation.
+* Duplicate payment processing.
+* Replaying the same payment verification request.
+* Client-side manipulation of course price.
+* Client-side manipulation of enrollment status.
+
+Repeated callbacks/webhook events must be handled idempotently.
+
+### 4. Razorpay Webhooks
+
+Implement secure Razorpay webhook handling according to the existing backend architecture.
+
+Requirements:
+
+* Verify webhook authenticity/signature.
+* Never trust unsigned webhook payloads.
+* Handle successful payment events.
+* Handle relevant failed/refunded/payment-status events as appropriate.
+* Store enough payment/event information for audit and reconciliation.
+* Process duplicate webhook events safely.
+
+Do not expose Razorpay secrets to the frontend.
+
+### 5. Database
+
+Add the required migration(s) using the existing migration conventions.
+
+Create/extend appropriate entities for:
+
+* Payment
+* Razorpay order/reference
+* Payment status
+* Amount/currency
+* Student
+* Course
+* Enrollment
+* Refund
+* Refund status
+* Payment timestamps
+* Webhook/event references
+* Admin audit information where required
+
+Maintain proper tenant/user/course relationships.
+
+Do not break existing:
+
+* College Students
+* Direct Students
+* Users
+* Courses
+* Enrollments
+* Certificates
+* Learning materials
+* Authentication
+* Progress data
+
+### 6. Student Types
+
+#### Direct Student
+
+Can purchase courses through Razorpay.
+
+#### College Student
+
+Do NOT require Razorpay for courses assigned by CITIS Admin.
+
+College students continue using the existing admin-assigned enrollment model.
+
+Do not mix the two business models.
+
+### 7. Refund Workflow
+
+Implement an Admin-controlled refund workflow.
+
+Only `CITIS_ADMIN` can initiate/manage refunds.
+
+Requirements:
+
+* Refund must reference the original successful payment.
+* Prevent invalid/duplicate refunds.
+* Store refund amount, reason, status and timestamps.
+* Use Razorpay server-side refund API through the existing backend integration.
+* Never expose Razorpay secret credentials.
+* Handle refund success/failure safely.
+* Keep a complete payment/refund audit trail.
+
+Define clear behavior for course access after refund.
+
+For a completed/processed refund, revoke the purchased course enrollment/access unless the existing business rules explicitly require otherwise.
+
+Do not delete historical payment/refund records.
+
+### 8. Admin APIs
+
+Add appropriate Admin APIs for:
+
+* Payment lookup
+* Payment history
+* Refund initiation
+* Refund status
+* Payment/refund details
+* Student/course payment filtering
+
+Only `CITIS_ADMIN` gets global payment/refund management access.
+
+Instructors must not access global payment/refund management.
+
+Students may only see their own payment/enrollment information where appropriate.
+
+### 9. Security
+
+Strictly enforce:
+
+* Server-side price validation
+* Server-side Razorpay signature verification
+* Webhook signature verification
+* Tenant isolation
+* Student ownership checks
+* Admin-only refund access
+* No Razorpay secret keys in frontend code
+* No payment credentials in logs
+* No sensitive payment data unnecessarily stored
+* Safe error responses
+* Idempotent payment processing
+
+Do not weaken existing authentication, MFA, or authorization.
+
+### 10. Course Access
+
+After verified successful payment:
+
+* Enrollment becomes active immediately.
+* Student can access the purchased published course.
+* Existing resource/course authorization rules must continue to apply.
+* Student cannot access another student's purchased course data.
+
+After successful refund:
+
+* Apply the defined refund access rule consistently.
+* Do not delete historical progress/payment/refund records unless the existing architecture explicitly requires it.
+
+### 11. Environment Configuration
+
+Use environment variables for Razorpay configuration.
+
+Do NOT hard-code:
+
+* Razorpay Key Secret
+* Webhook Secret
+* API credentials
+
+Clearly document the required environment variable names.
+
+Do not expose secrets in logs, responses, Git, or frontend bundles.
+
+If Razorpay credentials are not configured in the development environment, keep tests mockable and do not invent credentials.
+
+### 12. DO NOT IMPLEMENT IN THIS STEP
+
+Do NOT implement:
+
+* Major LMS UI redesign
+* Tutedude-style redesign
+* Certificate approval
+* Assignment review workflow
+* Full reporting/export system
+* Unrelated features
+
+Those remain separate steps.
+
+### 13. Verification
+
+Test at minimum:
+
+1. Direct Student can start course purchase.
+2. Server creates correct Razorpay order.
+3. Server uses database course price.
+4. Successful payment verification activates enrollment.
+5. Course becomes accessible immediately after verified payment.
+6. Failed payment does not activate enrollment.
+7. Cancelled payment does not activate enrollment.
+8. Invalid signature is rejected.
+9. Replayed verification cannot create duplicate enrollment.
+10. Duplicate webhook is handled safely.
+11. Webhook signature is verified.
+12. College Student flow remains admin-assignment based.
+13. Direct Student and College Student models remain separate.
+14. Student cannot manipulate course price.
+15. Student cannot activate enrollment manually.
+16. Student cannot access another student's payment data.
+17. Only `CITIS_ADMIN` can initiate refunds.
+18. Refund references the correct original payment.
+19. Duplicate refund is prevented.
+20. Refund failure is handled safely.
+21. Successful refund updates the correct records.
+22. Course access follows the defined refund rule.
+23. Payment/refund history remains auditable.
+24. Razorpay secrets are never exposed.
+25. Existing authentication/MFA remains intact.
+26. Existing College User ID login remains intact.
+27. API build succeeds.
+28. Database migrations succeed.
+29. Full existing API test suite passes.
+30. Add focused payment, webhook, enrollment and refund tests.
+
+### 14. Final Report
+
+When complete, report:
+
+* Files changed
+* Database migrations
+* Payment entities
+* Enrollment changes
+* Razorpay APIs
+* Webhook implementation
+* Refund implementation
+* Environment variables required
+* Security measures
+* Tests and results
+* Build status
+* Any limitations or credentials/configuration still required
+
+Important:
+
+**Actually implement the backend code, database changes, Razorpay integration, webhook handling, enrollment logic, refund workflow and tests. Do not only create documentation or a plan.**
+
+**Do not redesign the LMS UI in this step.**
