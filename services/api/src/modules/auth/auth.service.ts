@@ -711,11 +711,19 @@ export class AuthService {
 
   private directStudentRateLimit(ipAddress: string | undefined, contact: string) {
     const ipKey = ipAddress || "unknown";
-    const contactKey = `${ipKey}:direct-registration:${contact.toLowerCase()}`;
+    const contactKey = `direct-registration:${contact.toLowerCase()}`;
     this.rateLimiter.assertAllowed("direct-registration-ip", ipKey, 10, OTP_WINDOW_MS);
     this.rateLimiter.assertAllowed("direct-registration-contact", contactKey, 5, OTP_WINDOW_MS);
     this.rateLimiter.record("direct-registration-ip", ipKey, OTP_WINDOW_MS);
     this.rateLimiter.record("direct-registration-contact", contactKey, OTP_WINDOW_MS);
+    return { ipKey, contactKey };
+  }
+
+  private assertDirectStudentVerificationAllowed(ipAddress: string | undefined, contact: string) {
+    const ipKey = ipAddress || "unknown";
+    const contactKey = `direct-registration:${contact.toLowerCase()}`;
+    this.rateLimiter.assertAllowed("direct-registration-ip", ipKey, 20, OTP_WINDOW_MS);
+    this.rateLimiter.assertAllowed("direct-registration-contact", contactKey, 5, OTP_WINDOW_MS);
     return { ipKey, contactKey };
   }
 
@@ -788,7 +796,6 @@ export class AuthService {
         passwordHash,
       ],
     );
-    this.rateLimiter.clear("direct-registration-contact", limiter.contactKey);
     return this.deliverDirectStudentOtp(challenge.rows[0].id, contact.channel, contact.contact, code, metadata);
   }
 
@@ -846,7 +853,7 @@ export class AuthService {
   ) {
     const contact = this.directStudentContact(input);
     const tenantId = await this.directStudentTenant(input.tenantSlug);
-    const limiter = this.directStudentRateLimit(metadata.ipAddress, contact.contact);
+    const limiter = this.assertDirectStudentVerificationAllowed(metadata.ipAddress, contact.contact);
     const result = await this.db.transaction(async (client) => {
       const challenge = await client.query<{
         id: string;
