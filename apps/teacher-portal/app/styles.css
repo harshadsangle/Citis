@@ -1,0 +1,120 @@
+:root {
+  --teacher-ink: #102f49;
+  --teacher-navy: #082f50;
+  --teacher-teal: #5ca6b1;
+  --teacher-orange: #ef7d3c;
+  --teacher-surface: #fbfdfe;
+  --teacher-line: #d3e1e8;
+  font-family: var(--font-manrope), "Avenir Next", "Segoe UI", sans-serif;
+  color: var(--teacher-ink);
+  background: #f4f8fb;
+  font-synthesis: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgb(239 125 60 / .5) !important;
+  outline-offset: 3px;
+}
+
+.portal-shell {
+  background:
+    radial-gradient(circle at 8% 0%, rgb(92 166 177 / .16), transparent 25%),
+    radial-gradient(circle at 96% 10%, rgb(239 125 60 / .12), transparent 24%),
+    linear-gradient(180deg, #f8fbfc 0%, #f1f6f8 100%) !important;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  max-height: 100dvh;
+  box-shadow: 18px 0 44px rgb(8 47 80 / .11) !important;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  background: rgb(251 253 254 / .9) !important;
+  backdrop-filter: blur(14px);
+}
+
+.panel,
+.metric-card {
+  border-color: var(--teacher-line) !important;
+  box-shadow: 0 16px 38px rgb(18 75 115 / .07) !important;
+}
+
+.panel,
+.metric-card,
+.course-row,
+.action-row,
+.module-card,
+.assignment-card,
+.assessment-card,
+.submission-card {
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.panel:hover,
+.metric-card:hover,
+.module-card:hover,
+.assignment-card:hover,
+.assessment-card:hover,
+.submission-card:hover {
+  border-color: #a9ccd0 !important;
+  box-shadow: 0 20px 44px rgb(18 75 115 / .11) !important;
+}
+
+.primary-button,
+.secondary-button,
+.small-button {
+  min-height: 44px;
+  border-radius: 11px !important;
+}
+
+.small-button {
+  min-height: 40px;
+}
+
+@media (max-width: 780px) {
+  .sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  .topbar {
+    position: sticky;
+  }
+
+  .panel:hover,
+  .metric-card:hover,
+  .module-card:hover,
+  .assignment-card:hover,
+  .assessment-card:hover,
+  .submission-card:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
