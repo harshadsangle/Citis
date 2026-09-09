@@ -794,30 +794,55 @@ export class LmsService {
 
   private async contentScope(id: string, table: LmsTable, user: AuthenticatedUser) {
     const query = table === "programmes"
-      ? "SELECT institution_id, campus_id, NULL::uuid AS course_id FROM programmes WHERE id = $1 AND tenant_id = $2"
+      ? `SELECT p.institution_id, p.campus_id, NULL::uuid AS course_id,
+                p.status AS content_status, NULL::text AS course_status,
+                NULL::text AS module_status, NULL::text AS lesson_status,
+                p.status AS programme_status, i.status AS institution_status
+         FROM programmes p
+         JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = p.tenant_id
+         WHERE p.id = $1 AND p.tenant_id = $2`
       : table === "courses"
-        ? "SELECT institution_id, campus_id, id AS course_id FROM courses WHERE id = $1 AND tenant_id = $2"
+        ? `SELECT c.institution_id, c.campus_id, c.id AS course_id,
+                  c.status AS content_status, c.status AS course_status,
+                  NULL::text AS module_status, NULL::text AS lesson_status,
+                  p.status AS programme_status, i.status AS institution_status
+           FROM courses c
+           JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+           JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
+           WHERE c.id = $1 AND c.tenant_id = $2`
         : table === "course_modules"
-          ? `SELECT p.institution_id, c.campus_id, c.id AS course_id
+          ? `SELECT p.institution_id, c.campus_id, c.id AS course_id,
+                    x.status AS content_status, c.status AS course_status,
+                    x.status AS module_status, NULL::text AS lesson_status,
+                    p.status AS programme_status, i.status AS institution_status
              FROM course_modules x
              JOIN courses c ON c.id = x.course_id AND c.tenant_id = x.tenant_id
              JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+             JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = x.tenant_id
              WHERE x.id = $1 AND x.tenant_id = $2`
           : table === "lessons"
-            ? `SELECT p.institution_id, c.campus_id, c.id AS course_id
+            ? `SELECT p.institution_id, c.campus_id, c.id AS course_id,
+                      x.status AS content_status, c.status AS course_status,
+                      cm.status AS module_status, x.status AS lesson_status,
+                      p.status AS programme_status, i.status AS institution_status
                FROM lessons x
                JOIN course_modules cm ON cm.id = x.module_id AND cm.tenant_id = x.tenant_id
                JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
                JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+               JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = x.tenant_id
                WHERE x.id = $1 AND x.tenant_id = $2`
-             : `SELECT p.institution_id, c.campus_id, c.id AS course_id
+             : `SELECT p.institution_id, c.campus_id, c.id AS course_id,
+                       x.status AS content_status, c.status AS course_status,
+                       cm.status AS module_status, l.status AS lesson_status,
+                       p.status AS programme_status, i.status AS institution_status
                FROM learning_resources x
                JOIN lessons l ON l.id = x.lesson_id AND l.tenant_id = x.tenant_id
                JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = x.tenant_id
                JOIN courses c ON c.id = cm.course_id AND c.tenant_id = x.tenant_id
                JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = x.tenant_id
+               JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = x.tenant_id
                WHERE x.id = $1 AND x.tenant_id = $2`;
-    const result = await this.db.query<{ institution_id: string; campus_id: string | null; course_id?: string | null }>(query, [id, user.tenantId]);
+    const result = await this.db.query<Record<string, unknown>>(query, [id, user.tenantId]);
     if (!result.rows[0]) throw new NotFoundException("LMS content not found.");
     return result.rows[0];
   }
