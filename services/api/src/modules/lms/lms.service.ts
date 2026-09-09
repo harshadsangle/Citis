@@ -9,6 +9,7 @@ import { CertificateService } from "./certificate.service";
 import type {
   ContentListQueryDto,
   CandidateListQueryDto,
+  AssignInstructorCollegeDto,
   AssignInstructorDto,
   AssignmentListQueryDto,
   CreateCourseDto,
@@ -217,6 +218,13 @@ export class LmsService {
           AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
           AND ia.instructor_id = $${values.length}
           AND ia.status = 'ACTIVE'
+        UNION ALL
+        SELECT 1
+        FROM lms_instructor_colleges ic
+        WHERE ic.tenant_id = c.tenant_id
+          AND ic.institution_id = c.institution_id
+          AND ic.instructor_id = $${values.length}
+          AND ic.status = 'ACTIVE'
       )`);
     }
     if (learnerOnly) {
@@ -281,7 +289,16 @@ export class LmsService {
       [id, user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("Course not found.");
-    assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    if (this.isInstructorOnly(user)) {
+      await this.assertAssignedTeacherRead(
+        user,
+        String(result.rows[0].institution_id),
+        id,
+        result.rows[0].campus_id as string | null | undefined,
+      );
+    } else {
+      assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    }
     if (this.isLearnerOnly(user)) {
       if (
         result.rows[0].status !== "PUBLISHED"
@@ -362,7 +379,7 @@ export class LmsService {
     const filter = this.statusFilter(query.status);
     const values: unknown[] = [user.tenantId];
     const clauses = [`x.tenant_id = $1`];
-    const instructorOnly = user.roles.some((role) => role.code === "TEACHER")
+    const instructorOnly = user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR")
       && !isLmsAdministrator(user);
     if (parentId) {
       values.push(parentId);
@@ -383,6 +400,13 @@ export class LmsService {
           AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
           AND ia.instructor_id = $${values.length}
           AND ia.status = 'ACTIVE'
+        UNION ALL
+        SELECT 1
+        FROM lms_instructor_colleges ic
+        WHERE ic.tenant_id = x.tenant_id
+          AND ic.institution_id = p.institution_id
+          AND ic.instructor_id = $${values.length}
+          AND ic.status = 'ACTIVE'
       )`);
     }
     if (this.isLearnerOnly(user)) {
@@ -864,14 +888,14 @@ export class LmsService {
   }
 
   private isInstructorOnly(user: AuthenticatedUser) {
-    return user.roles.some((role) => role.code === "TEACHER")
+    return user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR")
       && !isLmsAdministrator(user);
   }
 
   private isLearnerOnly(user: AuthenticatedUser) {
     return user.roles.some((role) => role.code === "STUDENT")
       && !isLmsAdministrator(user)
-      && !user.roles.some((role) => role.code === "TEACHER");
+      && !user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR");
   }
 
   private async assertLearnerCourseAccess(user: AuthenticatedUser, courseId: string, institutionId: string, campusId?: string | null) {
