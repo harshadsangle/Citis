@@ -37,6 +37,7 @@ import {
   UpdateCourseDto,
   UpdateCourseModuleDto,
   UpdateLearningResourceDto,
+  UpdateLearningResourceProgressDto,
   UpdateLessonDto,
   UpdateProgrammeDto,
 } from "./lms.dto";
@@ -520,11 +521,18 @@ export class LmsController {
   @Get("learning-resources/:id/file")
   @RequirePermission("lms.learning_resource.view")
   async downloadLearningResourceFile(@Param("id") id: string, @Req() request: ContextRequest, @Res() response: Response) {
-    const file = await this.lms.getManagedFile(id, request);
+    const file = await this.lms.openManagedFile(id, request, request.headers.range);
     response.setHeader("Content-Type", String(file.mimeType));
     response.setHeader("Content-Disposition", `inline; filename="${String(file.filename).replace(/[\r\n"]/g, "")}"`);
     response.setHeader("X-Content-Type-Options", "nosniff");
-    return response.send(file.content);
+    response.setHeader("Cache-Control", "private, no-store");
+    response.setHeader("Accept-Ranges", "bytes");
+    response.setHeader("Content-Length", String(file.size));
+    if (file.partial) {
+      response.status(206);
+      response.setHeader("Content-Range", `bytes ${file.start}-${file.end}/${file.totalSize}`);
+    }
+    return file.stream.pipe(response);
   }
 
   @Get("learning-resources/:id/scorm/launch")

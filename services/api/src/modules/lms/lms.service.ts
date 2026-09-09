@@ -26,9 +26,11 @@ import type {
   UpdateCourseDto,
   UpdateCourseModuleDto,
   UpdateLearningResourceDto,
+  UpdateLearningResourceProgressDto,
   UpdateLessonDto,
   UpdateProgrammeDto,
 } from "./lms.dto";
+import { LmsContentRateLimiter } from "./lms.rate-limit";
 
 type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type LmsResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
@@ -55,6 +57,7 @@ export class LmsService {
     private readonly audit: AuditService,
     private readonly storage: ResourceStorageService,
     @Optional() private readonly certificates?: CertificateService,
+    @Optional() private readonly contentRateLimiter?: LmsContentRateLimiter,
   ) {}
 
   private statusFilter(status?: string) {
@@ -492,7 +495,7 @@ export class LmsService {
 
   private async resourceFor(id: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-        `SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id
+         `SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id, cm.id AS module_id
        FROM learning_resources lr
        JOIN lessons l ON l.id = lr.lesson_id AND l.tenant_id = lr.tenant_id
        JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = lr.tenant_id
@@ -510,6 +513,25 @@ export class LmsService {
       result.rows[0].campus_id as string | null | undefined,
     );
     return result.rows[0];
+  }
+
+  private rateLimitProtectedContent(request: ContextRequest, scope: string, limit = 120) {
+    if (!this.contentRateLimiter) return;
+    const user = request.context.user!;
+    const ip = request.context.ipAddress || "unknown";
+    this.contentRateLimiter.assertAllowed(scope, `user:${user.id}`, limit);
+    this.contentRateLimiter.assertAllowed(scope, `ip:${ip}`, limit);
+  }
+
+  private async managedFileFor(id: string, request: ContextRequest) {
+    this.rateLimitProtectedContent(request, "managed-file");
+    const resource = await this.resourceFor(id, request.context.user!);
+    const result = await this.db.query<Record<string, unknown>>(
+      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND institution_id = $3 AND campus_id IS NOT DISTINCT FROM $4 AND kind = 'FILE'",
+      [id, request.context.user!.tenantId, resource.institution_id, resource.campus_id ?? null],
+    );
+    if (!result.rows[0]) throw new NotFoundException("No managed file is attached to this resource.");
+    return { resource, managed: result.rows[0] };
   }
 
   async uploadResourceFile(id: string, file: LmsUpload, request: ContextRequest) {
@@ -604,13 +626,7 @@ export class LmsService {
   }
 
   async getManagedFile(id: string, request: ContextRequest) {
-    const resource = await this.resourceFor(id, request.context.user!);
-    const result = await this.db.query<Record<string, unknown>>(
-      "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND institution_id = $3 AND campus_id IS NOT DISTINCT FROM $4 AND kind = 'FILE'",
-      [id, request.context.user!.tenantId, resource.institution_id, resource.campus_id ?? null],
-    );
-    if (!result.rows[0]) throw new NotFoundException("No managed file is attached to this resource.");
-    const managed = result.rows[0];
+    const { resource, managed } = await this.managedFileFor(id, request);
     let content: Buffer;
     try {
       content = await this.storage.read(String(managed.storage_key));
@@ -625,7 +641,49 @@ export class LmsService {
     return { content, mimeType: managed.mime_type, filename: managed.original_filename };
   }
 
+  async openManagedFile(id: string, request: ContextRequest, range?: string) {
+    const { resource, managed } = await this.managedFileFor(id, request);
+    let fileSize: number;
+    try {
+      fileSize = (await this.storage.fileStat(String(managed.storage_key))).size;
+    } catch (error) {
+      if ((error as { code?: string }).code === "ENOENT") throw new NotFoundException("The managed file is unavailable.");
+      throw error;
+    }
+
+    let start = 0;
+    let end = Math.max(0, fileSize - 1);
+    let partial = false;
+    const match = /^bytes=(\d*)-(\d*)$/.exec(range || "");
+    if (match && fileSize > 0) {
+      const requestedStart = match[1] ? Number(match[1]) : Math.max(0, fileSize - Number(match[2] || 0));
+      const requestedEnd = match[2] ? Number(match[2]) : end;
+      if (Number.isSafeInteger(requestedStart) && Number.isSafeInteger(requestedEnd) && requestedStart >= 0 && requestedStart <= requestedEnd && requestedStart < fileSize) {
+        start = requestedStart;
+        end = Math.min(requestedEnd, fileSize - 1);
+        partial = true;
+      }
+    }
+
+    await this.auditAccess(request, "learning_resource_file", "VIEW", resource, {
+      managedFileId: managed.id,
+      filename: managed.original_filename,
+      range: partial ? { start, end } : undefined,
+    });
+    return {
+      stream: this.storage.createReadStreamForKey(String(managed.storage_key), { start, end }),
+      mimeType: managed.mime_type,
+      filename: managed.original_filename,
+      size: end - start + 1,
+      totalSize: fileSize,
+      start,
+      end,
+      partial,
+    };
+  }
+
   async getScormLaunch(id: string, request: ContextRequest) {
+    this.rateLimitProtectedContent(request, "scorm");
     const resource = await this.resourceFor(id, request.context.user!);
     const result = await this.db.query<Record<string, unknown>>(
       "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND institution_id = $3 AND campus_id IS NOT DISTINCT FROM $4 AND kind = 'SCORM'",
@@ -648,6 +706,7 @@ export class LmsService {
   }
 
   async getScormAsset(id: string, assetPath: string, request: ContextRequest) {
+    this.rateLimitProtectedContent(request, "scorm");
     const resource = await this.resourceFor(id, request.context.user!);
     const result = await this.db.query<Record<string, unknown>>(
       "SELECT * FROM managed_files WHERE resource_id = $1 AND tenant_id = $2 AND institution_id = $3 AND campus_id IS NOT DISTINCT FROM $4 AND kind = 'SCORM'",
