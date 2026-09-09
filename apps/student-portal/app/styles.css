@@ -602,9 +602,10 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .course-detail-side-card .course-primary-button { margin-top: 20px; width: 100%; }
 
 .lesson-resource { background: #112f49; border-radius: 18px; box-shadow: 0 18px 38px rgb(18 48 74 / .16); margin-top: 27px; overflow: hidden; }
-.lesson-resource-frame { aspect-ratio: 16 / 8.8; background: #0b2237; display: flex; min-height: 220px; }
+.lesson-resource-frame { aspect-ratio: 16 / 8.8; background: #0b2237; display: flex; min-height: 220px; position: relative; }
 .lesson-resource-frame iframe, .lesson-resource-frame video { border: 0; height: 100%; min-height: 220px; width: 100%; }
 .lesson-resource-frame video { background: #0b2237; object-fit: contain; }
+.lesson-resource-watermark { background: rgb(7 28 45 / .42); border: 1px solid rgb(255 255 255 / .12); border-radius: 999px; bottom: 12px; color: rgb(255 255 255 / .68); font-size: 9px; font-weight: 800; left: 12px; letter-spacing: .08em; padding: 6px 9px; pointer-events: none; position: absolute; text-transform: uppercase; }
 .lesson-resource-link-card { align-items: center; color: #fff; display: flex; gap: 14px; margin: auto; max-width: 580px; padding: 26px; width: 100%; }
 .resource-link-icon { align-items: center; background: #2a8a78; border-radius: 13px; color: #fff; display: flex; flex: 0 0 auto; font-size: 20px; height: 44px; justify-content: center; width: 44px; }
 .lesson-resource-link-card div { flex: 1; }

@@ -879,6 +879,9 @@ function LearningResourceViewer({
             onContextMenu={(event) => event.preventDefault()}
             onEnded={handleVideoEnded}
             onLoadedMetadata={handleVideoLoadedMetadata}
+            onRateChange={(event) => {
+              if (event.currentTarget.playbackRate !== 1) event.currentTarget.playbackRate = 1;
+            }}
             onPlay={(event) => {
               videoTracker.current = { resourceId: activeResource.id, lastTime: event.currentTarget.currentTime, duration: event.currentTarget.duration, seeking: false };
             }}
@@ -898,6 +901,7 @@ function LearningResourceViewer({
             <a href={url} target="_blank" rel="noreferrer">Open resource</a>
           </div>
         )}
+        <div className="lesson-resource-watermark" aria-hidden="true">CITIS • Learner view • Do not redistribute</div>
       </div>
       <div className="lesson-resource-footer">
         <div><span className="lesson-resource-kicker">{resourceTypeLabel(activeResource.resource_type)}</span><strong>{activeResource.title}</strong></div>
