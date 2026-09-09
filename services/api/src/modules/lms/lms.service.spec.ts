@@ -207,7 +207,7 @@ test("only assigned teachers can create nested course content", async () => {
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
   let inserted = false;
   const { service } = serviceWith(async (text) => {
-    if (text.startsWith("SELECT institution_id, campus_id, id AS course_id")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    if (text.includes("FROM course_modules x")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
     if (text.startsWith("SELECT id FROM courses")) return { rows: [{ id: "course-1" }] };
     if (text.startsWith("SELECT institution_id, campus_id FROM courses")) return { rows: [{ institution_id: "institution-1", campus_id: null }] };
     if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
@@ -223,7 +223,7 @@ test("only assigned teachers can create nested course content", async () => {
   assert.equal(inserted, true);
 
   const { service: blockedService } = serviceWith(async (text) => {
-    if (text.startsWith("SELECT institution_id, campus_id, id AS course_id")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    if (text.includes("FROM course_modules x")) return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
     if (text.startsWith("SELECT id FROM courses")) return { rows: [{ id: "course-1" }] };
     if (text.startsWith("SELECT institution_id, campus_id FROM courses")) return { rows: [{ institution_id: "institution-1", campus_id: null }] };
     if (text.startsWith("SELECT 1")) return { rows: [] };
@@ -254,7 +254,7 @@ test("managed file delivery is tenant-scoped and auditable", async () => {
   const db = {
     query: async (text: string, values: unknown[]) => {
       queries.push({ text, values });
-      if (text.startsWith("SELECT lr.*")) {
+    if (text.includes("FROM learning_resources lr")) {
         return { rows: [{ id: "resource-1", tenant_id: user.tenantId, institution_id: "institution-1", resource_type: "PDF" }] };
       }
       return { rows: [{ id: "file-1", tenant_id: user.tenantId, resource_id: "resource-1", kind: "FILE", storage_key: "tenant-1/resource-1/file.pdf", original_filename: "file.pdf", mime_type: "application/pdf" }] };
@@ -294,6 +294,12 @@ test("resource progress is clamped, persisted, and rate limited", async () => {
             module_id: "module-1",
             lesson_id: "lesson-1",
             resource_type: "VIDEO",
+            resource_status: "PUBLISHED",
+            lesson_status: "PUBLISHED",
+            module_status: "PUBLISHED",
+            course_status: "PUBLISHED",
+            programme_status: "PUBLISHED",
+            institution_status: "ACTIVE",
           }],
         };
       }
