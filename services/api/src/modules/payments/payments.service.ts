@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import type { ContextRequest, AuthenticatedUser } from "../../common/request-context";
 import { isLmsAdministrator } from "../../common/access-scope";
 import { DatabaseService } from "../../database/database.service";
+import { AuditService } from "../../common/audit.service";
 import type { CreatePaymentOrderDto, CreateRefundDto, PaymentListQueryDto, VerifyPaymentDto } from "./payments.dto";
 import { RazorpayClient } from "./razorpay.client";
 
@@ -20,6 +21,7 @@ export class PaymentsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly razorpay: RazorpayClient,
+    private readonly audit: AuditService,
   ) {}
 
   private assertDirectStudent(user: AuthenticatedUser) {
@@ -73,7 +75,7 @@ export class PaymentsService {
     };
   }
 
-  async createOrder(courseId: string, input: CreatePaymentOrderDto, user: AuthenticatedUser) {
+  async createOrder(courseId: string, input: CreatePaymentOrderDto, user: AuthenticatedUser, requestId = "payment-order") {
     this.assertDirectStudent(user);
     const course = await this.purchaseCourse(courseId, user);
     const idempotencyKey = input.idempotencyKey.trim();
@@ -140,13 +142,24 @@ export class PaymentsService {
        RETURNING *`,
       [payment.id, order.id],
     );
-    return {
+    const response = {
       ...this.paymentSummary(updated.rows[0] || { ...payment, razorpay_order_id: order.id, status: "ORDER_CREATED" }),
       keyId: process.env.RAZORPAY_KEY_ID || null,
     };
+    await this.audit.record({
+      tenantId: user.tenantId,
+      actorUserId: user.id,
+      requestId,
+      module: "payments",
+      resource: "payment_order",
+      resourceId: String(payment.id),
+      action: "CREATE",
+      newValue: { courseId, amountMinor: response.amountMinor, currency: response.currency, razorpayOrderId: response.razorpayOrderId },
+    });
+    return response;
   }
 
-  async verifyPayment(input: VerifyPaymentDto, user: AuthenticatedUser) {
+  async verifyPayment(input: VerifyPaymentDto, user: AuthenticatedUser, requestId = "payment-verification") {
     this.assertDirectStudent(user);
     const found = await this.db.query<Record<string, unknown>>(
       `SELECT * FROM lms_payments
@@ -182,7 +195,18 @@ export class PaymentsService {
       );
       throw new BadRequestException("The payment has not been captured.");
     }
-    return this.activatePayment(payment.id as string, user.id, providerPayment);
+    const activated = await this.activatePayment(payment.id as string, user.id, providerPayment);
+    await this.audit.record({
+      tenantId: user.tenantId,
+      actorUserId: user.id,
+      requestId,
+      module: "payments",
+      resource: "payment",
+      resourceId: String(payment.id),
+      action: "CAPTURE",
+      newValue: activated,
+    });
+    return activated;
   }
 
   private async activatePayment(paymentId: string, actorUserId: string | null, providerPayment: ProviderPayment) {
@@ -363,7 +387,7 @@ export class PaymentsService {
     return this.paymentSummary(payment);
   }
 
-  async initiateRefund(id: string, input: CreateRefundDto, user: AuthenticatedUser) {
+  async initiateRefund(id: string, input: CreateRefundDto, user: AuthenticatedUser, requestId = "payment-refund") {
     this.assertCitisAdmin(user);
     const paymentResult = await this.db.query<Record<string, unknown>>(
       "SELECT * FROM lms_payments WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
@@ -390,7 +414,18 @@ export class PaymentsService {
         amount,
         notes: { reason: input.reason.trim(), paymentReference: id },
       });
-      return await this.markRefundProcessed(String(providerRefund.id), Number(providerRefund.amount), String(refund.rows[0].id));
+      const processed = await this.markRefundProcessed(String(providerRefund.id), Number(providerRefund.amount), String(refund.rows[0].id));
+      await this.audit.record({
+        tenantId: user.tenantId,
+        actorUserId: user.id,
+        requestId,
+        module: "payments",
+        resource: "refund",
+        resourceId: String(refund.rows[0].id),
+        action: "CREATE",
+        newValue: { paymentId: id, amountMinor: amount, reason: input.reason.trim(), providerRefundId: providerRefund.id, status: "PROCESSED" },
+      });
+      return processed;
     } catch (error) {
       await this.db.query(
         "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE id = $1",

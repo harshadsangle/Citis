@@ -21,7 +21,7 @@ function serviceWith(
   transaction: (work: (client: any) => Promise<unknown>) => Promise<unknown>,
   razorpay: Record<string, any>,
 ) {
-  return new PaymentsService({ query, transaction } as never, razorpay as never);
+  return new PaymentsService({ query, transaction } as never, razorpay as never, { record: async () => undefined } as never);
 }
 
 test("direct purchase creates a provider order from the existing course price", async () => {

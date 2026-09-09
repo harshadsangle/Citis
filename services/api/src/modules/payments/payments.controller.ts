@@ -15,13 +15,13 @@ export class PaymentsController {
   @Post("courses/:courseId/order")
   @RequirePermission("payments.payment.create")
   async createOrder(@Param("courseId", ParseUUIDPipe) courseId: string, @Body() input: CreatePaymentOrderDto, @Req() request: ContextRequest) {
-    return successResponse(await this.payments.createOrder(courseId, input, request.context.user!), request);
+    return successResponse(await this.payments.createOrder(courseId, input, request.context.user!, request.context.requestId), request);
   }
 
   @Post("verify")
   @RequirePermission("payments.payment.create")
   async verify(@Body() input: VerifyPaymentDto, @Req() request: ContextRequest) {
-    return successResponse(await this.payments.verifyPayment(input, request.context.user!), request);
+    return successResponse(await this.payments.verifyPayment(input, request.context.user!, request.context.requestId), request);
   }
 
   @Get("me")
@@ -45,7 +45,7 @@ export class PaymentsController {
   @Post(":id/refund")
   @RequirePermission("payments.refund.create")
   async refund(@Param("id", ParseUUIDPipe) id: string, @Body() input: CreateRefundDto, @Req() request: ContextRequest) {
-    return successResponse(await this.payments.initiateRefund(id, input, request.context.user!), request);
+    return successResponse(await this.payments.initiateRefund(id, input, request.context.user!, request.context.requestId), request);
   }
 }
 
