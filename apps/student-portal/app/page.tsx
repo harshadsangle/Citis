@@ -431,7 +431,16 @@ function resourceTypeLabel(resourceType: string) {
 }
 
 function resourceUrl(resource: LearningResource) {
-  return resource.url || `/api/v1/learning-resources/${resource.id}/file`;
+  const value = resource.url?.trim();
+  if (value) {
+    try {
+      const parsed = new URL(value, typeof window === "undefined" ? "http://localhost" : window.location.origin);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") return value;
+    } catch {
+      // Invalid persisted URLs fall through to the managed-file route.
+    }
+  }
+  return `/api/v1/learning-resources/${resource.id}/file`;
 }
 
 function videoEmbedUrl(value: string) {
@@ -470,7 +479,11 @@ function resourceIsVideo(resource: LearningResource) {
 
 function resourceIsDocument(resource: LearningResource) {
   const type = resource.resource_type.toUpperCase();
-  return type.includes("PDF") || type.includes("DOCUMENT") || type === "FILE";
+  return type.includes("PDF") || type.includes("DOCUMENT") || type.includes("PRESENTATION") || type === "FILE";
+}
+
+function resourceIsScorm(resource: LearningResource) {
+  return resource.resource_type.toUpperCase() === "SCORM";
 }
 
 function videoProgressStorageKey(lessonId: string, resourceId: string) {
@@ -542,12 +555,17 @@ function LearningResourceViewer({
 }) {
   const [activeResourceId, setActiveResourceId] = useState("");
   const [videoStates, setVideoStates] = useState<Record<string, VideoWatchState>>({});
+  const [scormLaunchUrl, setScormLaunchUrl] = useState("");
+  const [scormError, setScormError] = useState("");
+  const [scormLoading, setScormLoading] = useState(false);
   const videoTracker = useRef<{ resourceId: string; lastTime: number; duration: number; seeking: boolean }>({ resourceId: "", lastTime: 0, duration: 0, seeking: false });
   const embeddedVideoFrame = useRef<HTMLIFrameElement | null>(null);
   const activeResource = resources.find((resource) => resource.id === activeResourceId) || resources[0];
 
   useEffect(() => {
     setActiveResourceId(resources[0]?.id || "");
+    setScormLaunchUrl("");
+    setScormError("");
     const nextVideoStates: Record<string, VideoWatchState> = {};
     resources.filter(resourceIsVideo).forEach((resource) => {
       nextVideoStates[resource.id] = readVideoWatchState(lessonId, resource);
@@ -555,6 +573,31 @@ function LearningResourceViewer({
     setVideoStates(nextVideoStates);
     videoTracker.current = { resourceId: resources[0]?.id || "", lastTime: 0, duration: 0, seeking: false };
   }, [lessonId, resources]);
+
+  useEffect(() => {
+    if (!activeResource || !resourceIsScorm(activeResource) || activeResource.url?.trim()) {
+      setScormLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setScormLoading(true);
+    setScormError("");
+    fetch(`/api/v1/learning-resources/${encodeURIComponent(activeResource.id)}/scorm/launch`, { credentials: "include", signal: controller.signal })
+      .then(async (response) => {
+        const body = await response.json().catch(() => null) as { data?: { launchUrl?: string }; error?: { message?: string } } | null;
+        if (!response.ok || !body?.data?.launchUrl) throw new Error(body?.error?.message || "This SCORM resource is unavailable.");
+        setScormLaunchUrl(body.data.launchUrl);
+      })
+      .catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === "AbortError") return;
+        setScormError(reason instanceof Error ? reason.message : "This SCORM resource is unavailable.");
+        setScormLaunchUrl("");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setScormLoading(false);
+      });
+    return () => controller.abort();
+  }, [activeResource?.id, activeResource?.resource_type, activeResource?.url]);
 
   useEffect(() => {
     if (loading || error) return;
@@ -655,7 +698,11 @@ function LearningResourceViewer({
     videoTracker.current.seeking = false;
   }, [recordVideoProgress]);
 
-  const activeResourceUrl = activeResource ? resourceUrl(activeResource) : "";
+  const activeResourceUrl = activeResource
+    ? resourceIsScorm(activeResource) && !activeResource.url?.trim()
+      ? scormLaunchUrl
+      : resourceUrl(activeResource)
+    : "";
   const activeResourceIsEmbed = Boolean(activeResource && resourceIsVideo(activeResource) && /^https?:\/\//i.test(activeResourceUrl) && !/\.(mp4|webm|ogg)(?:$|\?)/i.test(activeResourceUrl));
 
   useEffect(() => {
@@ -727,6 +774,12 @@ function LearningResourceViewer({
   if (error) {
     return <div className="lesson-resource-error" role="alert">{error}</div>;
   }
+  if (activeResource && resourceIsScorm(activeResource) && scormLoading) {
+    return <div className="lesson-resource-loading"><span className="resource-loading-dot" /> Loading SCORM lesson…</div>;
+  }
+  if (activeResource && resourceIsScorm(activeResource) && scormError) {
+    return <div className="lesson-resource-error" role="alert">{scormError}</div>;
+  }
   if (!activeResource) {
     return (
       <div className="lesson-resource-empty">
@@ -776,7 +829,8 @@ function LearningResourceViewer({
           </video>
         ))}
         {resourceIsDocument(activeResource) && <iframe title={activeResource.title} src={url} />}
-        {!resourceIsVideo(activeResource) && !resourceIsDocument(activeResource) && (
+        {resourceIsScorm(activeResource) && url && <iframe title={activeResource.title} src={url} />}
+        {!resourceIsVideo(activeResource) && !resourceIsDocument(activeResource) && !resourceIsScorm(activeResource) && (
           <div className="lesson-resource-link-card">
             <span className="resource-link-icon" aria-hidden="true">↗</span>
             <div><strong>{activeResource.title}</strong><p>{resourceTypeLabel(activeResource.resource_type)} resource</p></div>

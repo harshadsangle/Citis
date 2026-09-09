@@ -4,7 +4,7 @@ import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows, isLm
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
-import { ResourceStorageService, mimeTypeForFilename, type LmsUpload } from "./resource-storage.service";
+import { ResourceStorageService, mimeTypeForFilename, safeArchivePath, type LmsUpload } from "./resource-storage.service";
 import { CertificateService } from "./certificate.service";
 import type {
   ContentListQueryDto,
@@ -215,6 +215,19 @@ export class LmsService {
           AND ia.status = 'ACTIVE'
       )`);
     }
+    if (this.isLearnerOnly(user)) {
+      values.push(user.id);
+      clauses.push(`EXISTS (
+        SELECT 1
+        FROM lms_enrollments e
+        WHERE e.tenant_id = x.tenant_id
+          AND e.institution_id = p.institution_id
+          AND e.course_id = c.id
+          AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+          AND e.learner_id = $${values.length}
+          AND e.status = 'ACTIVE'
+      )`);
+    }
     if (programmeId) {
       values.push(programmeId);
       clauses.push(`c.programme_id = $${values.length}`);
@@ -385,6 +398,7 @@ export class LmsService {
   async getChild(id: string, table: LmsTable, user: AuthenticatedUser) {
     const scope = await this.contentScope(id, table, user);
     assertScopeForRead(user, scope.institution_id, scope.campus_id);
+    if (scope.course_id) await this.assertLearnerCourseAccess(user, String(scope.course_id), String(scope.institution_id), scope.campus_id);
     if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id);
     const result = await this.db.query(
       `SELECT * FROM ${table} WHERE id = $1 AND tenant_id = $2`,
@@ -489,6 +503,12 @@ export class LmsService {
     );
     if (!result.rows[0]) throw new NotFoundException("Learning resource not found.");
     assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    await this.assertLearnerCourseAccess(
+      user,
+      String(result.rows[0].course_id),
+      String(result.rows[0].institution_id),
+      result.rows[0].campus_id as string | null | undefined,
+    );
     return result.rows[0];
   }
 
@@ -612,11 +632,19 @@ export class LmsService {
       [id, request.context.user!.tenantId, resource.institution_id, resource.campus_id ?? null],
     );
     if (!result.rows[0]) throw new NotFoundException("No SCORM package is attached to this resource.");
+    let entrypoint: string;
+    try {
+      entrypoint = safeArchivePath(String(result.rows[0].entrypoint || ""));
+      await this.storage.readScormAsset(String(result.rows[0].storage_key), entrypoint);
+    } catch (error) {
+      if ((error as { code?: string }).code === "ENOENT") throw new NotFoundException("The SCORM entrypoint is unavailable.");
+      throw error;
+    }
     await this.auditAccess(request, "learning_resource_scorm", "LAUNCH", resource, {
       managedFileId: result.rows[0].id,
-      entrypoint: result.rows[0].entrypoint,
+      entrypoint,
     });
-    return { launchUrl: `/api/v1/learning-resources/${id}/scorm/${encodeURI(String(result.rows[0].entrypoint))}` };
+    return { launchUrl: `/api/v1/learning-resources/${id}/scorm/${encodeURI(entrypoint)}` };
   }
 
   async getScormAsset(id: string, assetPath: string, request: ContextRequest) {
@@ -681,6 +709,25 @@ export class LmsService {
   private isInstructorOnly(user: AuthenticatedUser) {
     return user.roles.some((role) => role.code === "TEACHER")
       && !isLmsAdministrator(user);
+  }
+
+  private isLearnerOnly(user: AuthenticatedUser) {
+    return user.roles.some((role) => role.code === "STUDENT")
+      && !isLmsAdministrator(user)
+      && !user.roles.some((role) => role.code === "TEACHER");
+  }
+
+  private async assertLearnerCourseAccess(user: AuthenticatedUser, courseId: string, institutionId: string, campusId?: string | null) {
+    if (!this.isLearnerOnly(user)) return;
+    const result = await this.db.query(
+      `SELECT 1
+       FROM lms_enrollments
+       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
+         AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+       LIMIT 1`,
+      [user.tenantId, institutionId, courseId, user.id, campusId ?? null],
+    );
+    if (!result.rows[0]) throw new NotFoundException("The requested resource was not found.");
   }
 
   private async assertAssignedTeacherRead(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {

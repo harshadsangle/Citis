@@ -66,7 +66,7 @@ export function mimeTypeForFilename(filename: string) {
   }
 }
 
-function safeArchivePath(input: string) {
+export function safeArchivePath(input: string) {
   const value = input.replaceAll("\\", "/");
   if (!value || value.includes("\0") || posix.isAbsolute(value)) throw new BadRequestException("The SCORM package contains an unsafe path.");
   const normalized = posix.normalize(value);
