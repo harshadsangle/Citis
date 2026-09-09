@@ -19,6 +19,7 @@ const teacherContentMigration = readFileSync(resolve(process.cwd(), "../../packa
 const adminAccessMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/016_lms_admin_full_access.sql"), "utf8");
 const emailSmsMfaMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/017_auth_email_sms_mfa.sql"), "utf8");
 const resourceProgressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/018_lms_resource_progress.sql"), "utf8");
+const resourceProgressPermissionMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/019_lms_resource_progress_permission.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -47,6 +48,12 @@ test("resource progress migration stores bounded learner playback state", () => 
   assert.match(resourceProgressMigration, /progress_percent numeric\(5, 2\)/);
   assert.match(resourceProgressMigration, /progress_percent >= 0 AND progress_percent <= 100/);
   assert.match(resourceProgressMigration, /018_lms_resource_progress/);
+});
+
+test("resource progress permission migration grants writes only to learners", () => {
+  assert.match(resourceProgressPermissionMigration, /lms\.resource_progress\.update/);
+  assert.match(resourceProgressPermissionMigration, /r\.code = 'STUDENT'/);
+  assert.match(resourceProgressPermissionMigration, /019_lms_resource_progress_permission/);
 });
 
 for (const table of ["programmes", "courses", "course_modules", "lessons", "learning_resources"]) {
