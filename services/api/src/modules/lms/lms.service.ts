@@ -37,7 +37,7 @@ type LmsResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | 
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
 type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 
-const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "SCORM", "INTERACTIVE"];
+const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
 
 function progressState(completed: number, total: number): ProgressState {
@@ -205,6 +205,7 @@ export class LmsService {
     const values: unknown[] = [user.tenantId];
     const clauses = ["c.tenant_id = $1"];
     const instructorOnly = this.isInstructorOnly(user);
+    const learnerOnly = this.isLearnerOnly(user);
     if (instructorOnly) {
       values.push(user.id);
       clauses.push(`EXISTS (
@@ -217,6 +218,23 @@ export class LmsService {
           AND ia.instructor_id = $${values.length}
           AND ia.status = 'ACTIVE'
       )`);
+    }
+    if (learnerOnly) {
+      values.push(user.id);
+      clauses.push(
+        "c.status = 'PUBLISHED'",
+        "p.status = 'PUBLISHED'",
+        "i.status = 'ACTIVE'",
+        `EXISTS (
+          SELECT 1 FROM lms_enrollments e
+          WHERE e.tenant_id = c.tenant_id
+            AND e.institution_id = c.institution_id
+            AND e.course_id = c.id
+            AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+            AND e.learner_id = $${values.length}
+            AND e.status = 'ACTIVE'
+        )`,
+      );
     }
     if (programmeId) {
       values.push(programmeId);
@@ -232,12 +250,21 @@ export class LmsService {
       this.db.query(
         `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
                 c.created_at, c.updated_at
-         FROM courses c JOIN programmes p ON p.id = c.programme_id
+         FROM courses c
+         JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+         JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
          WHERE ${clauses.join(" AND ")}
          ORDER BY c.created_at DESC LIMIT $${pageParam} OFFSET $${pageParam + 1}`,
         values,
       ),
-      this.db.query<{ count: string }>(`SELECT count(*)::text AS count FROM courses c WHERE ${clauses.join(" AND ")}`, values.slice(0, -2)),
+      this.db.query<{ count: string }>(
+        `SELECT count(*)::text AS count
+         FROM courses c
+         JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+         JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
+         WHERE ${clauses.join(" AND ")}`,
+        values.slice(0, -2),
+      ),
     ]);
     const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
@@ -246,13 +273,23 @@ export class LmsService {
   async getCourse(id: string, user: AuthenticatedUser) {
     const result = await this.db.query(
       `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
-              c.created_at, c.updated_at
-       FROM courses c JOIN programmes p ON p.id = c.programme_id
+              c.created_at, c.updated_at, p.status AS programme_status, i.status AS institution_status
+       FROM courses c
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
        WHERE c.id = $1 AND c.tenant_id = $2`,
       [id, user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("Course not found.");
     assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    if (this.isLearnerOnly(user)) {
+      if (
+        result.rows[0].status !== "PUBLISHED"
+        || result.rows[0].programme_status !== "PUBLISHED"
+        || result.rows[0].institution_status !== "ACTIVE"
+      ) throw new NotFoundException("Course not found.");
+      await this.assertLearnerCourseAccess(user, id, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    }
     return result.rows[0];
   }
 
