@@ -498,6 +498,85 @@ test("lesson completion rejects learners without an active course enrollment", a
   await assert.rejects(service.completeLesson("lesson-1", request), ForbiddenException);
 });
 
+test("direct learners can complete institutionless enrollments without an institution scope", async () => {
+  const directLearner: AuthenticatedUser = {
+    ...user,
+    id: "direct-student-1",
+    studentType: "DIRECT_STUDENT",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    scopes: [],
+  };
+  const directRequest = { context: { ...request.context, user: directLearner } } as unknown as ContextRequest;
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT l.id")) {
+      return {
+        rows: [{
+          id: "lesson-1",
+          tenant_id: directLearner.tenantId,
+          institution_id: "institution-1",
+          course_id: "course-1",
+          module_id: "module-1",
+          lesson_status: "PUBLISHED",
+          module_status: "PUBLISHED",
+          course_status: "PUBLISHED",
+          programme_status: "PUBLISHED",
+          institution_status: "ACTIVE",
+        }],
+      };
+    }
+    if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "direct-enrollment-1" }] };
+    if (text.startsWith("SELECT * FROM lms_lesson_progress")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_lesson_progress")) return { rows: [{ id: "progress-1", status: "COMPLETED" }] };
+    return { rows: [] };
+  });
+
+  const result = await service.completeLesson("lesson-1", directRequest);
+
+  assert.equal(result.status, "COMPLETED");
+});
+
+test("failed assignments do not count toward course completion", async () => {
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT c.id")) {
+      return {
+        rows: [{
+          id: "course-1",
+          tenant_id: user.tenantId,
+          institution_id: "institution-1",
+          title: "Digital Skills",
+          code: "DS-101",
+          status: "PUBLISHED",
+          programme_status: "PUBLISHED",
+          institution_status: "ACTIVE",
+        }],
+      };
+    }
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("SELECT cm.id")) {
+      return {
+        rows: [{
+          module_id: "module-1",
+          module_title: "Foundations",
+          sequence: 1,
+          lesson_total: 0,
+          lesson_completed: 0,
+          assessment_total: 0,
+          assessment_completed: 0,
+          assignment_total: 1,
+          assignment_completed: 0,
+        }],
+      };
+    }
+    return { rows: [] };
+  });
+
+  const result = await service.getCourseProgress("course-1", user);
+
+  assert.equal(result.state, "NOT_STARTED");
+  assert.equal(result.percentage, 0);
+  assert.deepEqual(result.assignments, { completed: 0, total: 1 });
+});
+
 test("assignment creation is scoped to an assigned course module and audited", async () => {
   const { service, audits } = serviceWith(async (text) => {
     if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
@@ -559,6 +638,99 @@ test("a learner submission is graded by a CITIS administrator and completes assi
   assert.equal(audits.some((audit) => audit.resource === "assignment_submission" && audit.action === "SUBMIT"), true);
   assert.equal(audits.some((audit) => audit.resource === "assignment_submission" && audit.action === "GRADE"), true);
   assert.equal(audits.some((audit) => audit.resource === "assessment_completion"), true);
+});
+
+test("instructors cannot review or grade assignment submissions", async () => {
+  const instructor: AuthenticatedUser = {
+    ...user,
+    id: "instructor-1",
+    roles: [{ code: "INSTRUCTOR", name: "Instructor" }],
+  };
+  const instructorRequest = { context: { ...request.context, user: instructor } } as unknown as ContextRequest;
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT a.*")) {
+      return {
+        rows: [{
+          id: "assignment-1",
+          tenant_id: instructor.tenantId,
+          institution_id: "institution-1",
+          course_id: "course-1",
+          assessment_type: "ASSIGNMENT",
+          total_marks: "100",
+        }],
+      };
+    }
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 50 }, instructorRequest),
+    ForbiddenException,
+  );
+});
+
+test("assignment grades use a 50 percent pass threshold", async () => {
+  const reviewer: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  };
+  const reviewerRequest = { context: { ...request.context, user: reviewer } } as unknown as ContextRequest;
+  let completionValues: unknown[] | undefined;
+  const { service } = serviceWith(async (text, values) => {
+    if (text.startsWith("SELECT a.*")) {
+      return {
+        rows: [{
+          id: "assignment-1",
+          tenant_id: reviewer.tenantId,
+          institution_id: "institution-1",
+          course_id: "course-1",
+          module_id: "module-1",
+          assessment_type: "ASSIGNMENT",
+          total_marks: "100",
+          campus_id: null,
+        }],
+      };
+    }
+    if (text.startsWith("SELECT * FROM lms_assignment_submissions")) {
+      return {
+        rows: [{
+          id: "submission-1",
+          tenant_id: reviewer.tenantId,
+          institution_id: "institution-1",
+          course_id: "course-1",
+          module_id: "module-1",
+          assignment_id: "assignment-1",
+          learner_id: "student-1",
+          status: "SUBMITTED",
+          submission_text: "Work",
+          attachment_url: null,
+          is_late: false,
+        }],
+      };
+    }
+    if (text.startsWith("UPDATE lms_assignment_submissions")) {
+      return {
+        rows: [{
+          id: "submission-1",
+          learner_id: "student-1",
+          status: "GRADED",
+          grade: 49,
+          submission_text: "Work",
+          attachment_url: null,
+          is_late: false,
+        }],
+      };
+    }
+    if (text.startsWith("INSERT INTO lms_assessment_completions")) {
+      completionValues = values;
+      return { rows: [{ id: "completion-1", passed: false }] };
+    }
+    return { rows: [] };
+  });
+
+  await service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 49 }, reviewerRequest);
+
+  assert.equal(completionValues?.[9], false);
 });
 
 test("learner assignment listings include only published content from enrolled courses", async () => {
