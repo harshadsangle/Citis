@@ -1,0 +1,58 @@
+STOP verification-only work. The LMS UI has NOT been visibly redesigned yet.
+
+I need you to ACTUALLY IMPLEMENT the Step 8 premium LMS redesign now.
+
+The current `/lms` screenshot still looks essentially like the old LMS. Do not report CSS polish as completion.
+
+Build a clearly visible, premium EdTech LMS experience inspired by the quality and structure of Tutedude, but with ORIGINAL CITIS branding/design.
+
+REDESIGN THESE EXISTING LMS SCREENS:
+
+* `/lms` catalogue/home
+* course cards and course detail
+* Student dashboard
+* My Courses
+* lesson/video learning page
+* assessments
+* assignments
+* certificates
+* profile/activity
+
+For `/lms` specifically, make the transformation immediately obvious:
+
+* premium hero section
+* strong headline/subheadline and CTA
+* attractive course discovery section
+* polished course cards
+* provider/category presentation
+* search/filter/sort redesigned as a modern catalogue experience
+* clear learning/progress visual hierarchy
+* professional spacing, cards, borders, shadows and responsive layout
+* polished empty/loading states
+* subtle animations and hover interactions
+
+For student learning:
+
+* prominent Continue Learning
+* progress visualization
+* clean curriculum/module navigation
+* premium lesson/video layout
+* clear Previous/Next/Complete actions
+* assessments, assignments and certificates integrated into the learning journey
+
+IMPORTANT:
+
+* DO NOT change backend/API/database/auth/permissions.
+* DO NOT change existing routes.
+* DO NOT add dummy data.
+* DO NOT duplicate courses.
+* DO NOT change course content/counts/providers.
+* DO NOT redesign the corporate website.
+* Keep CITIS light theme and Manrope.
+* Keep all existing functionality.
+
+This must be a REAL visual redesign, not minor CSS adjustments.
+
+Before finishing, compare the current `/lms` with the new implementation and confirm that the visual difference is substantial and immediately noticeable.
+
+Then show/verify the redesigned `/lms` page at desktop and mobile widths.
