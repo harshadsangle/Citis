@@ -1044,17 +1044,24 @@ export class LmsService {
   }
 
   private async eligiblePerson(user: AuthenticatedUser, institutionId: string, campusId: string | null, personId: string, roleCode: "STUDENT" | "TEACHER") {
+    const studentScope = roleCode === "STUDENT"
+      ? isLmsAdministrator(user)
+        ? "AND (sp.student_type = 'DIRECT_STUDENT' OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $3))"
+        : "AND sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $3"
+      : "";
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT u.id, u.tenant_id, u.first_name, u.last_name, u.email, u.mobile
        FROM users u
        JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
        JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+       ${roleCode === "STUDENT" ? "JOIN lms_student_profiles sp ON sp.user_id = u.id AND sp.tenant_id = u.tenant_id AND sp.status = 'ACTIVE'" : ""}
        WHERE u.id = $1 AND u.tenant_id = $2 AND u.status = 'ACTIVE'
-          AND ur.institution_id = $3
+           AND (${roleCode === "STUDENT" ? "ur.institution_id IS NOT DISTINCT FROM sp.institution_id" : "ur.institution_id = $3"})
           AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
-          AND r.code = $5 AND r.status = 'ACTIVE'
+           AND r.code IN (${roleCode === "STUDENT" ? "'STUDENT'" : "'TEACHER', 'INSTRUCTOR'"}) AND r.status = 'ACTIVE'
+           ${studentScope}
        LIMIT 1`,
-      [personId, user.tenantId, institutionId, campusId, roleCode],
+      [personId, user.tenantId, institutionId, campusId],
     );
     if (!result.rows[0]) {
       throw new NotFoundException(roleCode === "STUDENT"
@@ -1080,6 +1087,18 @@ export class LmsService {
     const searchClause = search
       ? " AND (u.first_name ILIKE $6 OR u.last_name ILIKE $6 OR concat_ws(' ', u.first_name, u.last_name) ILIKE $6 OR COALESCE(u.email, '') ILIKE $6)"
       : "";
+    const profileJoin = roleCode === "STUDENT"
+      ? " JOIN lms_student_profiles sp ON sp.user_id = u.id AND sp.tenant_id = u.tenant_id AND sp.status = 'ACTIVE'"
+      : "";
+    const studentScope = roleCode === "STUDENT"
+      ? isLmsAdministrator(user)
+        ? " AND (sp.student_type = 'DIRECT_STUDENT' OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $2))"
+        : " AND sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $2"
+      : "";
+    const institutionScope = roleCode === "STUDENT"
+      ? "ur.institution_id IS NOT DISTINCT FROM sp.institution_id"
+      : "ur.institution_id = $2";
+    const roleClause = roleCode === "STUDENT" ? "'STUDENT'" : "'TEACHER', 'INSTRUCTOR'";
     const values: unknown[] = [user.tenantId, course.institution_id, course.id, roleCode, course.campus_id ?? null];
     if (search) values.push(`%${search}%`);
     const limitParam = values.length + 1;
@@ -1090,9 +1109,11 @@ export class LmsService {
          FROM users u
          JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+          ${profileJoin}
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-            AND ur.institution_id = $2 AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
-            AND r.code = $4 AND r.status = 'ACTIVE'
+             AND ${institutionScope} AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
+             AND r.code IN (${roleClause}) AND r.status = 'ACTIVE'
+             ${studentScope}
            AND NOT EXISTS (
              SELECT 1 FROM ${relationshipTable} x
               WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
@@ -1108,9 +1129,11 @@ export class LmsService {
          FROM users u
          JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+          ${profileJoin}
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-            AND ur.institution_id = $2 AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
-            AND r.code = $4 AND r.status = 'ACTIVE'
+             AND ${institutionScope} AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
+             AND r.code IN (${roleClause}) AND r.status = 'ACTIVE'
+             ${studentScope}
            AND NOT EXISTS (
              SELECT 1 FROM ${relationshipTable} x
               WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
@@ -1197,9 +1220,12 @@ export class LmsService {
     await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.learnerId, "STUDENT");
     return this.runRelationship(async () => {
       const result = await this.db.query<Record<string, unknown>>(
-        `INSERT INTO lms_enrollments (tenant_id, institution_id, campus_id, course_id, learner_id, enrolled_by)
-          VALUES ($1, $2, $3, $4, $5, $6)
-          RETURNING id, tenant_id, institution_id, campus_id, course_id, learner_id, status, enrolled_by, enrolled_at, removed_at, created_at, updated_at`,
+        `INSERT INTO lms_enrollments
+          (tenant_id, institution_id, campus_id, course_id, learner_id, enrolled_by, assignment_source, assigned_by, assigned_at)
+          VALUES ($1, $2, $3, $4, $5, $6, 'ADMIN', $6, now())
+          RETURNING id, tenant_id, institution_id, campus_id, course_id, learner_id, status,
+                    enrolled_by, enrolled_at, assignment_source, assigned_by, assigned_at,
+                    progress_percent, completed_at, removed_at, created_at, updated_at`,
         [user.tenantId, course.institution_id, course.campus_id ?? null, course.id, input.learnerId, user.id],
       );
       const row = result.rows[0];
@@ -1319,8 +1345,8 @@ export class LmsService {
          AND r.status = 'ACTIVE'
          AND (
            r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
-           OR (
-             r.code = 'TEACHER'
+            OR (
+              r.code IN ('TEACHER', 'INSTRUCTOR')
              AND EXISTS (
                SELECT 1
                FROM lms_instructor_assignments ia
@@ -1328,6 +1354,17 @@ export class LmsService {
                   AND ia.campus_id IS NOT DISTINCT FROM $5
                  AND ia.instructor_id = ur.user_id AND ia.status = 'ACTIVE'
              )
+            )
+            OR (
+              r.code IN ('TEACHER', 'INSTRUCTOR')
+              AND EXISTS (
+                SELECT 1
+                FROM lms_instructor_colleges ic
+                WHERE ic.tenant_id = $2
+                  AND ic.institution_id = $3
+                  AND ic.instructor_id = ur.user_id
+                  AND ic.status = 'ACTIVE'
+              )
            )
          )
        LIMIT 1`,
