@@ -215,19 +215,6 @@ export class LmsService {
           AND ia.status = 'ACTIVE'
       )`);
     }
-    if (this.isLearnerOnly(user)) {
-      values.push(user.id);
-      clauses.push(`EXISTS (
-        SELECT 1
-        FROM lms_enrollments e
-        WHERE e.tenant_id = x.tenant_id
-          AND e.institution_id = p.institution_id
-          AND e.course_id = c.id
-          AND e.campus_id IS NOT DISTINCT FROM c.campus_id
-          AND e.learner_id = $${values.length}
-          AND e.status = 'ACTIVE'
-      )`);
-    }
     if (programmeId) {
       values.push(programmeId);
       clauses.push(`c.programme_id = $${values.length}`);
@@ -356,6 +343,19 @@ export class LmsService {
           AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
           AND ia.instructor_id = $${values.length}
           AND ia.status = 'ACTIVE'
+      )`);
+    }
+    if (this.isLearnerOnly(user)) {
+      values.push(user.id);
+      clauses.push(`EXISTS (
+        SELECT 1
+        FROM lms_enrollments e
+        WHERE e.tenant_id = x.tenant_id
+          AND e.institution_id = p.institution_id
+          AND e.course_id = c.id
+          AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+          AND e.learner_id = $${values.length}
+          AND e.status = 'ACTIVE'
       )`);
     }
     const pageParam = values.length + 1;
