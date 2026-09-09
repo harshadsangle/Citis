@@ -385,7 +385,7 @@ export class LmsController {
   }
 
   @Patch("progress/resources/:resourceId")
-  @RequirePermission("lms.course_progress.view")
+  @RequirePermission("lms.resource_progress.update")
   async updateResourceProgress(
     @Param("resourceId") resourceId: string,
     @Body() input: UpdateLearningResourceProgressDto,

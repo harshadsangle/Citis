@@ -552,12 +552,16 @@ export class LmsService {
 
   private async resourceFor(id: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-         `SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id, cm.id AS module_id
+         `SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id, cm.id AS module_id,
+                 lr.status AS resource_status, l.status AS lesson_status,
+                 cm.status AS module_status, c.status AS course_status,
+                 p.status AS programme_status, i.status AS institution_status
        FROM learning_resources lr
        JOIN lessons l ON l.id = lr.lesson_id AND l.tenant_id = lr.tenant_id
        JOIN course_modules cm ON cm.id = l.module_id AND cm.tenant_id = lr.tenant_id
        JOIN courses c ON c.id = cm.course_id AND c.tenant_id = lr.tenant_id
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = lr.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = lr.tenant_id
        WHERE lr.id = $1 AND lr.tenant_id = $2`,
       [id, user.tenantId],
     );
@@ -569,6 +573,17 @@ export class LmsService {
       String(result.rows[0].institution_id),
       result.rows[0].campus_id as string | null | undefined,
     );
+    if (
+      this.isLearnerOnly(user)
+      && (
+        result.rows[0].resource_status !== "PUBLISHED"
+        || result.rows[0].lesson_status !== "PUBLISHED"
+        || result.rows[0].module_status !== "PUBLISHED"
+        || result.rows[0].course_status !== "PUBLISHED"
+        || result.rows[0].programme_status !== "PUBLISHED"
+        || result.rows[0].institution_status !== "ACTIVE"
+      )
+    ) throw new NotFoundException("Learning resource not found.");
     return result.rows[0];
   }
 
@@ -1439,6 +1454,9 @@ export class LmsService {
   async updateResourceProgress(resourceId: string, input: UpdateLearningResourceProgressDto, request: ContextRequest) {
     const user = request.context.user!;
     this.rateLimitProtectedContent(request, "resource-progress", 60);
+    if (!this.isLearnerOnly(user)) {
+      throw new ForbiddenException("Only enrolled learners can update resource progress.");
+    }
     const resource = await this.resourceFor(resourceId, user);
     const duration = Math.max(0, Number(input.durationSeconds));
     const position = Math.min(Math.max(0, Number(input.positionSeconds)), duration || Number(input.positionSeconds));
