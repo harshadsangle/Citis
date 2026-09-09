@@ -44,6 +44,11 @@ test("platform super admin is unrestricted", () => {
   assert.equal(canAccessScope(platformUser, "institution-2", "campus-9"), true);
 });
 
+test("central CITIS admin is unrestricted", () => {
+  const administrator = { ...campusUser, roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }], scopes: [] };
+  assert.equal(canAccessScope(administrator, "institution-9", "campus-9"), true);
+});
+
 test("LMS administrator is unrestricted across institution and campus scopes", () => {
   const administrator = { ...campusUser, roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }], scopes: [] };
   assert.equal(canAccessScope(administrator, "institution-2", "campus-9"), true);

@@ -20,6 +20,7 @@ const adminAccessMigration = readFileSync(resolve(process.cwd(), "../../packages
 const emailSmsMfaMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/017_auth_email_sms_mfa.sql"), "utf8");
 const resourceProgressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/018_lms_resource_progress.sql"), "utf8");
 const resourceProgressPermissionMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/019_lms_resource_progress_permission.sql"), "utf8");
+const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/020_lms_foundation_roles_profiles.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -187,4 +188,17 @@ test("admin access migration grants every stored permission to LMS administrator
   }
   assert.match(adminAccessMigration, /CROSS JOIN permissions/);
   assert.match(adminAccessMigration, /016_lms_admin_full_access/);
+});
+
+test("Step 2 foundation migration defines student types, college relationships, assignments, and activity events", () => {
+  assert.match(foundationRolesMigration, /CREATE TABLE IF NOT EXISTS lms_student_profiles\b/);
+  assert.match(foundationRolesMigration, /student_type text NOT NULL CHECK \(student_type IN \('COLLEGE_STUDENT', 'DIRECT_STUDENT'\)\)/);
+  assert.match(foundationRolesMigration, /lms_student_profiles_type_scope_ck/);
+  assert.match(foundationRolesMigration, /CREATE TABLE IF NOT EXISTS lms_instructor_colleges\b/);
+  assert.match(foundationRolesMigration, /CREATE TABLE IF NOT EXISTS lms_activity_events\b/);
+  assert.match(foundationRolesMigration, /assignment_source text NOT NULL DEFAULT 'ADMIN'/);
+  assert.match(foundationRolesMigration, /progress_percent numeric\(5, 2\) NOT NULL DEFAULT 0/);
+  assert.match(foundationRolesMigration, /'CITIS_ADMIN'/);
+  assert.match(foundationRolesMigration, /'INSTRUCTOR'/);
+  assert.match(foundationRolesMigration, /020_lms_foundation_roles_profiles/);
 });
