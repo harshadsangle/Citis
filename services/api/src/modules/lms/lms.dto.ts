@@ -674,3 +674,73 @@ export class GradeAssessmentQuestionDto {
   @Max(100000)
   awardedMarks!: number;
 }
+
+export const CERTIFICATE_STATUSES = [
+  "NOT_ELIGIBLE",
+  "ELIGIBLE_FOR_REVIEW",
+  "APPROVED",
+  "REJECTED",
+  "ISSUED",
+  "REVOKED",
+] as const;
+
+export class CertificateReviewDecisionDto {
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  notes?: string;
+}
+
+export class CertificateReportQueryDto {
+  @IsOptional()
+  @IsIn(CERTIFICATE_STATUSES)
+  status?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+
+  @IsOptional()
+  @IsUUID()
+  institutionId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  studentId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  instructorId?: string;
+
+  @IsOptional()
+  @IsIn(["COLLEGE_STUDENT", "DIRECT_STUDENT"])
+  studentType?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  completionStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  assignmentStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  assessmentStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 80)
+  paymentStatus?: string;
+}
