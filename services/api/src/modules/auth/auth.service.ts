@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomInt } from "node:crypto";
 import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
 import { DatabaseService } from "../../database/database.service";
 import type { AuthenticatedUser } from "../../common/request-context";
@@ -12,8 +12,11 @@ import type {
   RegisterDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  MfaChallengeDto,
+  MfaEnrollmentDto,
 } from "./auth.dto";
 import { hashPassword, verifyPassword } from "./password-security";
+import { OtpDeliveryService, type OtpChannel, type OtpPurpose } from "./otp-delivery.service";
 
 const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 const SESSION_DAYS = 7;
@@ -24,6 +27,9 @@ const RESET_WINDOW_MS = 60 * 60 * 1000;
 const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
 const OTP_WINDOW_MS = 10 * 60 * 1000;
 const PASSWORD_CHANGE_WINDOW_MS = 15 * 60 * 1000;
+const MFA_WINDOW_MS = 15 * 60 * 1000;
+const MFA_CHALLENGE_MINUTES = 10;
+const MFA_MAX_ATTEMPTS = 5;
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function hashToken(token: string) {
@@ -57,6 +63,7 @@ export class AuthService {
   constructor(
     private readonly db: DatabaseService,
     private readonly rateLimiter: AuthRateLimiter,
+    private readonly otpDelivery: OtpDeliveryService,
   ) {}
 
   async login(input: LoginDto, metadata: { ipAddress?: string; userAgent?: string }) {
@@ -72,11 +79,14 @@ export class AuthService {
       first_name: string;
       last_name: string;
       password_hash: string | null;
+      mobile: string | null;
+      mfa_enabled: boolean;
+      mfa_channel: OtpChannel | null;
       status: string;
       tenant_slug: string;
     }>(
-      `SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name, u.password_hash,
-              u.status, t.slug AS tenant_slug
+       `SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name, u.password_hash,
+               u.mobile, u.mfa_enabled, u.mfa_channel, u.status, t.slug AS tenant_slug
        FROM users u
        JOIN tenants t ON t.id = u.tenant_id
        WHERE lower(u.email) = lower($1)
@@ -94,11 +104,13 @@ export class AuthService {
     }
     this.rateLimiter.clear("login-account", accountKey);
 
-    await this.db.query("UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2", [
-      user.id,
-      user.tenant_id,
-    ]);
-    return this.startSession(user.id, metadata);
+    if (user.mfa_enabled && user.mfa_channel) {
+      return {
+        mfaRequired: true as const,
+        ...(await this.createMfaChallenge(user.id, user.mfa_channel, "LOGIN", metadata)),
+      };
+    }
+    return this.completeLogin(user.id, user.tenant_id, metadata);
   }
 
   async register(input: RegisterDto, metadata: { ipAddress?: string; userAgent?: string }) {
