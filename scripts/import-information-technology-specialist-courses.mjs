@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
-import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, resolve } from "node:path";
 import pg from "pg";
+import { managedFileExists, readManagedFile, removeManagedFile, writeManagedFile } from "./managed-file-storage.mjs";
 
 const { Pool } = pg;
 const execFileAsync = promisify(execFile);
@@ -77,25 +78,6 @@ async function extractModules(sourcePath) {
 
 function assertEnvironment() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-}
-
-function storagePathFor(storageKey) {
-  const root = resolve(process.env.LMS_STORAGE_DIR || join(process.cwd(), "var", "lms-storage"));
-  const destination = resolve(root, storageKey);
-  if (destination !== root && !destination.startsWith(`${root}/`)) {
-    throw new Error("Refusing to use a managed file path outside LMS storage.");
-  }
-  return destination;
-}
-
-async function fileExists(path) {
-  try {
-    await stat(path);
-    return true;
-  } catch (error) {
-    if (error?.code === "ENOENT") return false;
-    throw error;
-  }
 }
 
 async function findOrCreateProgramme(client, institution, createdBy) {
@@ -199,15 +181,13 @@ async function findOrCreateSourceResource(client, lesson, institution, definitio
   );
   const resource = inserted.rows[0];
   const storageKey = `${lesson.tenant_id}/${resource.id}/${definition.storageFilename}`;
-  const destination = storagePathFor(storageKey);
   const createdStorageFiles = [];
-  if (await fileExists(destination)) {
-    const currentHash = createHash("sha256").update(await readFile(destination)).digest("hex");
+  if (await managedFileExists(storageKey)) {
+    const currentHash = createHash("sha256").update(await readManagedFile(storageKey)).digest("hex");
     if (currentHash !== pdf.sha256) throw new Error("The existing managed PDF path contains different content.");
   } else {
-    await mkdir(dirname(destination), { recursive: true });
-    await writeFile(destination, pdf.buffer, { flag: "wx" });
-    createdStorageFiles.push(destination);
+    await writeManagedFile(storageKey, pdf.buffer);
+    createdStorageFiles.push(storageKey);
   }
   try {
     await client.query(
@@ -217,7 +197,7 @@ async function findOrCreateSourceResource(client, lesson, institution, definitio
       [lesson.tenant_id, institution.id, institution.campus_id ?? null, resource.id, storageKey, pdf.filename, pdf.byteSize, pdf.sha256, createdBy],
     );
   } catch (error) {
-    for (const createdPath of createdStorageFiles) await unlink(createdPath).catch(() => {});
+    for (const createdStorageKey of createdStorageFiles) await removeManagedFile(createdStorageKey).catch(() => {});
     throw error;
   }
   return { row: resource, created: true };
