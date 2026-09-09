@@ -1294,6 +1294,28 @@ export class LmsService {
     return result.rows[0];
   }
 
+  private async hasInstructorCollegeAccess(user: AuthenticatedUser, institutionId: string) {
+    if (isLmsAdministrator(user)) return true;
+    const result = await this.db.query(
+      `SELECT 1
+       FROM lms_instructor_colleges ic
+       JOIN user_roles ur
+         ON ur.user_id = ic.instructor_id
+        AND ur.tenant_id = ic.tenant_id
+        AND ur.institution_id = ic.institution_id
+       JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+       WHERE ic.tenant_id = $1
+         AND ic.institution_id = $2
+         AND ic.instructor_id = $3
+         AND ic.status = 'ACTIVE'
+         AND r.code IN ('TEACHER', 'INSTRUCTOR')
+         AND r.status = 'ACTIVE'
+       LIMIT 1`,
+      [user.tenantId, institutionId, user.id],
+    );
+    return Boolean(result.rows[0]);
+  }
+
   private async runRelationship<T>(work: () => Promise<T>) {
     try {
       return await work();
