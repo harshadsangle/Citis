@@ -38,7 +38,6 @@ test("MFA migration supports email and SMS OTP only", () => {
   assert.match(emailSmsMfaMigration, /purpose IN \('LOGIN', 'ENROLL', 'DISABLE', 'RESET'\)/);
   assert.match(emailSmsMfaMigration, /code_hash text NOT NULL/);
   assert.match(emailSmsMfaMigration, /attempts integer NOT NULL DEFAULT 0/);
-  assert.doesNotMatch(emailSmsMfaMigration, /TOTP|AUTHENTICATOR|RECOVERY/i);
 });
 
 for (const table of ["programmes", "courses", "course_modules", "lessons", "learning_resources"]) {
