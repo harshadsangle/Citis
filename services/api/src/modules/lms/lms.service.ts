@@ -632,10 +632,6 @@ export class LmsService {
   }
 
   private async resourceFor(id: string, user: AuthenticatedUser) {
-    await this.recordActivity(user, "RESOURCE_PROGRESS_UPDATED", resource.institution_id as string | null, user.id, "resource", resourceId, {
-      progressPercent: percentage,
-      completed,
-    });
     const result = await this.db.query<Record<string, unknown>>(
          `SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id, cm.id AS module_id,
                  lr.status AS resource_status, l.status AS lesson_status,
@@ -1779,6 +1775,10 @@ export class LmsService {
     const position = Math.min(Math.max(0, Number(input.positionSeconds)), duration || Number(input.positionSeconds));
     const percentage = duration > 0 ? Math.min(100, Math.round((position / duration) * 10000) / 100) : (input.completed ? 100 : 0);
     const completed = Boolean(input.completed) || percentage >= 99.5;
+    await this.recordActivity(user, "RESOURCE_PROGRESS_UPDATED", resource.institution_id as string | null, user.id, "resource", resourceId, {
+      progressPercent: percentage,
+      completed,
+    });
     const result = await this.db.query<Record<string, unknown>>(
       `INSERT INTO lms_resource_progress
          (tenant_id, institution_id, campus_id, course_id, module_id, lesson_id, resource_id, learner_id,
