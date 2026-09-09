@@ -1518,6 +1518,23 @@ export class LmsService {
       throw new BadRequestException("The course institution or programme is not active.");
     }
     await this.activeEnrollment(String(lesson.course_id), user.id, user);
+    const incompleteVideo = await this.db.query(
+      `SELECT 1
+       FROM learning_resources lr
+       WHERE lr.tenant_id = $1 AND lr.lesson_id = $2
+         AND lr.status = 'PUBLISHED' AND lr.resource_type = 'VIDEO'
+         AND NOT EXISTS (
+           SELECT 1
+           FROM lms_resource_progress rp
+           WHERE rp.tenant_id = lr.tenant_id AND rp.resource_id = lr.id
+             AND rp.learner_id = $3 AND rp.completed = true
+         )
+       LIMIT 1`,
+      [user.tenantId, lesson.id, user.id],
+    );
+    if (incompleteVideo.rows[0]) {
+      throw new BadRequestException("Complete the lesson's video resources before marking the lesson complete.");
+    }
     const beforeResult = await this.db.query<Record<string, unknown>>(
       `SELECT * FROM lms_lesson_progress
        WHERE tenant_id = $1 AND course_id = $2 AND lesson_id = $3 AND learner_id = $4`,
@@ -1923,7 +1940,7 @@ export class LmsService {
            (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, now())
          ON CONFLICT (tenant_id, assessment_id, learner_id, attempt_id)
-         DO UPDATE SET score = EXCLUDED.score, completed_at = now(), updated_at = now()
+         DO UPDATE SET score = EXCLUDED.score, passed = EXCLUDED.passed, completed_at = now(), updated_at = now()
          RETURNING *`,
         [
           user.tenantId,
@@ -1935,6 +1952,7 @@ export class LmsService {
           before.learner_id,
           `assignment:${submissionId}`,
           input.grade,
+          input.grade >= Number(assignment.total_marks) * 0.5,
         ],
       );
       await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
