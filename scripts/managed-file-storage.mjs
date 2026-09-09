@@ -1,5 +1,5 @@
 import { mkdir, readFile, realpath, stat, unlink, writeFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { dirname, isAbsolute, join, pathToFileURL, relative, resolve } from "node:path";
 
 const STORAGE_KEY_SEGMENT = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
@@ -61,16 +61,17 @@ export async function readManagedFile(storageKey) {
   const { destination } = pathForKey(storageKey);
   const root = await canonicalRoot();
   const safeDestination = await assertExistingPathIsManaged(root, destination);
-  return readFile(safeDestination);
+  return readFile(pathToFileURL(safeDestination));
 }
 
 export async function writeManagedFile(storageKey, content) {
   const { destination } = pathForKey(storageKey);
   const root = await canonicalRoot();
-  await mkdir(dirname(destination), { recursive: true });
-  const safeDirectory = await realpath(dirname(destination));
+  const safeDirectoryPath = dirname(destination);
+  await mkdir(pathToFileURL(safeDirectoryPath), { recursive: true });
+  const safeDirectory = await realpath(safeDirectoryPath);
   assertInsideRoot(root, safeDirectory);
-  await writeFile(destination, content, { flag: "wx" });
+  await writeFile(pathToFileURL(destination), content, { flag: "wx" });
 }
 
 export async function removeManagedFile(storageKey) {
@@ -78,7 +79,7 @@ export async function removeManagedFile(storageKey) {
   try {
     const root = await canonicalRoot();
     const safeDestination = await assertExistingPathIsManaged(root, destination);
-    await unlink(safeDestination);
+    await unlink(pathToFileURL(safeDestination));
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
   }
