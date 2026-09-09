@@ -1,0 +1,80 @@
+Perform the **FINAL Production-Readiness + Security + Stability Audit** of the complete LMS.
+
+Do not redesign the UI or introduce new features unless required to fix a security/stability issue.
+
+### Security Audit
+
+Verify and fix, where necessary:
+
+* Authentication, sessions, logout and MFA
+* Password hashing/security and password reset
+* Admin / Instructor / Learner authorization
+* Tenant / institution / campus isolation
+* Course → Module → Lesson → Resource access control
+* Enrollment enforcement
+* API authorization and input validation
+* Rate limiting
+* File upload/storage/streaming security
+* Path traversal and malicious file handling
+* Video/resource download and direct-access protection
+* SCORM security
+* SQL/database query safety
+* CORS and security headers
+* Secrets/environment-variable exposure
+* Error handling and information leakage
+
+### Stability & Production Readiness
+
+Test for:
+
+* Server crashes
+* Unhandled exceptions
+* Invalid/malformed requests
+* Missing/deleted/corrupt resources
+* Large requests/files
+* Repeated/abusive requests
+* Database failures
+* Expired/invalid sessions
+* API failures
+* Frontend runtime errors
+* All Admin, Instructor and Learner portals
+
+A bad request or missing resource must **never crash the application**.
+
+### Full Regression
+
+Verify these end-to-end:
+
+**Login → Enrollment → Course → Module → Lesson → Resource → Play/View → Progress → Quiz/Assignment → Completion → Certificate**
+
+Ensure Steps 1–6 remain fully functional.
+
+Run:
+
+* Full API/security/integration tests
+* TypeScript checks
+* Production builds for all portals
+* Database migration validation
+* Browser/preview checks
+* `git diff --check`
+* Relevant load/stability checks
+
+Fix any **critical/high security or production-blocking issue** found.
+
+Do not add paid services, DRM, TOTP, authenticator apps, backup codes, or recovery codes.
+
+### Final Report
+
+Clearly report:
+
+1. Security issues found and fixed
+2. Stability issues found and fixed
+3. Tests performed and exact results
+4. Production build results
+5. Portal/browser verification
+6. Database/migration status
+7. Remaining warnings/limitations
+8. Any **Critical / High / Medium / Low** issues still open
+9. Final verdict: **READY FOR PRODUCTION** or **NOT READY**
+
+Do not declare production-ready if any critical/high security issue or production-blocking failure remains.
