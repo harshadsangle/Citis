@@ -22,3 +22,4 @@
 - [GitHub API commit timezone](github-api-commit-timezone.md) — REST-created commits may retain the workspace timezone offset even when API dates are shown in UTC.
 - [GitHub integration commit client](github-integration-commit-client.md) — use the authorized SDK Git client for commits when proxyFetch mishandles array fields.
 - [LMS content access boundary](lms-content-access-boundary.md) — protect both hierarchy lists and direct lesson/file/SCORM reads with the same scoped course-access rules.
+- [Security audit remediation](security-audit-remediation.md) — audit every nested lockfile and centralize importer storage containment with traversal tests.
