@@ -1,0 +1,312 @@
+Implement **CITIS LMS Step 6 — Student Progress, Assessments, Assignments & Instructor Tracking**.
+
+Use the completed Steps 1–5 as the source of truth.
+
+### 1. Student Progress Tracking
+
+Track progress for each authorized student and existing LMS course:
+
+* Course start date
+* Course completion date
+* Overall progress percentage
+* Last accessed date/time
+* Last accessed module
+* Last accessed lesson
+* Lessons completed
+* Lessons remaining
+* Module progress
+* Video progress/resume position where supported
+* Assessment progress
+* Assignment progress
+
+Progress must be calculated from the existing course/module/lesson structure.
+
+Do NOT create duplicate courses or learning content.
+
+### 2. Lesson Completion
+
+Students can complete lessons only when they have access through the existing authorization/enrollment system.
+
+Respect existing rules for:
+
+* Published course
+* Published module
+* Published lesson
+* Authorized enrollment
+* Resource access
+
+Do not allow a student to manually mark unauthorized content as completed.
+
+### 3. Assessments / Quizzes
+
+Implement/complete student assessment workflow using the existing assessment system.
+
+Requirements:
+
+* Student can start an authorized assessment.
+* Record attempts.
+* Record answers/results.
+* Calculate score securely on the server.
+* Do not trust client-supplied scores.
+* Store attempt timestamps.
+* Store pass/fail status.
+* Prevent unauthorized access to another student's attempts.
+* Respect configured attempt limits where applicable.
+
+Assessment completion must contribute to course completion where required.
+
+### 4. Assignments
+
+Implement student assignment workflow:
+
+* View authorized assignment.
+* Submit assignment.
+* Store submission timestamp.
+* Store submission status.
+* Support required submission/resource reference according to existing LMS architecture.
+* Track submission history where supported.
+
+Important business rule:
+
+**Only CITIS_ADMIN reviews/grades assignments.**
+
+Instructor must NOT:
+
+* Approve assignments
+* Reject assignments
+* Give final marks
+* Change assignment results
+
+Instructor may only view assignment/submission status for students within their assigned college where authorized.
+
+### 5. Admin Assignment Review
+
+`CITIS_ADMIN` must be able to:
+
+* View submissions
+* Review submission
+* Give marks
+* Add feedback
+* Approve/pass
+* Reject/fail
+* Record review timestamp
+* Preserve review history/audit information
+
+Assignment pass threshold must remain **50%** unless an existing course-specific rule explicitly overrides it.
+
+A failed assignment must not make the student certificate-eligible.
+
+### 6. Instructor Tracking
+
+Instructor access must remain strictly scoped to assigned college(s).
+
+Instructor should be able to view authorized student learning information such as:
+
+* Student list
+* Login/activity
+* Course enrollment
+* Course progress
+* Last active
+* Lessons completed
+* Assessment attempts/results
+* Assignment submission/status
+
+Instructor must NOT access:
+
+* Students from another college
+* Global student data
+* Payment/refund management
+* Admin-only assignment review
+* Certificate approval
+* Course creation/editing
+
+### 7. College vs Direct Students
+
+Keep both business models separate.
+
+#### College Student
+
+* Course access comes from CITIS Admin assignment.
+* Instructor can track them only within assigned college.
+* No Razorpay purchase required.
+
+#### Direct Student
+
+* Course access comes from successful Razorpay purchase.
+* No college association.
+* Student can track their own progress.
+
+Do not mix these enrollment models.
+
+### 8. Course Completion
+
+Implement a reliable server-side completion calculation using:
+
+* Required lessons
+* Required assessments
+* Required assignments
+* Assignment pass status
+* Assessment requirements
+
+Do not mark a course completed simply because the frontend sends `completed = true`.
+
+Course completion must be calculated/validated server-side.
+
+Do not automatically issue certificates in this step.
+
+Certificate approval remains Step 7.
+
+### 9. Activity Tracking
+
+Record relevant learning activity, such as:
+
+* Login
+* Course opened
+* Lesson opened
+* Lesson completed
+* Assessment started
+* Assessment submitted
+* Assignment submitted
+* Assignment reviewed
+* Course completed
+
+Use the existing activity/audit system.
+
+Do not store unnecessary sensitive information.
+
+### 10. Security
+
+Maintain all existing authorization and tenant isolation.
+
+Verify:
+
+* Student can only see own progress.
+* Student cannot modify another student's progress.
+* Student cannot submit/complete unauthorized lessons.
+* Student cannot access another student's assessments.
+* Student cannot access another student's assignments.
+* Instructor cannot cross college boundaries.
+* Instructor cannot perform Admin-only actions.
+* Client cannot manipulate progress percentage, assessment score, or completion status.
+
+### 11. Existing LMS Content
+
+This is critical:
+
+Use the **existing LMS catalogue and existing learning content**.
+
+Do NOT:
+
+* Create duplicate courses
+* Create sample courses
+* Create dummy lessons
+* Duplicate modules
+* Duplicate PDFs/DOCX
+* Replace existing resources
+* Delete existing learning content
+
+All tracking must connect to the existing course/module/lesson/resource records.
+
+### 12. Database
+
+Add only the required migration(s).
+
+Preserve all existing:
+
+* Users
+* Student profiles
+* Courses
+* Modules
+* Lessons
+* Resources
+* Assessments
+* Enrollments
+* Payments
+* Refunds
+* Certificates
+* Activity records
+
+Use existing migration conventions.
+
+### 13. APIs
+
+Add or extend APIs as required for:
+
+* Student progress
+* Lesson completion
+* Assessment attempts/results
+* Assignment submission
+* Admin assignment review
+* Instructor student tracking
+* Course completion
+* Activity tracking
+
+Follow existing API/auth/permission conventions.
+
+### 14. DO NOT IMPLEMENT
+
+Do NOT implement:
+
+* Certificate generation/approval
+* Full CSV reporting/export
+* Major LMS UI redesign
+* Tutedude-style redesign
+* New payment features
+* New authentication methods
+* Unrelated features
+
+These remain separate work.
+
+### 15. Verification
+
+Test at minimum:
+
+1. Student progress updates correctly.
+2. Lesson completion works only for authorized content.
+3. Progress percentage is server-controlled.
+4. Assessment attempts are recorded.
+5. Assessment scores are server-calculated.
+6. Unauthorized assessment access is blocked.
+7. Assignment submission works.
+8. Assignment history/status is tracked.
+9. Only CITIS_ADMIN can review/grade assignments.
+10. Instructor cannot review/approve assignments.
+11. Assignment pass threshold is enforced.
+12. Failed assignment prevents certificate eligibility.
+13. Instructor sees only assigned-college students.
+14. Cross-college access is blocked.
+15. Student sees only their own progress/activity.
+16. Course completion is calculated server-side.
+17. Direct Student purchased-course progress works.
+18. College Student assigned-course progress works.
+19. Existing course/module/lesson/resource records remain intact.
+20. Existing payment/enrollment behavior remains intact.
+21. Existing authentication/MFA remains intact.
+22. Database migrations succeed.
+23. API build succeeds.
+24. Full API test suite passes.
+25. Add focused tests for progress, assessments, assignments, instructor scoping and completion.
+
+### Final Report
+
+Report:
+
+* Files changed
+* Migrations added
+* APIs added/changed
+* Progress implementation
+* Assessment implementation
+* Assignment submission/review implementation
+* Instructor access/scoping
+* Course completion logic
+* Activity tracking
+* Security checks
+* Tests and results
+* Build status
+* Any remaining limitations
+
+Important:
+
+**Actually implement the code, database changes, APIs, authorization and tests. Do not only create documentation or a plan.**
+
+**Do not redesign the LMS UI in this step.**
