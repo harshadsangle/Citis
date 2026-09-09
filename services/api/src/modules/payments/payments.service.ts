@@ -299,7 +299,7 @@ export class PaymentsService {
           [paymentEntity.order_id, paymentEntity.error_code || null, paymentEntity.error_description || "Payment failed."],
         );
       } else if (eventType === "refund.processed" && refundEntity?.id) {
-        await this.markRefundProcessed(String(refundEntity.id), Number(refundEntity.amount));
+        await this.markRefundProcessed(String(refundEntity.id), Number(refundEntity.amount), undefined, refundEntity.payment_id ? String(refundEntity.payment_id) : undefined);
       } else if (eventType === "refund.failed" && refundEntity?.id) {
         await this.db.query(
           "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE razorpay_refund_id = $1",
@@ -400,13 +400,13 @@ export class PaymentsService {
     }
   }
 
-  private async markRefundProcessed(providerRefundId: string, amount: number, refundId?: string) {
+  private async markRefundProcessed(providerRefundId: string, amount: number, refundId?: string, providerPaymentId?: string) {
     const refundResult = await this.db.query<Record<string, unknown>>(
       `SELECT r.*, p.student_id, p.course_id, p.amount_minor AS payment_amount
        FROM lms_refunds r JOIN lms_payments p ON p.id = r.payment_id
-       WHERE ${refundId ? "r.id = $1" : "r.razorpay_refund_id = $1"}
+       WHERE ${refundId ? "r.id = $1" : "(r.razorpay_refund_id = $1 OR (r.status = 'PENDING' AND p.razorpay_payment_id = $2))"}
        LIMIT 1`,
-      [refundId || providerRefundId],
+      refundId ? [refundId] : [providerRefundId, providerPaymentId || null],
     );
     const refund = refundResult.rows[0];
     if (!refund) return { received: true, ignored: true };

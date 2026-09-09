@@ -23,6 +23,7 @@ const resourceProgressPermissionMigration = readFileSync(resolve(process.cwd(), 
 const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/020_lms_foundation_roles_profiles.sql"), "utf8");
 const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/021_college_student_csv_onboarding.sql"), "utf8");
 const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
+const paymentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/023_razorpay_course_payments.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -220,4 +221,18 @@ test("Step 4 migration extends OTP challenges for direct student registration", 
   assert.match(directStudentMigration, /purpose IN \('LOGIN', 'VERIFY', 'REGISTER'\)/);
   assert.match(directStudentMigration, /channel IN \('EMAIL', 'SMS'\)/);
   assert.match(directStudentMigration, /022_direct_student_registration_otp/);
+});
+
+test("Step 5 migration keeps the LMS catalogue authoritative for direct purchases", () => {
+  assert.match(paymentMigration, /ALTER TABLE courses/);
+  assert.match(paymentMigration, /price_minor bigint NOT NULL/);
+  assert.match(paymentMigration, /purchasable boolean NOT NULL/);
+  assert.match(paymentMigration, /ALTER COLUMN institution_id DROP NOT NULL/);
+  assert.match(paymentMigration, /CREATE TABLE IF NOT EXISTS lms_payments/);
+  assert.match(paymentMigration, /CREATE TABLE IF NOT EXISTS lms_payment_events/);
+  assert.match(paymentMigration, /CREATE TABLE IF NOT EXISTS lms_refunds/);
+  assert.match(paymentMigration, /lms_enrollments_direct_active_unique_idx/);
+  assert.match(paymentMigration, /payments\.payment\.create/);
+  assert.match(paymentMigration, /payments\.refund\.create/);
+  assert.match(paymentMigration, /023_razorpay_course_payments/);
 });
