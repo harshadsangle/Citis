@@ -25,6 +25,7 @@ const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packa
 const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
 const paymentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/023_razorpay_course_payments.sql"), "utf8");
 const progressIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/024_lms_progress_assessment_assignment_integrity.sql"), "utf8");
+const certificateLifecycleMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/025_lms_certificate_lifecycle.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -246,4 +247,16 @@ test("Step 6 migration persists access state, submission history, and central-ad
   assert.match(progressIntegrityMigration, /p\.code = 'lms\.assignment_submission\.update'/);
   assert.match(progressIntegrityMigration, /r\.code <> 'CITIS_ADMIN'/);
   assert.match(progressIntegrityMigration, /024_lms_progress_assessment_assignment_integrity/);
+});
+
+test("Step 7 migration supports certificate review lifecycle and admin reporting", () => {
+  assert.match(certificateLifecycleMigration, /ALTER TABLE lms_certificates/);
+  assert.match(certificateLifecycleMigration, /DROP NOT NULL/);
+  assert.match(certificateLifecycleMigration, /'ELIGIBLE_FOR_REVIEW'/);
+  assert.match(certificateLifecycleMigration, /'REVOKED'/);
+  assert.match(certificateLifecycleMigration, /lms\.certificate\.approve/);
+  assert.match(certificateLifecycleMigration, /lms\.certificate\.revoke/);
+  assert.match(certificateLifecycleMigration, /lms\.report\.export/);
+  assert.match(certificateLifecycleMigration, /r\.code = 'CITIS_ADMIN'/);
+  assert.match(certificateLifecycleMigration, /025_lms_certificate_lifecycle/);
 });
