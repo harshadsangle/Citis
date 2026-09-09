@@ -181,16 +181,16 @@ function CertificateReview({ apiBase }: { apiBase: string }) {
     let cancelled = false;
     setDetailLoading(true);
     Promise.all([
-      requestJson<ApiEnvelope<{ data: ReportRow[] }>>(apiBase, `/reports/progress?${queryString({ studentId: selected.enrollment_id ? selected.id ? "" : "" : "", courseId: selected.course_id, dateFrom: "", dateTo: "" })}`).catch(() => ({ data: [] })),
-      requestJson<ApiEnvelope<{ data: ReportRow[] }>>(apiBase, `/reports/assessments?${queryString({ studentId: selected.id ? "" : "", courseId: selected.course_id })}`).catch(() => ({ data: [] })),
-      requestJson<ApiEnvelope<{ data: ReportRow[] }>>(apiBase, `/reports/assignments?${queryString({ studentId: selected.id ? "" : "", courseId: selected.course_id })}`).catch(() => ({ data: [] })),
+      requestJson<ApiEnvelope<{ data: ReportRow[] }>>(apiBase, `/reports/progress?${queryString({ courseId: selected.course_id })}`).catch(() => ({ data: { data: [] } })),
+      requestJson<ApiEnvelope<{ data: ReportRow[] }>>(apiBase, `/reports/assessments?${queryString({ courseId: selected.course_id })}`).catch(() => ({ data: { data: [] } })),
+      requestJson<ApiEnvelope<{ data: ReportRow[] }>>(apiBase, `/reports/assignments?${queryString({ courseId: selected.course_id })}`).catch(() => ({ data: { data: [] } })),
       requestJson<ApiList<AuditRow>>(apiBase, `/audit-logs?resource=certificate&page=1&pageSize=100`).catch(() => ({ data: [] })),
     ]).then(([progress, assessments, assignments, history]) => {
       if (cancelled) return;
       setDetail({
-        progress: progress.data?.data || [],
-        assessments: assessments.data?.data || [],
-        assignments: assignments.data?.data || [],
+        progress: (progress.data?.data || []).filter((row) => row.student_name === selected.learner_name),
+        assessments: (assessments.data?.data || []).filter((row) => row.student_name === selected.learner_name),
+        assignments: (assignments.data?.data || []).filter((row) => row.student_name === selected.learner_name),
         history: (history.data || []).filter((entry) => entry.resource_id === selected.id),
       });
     }).finally(() => { if (!cancelled) setDetailLoading(false); });
