@@ -57,7 +57,7 @@ test("CSV import keeps valid rows, reports duplicates and invalid rows, and neve
     "North College,NC-002,Invalid Student,,,weak,Active",
   ].join("\n");
 
-  const result = await service.importCsv({ originalname: "students.csv", mimetype: "text/csv", size: Buffer.byteLength(csv), buffer: Buffer.from(csv) }, request);
+  const result = await service.importCsv({ originalname: "students.csv", mimetype: "text/csv", size: Buffer.byteLength(csv), buffer: Buffer.from(csv) }, request) as Record<string, any>;
   assert.equal(result.status, "PARTIAL");
   assert.equal(result.imported_count, 1);
   assert.equal(result.duplicate_count, 1);

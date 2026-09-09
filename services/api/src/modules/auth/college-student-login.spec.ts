@@ -35,6 +35,7 @@ test("college login accepts a College User ID without email or phone", async () 
   }]);
 
   const session = await service.collegeStudentLogin({ collegeUserId: "COL-001", password: "StrongPass1!" }, metadata);
+  if ("mfaRequired" in session) throw new Error("Test student should not require MFA.");
   assert.ok(session.token);
   assert.ok(session.expiresAt instanceof Date);
   assert.equal(queries.some((query) => query.includes("lower(sp.college_user_id)")), true);
