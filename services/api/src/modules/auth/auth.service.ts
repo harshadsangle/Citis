@@ -626,11 +626,15 @@ export class AuthService {
       email: string | null;
       first_name: string;
       last_name: string;
+      student_type: "COLLEGE_STUDENT" | "DIRECT_STUDENT" | null;
       roles: Array<{ code: string; name: string }> | null;
       permissions: string[] | null;
       scopes: AccessScope[] | null;
     }>(
-      `SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name,
+       `SELECT u.id, u.tenant_id, u.email, u.first_name, u.last_name,
+         (SELECT sp.student_type FROM lms_student_profiles sp
+          WHERE sp.tenant_id = u.tenant_id AND sp.user_id = u.id
+          LIMIT 1) AS student_type,
         COALESCE((
           SELECT json_agg(json_build_object('code', r.code, 'name', r.name))
           FROM user_roles ur JOIN roles r ON r.id = ur.role_id
@@ -695,8 +699,8 @@ export class AuthService {
       [tenant.rows[0].id, input.mobile.trim()],
     );
     await this.db.query(
-      `INSERT INTO auth_challenges (tenant_id, mobile, purpose, code_hash, expires_at)
-       VALUES ($1, $2, 'LOGIN', $3, now() + interval '10 minutes')`,
+      `INSERT INTO auth_challenges (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at)
+        VALUES ($1, $2, $2, 'SMS', 'LOGIN', $3, now() + interval '10 minutes')`,
       [tenant.rows[0].id, input.mobile.trim(), hashToken(code)],
     );
     return { accepted: true, expiresInSeconds: 600 };
