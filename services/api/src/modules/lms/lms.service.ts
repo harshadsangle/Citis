@@ -1200,6 +1200,100 @@ export class LmsService {
     return this.listRelationships(courseId, user, page, pageSize, offset, query, "instructor_assignment");
   }
 
+  async getStudentProfile(studentId: string, user: AuthenticatedUser) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT sp.id, sp.tenant_id, sp.user_id, sp.student_type, sp.institution_id,
+              sp.college_user_id, sp.status, sp.created_at, sp.updated_at,
+              u.first_name, u.last_name, u.email, u.mobile
+       FROM lms_student_profiles sp
+       JOIN users u ON u.id = sp.user_id AND u.tenant_id = sp.tenant_id
+       WHERE sp.tenant_id = $1 AND sp.user_id = $2`,
+      [user.tenantId, studentId],
+    );
+    const profile = result.rows[0];
+    if (!profile) throw new NotFoundException("Student profile not found.");
+    if (isLmsAdministrator(user) || studentId === user.id) return profile;
+    if (!this.isInstructorOnly(user) || !profile.institution_id || !await this.hasInstructorCollegeAccess(user, String(profile.institution_id))) {
+      throw new NotFoundException("Student profile not found.");
+    }
+    return profile;
+  }
+
+  async listInstructorColleges(user: AuthenticatedUser) {
+    if (!isLmsAdministrator(user)) throw new ForbiddenException("Only CITIS administrators can manage college relationships.");
+    const result = await this.db.query(
+      `SELECT ic.id, ic.tenant_id, ic.institution_id, ic.instructor_id, ic.status,
+              ic.assigned_by, ic.assigned_at, ic.removed_at,
+              i.name AS institution_name,
+              u.first_name AS instructor_first_name, u.last_name AS instructor_last_name,
+              u.email AS instructor_email
+       FROM lms_instructor_colleges ic
+       JOIN institutions i ON i.id = ic.institution_id AND i.tenant_id = ic.tenant_id
+       JOIN users u ON u.id = ic.instructor_id AND u.tenant_id = ic.tenant_id
+       WHERE ic.tenant_id = $1
+       ORDER BY ic.assigned_at DESC, ic.id DESC`,
+      [user.tenantId],
+    );
+    return result.rows;
+  }
+
+  async assignInstructorCollege(input: AssignInstructorCollegeDto, request: ContextRequest) {
+    const actor = request.context.user!;
+    if (!isLmsAdministrator(actor)) throw new ForbiddenException("Only CITIS administrators can manage college relationships.");
+    const scope = await this.db.query(
+      `SELECT i.id AS institution_id, u.id AS instructor_id
+       FROM institutions i
+       JOIN users u ON u.id = $2 AND u.tenant_id = i.tenant_id AND u.status = 'ACTIVE'
+       JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+       JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+       WHERE i.id = $1 AND i.tenant_id = $3 AND i.status <> 'ARCHIVED'
+         AND r.code IN ('TEACHER', 'INSTRUCTOR') AND r.status = 'ACTIVE'
+       LIMIT 1`,
+      [input.institutionId, input.instructorId, actor.tenantId],
+    );
+    if (!scope.rows[0]) throw new NotFoundException("The instructor or college was not found in the current tenant.");
+    return this.runRelationship(async () => {
+      const result = await this.db.query<Record<string, unknown>>(
+        `INSERT INTO lms_instructor_colleges
+          (tenant_id, institution_id, instructor_id, assigned_by)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT DO NOTHING
+         RETURNING id, tenant_id, institution_id, instructor_id, status, assigned_by, assigned_at, removed_at, created_at, updated_at`,
+        [actor.tenantId, input.institutionId, input.instructorId, actor.id],
+      );
+      const row = result.rows[0] ?? (await this.db.query<Record<string, unknown>>(
+        `SELECT id, tenant_id, institution_id, instructor_id, status, assigned_by, assigned_at, removed_at, created_at, updated_at
+         FROM lms_instructor_colleges
+         WHERE tenant_id = $1 AND institution_id = $2 AND instructor_id = $3 AND status = 'ACTIVE'`,
+        [actor.tenantId, input.institutionId, input.instructorId],
+      )).rows[0];
+      await this.auditMutation(request, "instructor_college", "CREATE", row);
+      return row;
+    });
+  }
+
+  async removeInstructorCollege(id: string, request: ContextRequest) {
+    const actor = request.context.user!;
+    if (!isLmsAdministrator(actor)) throw new ForbiddenException("Only CITIS administrators can manage college relationships.");
+    const beforeResult = await this.db.query<Record<string, unknown>>(
+      `SELECT * FROM lms_instructor_colleges
+       WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'`,
+      [id, actor.tenantId],
+    );
+    const before = beforeResult.rows[0];
+    if (!before) throw new NotFoundException("Instructor college relationship not found.");
+    const result = await this.db.query<Record<string, unknown>>(
+      `UPDATE lms_instructor_colleges
+       SET status = 'REMOVED', removed_at = now(), updated_at = now()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'
+       RETURNING *`,
+      [id, actor.tenantId],
+    );
+    if (!result.rows[0]) throw new ConflictException("This instructor college relationship has already been removed.");
+    await this.auditMutation(request, "instructor_college", "REMOVE", result.rows[0], before);
+    return result.rows[0];
+  }
+
   private async runRelationship<T>(work: () => Promise<T>) {
     try {
       return await work();

@@ -10,6 +10,7 @@ import { AuthGuard } from "../auth/auth.guard";
 import {
   ContentListQueryDto,
   CandidateListQueryDto,
+  AssignInstructorCollegeDto,
   AssignInstructorDto,
   AssignmentListQueryDto,
   CreateAssessmentDto,
@@ -49,6 +50,30 @@ import type { LmsUpload } from "./resource-storage.service";
 @UseGuards(AuthGuard, PermissionGuard)
 export class LmsController {
   constructor(private readonly lms: LmsService, private readonly assessments: AssessmentService) {}
+
+  @Get("student-profiles/:id")
+  @RequirePermission("lms.student_profile.view")
+  async studentProfile(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.getStudentProfile(id, request.context.user!), request);
+  }
+
+  @Get("instructor-colleges")
+  @RequirePermission("lms.instructor_college.view")
+  async instructorColleges(@Req() request: ContextRequest) {
+    return successResponse(await this.lms.listInstructorColleges(request.context.user!), request);
+  }
+
+  @Post("instructor-colleges")
+  @RequirePermission("lms.instructor_college.create")
+  async assignInstructorCollege(@Body() input: AssignInstructorCollegeDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.assignInstructorCollege(input, request), request);
+  }
+
+  @Post("instructor-colleges/:id/remove")
+  @RequirePermission("lms.instructor_college.archive")
+  async removeInstructorCollege(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.removeInstructorCollege(id, request), request);
+  }
 
   @Get("programmes")
   @RequirePermission("lms.programme.view")

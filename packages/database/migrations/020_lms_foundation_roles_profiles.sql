@@ -178,6 +178,14 @@ WHERE r.tenant_id = '00000000-0000-0000-0000-000000000001'
   )
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.code = 'lms.student_profile.view'
+WHERE r.tenant_id = '00000000-0000-0000-0000-000000000001'
+  AND r.code IN ('STUDENT', 'INSTRUCTOR', 'TEACHER')
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
 DO $$
 BEGIN
   IF NOT EXISTS (
