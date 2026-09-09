@@ -1056,7 +1056,9 @@ export class LmsService {
        JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
        ${roleCode === "STUDENT" ? "JOIN lms_student_profiles sp ON sp.user_id = u.id AND sp.tenant_id = u.tenant_id AND sp.status = 'ACTIVE'" : ""}
        WHERE u.id = $1 AND u.tenant_id = $2 AND u.status = 'ACTIVE'
-           AND (${roleCode === "STUDENT" ? "ur.institution_id IS NOT DISTINCT FROM sp.institution_id" : "ur.institution_id = $3"})
+           AND (${roleCode === "STUDENT"
+             ? "(ur.institution_id = $3 OR (sp.student_type = 'DIRECT_STUDENT' AND ur.institution_id IS NULL)) AND ur.institution_id IS NOT DISTINCT FROM sp.institution_id"
+             : "ur.institution_id = $3"})
           AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
            AND r.code IN (${roleCode === "STUDENT" ? "'STUDENT'" : "'TEACHER', 'INSTRUCTOR'"}) AND r.status = 'ACTIVE'
            ${studentScope}

@@ -115,7 +115,7 @@ FROM student_users
 ON CONFLICT (tenant_id, user_id) DO NOTHING;
 
 INSERT INTO lms_instructor_colleges (tenant_id, institution_id, instructor_id, assigned_by)
-SELECT DISTINCT ur.tenant_id, ur.institution_id, ur.user_id, NULL
+SELECT DISTINCT ur.tenant_id, ur.institution_id, ur.user_id, NULL::uuid
 FROM user_roles ur
 JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
 WHERE ur.institution_id IS NOT NULL
