@@ -1,0 +1,427 @@
+Implement **CITIS LMS Step 8 — Complete Premium UI/UX Redesign + Full Mobile Responsiveness**.
+
+This is the FINAL major LMS milestone.
+
+Use the existing implemented Steps 1–7 as the functional source of truth.
+
+### 1. Critical Rule
+
+This is a **UI/UX redesign only**.
+
+DO NOT break or remove existing:
+
+* APIs
+* Routes
+* Authentication
+* Authorization
+* Sessions
+* Roles
+* Database
+* Courses
+* Modules
+* Lessons
+* PDFs/DOCX
+* Videos
+* SCORM
+* Assessments
+* Assignments
+* Progress tracking
+* Certificates
+* Payments
+* Refunds
+* Reports
+* CSV exports
+* Existing LMS functionality
+
+Do not create duplicate/sample/dummy courses or content.
+
+### 2. Design Direction
+
+Create a **premium, modern LMS experience inspired by the quality level and usability of platforms like Tutedude, but with completely original CITIS branding/design**.
+
+Use:
+
+* CITIS branding
+* Clean light theme
+* Modern cards
+* Strong visual hierarchy
+* Professional spacing
+* Modern typography
+* Subtle shadows
+* Rounded components
+* Smooth animations
+* Polished hover/focus states
+* Consistent icons
+* Attractive empty/loading/error states
+* Excellent accessibility
+
+Keep the CITIS visual identity rather than copying another website.
+
+### 3. Student LMS
+
+Redesign:
+
+* LMS landing/catalogue
+* Course cards
+* Course detail page
+* Course enrollment/purchase experience
+* Student dashboard
+* My Courses
+* Course progress
+* Lesson page
+* Video learning player
+* Module/lesson navigation
+* Assessments/quizzes
+* Assignments
+* Assignment submission/review status
+* Certificates
+* Profile
+* Activity/progress views
+* Payment/enrollment status where applicable
+
+Course cards should clearly show useful information such as:
+
+* Course title
+* Provider/category
+* Progress
+* Modules/lessons
+* Completion state
+* Enrollment/purchase state
+
+### 4. Learning Experience
+
+Make lesson learning feel premium.
+
+Include:
+
+* Clean video/content area
+* Persistent course/module navigation
+* Current lesson highlight
+* Previous/Next controls
+* Progress indicator
+* Completion state
+* Assessment/assignment entry points
+* Resume learning
+* Proper loading states
+* Error states
+
+Preserve existing video security/watermark/progress behavior.
+
+Do not weaken access controls.
+
+### 5. Admin Portal
+
+Redesign the existing Admin portal professionally.
+
+Improve:
+
+* Dashboard
+* Sidebar
+* Header
+* Profile menu
+* Student management
+* College/institution management
+* Instructor management
+* Course management
+* Course assignment
+* CSV student import
+* Progress tracking
+* Assessments
+* Assignments
+* Certificate review/approval
+* Payments
+* Refunds
+* Reports
+* CSV exports
+* Activity tracking
+
+Use modern:
+
+* KPI cards
+* Tables
+* Filters
+* Search
+* Status badges
+* Pagination
+* Detail drawers/pages
+* Confirmation dialogs
+* Toast notifications
+* Empty states
+
+Do not change backend permissions.
+
+### 6. Instructor Portal
+
+Redesign the existing Instructor portal.
+
+Show only information already authorized by backend rules.
+
+Improve:
+
+* Dashboard
+* Assigned college overview
+* Students
+* Student progress
+* Activity
+* Assessments
+* Assignments
+* Course/lesson visibility
+
+Clearly communicate that instructors cannot perform Admin-only actions such as certificate approval or assignment grading where restricted.
+
+Do not add unauthorized capabilities.
+
+### 7. Authentication Pages
+
+Polish:
+
+* Student login
+* Admin login
+* Instructor login
+* College User ID login
+* Direct Student registration
+* Email/phone OTP
+* Password/reset flows
+* MFA screens
+
+Respect the existing authentication policy:
+
+**Email OTP + SMS/mobile OTP only.**
+
+Do NOT add:
+
+* TOTP
+* Google Authenticator
+* Microsoft Authenticator
+* Authenticator apps
+* QR-code MFA
+* Backup/recovery codes
+
+### 8. Catalogue
+
+Improve the existing catalogue UX.
+
+Preserve:
+
+* Existing provider counts
+* Existing courses
+* Existing provider routes
+* Search
+* Filters
+* Sorting
+* Course categories
+* Global Certifications
+* Existing course content
+
+Make provider/course discovery visually polished.
+
+Do not change catalogue data.
+
+### 9. Responsive Design
+
+This is mandatory.
+
+The entire LMS must work properly on:
+
+* Desktop
+* Laptop
+* Tablet
+* Mobile
+
+Test common widths including approximately:
+
+* 1440px
+* 1280px
+* 1024px
+* 768px
+* 390px
+* 375px
+
+Mobile requirements:
+
+* No horizontal overflow
+* No clipped content
+* Touch-friendly controls
+* Responsive sidebar/navigation
+* Responsive tables
+* Responsive course cards
+* Responsive video player
+* Responsive dashboards
+* Responsive forms
+* Responsive dialogs
+* Responsive filters
+* Responsive assessment UI
+* Responsive assignment UI
+
+### 10. Navigation
+
+Keep existing routes and navigation behavior.
+
+Do not randomly create new tabs/routes.
+
+Use responsive navigation patterns where necessary, such as:
+
+* collapsible sidebar
+* mobile menu
+* bottom navigation only where genuinely useful
+
+Keep navigation simple and consistent.
+
+### 11. Typography
+
+Use the existing CITIS typography direction and **Manrope** where already established.
+
+Improve readability without making existing headings/metrics unnecessarily smaller.
+
+Keep:
+
+* strong headings
+* readable body text
+* clear labels
+* comfortable line height
+
+### 12. Animations
+
+Use subtle professional animations.
+
+Examples:
+
+* card hover
+* page transitions
+* sidebar transitions
+* modal transitions
+* progress animation
+* skeleton loading
+
+Avoid:
+
+* excessive animation
+* distracting effects
+* slow transitions
+* animations that hurt mobile performance
+
+### 13. Accessibility
+
+Verify:
+
+* keyboard navigation
+* visible focus states
+* semantic buttons/links
+* form labels
+* accessible dialogs
+* sufficient contrast
+* usable touch targets
+* meaningful loading/error states
+
+### 14. Preserve Existing Content
+
+Absolutely do not modify:
+
+* PDFs
+* DOCX
+* videos
+* SCORM packages
+* lesson content
+* assessment questions
+* assignment data
+* certificate records
+* payment records
+* existing course records
+
+Only change presentation/UI where required.
+
+### 15. Performance
+
+Keep the redesign performant.
+
+Avoid unnecessary:
+
+* dependencies
+* API calls
+* client-side re-renders
+* large assets
+* animation overhead
+
+Reuse existing components where appropriate, but refactor them when necessary for consistency.
+
+### 16. Verification
+
+After implementation verify:
+
+1. Public website still loads.
+2. `/lms` loads.
+3. Existing provider routes work.
+4. Student login works.
+5. College student login works.
+6. Direct student registration/OTP flow works.
+7. Admin login works.
+8. Instructor login works.
+9. Student dashboard works.
+10. Course catalogue works.
+11. Existing courses remain visible.
+12. Course detail works.
+13. Lesson/video learning works.
+14. Progress tracking still works.
+15. Assessments still work.
+16. Assignments still work.
+17. Certificate workflow still works.
+18. Certificate verification still works.
+19. Payment/enrollment pages still work.
+20. Admin reports still work.
+21. CSV exports still work.
+22. Role permissions remain unchanged.
+23. No cross-tenant data leakage.
+24. No horizontal overflow at mobile widths.
+25. Desktop layout is polished.
+26. Tablet layout is polished.
+27. Mobile layout is polished.
+28. No browser console errors on major routes.
+29. Existing API tests still pass.
+30. Production build succeeds.
+
+### 17. Final Quality Check
+
+Perform a visual consistency pass across the entire LMS.
+
+Ensure:
+
+* Same design language everywhere
+* Same button styles
+* Same card styles
+* Same spacing system
+* Same typography hierarchy
+* Same status colors
+* Same form controls
+* Same modal/dialog style
+* Same responsive behavior
+
+Fix inconsistent UI discovered during the pass.
+
+### 18. Important Scope Rule
+
+Do NOT redesign the public corporate website unnecessarily.
+
+Focus primarily on the LMS and its Admin/Instructor/Student portals.
+
+Do not change business logic.
+
+Do not change database schema unless absolutely required for a UI-only compatibility issue.
+
+Do not change API contracts.
+
+### Final Report
+
+Report:
+
+* Major UI areas redesigned
+* Responsive breakpoints tested
+* Components created/refactored
+* Accessibility improvements
+* Performance considerations
+* Routes verified
+* API tests
+* Build result
+* Browser/console verification
+* Any remaining UI limitations
+
+**Actually implement the redesign. Do not only create a design document or plan.**
