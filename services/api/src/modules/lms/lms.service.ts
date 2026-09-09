@@ -134,6 +134,23 @@ export class LmsService {
     });
   }
 
+  private async recordActivity(
+    user: AuthenticatedUser,
+    eventType: string,
+    institutionId: string | null,
+    subjectUserId: string,
+    resourceType: string,
+    resourceId: string | null,
+    metadata: Record<string, unknown> = {},
+  ) {
+    await this.db.query(
+      `INSERT INTO lms_activity_events
+        (tenant_id, institution_id, actor_user_id, subject_user_id, event_type, resource_type, resource_id, metadata)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb)`,
+      [user.tenantId, institutionId, user.id, subjectUserId, eventType, resourceType, resourceId, JSON.stringify(metadata)],
+    );
+  }
+
   async listProgrammes(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto) {
     const filter = this.statusFilter(query.status);
     const values = [user.tenantId, ...filter.values, pageSize, offset];
@@ -1494,16 +1511,22 @@ export class LmsService {
 
   private async assertProgressViewer(course: Record<string, unknown>, user: AuthenticatedUser, learnerId: string) {
     const selfEnrollment = await this.db.query(
-       `SELECT 1
+      `SELECT 1
        FROM lms_enrollments
-        WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
-          AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+         AND (
+           (institution_id = $4 AND campus_id IS NOT DISTINCT FROM $5)
+           OR (institution_id IS NULL AND campus_id IS NULL)
+         )
        LIMIT 1`,
-      [user.tenantId, course.institution_id, course.id, learnerId, course.campus_id ?? null],
+      [user.tenantId, course.id, learnerId, course.institution_id, course.campus_id ?? null],
     );
     if (!selfEnrollment.rows[0]) throw new NotFoundException("Active learner enrollment not found.");
     if (learnerId === user.id) return;
-     if (isPlatformUser(user)) return;
+    if (isPlatformUser(user)) return;
+    if (this.isDirectStudentLearner(user)) {
+      throw new ForbiddenException("You are not authorized to view this learner's progress.");
+    }
 
     const staffAccess = await this.db.query(
       `SELECT 1
@@ -1556,17 +1579,34 @@ export class LmsService {
                    WHERE lp.tenant_id = $2 AND lp.course_id = $1 AND lp.module_id = cm.id
                      AND lp.lesson_id = l.id AND lp.learner_id = $3 AND lp.status = 'COMPLETED'
                  )) AS lesson_completed,
+               (SELECT count(*)::int
+               FROM lms_assessments a
+                WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id
+                  AND a.status = 'PUBLISHED' AND a.assessment_type <> 'ASSIGNMENT') AS assessment_total,
               (SELECT count(*)::int
                FROM lms_assessments a
-               WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id AND a.status = 'PUBLISHED') AS assessment_total,
-              (SELECT count(*)::int
-               FROM lms_assessments a
-               WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id AND a.status = 'PUBLISHED'
+                WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id
+                  AND a.status = 'PUBLISHED' AND a.assessment_type <> 'ASSIGNMENT'
                  AND EXISTS (
                    SELECT 1 FROM lms_assessment_completions ac
                    WHERE ac.tenant_id = $2 AND ac.course_id = $1 AND ac.module_id = cm.id
                      AND ac.assessment_id = a.id AND ac.learner_id = $3 AND ac.status = 'COMPLETED'
+                      AND ac.passed IS TRUE
                   )) AS assessment_completed,
+               (SELECT count(*)::int
+                FROM lms_assessments a
+                WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id
+                  AND a.status = 'PUBLISHED' AND a.assessment_type = 'ASSIGNMENT') AS assignment_total,
+               (SELECT count(*)::int
+                FROM lms_assessments a
+                WHERE a.tenant_id = $2 AND a.course_id = $1 AND a.module_id = cm.id
+                  AND a.status = 'PUBLISHED' AND a.assessment_type = 'ASSIGNMENT'
+                  AND EXISTS (
+                    SELECT 1 FROM lms_assessment_completions ac
+                    WHERE ac.tenant_id = $2 AND ac.course_id = $1 AND ac.module_id = cm.id
+                      AND ac.assessment_id = a.id AND ac.learner_id = $3 AND ac.status = 'COMPLETED'
+                      AND ac.passed IS TRUE
+                   )) AS assignment_completed,
                (SELECT COALESCE(json_agg(
                  json_build_object(
                    'id', l.id,
@@ -1589,8 +1629,10 @@ export class LmsService {
       const lessonCompleted = Number(row.lesson_completed ?? 0);
       const assessmentTotal = Number(row.assessment_total ?? 0);
       const assessmentCompleted = Number(row.assessment_completed ?? 0);
-      const total = lessonTotal + assessmentTotal;
-      const completed = lessonCompleted + assessmentCompleted;
+      const assignmentTotal = Number(row.assignment_total ?? 0);
+      const assignmentCompleted = Number(row.assignment_completed ?? 0);
+      const total = lessonTotal + assessmentTotal + assignmentTotal;
+      const completed = lessonCompleted + assessmentCompleted + assignmentCompleted;
       const lessonItems = Array.isArray(row.lesson_items)
         ? row.lesson_items.map((item) => {
           const lesson = item as Record<string, unknown>;
@@ -1611,6 +1653,7 @@ export class LmsService {
         percentage: progressPercentage(completed, total),
         lessons: { completed: lessonCompleted, total: lessonTotal },
         assessments: { completed: assessmentCompleted, total: assessmentTotal },
+        assignments: { completed: assignmentCompleted, total: assignmentTotal },
         lessonItems,
       };
     });
@@ -1622,8 +1665,12 @@ export class LmsService {
       completed: summary.completed + module.assessments.completed,
       total: summary.total + module.assessments.total,
     }), { completed: 0, total: 0 });
-    const total = lessons.total + assessments.total;
-    const completed = lessons.completed + assessments.completed;
+    const assignments = modules.reduce((summary, module) => ({
+      completed: summary.completed + module.assignments.completed,
+      total: summary.total + module.assignments.total,
+    }), { completed: 0, total: 0 });
+    const total = lessons.total + assessments.total + assignments.total;
+    const completed = lessons.completed + assessments.completed + assignments.completed;
 
     return {
       course: {
@@ -1639,8 +1686,39 @@ export class LmsService {
       percentage: progressPercentage(completed, total),
       lessons,
       assessments,
+      assignments,
       modules,
     };
+  }
+
+  private async refreshEnrollmentProgress(
+    course: Record<string, unknown>,
+    learnerId: string,
+    progress: { percentage: number; state: ProgressState },
+    user: AuthenticatedUser,
+  ) {
+    const existing = await this.db.query<Record<string, unknown>>(
+      `SELECT id, progress_percent, completed_at
+       FROM lms_enrollments
+       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+       LIMIT 1`,
+      [user.tenantId, course.id, learnerId],
+    );
+    if (!existing.rows[0]) return;
+    const wasComplete = existing.rows[0].completed_at != null;
+    const isComplete = progress.state === "COMPLETED";
+    await this.db.query(
+      `UPDATE lms_enrollments
+       SET progress_percent = $4,
+           completed_at = CASE WHEN $5::boolean THEN COALESCE(completed_at, now()) ELSE NULL END,
+           last_accessed_at = now(),
+           updated_at = now()
+       WHERE id = $1 AND tenant_id = $2 AND learner_id = $3 AND status = 'ACTIVE'`,
+      [existing.rows[0].id, user.tenantId, learnerId, progress.percentage, isComplete],
+    );
+    if (!wasComplete && isComplete) {
+      await this.recordActivity(user, "COURSE_COMPLETED", course.institution_id as string | null, learnerId, "course", String(course.id));
+    }
   }
 
   async listLearnerProgress(user: AuthenticatedUser) {
@@ -1657,7 +1735,10 @@ export class LmsService {
   async getCourseProgress(courseId: string, user: AuthenticatedUser, learnerId = user.id) {
     const course = await this.progressCourse(courseId, user);
     await this.assertProgressViewer(course, user, learnerId);
-    return this.calculateCourseProgress(course, learnerId, user);
+    const progress = await this.calculateCourseProgress(course, learnerId, user);
+    await this.refreshEnrollmentProgress(course, learnerId, progress, user);
+    await this.recordActivity(user, "COURSE_OPENED", course.institution_id as string | null, learnerId, "course", String(course.id));
+    return progress;
   }
 
   async getResourceProgress(resourceId: string, request: ContextRequest) {
@@ -1670,6 +1751,7 @@ export class LmsService {
        WHERE tenant_id = $1 AND resource_id = $2 AND learner_id = $3`,
       [user.tenantId, resourceId, user.id],
     );
+    await this.recordActivity(user, "RESOURCE_OPENED", resource.institution_id as string | null, user.id, "resource", resourceId);
     return result.rows[0] || {
       resource_id: resourceId,
       learner_id: user.id,
@@ -1722,6 +1804,10 @@ export class LmsService {
         completed,
       ],
     );
+    await this.recordActivity(user, "RESOURCE_PROGRESS_UPDATED", resource.institution_id as string | null, user.id, "resource", resourceId, {
+      progressPercent: percentage,
+      completed,
+    });
     return result.rows[0];
   }
 
@@ -1741,7 +1827,9 @@ export class LmsService {
     );
     const lesson = result.rows[0];
     if (!lesson) throw new NotFoundException("Lesson not found in the current tenant.");
-    assertScope(user, String(lesson.institution_id), lesson.campus_id as string | null | undefined);
+     if (!this.isDirectStudentLearner(user)) {
+       assertScope(user, String(lesson.institution_id), lesson.campus_id as string | null | undefined);
+     }
     if (lesson.course_status !== "PUBLISHED" || lesson.module_status !== "PUBLISHED" || lesson.lesson_status !== "PUBLISHED") {
       throw new BadRequestException("Only published lessons in published courses can be completed.");
     }
@@ -1783,7 +1871,13 @@ export class LmsService {
     );
     const row = completed.rows[0];
     if (before?.status !== "COMPLETED") await this.auditMutation(request, "lesson_progress", "COMPLETE", row, before);
-    await this.certificates?.issueIfEligible(user.tenantId, String(lesson.course_id), user.id, request);
+    await this.db.query(
+      `UPDATE lms_enrollments
+       SET last_accessed_at = now(), last_accessed_module_id = $4, last_accessed_lesson_id = $5, updated_at = now()
+       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'`,
+      [user.tenantId, lesson.course_id, user.id, lesson.module_id, lesson.id],
+    );
+    await this.recordActivity(user, "LESSON_COMPLETED", lesson.institution_id as string | null, user.id, "lesson", String(lesson.id));
     return row;
   }
 
@@ -1839,6 +1933,12 @@ export class LmsService {
   private async assertAssignmentStaffAccess(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
     if (!await this.hasAssignmentStaffAccess(user, institutionId, courseId, campusId)) {
       throw new ForbiddenException("You are not authorized to manage assignments for this course.");
+    }
+  }
+
+  private assertAssignmentReviewAccess(user: AuthenticatedUser) {
+    if (!user.roles.some((role) => role.code === "CITIS_ADMIN")) {
+      throw new ForbiddenException("Only CITIS administrators can review assignment submissions.");
     }
   }
 
@@ -2058,7 +2158,7 @@ export class LmsService {
 
   async listAssignmentSubmissions(id: string, user: AuthenticatedUser, page: number, pageSize: number, offset: number) {
     const assignment = await this.assignmentFor(id, user);
-    await this.assertAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id), assignment.campus_id as string | null);
+    this.assertAssignmentReviewAccess(user);
     const values = [user.tenantId, id, pageSize, offset];
     const [rows, total] = await Promise.all([
       this.db.query(
@@ -2090,6 +2190,20 @@ export class LmsService {
       [user.tenantId, id, user.id, assignment.campus_id ?? null],
     );
     return result.rows[0] ?? null;
+  }
+
+  async listAssignmentSubmissionHistory(id: string, submissionId: string, user: AuthenticatedUser) {
+    const assignment = await this.assignmentFor(id, user);
+    this.assertAssignmentReviewAccess(user);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT h.*, u.first_name AS actor_first_name, u.last_name AS actor_last_name
+       FROM lms_assignment_submission_history h
+       LEFT JOIN users u ON u.id = h.actor_user_id AND u.tenant_id = h.tenant_id
+       WHERE h.tenant_id = $1 AND h.assignment_id = $2 AND h.submission_id = $3
+       ORDER BY h.created_at ASC, h.id ASC`,
+      [user.tenantId, assignment.id, submissionId],
+    );
+    return result.rows;
   }
 
   async submitAssignment(id: string, input: SubmitAssignmentDto, request: ContextRequest) {
@@ -2140,7 +2254,28 @@ export class LmsService {
         ],
       );
       const row = result.rows[0];
+      await this.db.query(
+        `INSERT INTO lms_assignment_submission_history
+          (tenant_id, submission_id, assignment_id, learner_id, actor_user_id, event_type, status,
+           submission_text, attachment_url, is_late, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, 'SUBMITTED', $7, $8, $9, now())`,
+        [
+          user.tenantId,
+          row.id,
+          assignment.id,
+          user.id,
+          user.id,
+          before ? "RESUBMITTED" : "SUBMITTED",
+          row.submission_text,
+          row.attachment_url ?? null,
+          row.is_late,
+        ],
+      );
       await this.auditMutation(request, "assignment_submission", before ? "RESUBMIT" : "SUBMIT", row, before);
+      await this.recordActivity(user, "ASSIGNMENT_SUBMITTED", assignment.institution_id as string | null, user.id, "assignment", String(assignment.id), {
+        submissionId: row.id,
+        resubmission: Boolean(before),
+      });
       return row;
     });
   }
@@ -2148,7 +2283,7 @@ export class LmsService {
   async gradeAssignmentSubmission(id: string, submissionId: string, input: GradeAssignmentSubmissionDto, request: ContextRequest) {
     const user = request.context.user!;
     const assignment = await this.assignmentFor(id, user);
-    await this.assertAssignmentStaffAccess(user, String(assignment.institution_id), String(assignment.course_id), assignment.campus_id as string | null);
+    this.assertAssignmentReviewAccess(user);
     if (input.grade > Number(assignment.total_marks)) throw new BadRequestException("Grade cannot exceed the assignment's maximum marks.");
     const submissionResult = await this.db.query<Record<string, unknown>>(
       `SELECT * FROM lms_assignment_submissions
@@ -2169,6 +2304,24 @@ export class LmsService {
         [submissionId, user.id, user.tenantId, input.grade, input.feedback?.trim() || null, id],
       );
       const row = result.rows[0];
+      await this.db.query(
+        `INSERT INTO lms_assignment_submission_history
+          (tenant_id, submission_id, assignment_id, learner_id, actor_user_id, event_type, status,
+           submission_text, attachment_url, grade, feedback, is_late, created_at)
+         VALUES ($1, $2, $3, $4, $5, 'GRADED', 'GRADED', $6, $7, $8, $9, $10, now())`,
+        [
+          user.tenantId,
+          row.id,
+          assignment.id,
+          before.learner_id,
+          user.id,
+          row.submission_text,
+          row.attachment_url ?? null,
+          row.grade,
+          row.feedback ?? null,
+          row.is_late,
+        ],
+      );
       await this.auditMutation(request, "assignment_submission", "GRADE", row, before);
       const completion = await this.db.query<Record<string, unknown>>(
         `INSERT INTO lms_assessment_completions
@@ -2191,7 +2344,11 @@ export class LmsService {
         ],
       );
       await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
-      await this.certificates?.issueIfEligible(user.tenantId, String(assignment.course_id), String(before.learner_id), request);
+      await this.recordActivity(user, "ASSIGNMENT_GRADED", assignment.institution_id as string | null, String(before.learner_id), "assignment", String(assignment.id), {
+        submissionId,
+        grade: input.grade,
+        passed: input.grade >= Number(assignment.total_marks) * 0.5,
+      });
       return row;
     });
   }
