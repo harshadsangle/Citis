@@ -49,47 +49,50 @@ function certificateRow(overrides: Record<string, unknown> = {}) {
   };
 }
 
-test("eligible completion issues one idempotent certificate with a unique number", async () => {
-  let insertCalls = 0;
+test("eligible completion creates one review candidate without issuing a certificate", async () => {
   const audits: Array<Record<string, unknown>> = [];
-  const row = certificateRow();
-  const client = {
+  const row = certificateRow({ status: "ELIGIBLE_FOR_REVIEW", eligible_at: "2026-08-31T00:00:00.000Z" });
+  const db = {
     query: async (text: string) => {
-      if (text.startsWith("SELECT e.id")) return { rows: [certificateRow({ enrollment_id: "enrollment-1" })] };
-      if (text.startsWith("INSERT INTO lms_certificates")) {
-        insertCalls += 1;
-        return insertCalls === 1 ? { rows: [row] } : { rows: [] };
+      if (text.startsWith("SELECT e.id AS enrollment_id")) return { rows: [{ enrollment_id: "enrollment-1" }] };
+      if (text.includes("CASE WHEN NOT EXISTS")) {
+        return { rows: [{
+          enrollment_id: "enrollment-1",
+          tenant_id: "tenant-1",
+          institution_id: "institution-1",
+          campus_id: "campus-1",
+          course_id: "course-1",
+          learner_id: "learner-1",
+          completed_at: "2026-08-31T00:00:00.000Z",
+          eligible: true,
+        }] };
       }
+      if (text.startsWith("INSERT INTO lms_certificates")) return { rows: [{ id: "certificate-1" }] };
       if (text.includes("SELECT cert.id")) return { rows: [row] };
       return { rows: [] };
     },
-  };
-  const db = {
-    transaction: async (work: (executor: typeof client) => Promise<unknown>) => work(client),
   };
   const audit = { record: async (input: Record<string, unknown>) => audits.push(input) };
   const service = new CertificateService(db as never, audit as never);
 
   const first = await service.issueIfEligible("tenant-1", "course-1", "learner-1", request);
-  const second = await service.issueIfEligible("tenant-1", "course-1", "learner-1", request);
 
   assert.equal(first?.certificate_number, "CITIS-2026-ABC1234567");
-  assert.equal(second?.certificate_number, first?.certificate_number);
-  assert.equal(insertCalls, 2);
-  assert.equal(audits.filter((audit) => audit.action === "ISSUE").length, 1);
+  assert.equal(first?.status, "ELIGIBLE_FOR_REVIEW");
+  assert.equal(audits.filter((audit) => audit.action === "ELIGIBILITY_CALCULATED").length, 1);
+  assert.equal(audits.filter((audit) => audit.action === "ISSUE").length, 0);
   assert.equal(first && "tenant_id" in first, false);
 });
 
 test("incomplete eligibility does not attempt certificate insertion", async () => {
   let inserted = false;
-  const client = {
+  const db = {
     query: async (text: string) => {
-      if (text.startsWith("SELECT e.id")) return { rows: [] };
+      if (text.startsWith("SELECT e.id AS enrollment_id")) return { rows: [] };
       if (text.startsWith("INSERT INTO lms_certificates")) inserted = true;
       return { rows: [] };
     },
   };
-  const db = { transaction: async (work: (executor: typeof client) => Promise<unknown>) => work(client) };
   const service = new CertificateService(db as never, { record: async () => undefined } as never);
 
   assert.equal(await service.issueIfEligible("tenant-1", "course-1", "learner-1"), null);

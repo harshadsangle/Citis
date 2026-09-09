@@ -83,7 +83,9 @@ export class CertificateService {
       throw new NotFoundException("Certificate not found.");
     }
     if (row.learner_id !== user.id) {
-      assertScopeForRead(user, row.institution_id as string | null | undefined, row.campus_id as string | null | undefined);
+      if (typeof row.institution_id === "string") {
+        assertScopeForRead(user, row.institution_id, row.campus_id as string | null | undefined);
+      }
     }
     return row;
   }
