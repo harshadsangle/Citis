@@ -45,8 +45,7 @@ CREATE INDEX IF NOT EXISTS auth_challenges_registration_contact_idx
 
 INSERT INTO permissions (module, resource, action, code, description)
 VALUES
-  ('auth', 'direct_student_registration', 'CREATE', 'auth.direct_student_registration.create', 'Register a direct student account'),
-  ('auth', 'direct_student_registration', 'VERIFY', 'auth.direct_student_registration.verify', 'Verify a direct student registration')
+  ('auth', 'direct_student_registration', 'CREATE', 'auth.direct_student_registration.create', 'Register a direct student account')
 ON CONFLICT (code) DO NOTHING;
 
 INSERT INTO schema_migrations (version)
