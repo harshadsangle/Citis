@@ -8,6 +8,9 @@ import {
   ForgotPasswordDto,
   ChangePasswordDto,
   LoginDto,
+  MfaChallengeDto,
+  MfaDisableDto,
+  MfaEnrollmentDto,
   OtpRequestDto,
   OtpVerifyDto,
   ProviderDto,
@@ -23,6 +26,10 @@ export class AuthController {
   @HttpCode(200)
   async login(@Body() input: LoginDto, @Req() request: ContextRequest, @Res({ passthrough: true }) response: Response) {
     const session = await this.auth.login(input, request.context);
+    if ("mfaRequired" in session) {
+      response.setHeader("Cache-Control", "no-store");
+      return successResponse(session, request);
+    }
     response.cookie("citis_session", session.token, {
       httpOnly: true,
       sameSite: "lax",
@@ -75,6 +82,90 @@ export class AuthController {
       await this.auth.changePassword(request.context.user.id, input, request.context, token),
       request,
     );
+  }
+
+  @Get("mfa/status")
+  @UseGuards(AuthGuard)
+  async mfaStatus(@Req() request: ContextRequest) {
+    return successResponse(await this.auth.mfaStatus(request.context.user!.id), request);
+  }
+
+  @Post("mfa/enroll")
+  @UseGuards(AuthGuard)
+  @HttpCode(202)
+  async beginMfaEnrollment(@Body() input: MfaEnrollmentDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.beginMfaEnrollment(request.context.user!.id, input, request.context),
+      request,
+    );
+  }
+
+  @Post("mfa/enroll/verify")
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  async verifyMfaEnrollment(@Body() input: MfaChallengeDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.verifyMfaEnrollment(request.context.user!.id, input, request.context),
+      request,
+    );
+  }
+
+  @Post("mfa/reset")
+  @UseGuards(AuthGuard)
+  @HttpCode(202)
+  async beginMfaReset(@Body() input: MfaEnrollmentDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.beginMfaReset(request.context.user!.id, input, request.context),
+      request,
+    );
+  }
+
+  @Post("mfa/reset/verify")
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  async verifyMfaReset(@Body() input: MfaChallengeDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.verifyMfaReset(request.context.user!.id, input, request.context),
+      request,
+    );
+  }
+
+  @Post("mfa/disable")
+  @UseGuards(AuthGuard)
+  @HttpCode(202)
+  async beginMfaDisable(@Body() input: MfaDisableDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.beginMfaDisable(request.context.user!.id, input.currentPassword, request.context),
+      request,
+    );
+  }
+
+  @Post("mfa/disable/verify")
+  @UseGuards(AuthGuard)
+  @HttpCode(200)
+  async verifyMfaDisable(@Body() input: MfaChallengeDto, @Req() request: ContextRequest) {
+    return successResponse(
+      await this.auth.verifyMfaDisable(request.context.user!.id, input, request.context),
+      request,
+    );
+  }
+
+  @Post("mfa/login/verify")
+  @HttpCode(200)
+  async verifyMfaLogin(
+    @Body() input: MfaChallengeDto,
+    @Req() request: ContextRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const session = await this.auth.verifyMfaLogin(input, request.context);
+    response.cookie("citis_session", session.token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      expires: session.expiresAt,
+      path: "/",
+    });
+    return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
   }
 
   @Get("verify-email/:token")

@@ -97,6 +97,13 @@ export class MfaEnrollmentDto extends MfaChannelDto {
   currentPassword!: string;
 }
 
+export class MfaDisableDto {
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  currentPassword!: string;
+}
+
 export class MfaChallengeDto {
   @IsString()
   @Length(43, 43)
