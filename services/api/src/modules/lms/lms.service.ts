@@ -5,6 +5,7 @@ import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, mimeTypeForFilename, safeArchivePath, type LmsUpload } from "./resource-storage.service";
+import { CertificateService } from "./certificate.service";
 import type {
   ContentListQueryDto,
   CandidateListQueryDto,
@@ -56,6 +57,7 @@ export class LmsService {
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly storage: ResourceStorageService,
+    @Optional() private readonly _certificates?: CertificateService,
     @Optional() private readonly contentRateLimiter?: LmsContentRateLimiter,
   ) {}
 
@@ -630,6 +632,10 @@ export class LmsService {
   }
 
   private async resourceFor(id: string, user: AuthenticatedUser) {
+    await this.recordActivity(user, "RESOURCE_PROGRESS_UPDATED", resource.institution_id as string | null, user.id, "resource", resourceId, {
+      progressPercent: percentage,
+      completed,
+    });
     const result = await this.db.query<Record<string, unknown>>(
          `SELECT lr.*, p.institution_id, c.campus_id, c.id AS course_id, cm.id AS module_id,
                  lr.status AS resource_status, l.status AS lesson_status,
@@ -1802,10 +1808,6 @@ export class LmsService {
         completed,
       ],
     );
-    await this.recordActivity(user, "RESOURCE_PROGRESS_UPDATED", resource.institution_id as string | null, user.id, "resource", resourceId, {
-      progressPercent: percentage,
-      completed,
-    });
     return result.rows[0];
   }
 

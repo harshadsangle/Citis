@@ -520,7 +520,7 @@ test("assignment creation is scoped to an assigned course module and audited", a
   assert.equal(audits[0].action, "CREATE");
 });
 
-test("a learner submission is graded by scoped staff and completes assignment progress", async () => {
+test("a learner submission is graded by a CITIS administrator and completes assignment progress", async () => {
   const learner: AuthenticatedUser = {
     ...user,
     id: "student-1",
@@ -529,6 +529,11 @@ test("a learner submission is graded by scoped staff and completes assignment pr
   const learnerRequest = { context: { ...request.context, user: learner } } as unknown as ContextRequest;
   const assignment = { id: "assignment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", title: "Portfolio", assessment_type: "ASSIGNMENT", status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE", total_marks: "100", due_at: null };
   let submission: Record<string, unknown> | undefined;
+  const reviewer: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  };
+  const reviewerRequest = { context: { ...request.context, user: reviewer } } as unknown as ContextRequest;
   const { service, audits } = serviceWith(async (text) => {
     if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
     if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
@@ -548,7 +553,7 @@ test("a learner submission is graded by scoped staff and completes assignment pr
 
   const submitted = await service.submitAssignment("assignment-1", { submissionText: "My work" }, learnerRequest);
   assert.equal(submitted.status, "SUBMITTED");
-  const graded = await service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 86, feedback: "Strong work." }, request);
+  const graded = await service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 86, feedback: "Strong work." }, reviewerRequest);
 
   assert.equal(graded.status, "GRADED");
   assert.equal(audits.some((audit) => audit.resource === "assignment_submission" && audit.action === "SUBMIT"), true);
@@ -691,6 +696,11 @@ test("graded learner assignment submissions cannot be replaced", async () => {
 });
 
 test("assignment grades cannot exceed the configured maximum", async () => {
+  const reviewer: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  };
+  const reviewerRequest = { context: { ...request.context, user: reviewer } } as unknown as ContextRequest;
   const { service } = serviceWith(async (text) => {
     if (text.startsWith("SELECT a.*")) return { rows: [{ id: "assignment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assessment_type: "ASSIGNMENT", status: "PUBLISHED", course_status: "PUBLISHED", module_status: "PUBLISHED", total_marks: "50" }] };
     if (text.includes("FROM user_roles")) return { rows: [{ allowed: 1 }] };
@@ -698,7 +708,7 @@ test("assignment grades cannot exceed the configured maximum", async () => {
   });
 
   await assert.rejects(
-    service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 51 }, request),
+    service.gradeAssignmentSubmission("assignment-1", "submission-1", { grade: 51 }, reviewerRequest),
     BadRequestException,
   );
 });
