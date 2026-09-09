@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Req, Res, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res, UseGuards } from "@nestjs/common";
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
 import { paginationFrom } from "../../common/pagination";
@@ -7,7 +7,7 @@ import { RequirePermission } from "../../guards/permission.decorator";
 import { PermissionGuard } from "../../guards/permission.guard";
 import { AuthGuard } from "../auth/auth.guard";
 import { CertificateService } from "./certificate.service";
-import { CertificateListQueryDto } from "./lms.dto";
+import { CertificateListQueryDto, CertificateReportQueryDto, CertificateReviewDecisionDto } from "./lms.dto";
 
 @Controller("public/certificates")
 export class PublicCertificateController {
@@ -47,5 +47,41 @@ export class CertificateController {
     response.setHeader("Cache-Control", "private, no-store");
     response.setHeader("X-Content-Type-Options", "nosniff");
     return response.send(file.content);
+  }
+
+  @Get("certificates/eligibility/:enrollmentId")
+  @RequirePermission("lms.certificate.view")
+  async eligibility(@Param("enrollmentId") enrollmentId: string, @Req() request: ContextRequest) {
+    return successResponse(await this.certificates.eligibility(enrollmentId, request.context.user!), request);
+  }
+
+  @Get("certificate-review")
+  @RequirePermission("lms.certificate.review")
+  async review(@Query() query: CertificateReportQueryDto, @Req() request: ContextRequest) {
+    return successResponse(await this.certificates.listReview(query, request.context.user!), request);
+  }
+
+  @Post("certificates/:id/approve")
+  @RequirePermission("lms.certificate.approve")
+  async approve(@Param("id") id: string, @Body() input: CertificateReviewDecisionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.certificates.approve(id, input, request), request);
+  }
+
+  @Post("certificates/:id/reject")
+  @RequirePermission("lms.certificate.reject")
+  async reject(@Param("id") id: string, @Body() input: CertificateReviewDecisionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.certificates.reject(id, input, request), request);
+  }
+
+  @Post("certificates/:id/issue")
+  @RequirePermission("lms.certificate.issue")
+  async issue(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.certificates.issue(id, request), request);
+  }
+
+  @Post("certificates/:id/revoke")
+  @RequirePermission("lms.certificate.revoke")
+  async revoke(@Param("id") id: string, @Body() input: CertificateReviewDecisionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.certificates.revoke(id, input, request), request);
   }
 }
