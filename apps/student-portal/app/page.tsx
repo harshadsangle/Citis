@@ -667,11 +667,11 @@ function LearningResourceViewer({
     }).catch(() => undefined);
   }, []);
 
-  const recordVideoProgress = useCallback((resourceId: string, currentTime: number, duration: number) => {
+  const recordVideoProgress = useCallback((resourceId: string, currentTime: number, duration: number, forceSync = false) => {
     setVideoStates((current) => {
       const nextState = mergeWatchedRange(current[resourceId] || emptyVideoWatchState(duration), videoTracker.current.lastTime, currentTime, duration);
       persistVideoState(resourceId, nextState);
-      syncResourceProgress(resourceId, nextState);
+      syncResourceProgress(resourceId, nextState, forceSync);
       return { ...current, [resourceId]: nextState };
     });
   }, [persistVideoState, syncResourceProgress]);
@@ -706,7 +706,7 @@ function LearningResourceViewer({
     video.playbackRate = 1;
     setVideoStates((current) => {
       const existing = current[resourceId] || emptyVideoWatchState();
-       const nextState = {
+      const nextState = {
         ...existing,
         duration: Math.max(existing.duration, video.duration || 0),
         completed: existing.completed || (video.duration > 0 && watchedSeconds(existing) >= video.duration - 0.5),
@@ -727,7 +727,7 @@ function LearningResourceViewer({
   function handleVideoEnded(event: React.SyntheticEvent<HTMLVideoElement>) {
     const video = event.currentTarget;
     if (!videoTracker.current.seeking && videoTracker.current.lastTime >= video.duration - 1.5) {
-      recordVideoProgress(activeResource?.id || "", video.duration, video.duration);
+      recordVideoProgress(activeResource?.id || "", video.duration, video.duration, true);
     }
   }
 
