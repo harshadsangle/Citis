@@ -6,6 +6,7 @@ export class LoginDto {
 
   @IsString()
   @MinLength(8)
+  @MaxLength(128)
   password!: string;
 
   @IsOptional()
@@ -31,6 +32,7 @@ export class RegisterDto {
   @IsString()
   @MinLength(1)
   @MaxLength(80)
+  @Matches(/\S/, { message: "First name cannot be blank." })
   firstName!: string;
 
   @IsString()

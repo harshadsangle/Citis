@@ -85,8 +85,8 @@ export class AuthController {
 
   @Post("otp/request")
   @HttpCode(202)
-  async requestOtp(@Body() input: OtpRequestDto, @Req() request: Request) {
-    const result = await this.auth.requestOtp(input);
+  async requestOtp(@Body() input: OtpRequestDto, @Req() request: ContextRequest) {
+    const result = await this.auth.requestOtp(input, request.context);
     return successResponse(result, request);
   }
 

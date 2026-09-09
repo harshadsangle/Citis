@@ -10,6 +10,7 @@ import { requestContextMiddleware } from "./common/request-context";
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix("api/v1");
+  app.set("trust proxy", 1);
   app.use(requestContextMiddleware);
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -17,20 +18,32 @@ async function bootstrap() {
     transform: true,
   }));
   app.useGlobalFilters(new ApiExceptionFilter());
+  const allowedOrigins = (process.env.WEB_ORIGIN || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
+    throw new Error("WEB_ORIGIN must be configured in production.");
+  }
+  const allowedOriginSet = new Set(allowedOrigins);
   app.enableCors({
-    origin: process.env.WEB_ORIGIN?.split(",").map((origin) => origin.trim()).filter(Boolean) || true,
+    origin: allowedOrigins.length
+      ? (origin, callback) => callback(null, !origin || allowedOriginSet.has(origin))
+      : true,
     credentials: true,
   });
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle("CITIS Education Platform API")
-    .setDescription("Phase 0 multi-tenant foundation API for the CITIS Education Platform.")
-    .setVersion("1.0")
-    .addCookieAuth("citis_session")
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup("api/docs", app, document);
+  if (process.env.NODE_ENV !== "production") {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle("CITIS Education Platform API")
+      .setDescription("Phase 0 multi-tenant foundation API for the CITIS Education Platform.")
+      .setVersion("1.0")
+      .addCookieAuth("citis_session")
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup("api/docs", app, document);
+  }
 
   const port = Number(process.env.PORT || 4000);
   await app.listen(port, "0.0.0.0");

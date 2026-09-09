@@ -55,7 +55,7 @@ trap cleanup EXIT INT TERM
 
 # Invoke the API entrypoint directly so its process stays rooted at the
 # repository directory instead of inheriting the workspace package directory.
-start_service env PORT=4000 npm exec -- ts-node --transpile-only --project services/api/tsconfig.json services/api/src/main.ts
+start_service env PORT=4000 AUTH_EXPOSE_DEV_TOKENS=true npm exec -- ts-node --transpile-only --project services/api/tsconfig.json services/api/src/main.ts
 
 # Portals call /api/v1/auth/me from middleware during their first request. Wait
 # for the API listener before launching them so startup is deterministic on

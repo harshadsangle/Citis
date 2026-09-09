@@ -4,9 +4,18 @@ import { AuthService } from "./auth.service";
 
 function sessionToken(request: ContextRequest) {
   const authorization = request.header("authorization");
-  if (authorization?.toLowerCase().startsWith("bearer ")) return authorization.slice(7).trim();
+  if (authorization?.toLowerCase().startsWith("bearer ")) {
+    const token = authorization.slice(7).trim();
+    return token.length <= 256 ? token : "";
+  }
   const cookie = request.header("cookie")?.match(/(?:^|;\s*)citis_session=([^;]+)/);
-  return cookie ? decodeURIComponent(cookie[1]) : "";
+  if (!cookie) return "";
+  try {
+    const token = decodeURIComponent(cookie[1]);
+    return token.length <= 256 ? token : "";
+  } catch {
+    return "";
+  }
 }
 
 @Injectable()

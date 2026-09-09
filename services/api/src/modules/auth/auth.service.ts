@@ -4,6 +4,7 @@ import * as bcrypt from "bcryptjs";
 import { DatabaseService } from "../../database/database.service";
 import type { AuthenticatedUser } from "../../common/request-context";
 import type { AccessScope } from "../../common/access-scope";
+import { AuthRateLimiter } from "./auth.rate-limit";
 import type {
   ForgotPasswordDto,
   LoginDto,
@@ -17,6 +18,11 @@ const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 const SESSION_DAYS = 7;
 const RESET_TOKEN_MINUTES = 60;
 const VERIFICATION_TOKEN_HOURS = 24;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const RESET_WINDOW_MS = 60 * 60 * 1000;
+const REGISTRATION_WINDOW_MS = 60 * 60 * 1000;
+const OTP_WINDOW_MS = 10 * 60 * 1000;
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -48,9 +54,15 @@ function toPrincipal(row: {
 export class AuthService {
   constructor(
     private readonly db: DatabaseService,
+    private readonly rateLimiter: AuthRateLimiter,
   ) {}
 
   async login(input: LoginDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const email = input.email.trim().toLowerCase();
+    const ipKey = metadata.ipAddress || "unknown";
+    const accountKey = `${ipKey}:${email}`;
+    this.rateLimiter.assertAllowed("login-ip", ipKey, 30, LOGIN_WINDOW_MS);
+    this.rateLimiter.assertAllowed("login-account", accountKey, 10, LOGIN_WINDOW_MS);
     const result = await this.db.query<{
       id: string;
       tenant_id: string;
@@ -70,12 +82,16 @@ export class AuthService {
          AND t.status = 'ACTIVE'
        ORDER BY u.created_at
        LIMIT 2`,
-      [input.email.trim(), input.tenantSlug?.trim() || null],
+       [email, input.tenantSlug?.trim() || null],
     );
     const user = result.rows.length === 1 ? result.rows[0] : undefined;
     if (!user || user.status !== "ACTIVE" || !user.password_hash || !(await bcrypt.compare(input.password, user.password_hash))) {
+      this.rateLimiter.record("login-ip", ipKey, LOGIN_WINDOW_MS);
+      this.rateLimiter.record("login-account", accountKey, LOGIN_WINDOW_MS);
       throw new UnauthorizedException("Invalid email or password.");
     }
+    this.rateLimiter.clear("login-ip", ipKey);
+    this.rateLimiter.clear("login-account", accountKey);
 
     await this.db.query("UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2", [
       user.id,
@@ -85,6 +101,9 @@ export class AuthService {
   }
 
   async register(input: RegisterDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const ipKey = metadata.ipAddress || "unknown";
+    this.rateLimiter.assertAllowed("register-ip", ipKey, 10, REGISTRATION_WINDOW_MS);
+    this.rateLimiter.record("register-ip", ipKey, REGISTRATION_WINDOW_MS);
     const roleCode = {
       learner: "STUDENT",
       instructor: "TEACHER",
@@ -136,12 +155,18 @@ export class AuthService {
       status: "PENDING",
       role: input.role,
       requiresApproval: input.role !== "learner",
-      ...(process.env.NODE_ENV !== "production" ? { developmentVerificationToken: verificationToken } : {}),
+       ...(process.env.AUTH_EXPOSE_DEV_TOKENS === "true" ? { developmentVerificationToken: verificationToken } : {}),
     };
   }
 
   async requestPasswordReset(input: ForgotPasswordDto, metadata: { ipAddress?: string; userAgent?: string }) {
     const email = input.email.trim().toLowerCase();
+    const ipKey = metadata.ipAddress || "unknown";
+    const accountKey = `${ipKey}:${email}`;
+    this.rateLimiter.assertAllowed("reset-ip", ipKey, 10, RESET_WINDOW_MS);
+    this.rateLimiter.assertAllowed("reset-account", accountKey, 5, RESET_WINDOW_MS);
+    this.rateLimiter.record("reset-ip", ipKey, RESET_WINDOW_MS);
+    this.rateLimiter.record("reset-account", accountKey, RESET_WINDOW_MS);
     const result = await this.db.query<{ id: string }>(
       `SELECT u.id
        FROM users u
@@ -151,10 +176,12 @@ export class AuthService {
          AND t.status = 'ACTIVE'
          AND u.status <> 'ARCHIVED'
        ORDER BY u.created_at
-       LIMIT 1`,
+       LIMIT 2`,
       [email, input.tenantSlug?.trim() || null],
     );
-    if (!result.rows[0]) return { accepted: true };
+    // If the email exists in more than one tenant and no tenant was supplied,
+    // do not issue a reset for an arbitrary account.
+    if (result.rows.length !== 1) return { accepted: true };
 
     const rawToken = randomBytes(32).toString("base64url");
     await this.db.transaction(async (client) => {
@@ -177,6 +204,7 @@ export class AuthService {
   }
 
   async resetPassword(token: string, input: ResetPasswordDto) {
+    if (!TOKEN_PATTERN.test(token)) throw new BadRequestException("This password reset link is invalid or has expired.");
     const passwordHash = await bcrypt.hash(input.password, 12);
     return this.db.transaction(async (client) => {
       const result = await client.query<{ id: string; user_id: string }>(
@@ -207,6 +235,7 @@ export class AuthService {
   }
 
   async verifyEmail(token: string) {
+    if (!TOKEN_PATTERN.test(token)) throw new BadRequestException("This verification link is invalid or has expired.");
     return this.db.transaction(async (client) => {
       const result = await client.query<{ id: string; user_id: string; role_code: string }>(
         `SELECT v.id, v.user_id, r.code AS role_code
@@ -310,7 +339,13 @@ export class AuthService {
     ]);
   }
 
-  async requestOtp(input: OtpRequestDto) {
+  async requestOtp(input: OtpRequestDto, metadata: { ipAddress?: string }) {
+    const ipKey = metadata.ipAddress || "unknown";
+    const mobileKey = `${ipKey}:${input.mobile.trim()}`;
+    this.rateLimiter.assertAllowed("otp-request-ip", ipKey, 10, OTP_WINDOW_MS);
+    this.rateLimiter.assertAllowed("otp-request-mobile", mobileKey, 5, OTP_WINDOW_MS);
+    this.rateLimiter.record("otp-request-ip", ipKey, OTP_WINDOW_MS);
+    this.rateLimiter.record("otp-request-mobile", mobileKey, OTP_WINDOW_MS);
     const tenant = await this.db.query<{ id: string }>("SELECT id FROM tenants WHERE slug = $1 AND status = 'ACTIVE'", [
       input.tenantSlug.trim(),
     ]);
@@ -325,6 +360,10 @@ export class AuthService {
   }
 
   async verifyOtp(input: OtpVerifyDto, metadata: { ipAddress?: string; userAgent?: string }) {
+    const ipKey = metadata.ipAddress || "unknown";
+    const mobileKey = `${ipKey}:${input.mobile.trim()}`;
+    this.rateLimiter.assertAllowed("otp-verify-ip", ipKey, 20, OTP_WINDOW_MS);
+    this.rateLimiter.assertAllowed("otp-verify-mobile", mobileKey, 5, OTP_WINDOW_MS);
     const result = await this.db.query<{ id: string; user_id: string }>(
       `SELECT c.id, u.id AS user_id
        FROM auth_challenges c
@@ -334,7 +373,13 @@ export class AuthService {
        ORDER BY c.created_at DESC LIMIT 1`,
       [input.mobile.trim(), hashToken(input.code)],
     );
-    if (!result.rows[0]) throw new UnauthorizedException("Invalid or expired verification code.");
+    if (!result.rows[0]) {
+      this.rateLimiter.record("otp-verify-ip", ipKey, OTP_WINDOW_MS);
+      this.rateLimiter.record("otp-verify-mobile", mobileKey, OTP_WINDOW_MS);
+      throw new UnauthorizedException("Invalid or expired verification code.");
+    }
+    this.rateLimiter.clear("otp-verify-ip", ipKey);
+    this.rateLimiter.clear("otp-verify-mobile", mobileKey);
     await this.db.query("UPDATE auth_challenges SET consumed_at = now() WHERE id = $1", [result.rows[0].id]);
     return this.startSession(result.rows[0].user_id, metadata);
   }
