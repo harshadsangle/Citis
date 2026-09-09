@@ -91,6 +91,92 @@ test("assigned teachers can read nested course content while unassigned teachers
   await assert.rejects(blockedService.getChild("module-2", "course_modules", teacher), NotFoundException);
 });
 
+test("enrolled learners can list and read content only through their active course enrollment", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "learner-1",
+    email: "learner@example.com",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    permissions: ["lms.course_module.view", "lms.lesson.view", "lms.learning_resource.view"],
+  };
+  const queries: Array<{ text: string; values: unknown[] }> = [];
+  const { service } = serviceWith(async (text, values) => {
+    queries.push({ text, values });
+    if (text.startsWith("SELECT p.institution_id")) {
+      return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    }
+    if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [{ enrolled: 1 }] };
+    if (text.startsWith("SELECT * FROM lessons")) {
+      return { rows: [{ id: "lesson-1", tenant_id: learner.tenantId, module_id: "module-1", title: "Lesson one" }] };
+    }
+    if (text.startsWith("SELECT count")) return { rows: [{ count: "0" }] };
+    return { rows: [] };
+  });
+
+  const visible = await service.getChild("lesson-1", "lessons", learner);
+  assert.equal((visible as Record<string, unknown>).id, "lesson-1");
+  await service.listCourseModules(learner, 1, 20, 0, {}, "course-1");
+  await service.listLessons(learner, 1, 20, 0, {}, "module-1");
+  await service.listResources(learner, 1, 20, 0, {}, "lesson-1");
+
+  const listQueries = queries.filter(({ text }) => text.includes("lms_enrollments"));
+  assert.equal(listQueries.length, 6);
+  assert.ok(listQueries.every(({ values }) => values.includes(learner.id)));
+});
+
+test("unenrolled learners cannot read nested content, managed files, or SCORM resources", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "learner-2",
+    email: "unenrolled@example.com",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    permissions: ["lms.course_module.view", "lms.lesson.view", "lms.learning_resource.view"],
+  };
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT p.institution_id") || text.startsWith("SELECT lr.*")) {
+      return {
+        rows: [{
+          institution_id: "institution-1",
+          campus_id: null,
+          course_id: "course-2",
+          id: "resource-2",
+          tenant_id: learner.tenantId,
+          resource_type: "SCORM",
+        }],
+      };
+    }
+    if (text.startsWith("SELECT 1 FROM lms_enrollments")) return { rows: [] };
+    throw new Error(`Unexpected query after denied content access: ${text}`);
+  });
+  const learnerRequest = { context: { ...request.context, user: learner } } as unknown as ContextRequest;
+
+  await assert.rejects(service.getChild("module-2", "course_modules", learner), NotFoundException);
+  await assert.rejects(service.getChild("lesson-2", "lessons", learner), NotFoundException);
+  await assert.rejects(service.getChild("resource-2", "learning_resources", learner), NotFoundException);
+  await assert.rejects(service.getManagedFile("resource-2", learnerRequest), NotFoundException);
+  await assert.rejects(service.getScormLaunch("resource-2", learnerRequest), NotFoundException);
+  await assert.rejects(service.getScormAsset("resource-2", "index.html", learnerRequest), NotFoundException);
+});
+
+test("hierarchy list filters bind each child to its requested parent", async () => {
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    if (text.startsWith("SELECT count")) return { rows: [{ count: "0" }] };
+    return { rows: [] };
+  });
+
+  await service.listLessons(user, 1, 20, 0, {}, "module-1");
+  await service.listResources(user, 1, 20, 0, {}, "lesson-1");
+
+  const lessonListQuery = queries.find((text) => text.includes("FROM lessons x"));
+  const resourceListQuery = queries.find((text) => text.includes("FROM learning_resources x"));
+  assert.ok(lessonListQuery?.includes("x.module_id = $"));
+  assert.ok(lessonListQuery?.includes("JOIN course_modules cm ON cm.id = x.module_id"));
+  assert.ok(resourceListQuery?.includes("x.lesson_id = $"));
+  assert.ok(resourceListQuery?.includes("JOIN lessons l ON l.id = x.lesson_id"));
+});
+
 test("only assigned teachers can create nested course content", async () => {
   const teacher: AuthenticatedUser = {
     ...user,
