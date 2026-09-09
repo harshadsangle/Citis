@@ -6,6 +6,7 @@ import { PermissionGuard } from "./guards/permission.guard";
 import { AuditModule } from "./modules/audit/audit.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { CampusesModule } from "./modules/campuses/campuses.module";
+import { CollegeStudentsModule } from "./modules/college-students/college-students.module";
 import { InstitutionsModule } from "./modules/institutions/institutions.module";
 import { LmsModule } from "./modules/lms/lms.module";
 import { ModulesModule } from "./modules/modules/modules.module";
@@ -22,6 +23,7 @@ import { UsersModule } from "./modules/users/users.module";
     TenantsModule,
     InstitutionsModule,
     CampusesModule,
+    CollegeStudentsModule,
     UsersModule,
     RbacModule,
     ModulesModule,
