@@ -1,0 +1,222 @@
+Implement **CITIS LMS Step 3 — College/University Student CSV Onboarding & College User ID + Password Login**.
+
+Use **Step 1 architecture** and the already completed **Step 2 backend/database foundation** as the source of truth.
+
+### Goal
+
+Implement the complete production-ready College/University student onboarding flow where CITIS Admin imports students through CSV and those students log in using their **College User ID + Password**.
+
+Do NOT redesign the UI in this step.
+
+### 1. College Student CSV Import
+
+Only `CITIS_ADMIN` can import/manage college student CSV data.
+
+CSV should support these fields:
+
+* College/University
+* College User ID
+* Student Name
+* Email (optional)
+* Phone (optional)
+* Password supplied by college
+* Active/Inactive status
+
+Requirements:
+
+* Validate required fields.
+* College/University and College User ID must be valid.
+* Prevent duplicate College User IDs within the appropriate tenant/institution scope.
+* Re-importing the same student must not create duplicate accounts.
+* Handle duplicate rows safely.
+* Invalid rows must be rejected without corrupting valid rows.
+* Valid rows should still be imported when other rows are invalid.
+* Correctly associate every college student with the correct institution/tenant.
+* Store passwords only as secure hashes.
+* Never store or expose plaintext passwords.
+* Do not expose passwords in API responses, logs, error messages, or import reports.
+
+### 2. College Student Identity
+
+Imported college students must have:
+
+* `student_type = COLLEGE_STUDENT`
+* Correct college/university institution association
+* College-provided User ID
+* Correct student profile
+
+Do NOT convert or modify Direct Students.
+
+Direct Students must remain:
+
+* `student_type = DIRECT_STUDENT`
+* Institution-independent
+
+### 3. College Student Login
+
+Implement/extend authentication so College Students can log in using:
+
+**College User ID + Password**
+
+Requirements:
+
+* Email must NOT be required for college login.
+* Phone must NOT be required for college login.
+* Only successfully imported and active college students can log in.
+* Wrong password must be rejected.
+* Non-existent College User ID must be rejected.
+* Inactive/deactivated college student must be rejected.
+* Existing session/JWT/authentication behavior must remain secure and compatible.
+
+### 4. Security & Tenant Isolation
+
+Strict backend/API authorization is required.
+
+A college student must only be able to access:
+
+* Their own profile
+* Their own authorized courses
+* Their own progress
+* Their own assessments
+* Their own assignments
+* Their own activity/history
+
+They must NOT be able to access another student's:
+
+* Profile
+* Credentials
+* Progress
+* Activity
+* Assessments
+* Assignments
+* Private data
+
+College A must never be able to access College B data.
+
+Instructor access must remain restricted to their assigned college(s).
+
+Do not weaken or bypass the Step 2 authorization model.
+
+### 5. Admin Permissions
+
+Only:
+
+`CITIS_ADMIN`
+
+can:
+
+* Import college CSV
+* View import results
+* Manage imported college students
+* Activate/deactivate college students
+
+Instructor must NOT be able to import students.
+
+Do NOT create a College Admin role.
+
+### 6. APIs
+
+Implement production-ready APIs as appropriate for the existing architecture, including:
+
+* College student CSV upload/import
+* CSV validation/import result
+* Student lookup by College User ID
+* College student authentication
+* Admin college student management
+
+Import result should clearly report:
+
+* Total rows
+* Successfully imported
+* Successfully updated
+* Duplicate rows
+* Invalid rows
+* Failed rows
+* Reason for each rejected/failed row
+
+Do not expose passwords in any response.
+
+### 7. Database & Migration Safety
+
+Use the existing Step 2 database architecture and migration conventions.
+
+Requirements:
+
+* Add only required schema changes.
+* Make migrations safe and idempotent where appropriate.
+* Preserve existing users.
+* Preserve existing passwords.
+* Preserve existing sessions.
+* Preserve existing courses.
+* Preserve existing enrollments.
+* Preserve existing certificates.
+* Preserve existing learning materials.
+* Do not break legacy supported roles/accounts.
+
+Do not introduce unnecessary dependencies.
+
+### 8. DO NOT IMPLEMENT IN THIS STEP
+
+Do NOT implement:
+
+* Direct Student OTP registration
+* Email OTP registration
+* SMS/mobile OTP registration
+* Razorpay payment
+* Refund workflow
+* Certificate approval workflow
+* Full instructor assignment/review workflow
+* Major LMS UI redesign
+* Tutedude-style UI redesign
+* Unrelated features
+
+Those will be implemented in later steps.
+
+### 9. Verification
+
+After implementation, verify all of the following:
+
+1. Database migration succeeds.
+2. API TypeScript/build succeeds.
+3. Valid CSV imports successfully.
+4. Multiple valid students import successfully.
+5. Duplicate College User ID is handled safely.
+6. Duplicate CSV re-import does not create duplicate accounts.
+7. Invalid rows are rejected with clear reasons.
+8. Valid rows are still imported when other rows are invalid.
+9. Imported student receives `COLLEGE_STUDENT`.
+10. Correct institution/tenant is assigned.
+11. Password is securely hashed.
+12. Plaintext password is never returned or logged.
+13. Valid College User ID + Password login succeeds.
+14. Wrong password fails.
+15. Non-existent User ID fails.
+16. Inactive student login fails.
+17. Student can access only their own authorized data.
+18. Cross-student access is blocked.
+19. Cross-college access is blocked.
+20. Instructor cannot perform admin-only CSV import.
+21. Direct Student accounts remain unaffected.
+22. Existing authentication still works.
+23. Existing API test suite passes.
+24. Add focused tests for CSV import, duplicate handling, authentication, inactive users, and tenant isolation.
+
+### 10. Final Report
+
+When complete, report:
+
+* Files created/modified
+* Database migrations added
+* APIs added/changed
+* Authentication changes
+* CSV validation/import behavior
+* Security/tenant isolation changes
+* Tests executed and results
+* Build status
+* Any limitations or remaining work
+
+Important:
+
+**This step is backend/functional implementation only. Do not redesign existing LMS screens or change the visual design.**
+
+Do not stop at documentation or a plan. Actually implement the required code, database changes, APIs, authentication logic, and tests.
