@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { NotFoundException } from "@nestjs/common";
+import { ForbiddenException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { CertificateService } from "./certificate.service";
 import { renderCertificateSvg } from "./certificate-renderer";
@@ -23,6 +23,17 @@ const request = {
     userAgent: "test",
     user: learner,
   },
+} as unknown as ContextRequest;
+
+const admin: AuthenticatedUser = {
+  ...learner,
+  id: "admin-1",
+  roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  permissions: ["lms.certificate.approve", "lms.certificate.reject", "lms.certificate.revoke"],
+};
+
+const adminRequest = {
+  context: { ...request.context, user: admin },
 } as unknown as ContextRequest;
 
 function certificateRow(overrides: Record<string, unknown> = {}) {
@@ -128,6 +139,65 @@ test("certificate reads cannot cross learner scope", async () => {
   const service = new CertificateService(db as never, { record: async () => undefined } as never);
 
   await assert.rejects(service.get("certificate-1", learner), NotFoundException);
+});
+
+test("only CITIS Admin can approve an eligible certificate and issuance is audited", async () => {
+  const row = certificateRow({ status: "ELIGIBLE_FOR_REVIEW", learner_id: "learner-1" });
+  const actions: string[] = [];
+  const db = {
+    query: async (text: string) => {
+      if (text.includes("CASE WHEN NOT EXISTS")) {
+        return { rows: [{
+          enrollment_id: "enrollment-1",
+          tenant_id: "tenant-1",
+          institution_id: "institution-1",
+          campus_id: "campus-1",
+          course_id: "course-1",
+          learner_id: "learner-1",
+          completed_at: "2026-08-31T00:00:00.000Z",
+          eligible: true,
+        }] };
+      }
+      if (text.startsWith("UPDATE lms_certificates")) return { rows: [{ id: "certificate-1" }] };
+      return { rows: [row] };
+    },
+  };
+  const audit = { record: async (input: Record<string, unknown>) => actions.push(String(input.action)) };
+  const service = new CertificateService(db as never, audit as never);
+
+  const result = await service.approve("certificate-1", { notes: "Reviewed completion evidence." }, adminRequest);
+
+  assert.equal(result.status, "ISSUED");
+  assert.deepEqual(actions, ["APPROVE", "ISSUE"]);
+});
+
+test("students and instructors cannot approve certificates", async () => {
+  const db = { query: async () => ({ rows: [certificateRow({ status: "ELIGIBLE_FOR_REVIEW" })] }) };
+  const service = new CertificateService(db as never, { record: async () => undefined } as never);
+  const instructor = { ...learner, roles: [{ code: "INSTRUCTOR", name: "Instructor" }] };
+  const instructorRequest = { context: { ...request.context, user: instructor } } as unknown as ContextRequest;
+
+  await assert.rejects(service.approve("certificate-1", {}, request), ForbiddenException);
+  await assert.rejects(service.approve("certificate-1", {}, instructorRequest), ForbiddenException);
+});
+
+test("public verification reports revoked certificates as invalid without private fields", async () => {
+  const db = {
+    query: async () => ({ rows: [certificateRow({
+      status: "REVOKED",
+      revocation_reason: "Administrative review",
+      learner_email: "private@example.com",
+      tenant_id: "private-tenant",
+    })] }),
+  };
+  const service = new CertificateService(db as never, { record: async () => undefined } as never);
+
+  const result = await service.verify("CITIS-2026-ABC1234567");
+
+  assert.equal(result.valid, false);
+  assert.equal(result.status, "REVOKED");
+  assert.equal("tenant_id" in result, false);
+  assert.equal("learner_email" in result, false);
 });
 
 test("certificate renderer escapes dynamic values in the downloadable document", () => {
