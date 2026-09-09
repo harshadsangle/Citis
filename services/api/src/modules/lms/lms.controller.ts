@@ -259,6 +259,16 @@ export class LmsController {
     return successResponse(await this.lms.getMyAssignmentSubmission(id, request.context.user!), request);
   }
 
+  @Get("assignments/:id/submissions/:submissionId/history")
+  @RequirePermission("lms.assignment_submission.view")
+  async assignmentSubmissionHistory(
+    @Param("id") id: string,
+    @Param("submissionId") submissionId: string,
+    @Req() request: ContextRequest,
+  ) {
+    return successResponse(await this.lms.listAssignmentSubmissionHistory(id, submissionId, request.context.user!), request);
+  }
+
   @Post("assignments/:id/submissions")
   @RequirePermission("lms.assignment_submission.create")
   async submitAssignment(@Param("id") id: string, @Body() input: SubmitAssignmentDto, @Req() request: ContextRequest) {

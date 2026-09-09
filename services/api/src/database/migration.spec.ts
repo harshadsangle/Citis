@@ -24,6 +24,7 @@ const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../pack
 const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/021_college_student_csv_onboarding.sql"), "utf8");
 const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
 const paymentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/023_razorpay_course_payments.sql"), "utf8");
+const progressIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/024_lms_progress_assessment_assignment_integrity.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -235,4 +236,14 @@ test("Step 5 migration keeps the LMS catalogue authoritative for direct purchase
   assert.match(paymentMigration, /payments\.payment\.create/);
   assert.match(paymentMigration, /payments\.refund\.create/);
   assert.match(paymentMigration, /023_razorpay_course_payments/);
+});
+
+test("Step 6 migration persists access state, submission history, and central-admin assignment review", () => {
+  assert.match(progressIntegrityMigration, /last_accessed_at timestamptz/);
+  assert.match(progressIntegrityMigration, /last_accessed_module_id uuid/);
+  assert.match(progressIntegrityMigration, /CREATE TABLE IF NOT EXISTS lms_assignment_submission_history\b/);
+  assert.match(progressIntegrityMigration, /event_type text NOT NULL CHECK \(event_type IN \('SUBMITTED', 'RESUBMITTED', 'GRADED'\)\)/);
+  assert.match(progressIntegrityMigration, /p\.code = 'lms\.assignment_submission\.update'/);
+  assert.match(progressIntegrityMigration, /r\.code <> 'CITIS_ADMIN'/);
+  assert.match(progressIntegrityMigration, /024_lms_progress_assessment_assignment_integrity/);
 });

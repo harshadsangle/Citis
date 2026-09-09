@@ -5,7 +5,6 @@ import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import { ResourceStorageService, mimeTypeForFilename, safeArchivePath, type LmsUpload } from "./resource-storage.service";
-import { CertificateService } from "./certificate.service";
 import type {
   ContentListQueryDto,
   CandidateListQueryDto,
@@ -57,7 +56,6 @@ export class LmsService {
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
     private readonly storage: ResourceStorageService,
-    @Optional() private readonly certificates?: CertificateService,
     @Optional() private readonly contentRateLimiter?: LmsContentRateLimiter,
   ) {}
 

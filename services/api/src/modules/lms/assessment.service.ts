@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { assertScope, assertScopeForRead, filterScopedRows, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { AuditService } from "../../common/audit.service";
@@ -18,7 +18,6 @@ import type {
   UpdateAssessmentQuestionDto,
   UpdateAssessmentOptionDto,
 } from "./lms.dto";
-import { CertificateService } from "./certificate.service";
 
 type Queryable = { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> };
 type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
@@ -46,8 +45,14 @@ export class AssessmentService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
-    @Optional() private readonly certificates?: CertificateService,
   ) {}
+
+  private isDirectStudentLearner(user: AuthenticatedUser) {
+    return user.studentType === "DIRECT_STUDENT"
+      && user.roles.some((role) => role.code === "STUDENT")
+      && !isLmsAdministrator(user)
+      && !user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR");
+  }
 
   private async courseFor(courseId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
@@ -61,7 +66,9 @@ export class AssessmentService {
     );
     const course = result.rows[0];
     if (!course) throw new NotFoundException("Course not found in the current tenant.");
-    assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, String(course.institution_id), course.campus_id as string | null | undefined);
+    }
     if (course.status === "ARCHIVED" || course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution, programme, or course is not active.");
     }
@@ -138,7 +145,9 @@ export class AssessmentService {
     if (!assessment) throw new NotFoundException("Assessment not found in the current tenant.");
     const institutionId = String(assessment.course_institution_id ?? assessment.institution_id);
     const campusId = (assessment.course_campus_id ?? assessment.campus_id) as string | null | undefined;
-    assertScopeForRead(user, institutionId, campusId);
+    if (!this.isDirectStudentLearner(user)) {
+      assertScopeForRead(user, institutionId, campusId);
+    }
     return { ...assessment, institution_id: institutionId, campus_id: campusId ?? null };
   }
 
@@ -150,10 +159,13 @@ export class AssessmentService {
     }
     const enrollment = await this.db.query(
       `SELECT 1 FROM lms_enrollments
-       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
-         AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+         AND (
+           (institution_id = $4 AND campus_id IS NOT DISTINCT FROM $5)
+           OR (institution_id IS NULL AND campus_id IS NULL)
+         )
        LIMIT 1`,
-      [user.tenantId, assessment.institution_id, assessment.course_id, user.id, assessment.campus_id ?? null],
+      [user.tenantId, assessment.course_id, user.id, assessment.institution_id, assessment.campus_id ?? null],
     );
     if (!enrollment.rows[0]) throw new ForbiddenException("An active course enrollment is required.");
     return false;
@@ -162,10 +174,13 @@ export class AssessmentService {
   private async assertActiveEnrollmentForAttempt(attempt: Record<string, unknown>, user: AuthenticatedUser) {
     const enrollment = await this.db.query(
       `SELECT 1 FROM lms_enrollments
-       WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
-         AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+         AND (
+           (institution_id = $4 AND campus_id IS NOT DISTINCT FROM $5)
+           OR (institution_id IS NULL AND campus_id IS NULL)
+         )
        LIMIT 1`,
-      [user.tenantId, attempt.institution_id, attempt.course_id, user.id, attempt.campus_id ?? null],
+      [user.tenantId, attempt.course_id, user.id, attempt.institution_id, attempt.campus_id ?? null],
     );
     if (!enrollment.rows[0]) throw new ForbiddenException("An active course enrollment is required.");
   }
@@ -233,9 +248,12 @@ export class AssessmentService {
       if (!staff) {
         const enrollment = await this.db.query<{ course_id: string }>(
           `SELECT course_id FROM lms_enrollments
-           WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
-             AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'`,
-          [user.tenantId, course.institution_id, course.id, user.id, course.campus_id ?? null],
+           WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+             AND (
+               (institution_id = $4 AND campus_id IS NOT DISTINCT FROM $5)
+               OR (institution_id IS NULL AND campus_id IS NULL)
+             )`,
+          [user.tenantId, course.id, user.id, course.institution_id, course.campus_id ?? null],
         );
         if (!enrollment.rows.length) throw new ForbiddenException("An active course enrollment is required.");
       }
@@ -1023,10 +1041,13 @@ export class AssessmentService {
       if (locked.rows[0]?.status !== "IN_PROGRESS") throw new ConflictException("This assessment attempt has already been submitted.");
       const enrollment = await client.query(
         `SELECT 1 FROM lms_enrollments
-         WHERE tenant_id = $1 AND institution_id = $2 AND course_id = $3 AND learner_id = $4
-           AND campus_id IS NOT DISTINCT FROM $5 AND status = 'ACTIVE'
+         WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+           AND (
+             (institution_id = $4 AND campus_id IS NOT DISTINCT FROM $5)
+             OR (institution_id IS NULL AND campus_id IS NULL)
+           )
          LIMIT 1 FOR SHARE`,
-        [user.tenantId, attempt.institution_id, attempt.course_id, user.id, attempt.campus_id ?? null],
+        [user.tenantId, attempt.course_id, user.id, attempt.institution_id, attempt.campus_id ?? null],
       );
       if (!enrollment.rows[0]) throw new ForbiddenException("An active course enrollment is required.");
       if (locked.rows[0]?.expires_at && new Date(String(locked.rows[0].expires_at)).getTime() <= Date.now()) {
@@ -1074,7 +1095,6 @@ export class AssessmentService {
     if ("expired" in outcome && outcome.expired) {
       throw new ConflictException("This assessment attempt expired before it was submitted.");
     }
-    await this.certificates?.issueIfEligible(user.tenantId, String(attempt.course_id), user.id, request);
     return outcome;
   }
 
@@ -1154,7 +1174,6 @@ export class AssessmentService {
       await this.auditMutation(request, "assessment_completion", "COMPLETE", completion.rows[0]);
       return { ...updated.rows[0], results };
     }));
-    await this.certificates?.issueIfEligible(user.tenantId, String(attempt.course_id), String(attempt.learner_id), request);
     return outcome;
   }
 }
