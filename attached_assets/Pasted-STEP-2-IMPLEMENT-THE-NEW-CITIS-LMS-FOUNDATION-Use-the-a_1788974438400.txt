@@ -1,0 +1,141 @@
+STEP 2 — IMPLEMENT THE NEW CITIS LMS FOUNDATION
+
+Use the approved Step 1 architecture blueprint as the source of truth.
+
+This is an IMPLEMENTATION step.
+
+### Goal
+
+Build the backend foundation for the new CITIS LMS supporting:
+
+* CITIS Admin
+* Instructors
+* College/University Students
+* Direct Students
+* College/University tenant isolation
+
+### Implement
+
+1. DATABASE FOUNDATION
+   Create/update the required database models/tables for:
+
+* College/University
+* Student
+* Instructor
+* User/Role
+* Student Type
+* Course
+* Course Assignment/Enrollment
+* Instructor ↔ College relationship
+* Student ↔ College relationship
+* Basic activity/audit records
+
+Follow the architecture defined in Step 1. Do not create duplicate models if suitable existing models already exist.
+
+2. STUDENT TYPES
+
+Support exactly two student types:
+
+COLLEGE_STUDENT
+
+* Belongs to one college/university.
+* Uses college-provided User ID + Password.
+* Can access only individually assigned courses.
+
+DIRECT_STUDENT
+
+* Not tied to a college.
+* Will later use Email OR Phone registration.
+* Will later use Razorpay enrollment.
+
+3. ROLE MODEL
+
+Implement/enforce:
+
+CITIS_ADMIN
+
+* Global/full access.
+
+INSTRUCTOR
+
+* Restricted to their assigned college/university.
+
+STUDENT
+
+* Access only their own account and authorized courses.
+
+Do not create a separate College Admin role/dashboard.
+
+4. TENANT ISOLATION
+
+Implement backend/API-level authorization so:
+
+* College A students cannot access College B data.
+* Instructor A cannot access another college's students.
+* Students cannot access another student's private data.
+* CITIS Admin can access all tenants.
+
+Do not rely only on frontend hiding.
+
+5. COURSE ASSIGNMENT FOUNDATION
+
+Prepare the data model for individual student-wise course assignment.
+
+A course assignment must identify:
+
+* Student
+* Course
+* Assigned by Admin
+* Assigned date
+* Status
+* Progress/completion state
+
+Do not implement the complete learning/payment workflow yet.
+
+6. ACTIVITY FOUNDATION
+
+Prepare the database/API foundation for recording:
+
+* Login/activity events
+* Student activity
+* Course activity
+* Lesson activity
+* Progress events
+
+Detailed tracking can be implemented in later steps.
+
+7. SAFETY
+
+* Preserve existing important data.
+* Do not blindly delete old tables/models.
+* Do not break currently working authentication.
+* Reuse compatible infrastructure where safe.
+* Use migrations for schema changes.
+* Do not install unnecessary packages.
+* Do not change unrelated UI.
+* Keep changes focused only on the Step 2 foundation.
+
+8. VERIFICATION
+
+After implementation:
+
+* Run database migration safely.
+* Run existing tests.
+* Add focused tests for tenant isolation and role permissions.
+* Verify Admin has global access.
+* Verify Instructor is restricted to assigned college.
+* Verify College Student is restricted to own college and own assigned courses.
+* Verify Direct Student has no college association.
+* Verify existing authentication still works.
+
+At the end, provide:
+
+* Files changed
+* Database changes
+* APIs/modules added or changed
+* Permission rules implemented
+* Tests executed and results
+* Any risks/blockers
+* Confirmation that unrelated functionality was not changed
+
+Do NOT implement Razorpay, OTP registration, CSV import, certificate workflow, or the full learner UI in this step. Those will be separate steps.
