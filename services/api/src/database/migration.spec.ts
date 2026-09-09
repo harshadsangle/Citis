@@ -17,6 +17,7 @@ const instructorDashboardMigration = readFileSync(resolve(process.cwd(), "../../
 const certificateMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/013_lms_certificates.sql"), "utf8");
 const teacherContentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/015_lms_teacher_content_management.sql"), "utf8");
 const adminAccessMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/016_lms_admin_full_access.sql"), "utf8");
+const emailSmsMfaMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/017_auth_email_sms_mfa.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -28,6 +29,16 @@ test("migration defines tenant-scoped foreign keys and supported permission acti
     assert.match(migration, /tenant_id uuid NOT NULL REFERENCES tenants\(id\)/);
     assert.match(migration, /'APPROVE', 'REJECT', 'EXPORT', 'PUBLISH', 'ARCHIVE'/);
     assert.match(migration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("MFA migration supports email and SMS OTP only", () => {
+  assert.match(emailSmsMfaMigration, /mfa_enabled boolean NOT NULL DEFAULT false/);
+  assert.match(emailSmsMfaMigration, /mfa_channel text/);
+  assert.match(emailSmsMfaMigration, /channel IN \('EMAIL', 'SMS'\)/);
+  assert.match(emailSmsMfaMigration, /purpose IN \('LOGIN', 'ENROLL', 'DISABLE', 'RESET'\)/);
+  assert.match(emailSmsMfaMigration, /code_hash text NOT NULL/);
+  assert.match(emailSmsMfaMigration, /attempts integer NOT NULL DEFAULT 0/);
+  assert.doesNotMatch(emailSmsMfaMigration, /TOTP|AUTHENTICATOR|RECOVERY/i);
 });
 
 for (const table of ["programmes", "courses", "course_modules", "lessons", "learning_resources"]) {
