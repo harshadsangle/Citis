@@ -92,6 +92,7 @@ test("valid direct-student OTP creates an institutionless account and session", 
   const db = {
     query: async (text: string) => {
       statements.push(text);
+      if (text.includes("SELECT id FROM tenants")) return { rows: [{ id: "tenant-1" }] };
       if (text.includes("INSERT INTO auth_sessions")) return { rows: [] };
       return { rows: [] };
     },
@@ -134,6 +135,7 @@ test("invalid direct-student OTP is rejected and does not create a session", asy
   let sessionCreated = false;
   const db = {
     query: async (text: string) => {
+      if (text.includes("SELECT id FROM tenants")) return { rows: [{ id: "tenant-1" }] };
       if (text.includes("INSERT INTO auth_sessions")) sessionCreated = true;
       return { rows: [] };
     },
