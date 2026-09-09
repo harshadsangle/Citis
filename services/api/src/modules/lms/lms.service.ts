@@ -446,9 +446,9 @@ export class LmsService {
 
   async getChild(id: string, table: LmsTable, user: AuthenticatedUser) {
     const scope = await this.contentScope(id, table, user);
-    assertScopeForRead(user, scope.institution_id, scope.campus_id);
-    if (scope.course_id) await this.assertLearnerCourseAccess(user, String(scope.course_id), String(scope.institution_id), scope.campus_id);
-    if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id);
+    assertScopeForRead(user, String(scope.institution_id), scope.campus_id as string | null | undefined);
+    if (scope.course_id) await this.assertLearnerCourseAccess(user, String(scope.course_id), String(scope.institution_id), scope.campus_id as string | null | undefined);
+    if (scope.course_id) await this.assertAssignedTeacherRead(user, String(scope.institution_id), String(scope.course_id), scope.campus_id as string | null | undefined);
     if (
       this.isLearnerOnly(user)
       && (
@@ -803,8 +803,8 @@ export class LmsService {
     const scope = await this.contentScope(id, table, user);
     const result = await this.db.query(`SELECT id FROM ${table} WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'`, [id, user.tenantId]);
     if (!result.rows[0]) throw new NotFoundException("Parent LMS content not found in the current tenant.");
-    assertScope(user, scope.institution_id, scope.campus_id);
-    if (scope.course_id) await this.assertAssignedTeacherManage(user, String(scope.course_id), scope.campus_id);
+    assertScope(user, String(scope.institution_id), scope.campus_id as string | null | undefined);
+    if (scope.course_id) await this.assertAssignedTeacherManage(user, String(scope.course_id), scope.campus_id as string | null | undefined);
   }
 
   private async contentScope(id: string, table: LmsTable, user: AuthenticatedUser) {
@@ -1938,7 +1938,7 @@ export class LmsService {
       const completion = await this.db.query<Record<string, unknown>>(
         `INSERT INTO lms_assessment_completions
            (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_id, score, passed, completed_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, now())
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, now())
          ON CONFLICT (tenant_id, assessment_id, learner_id, attempt_id)
          DO UPDATE SET score = EXCLUDED.score, passed = EXCLUDED.passed, completed_at = now(), updated_at = now()
          RETURNING *`,
