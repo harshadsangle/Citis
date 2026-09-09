@@ -254,8 +254,8 @@ test("Step 7 migration supports certificate review lifecycle and admin reporting
   assert.match(certificateLifecycleMigration, /DROP NOT NULL/);
   assert.match(certificateLifecycleMigration, /'ELIGIBLE_FOR_REVIEW'/);
   assert.match(certificateLifecycleMigration, /'REVOKED'/);
-  assert.match(certificateLifecycleMigration, /lms\.certificate\.approve/);
-  assert.match(certificateLifecycleMigration, /lms\.certificate\.revoke/);
+  assert.match(certificateLifecycleMigration, /lms\.certificate_review\.update/);
+  assert.match(certificateLifecycleMigration, /lms\.certificate_revoke\.update/);
   assert.match(certificateLifecycleMigration, /lms\.report\.export/);
   assert.match(certificateLifecycleMigration, /r\.code = 'CITIS_ADMIN'/);
   assert.match(certificateLifecycleMigration, /025_lms_certificate_lifecycle/);
