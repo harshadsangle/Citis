@@ -6,6 +6,7 @@ import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import AdminInsights from "./AdminInsights";
+import CourseBuilder from "./CourseBuilder";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { lmsPortalUrl } from "./lms-portal-url";
 
@@ -195,6 +196,7 @@ export default function InstitutionAdminPage() {
   const [error, setError] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const [editing, setEditing] = useState<ContentRecord | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -366,6 +368,10 @@ export default function InstitutionAdminPage() {
   }
 
   function openCreate() {
+    if (activeKind === "courses") {
+      setBuilderOpen(true);
+      return;
+    }
     const nextSequence = records.reduce((highest, record) => Math.max(highest, Number(record.sequence) || 0), 0) + 1;
     setEditing(null);
     setSelectedFile(null);
@@ -732,6 +738,18 @@ export default function InstitutionAdminPage() {
             </form>
           </section>
         </div>
+      )}
+      {builderOpen && (
+        <CourseBuilder
+          apiBase={API_BASE}
+          programmeId={courseCreateProgrammeId}
+          onClose={() => setBuilderOpen(false)}
+          onCreated={(courseTitle) => {
+            setBuilderOpen(false);
+            setRefreshToken((current) => current + 1);
+            setToast(`${courseTitle} and its course structure were created.`);
+          }}
+        />
       )}
       {toast && <div className="toast" role="status"><span>✓</span>{toast}</div>}
     </main>
