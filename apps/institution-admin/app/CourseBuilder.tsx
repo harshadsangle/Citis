@@ -185,11 +185,12 @@ export default function CourseBuilder({
   function saveModule(event: FormEvent) {
     event.preventDefault();
     if (!moduleDraft?.title.trim()) return;
+    const savedModule = editingId ? { ...moduleDraft, id: editingId } : { ...moduleDraft, id: newId("module") };
     setModules((current) => editingId
-      ? current.map((item) => item.id === editingId ? { ...moduleDraft, id: editingId } : item)
-      : [...current, { ...moduleDraft, id: newId("module") }]);
+      ? current.map((item) => item.id === editingId ? savedModule : item)
+      : [...current, savedModule]);
     if (!editingId) {
-      setSelectedModuleId(moduleDraft.id);
+      setSelectedModuleId(savedModule.id);
       setSelectedLessonId("");
     }
     setModuleDraft(null);
