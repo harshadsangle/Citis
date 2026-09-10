@@ -87,9 +87,13 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 .panel-toolbar h2 { color: #18385e; font-size: 15px; letter-spacing: -.02em; }
 .panel-subtitle { display: block; max-width: 500px; overflow: hidden; margin-top: 5px; color: #9aa9b8; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .toolbar-controls { display: flex; align-items: center; gap: 10px; }
+.course-view-tabs { display: flex; align-items: center; gap: 6px; padding: 4px; border: 1px solid #dce6f0; border-radius: 8px; background: #f8fbfd; }
+.course-view-tabs button { padding: 7px 10px; border: 0; border-radius: 5px; color: #6d849b; background: transparent; font-size: 10px; font-weight: 800; }
+.course-view-tabs button:hover { color: #1c5e86; }
+.course-view-tabs button.active { color: #0b5e9f; background: #fff; box-shadow: 0 2px 7px #1a4c7714; }
 .filter-label { color: #8295aa; font-size: 10px; font-weight: 700; }
 .toolbar-controls select, .modal select { min-height: 34px; padding: 0 27px 0 10px; border: 1px solid #dce6f0; border-radius: 6px; color: #4b6683; background: #fff; font-size: 11px; }
-.list-head, .record-row { display: grid; grid-template-columns: minmax(230px, 1.8fr) minmax(160px, 1.2fr) 110px 100px 190px; align-items: center; gap: 14px; padding: 0 24px; }
+.list-head, .record-row { display: grid; grid-template-columns: minmax(230px, 1.8fr) minmax(160px, 1.2fr) 100px 190px; align-items: center; gap: 14px; padding: 0 24px; }
 .list-head { min-height: 40px; color: #a2afbd; background: #fbfcfe; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .record-row { min-height: 74px; border-top: 1px solid #edf1f6; }
 .record-row:hover { background: #fcfeff; }
@@ -189,9 +193,9 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 @media (max-width: 1060px) {
   .sidebar { width: 220px; flex-basis: 220px; }
   .workspace-content { padding-right: 3.5%; padding-left: 3.5%; }
-  .list-head, .record-row { grid-template-columns: minmax(210px, 1.7fr) minmax(120px, 1fr) 100px 155px; }
-  .list-head span:nth-child(4), .updated-detail { display: none; }
-  .row-actions { grid-column: 4; grid-row: 1; }
+  .list-head, .record-row { grid-template-columns: minmax(210px, 1.7fr) minmax(120px, 1fr) 155px; }
+  .list-head span:nth-child(3), .updated-detail { display: none; }
+  .row-actions { grid-column: 3; grid-row: 1; }
 }
 @media (max-width: 780px) {
   .admin-shell { display: block; }
@@ -216,12 +220,12 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
   .metric-card strong { font-size: 21px; }
   .panel-toolbar { align-items: flex-start; flex-direction: column; padding: 17px 15px; }
   .toolbar-controls { width: 100%; justify-content: space-between; }
-  .toolbar-controls select { flex: 1; }
+  .course-view-tabs { width: 100%; }
+  .course-view-tabs button { flex: 1; }
   .list-head { display: none; }
   .record-row { grid-template-columns: 1fr auto; gap: 9px 12px; min-height: 108px; padding: 15px; }
   .record-primary { grid-column: 1; grid-row: 1; }
   .record-detail { grid-column: 1 / -1; grid-row: 2; padding-left: 43px; }
-  .record-row > div:nth-child(3) { grid-column: 2; grid-row: 1; }
   .row-actions { grid-column: 1 / -1; grid-row: 3; justify-content: flex-start; padding-left: 43px; }
   .scope-note { line-height: 1.5; }
   .relationship-heading, .relationship-add { align-items: flex-start; flex-direction: column; padding: 18px 15px; }

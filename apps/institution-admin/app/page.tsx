@@ -187,7 +187,7 @@ export default function InstitutionAdminPage() {
   const [activeKind, setActiveKind] = useState<Kind>("courses");
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
   const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
-  const [status, setStatus] = useState<"ALL" | Status>("ALL");
+  const [courseView, setCourseView] = useState<"ALL" | "PUBLISHED">("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
   const [ids, setIds] = useState({ courseId: "", moduleId: "", lessonId: "" });
@@ -223,10 +223,6 @@ export default function InstitutionAdminPage() {
     if (activeKind !== "courses") return true;
     return providerForCourseCatalogue(record.programme_name) === provider;
   });
-  const publishedCount = visibleRecords.filter((record) => record.status === "PUBLISHED").length;
-  const draftCount = visibleRecords.filter((record) => record.status === "DRAFT").length;
-  const archivedCount = visibleRecords.filter((record) => record.status === "ARCHIVED").length;
-
   const canLoad = activeKind === "courses" || Boolean(activeParentId);
 
   useEffect(() => {
@@ -244,7 +240,7 @@ export default function InstitutionAdminPage() {
       }
       setLoading(true);
       setError("");
-      const query = status === "ALL" ? "" : `&status=${status}`;
+      const query = activeKind === "courses" && courseView === "PUBLISHED" ? "&status=PUBLISHED" : "";
       try {
         const payload = await request<ApiList<ContentRecord>>(
           `${endpointFor(activeKind)}?page=1&pageSize=100${parentQuery(activeKind, ids)}${query}`,
@@ -272,7 +268,7 @@ export default function InstitutionAdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeKind, canLoad, ids, provider, refreshToken, relationshipMode, insightMode, status]);
+  }, [activeKind, canLoad, courseView, ids, provider, refreshToken, relationshipMode, insightMode]);
 
   useEffect(() => {
     if (!toast) return;
@@ -290,7 +286,7 @@ export default function InstitutionAdminPage() {
     setInsightMode(null);
     setRelationshipMode(null);
     setActiveKind(kind);
-    setStatus("ALL");
+    setCourseView("ALL");
     if (kind === "courses") {
       setTrail([]);
       setIds({ courseId: "", moduleId: "", lessonId: "" });
@@ -474,19 +470,6 @@ export default function InstitutionAdminPage() {
     }
   }
 
-  async function changeStatus(record: ContentRecord, nextStatus: Status) {
-    if (nextStatus === "ARCHIVED" && !window.confirm(`Archive “${titleFor(record)}”? It will remain available in the archive but cannot be used as an active parent.`)) {
-      return;
-    }
-    try {
-      await request(`${endpointFor(activeKind)}/${record.id}/${nextStatus === "PUBLISHED" ? "publish" : "archive"}`, { method: "POST" });
-      setRefreshToken((current) => current + 1);
-      setToast(`${titleFor(record)} marked ${nextStatus.toLowerCase()}.`);
-    } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : "Unable to update the status.");
-    }
-  }
-
   async function moveRecord(index: number, direction: -1 | 1) {
     const targetIndex = index + direction;
     const current = records[index];
@@ -627,7 +610,7 @@ export default function InstitutionAdminPage() {
         </header>
 
         <div className="workspace-content">
-           {!insightMode && <><div className="page-heading">
+             {!insightMode && <><div className="page-heading">
             <div>
               <div className="eyebrow">{currentSection.kicker}</div>
               <h1>{currentSection.title}</h1>
@@ -650,12 +633,7 @@ export default function InstitutionAdminPage() {
              {relationshipMode && <><span className="crumb-separator">/</span><span className="crumb current">{relationshipCopy[relationshipMode].title}</span></>}
           </div>
 
-            {!relationshipMode && <div className="metric-grid">
-            <article className="metric-card"><span className="metric-label">Total in view</span><strong>{loading ? "—" : visibleRecords.length}</strong><span className="metric-foot">Current collection</span></article>
-            <article className="metric-card"><span className="metric-label">Published</span><strong className="green-text">{loading ? "—" : publishedCount}</strong><span className="metric-foot">Ready for learners</span></article>
-            <article className="metric-card"><span className="metric-label">Drafts</span><strong className="amber-text">{loading ? "—" : draftCount}</strong><span className="metric-foot">Still in progress</span></article>
-            <article className="metric-card muted-metric"><span className="metric-label">Archived</span><strong>{loading ? "—" : archivedCount}</strong><span className="metric-foot">Not in active flow</span></article>
-            </div>}</>}
+             </>}
 
              {insightMode ? (
                <AdminInsights apiBase={API_BASE} mode={insightMode} onModeChange={showInsights} />
@@ -671,15 +649,12 @@ export default function InstitutionAdminPage() {
                  <h2>{activeKind === "courses" ? "Your courses" : selectedParent ? `${labelFor(activeKind)} in ${selectedParent.label}` : labelFor(activeKind)}</h2>
                 <span className="panel-subtitle">{navSummary}</span>
               </div>
-              <div className="toolbar-controls">
-                <label className="filter-label" htmlFor="status-filter">Status</label>
-                <select id="status-filter" value={status} onChange={(event) => setStatus(event.target.value as "ALL" | Status)}>
-                  <option value="ALL">All statuses</option>
-                  <option value="DRAFT">Draft</option>
-                  <option value="PUBLISHED">Published</option>
-                  <option value="ARCHIVED">Archived</option>
-                </select>
-              </div>
+               {activeKind === "courses" && (
+                 <div className="course-view-tabs" aria-label="Course views">
+                   <button className={courseView === "ALL" ? "active" : ""} type="button" onClick={() => setCourseView("ALL")}>All Courses</button>
+                   <button className={courseView === "PUBLISHED" ? "active" : ""} type="button" onClick={() => setCourseView("PUBLISHED")}>Active / Published Courses</button>
+                 </div>
+               )}
             </div>
 
             {error && (
@@ -699,7 +674,7 @@ export default function InstitutionAdminPage() {
             )}
             {!error && !loading && visibleRecords.length > 0 && (
               <div className="record-list">
-                <div className="list-head"><span>{supportsOrdering ? "Order" : "Name"}</span><span>Details</span><span>Status</span><span>Updated</span><span aria-hidden="true" /></div>
+                 <div className="list-head"><span>{supportsOrdering ? "Order" : "Name"}</span><span>Details</span><span>Updated</span><span aria-hidden="true" /></div>
                 {visibleRecords.map((record, index) => (
                    <article className="record-row" key={record.id}>
                     <div className="record-primary">
@@ -709,9 +684,8 @@ export default function InstitutionAdminPage() {
                       <div><button className="record-title" type="button" onClick={() => selectRecord(record)}>{titleFor(record)}</button><span className="record-meta">{record.code || record.resource_type || (record.description ? record.description.slice(0, 44) : "No description")}</span></div>
                     </div>
                     <div className="record-detail">{record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
-                    <div><span className={`status-badge ${record.status.toLowerCase()}`}><span />{record.status.charAt(0) + record.status.slice(1).toLowerCase()}</span></div>
                     <div className="updated-detail">Recently edited</div>
-                     <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button></>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}{record.status !== "PUBLISHED" && <button type="button" onClick={() => changeStatus(record, "PUBLISHED")}>Publish</button>}{record.status !== "ARCHIVED" && <button className="danger-action" type="button" onClick={() => changeStatus(record, "ARCHIVED")}>Archive</button>}</div>
+                      <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button></>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
                   </article>
                 ))}
               </div>
