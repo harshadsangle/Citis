@@ -9,7 +9,7 @@ import AdminInsights from "./AdminInsights";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { lmsPortalUrl } from "./lms-portal-url";
 
-type Kind = "programmes" | "courses" | "course-modules" | "lessons" | "learning-resources";
+type Kind = "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
 type InsightMode = "certificates" | "reports";
 type Status = "DRAFT" | "PUBLISHED" | "ARCHIVED";
@@ -47,7 +47,7 @@ function normalizeLmsCourseProvider(value: string | null): LmsCourseProvider | n
   return value === "adobe" || value === "autodesk" || value === "cisco" || value === "comptia" || value === "ic3" || value === "intuit" || value === "microsoft" || value === "unity" ? value : null;
 }
 
-function providerForProgrammeName(value?: string | null): LmsCourseProvider | null {
+function providerForCourseCatalogue(value?: string | null): LmsCourseProvider | null {
   const name = value?.trim().toLowerCase() || "";
   if (name.includes("adobe")) return "adobe";
   if (name.includes("autodesk")) return "autodesk";
@@ -70,11 +70,6 @@ const sections: Array<{ kind: Kind; label: string; shortLabel: string; icon: str
 const sectionOrder = Object.fromEntries(sections.map((section, index) => [section.kind, index]));
 
 const sectionCopy: Record<Kind, { kicker: string; title: string; description: string }> = {
-  programmes: {
-    kicker: "Course catalogue",
-    title: "Courses",
-    description: "Manage the courses available in your institution’s learning catalogue.",
-  },
   courses: {
     kicker: "Course catalogue",
     title: "Courses",
@@ -145,8 +140,7 @@ function endpointFor(kind: Kind) {
   return `/${kind}`;
 }
 
-function parentQuery(kind: Kind, ids: { programmeId: string; courseId: string; moduleId: string; lessonId: string }) {
-  if (kind === "courses" && ids.programmeId) return `&programmeId=${encodeURIComponent(ids.programmeId)}`;
+function parentQuery(kind: Kind, ids: { courseId: string; moduleId: string; lessonId: string }) {
   if (kind === "course-modules" && ids.courseId) return `&courseId=${encodeURIComponent(ids.courseId)}`;
   if (kind === "lessons" && ids.moduleId) return `&moduleId=${encodeURIComponent(ids.moduleId)}`;
   if (kind === "learning-resources" && ids.lessonId) return `&lessonId=${encodeURIComponent(ids.lessonId)}`;
@@ -195,7 +189,7 @@ export default function InstitutionAdminPage() {
   const [status, setStatus] = useState<"ALL" | Status>("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
-  const [ids, setIds] = useState({ programmeId: "", courseId: "", moduleId: "", lessonId: "" });
+  const [ids, setIds] = useState({ courseId: "", moduleId: "", lessonId: "" });
   const [courseCreateProgrammeId, setCourseCreateProgrammeId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -214,7 +208,7 @@ export default function InstitutionAdminPage() {
   const currentSection = insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
   const activeParentId = activeKind === "courses"
-    ? ids.programmeId
+    ? ""
     : activeKind === "course-modules"
       ? ids.courseId
       : activeKind === "lessons"
@@ -224,15 +218,14 @@ export default function InstitutionAdminPage() {
           : "";
   const visibleRecords = records.filter((record) => {
     if (!provider) return true;
-    if (activeKind !== "programmes" && activeKind !== "courses") return true;
-    const programmeName = activeKind === "programmes" ? record.name : record.programme_name;
-    return providerForProgrammeName(programmeName) === provider;
+    if (activeKind !== "courses") return true;
+    return providerForCourseCatalogue(record.programme_name) === provider;
   });
   const publishedCount = visibleRecords.filter((record) => record.status === "PUBLISHED").length;
   const draftCount = visibleRecords.filter((record) => record.status === "DRAFT").length;
   const archivedCount = visibleRecords.filter((record) => record.status === "ARCHIVED").length;
 
-  const canLoad = activeKind === "programmes" || activeKind === "courses" || Boolean(activeParentId);
+  const canLoad = activeKind === "courses" || Boolean(activeParentId);
 
   useEffect(() => {
     let cancelled = false;
@@ -259,7 +252,7 @@ export default function InstitutionAdminPage() {
           if (activeKind === "courses") {
             const existingParent = payload.data.find((record) => (
               record.programme_id
-              && (!provider || providerForProgrammeName(record.programme_name) === provider)
+              && (!provider || providerForCourseCatalogue(record.programme_name) === provider)
             ))?.programme_id;
             if (existingParent) setCourseCreateProgrammeId((current) => current || existingParent);
           }
@@ -277,7 +270,7 @@ export default function InstitutionAdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeKind, canLoad, ids, refreshToken, relationshipMode, insightMode, status]);
+  }, [activeKind, canLoad, ids, provider, refreshToken, relationshipMode, insightMode, status]);
 
   useEffect(() => {
     if (!toast) return;
@@ -296,9 +289,9 @@ export default function InstitutionAdminPage() {
     setRelationshipMode(null);
     setActiveKind(kind);
     setStatus("ALL");
-    if (kind === "programmes" || kind === "courses") {
+    if (kind === "courses") {
       setTrail([]);
-      setIds({ programmeId: "", courseId: "", moduleId: "", lessonId: "" });
+      setIds({ courseId: "", moduleId: "", lessonId: "" });
     }
   }
 
