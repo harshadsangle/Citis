@@ -34,8 +34,8 @@ function redirectPath(response: Response) {
 
 test("portal middleware protects nested routes while leaving auth routes outside the matcher", () => {
   for (const config of [adminConfig, teacherConfig, studentConfig]) {
-    assert.match(config.matcher[0], ".*");
-    assert.match(config.matcher[0], "auth");
+    assert.ok(config.matcher[0].includes(".*"));
+    assert.ok(config.matcher[0].includes("auth"));
   }
 });
 
@@ -72,7 +72,9 @@ test("auth service errors, timeouts, and malformed responses fail closed", async
 
   globalThis.fetch = (async (_input, init) => {
     assert.ok(init?.signal, "auth/me must receive an abort signal");
-    return new Promise<Response>(() => undefined);
+    return new Promise<Response>((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new Error("auth/me timeout")));
+    });
   }) as typeof fetch;
   const timeoutResult = await Promise.race([
     studentMiddleware(request("/dashboard")),
