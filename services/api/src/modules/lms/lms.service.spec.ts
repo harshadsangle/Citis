@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
-import { LmsService } from "./lms.service";
+import { LmsService, courseCodeFromSeed } from "./lms.service";
 import { LmsContentRateLimiter } from "./lms.rate-limit";
 import { ResourceStorageService } from "./resource-storage.service";
 
@@ -50,7 +50,7 @@ function builderPayload(overrides: Record<string, unknown> = {}): {
     course: {
       programmeId: builderProgrammeId,
       title: "Atomic course",
-      code: "ATOMIC-101",
+      codeSeed: "22222222-2222-4222-8222-222222222222",
       ...overrides,
     },
     modules: [{
@@ -64,6 +64,61 @@ function builderPayload(overrides: Record<string, unknown> = {}): {
     }],
   };
 }
+
+test("course builder generates a stable server-owned code and ignores a supplied code", async () => {
+  const seed = "33333333-3333-4333-8333-333333333333";
+  const insertedValues: unknown[] = [];
+  const { db } = builderDb(async (text, values) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) {
+      assert.deepEqual(values, [user.tenantId, courseCodeFromSeed(seed)]);
+      return { rows: [] };
+    }
+    if (text.startsWith("INSERT INTO courses")) {
+      insertedValues.push(...values);
+      return { rows: [{ id: "course-1", code: values[5], tenant_id: user.tenantId }] };
+    }
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
+
+  await service.createCourseBuilder(builderPayload({
+    code: "MANUAL-101",
+    codeSeed: seed,
+  }), [], builderRequest);
+
+  assert.equal(insertedValues[5], courseCodeFromSeed(seed));
+  assert.notEqual(insertedValues[5], "MANUAL-101");
+});
+
+test("course builder retries a generated code when the candidate is already used", async () => {
+  const seed = "44444444-4444-4444-8444-444444444444";
+  let candidateChecks = 0;
+  let insertedCode: unknown;
+  const { db } = builderDb(async (text, values) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) {
+      candidateChecks += 1;
+      if (candidateChecks === 1) {
+        assert.deepEqual(values, [user.tenantId, courseCodeFromSeed(seed)]);
+        return { rows: [{ id: "existing-course" }] };
+      }
+      return { rows: [] };
+    }
+    if (text.startsWith("INSERT INTO courses")) {
+      insertedCode = values[5];
+      return { rows: [{ id: "course-2", code: insertedCode, tenant_id: user.tenantId }] };
+    }
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
+
+  await service.createCourseBuilder(builderPayload({ codeSeed: seed }), [], builderRequest);
+
+  assert.equal(candidateChecks, 2);
+  assert.match(String(insertedCode), /^CRS-[0-9A-F]{32}$/);
+  assert.notEqual(insertedCode, courseCodeFromSeed(seed));
+});
 
 function builderDb(
   clientQuery: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }>,
