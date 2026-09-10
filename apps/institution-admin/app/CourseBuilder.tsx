@@ -259,10 +259,12 @@ export default function CourseBuilder({
       });
     });
     if (moduleDraft) {
+      errors.moduleDraft = "Save or cancel the open module draft before continuing.";
       if (moduleDraft.title.trim().length < 2 || moduleDraft.title.trim().length > 180) errors["moduleDraft.title"] = "Finish the module title before continuing.";
       if (moduleDraft.description.trim().length > 2000) errors["moduleDraft.description"] = "Module description must be 2000 characters or fewer.";
     }
     if (lessonDraft) {
+      errors.lessonDraft = "Save or cancel the open lesson draft before continuing.";
       if (lessonDraft.title.trim().length < 2 || lessonDraft.title.trim().length > 180) errors["lessonDraft.title"] = "Finish the lesson title before continuing.";
       if (lessonDraft.description.trim().length > 2000) errors["lessonDraft.description"] = "Lesson description must be 2000 characters or fewer.";
       if (lessonDraft.estimatedDuration.trim() && !isNumberInRange(lessonDraft.estimatedDuration, 0, 100_000, true)) errors["lessonDraft.estimatedDuration"] = "Lesson duration must be a whole number from 0 to 100,000 minutes.";
@@ -314,21 +316,25 @@ export default function CourseBuilder({
       });
     });
     if (resourceDraft) {
+      errors.resourceDraft = "Save or cancel the open resource draft before continuing.";
       if (resourceDraft.title.trim().length < 2 || resourceDraft.title.trim().length > 180) errors["resourceDraft.title"] = "Finish the resource title before continuing.";
       if (resourceDraft.url.trim().length > 2048) errors["resourceDraft.url"] = "Resource URL must be 2048 characters or fewer.";
       else if (resourceDraft.url.trim() && !isValidUrl(resourceDraft.url.trim())) errors["resourceDraft.url"] = "Resource URL must be a valid HTTP or HTTPS URL.";
       if (resourceDraft.duration.trim() && !isNumberInRange(resourceDraft.duration, 0, 100_000, true)) errors["resourceDraft.duration"] = "Resource duration must be a whole number from 0 to 100,000 minutes.";
     }
     if (assignmentDraft) {
+      errors.assignmentDraft = "Save or cancel the open assignment draft before continuing.";
       if (assignmentDraft.title.trim().length < 2 || assignmentDraft.title.trim().length > 180) errors["assignmentDraft.title"] = "Finish the assignment title before continuing.";
       if (assignmentDraft.instructions.trim().length < 2 || assignmentDraft.instructions.trim().length > 12_000) errors["assignmentDraft.instructions"] = "Assignment instructions must be between 2 and 12,000 characters.";
       if (!isNumberInRange(assignmentDraft.maxMarks, 0.01, 100_000) || !hasAtMostTwoDecimals(assignmentDraft.maxMarks)) errors["assignmentDraft.maxMarks"] = "Maximum marks must be from 0.01 to 100,000 with at most two decimal places.";
     }
     if (assessmentDraft) {
+      errors.assessmentDraft = "Save or cancel the open assessment draft before continuing.";
       if (assessmentDraft.title.trim().length < 2 || assessmentDraft.title.trim().length > 180) errors["assessmentDraft.title"] = "Finish the assessment title before continuing.";
       if (assessmentDraft.description.trim().length > 4_000) errors["assessmentDraft.description"] = "Assessment description must be 4000 characters or fewer.";
     }
     if (questionDraft) {
+      errors.questionDraft = "Save or cancel the open question draft before continuing.";
       if (questionDraft.prompt.trim().length < 2 || questionDraft.prompt.trim().length > 2_000) errors["questionDraft.prompt"] = "Question prompt must be between 2 and 2,000 characters.";
       if (!isNumberInRange(questionDraft.marks, 0.01, 100_000) || !hasAtMostTwoDecimals(questionDraft.marks)) errors["questionDraft.marks"] = "Question marks must be from 0.01 to 100,000 with at most two decimal places.";
     }
@@ -514,12 +520,18 @@ export default function CourseBuilder({
   }
 
   async function createCourse() {
+    const preflightErrors = validateAll();
+    if (Object.keys(preflightErrors).length > 0) {
+      showValidationErrors(preflightErrors);
+      return;
+    }
     if (!programmeId) {
       setError("This workspace has no existing course catalogue relationship available.");
       return;
     }
     setSaving(true);
     setError("");
+    setValidationErrors({});
     try {
       setProgress("Creating course details…");
       const createdCourse = await request<ApiResponse>(apiBase, "/courses", {
@@ -634,7 +646,7 @@ export default function CourseBuilder({
       setCreated(true);
       completionTimer.current = window.setTimeout(() => onCreated(course.title.trim()), 5000);
     } catch (reason) {
-      setError(reason instanceof Error ? `${reason.message} The course record was created, but the remaining draft items were not completed.` : "The course was created, but one of its child records could not be saved.");
+      setError(reason instanceof Error ? reason.message : "The course could not be created. No course was added.");
       setProgress("");
     } finally {
       setSaving(false);
@@ -643,10 +655,26 @@ export default function CourseBuilder({
 
   function goToStep(next: number) {
     setError("");
-    if (next > 0 && (!course.title.trim() || !course.code.trim())) {
-      setError("Add a course title and course code before continuing.");
-      setStep(0);
-      return;
+    if (next > 0) {
+      const detailErrors = validateCourseDetails();
+      if (Object.keys(detailErrors).length > 0) {
+        showValidationErrors(detailErrors);
+        return;
+      }
+    }
+    if (next > 1) {
+      const structureErrors = { ...validateCourseDetails(), ...validateStructure() };
+      if (Object.keys(structureErrors).length > 0) {
+        showValidationErrors(structureErrors);
+        return;
+      }
+    }
+    if (next > 2) {
+      const activityErrors = { ...validateCourseDetails(), ...validateStructure(), ...validateActivities() };
+      if (Object.keys(activityErrors).length > 0) {
+        showValidationErrors(activityErrors);
+        return;
+      }
     }
     setStep(Math.max(0, Math.min(3, next)));
   }
