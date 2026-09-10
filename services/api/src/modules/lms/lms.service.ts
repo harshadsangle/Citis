@@ -2722,7 +2722,7 @@ export class LmsService {
     ) {
       throw new BadRequestException("Only published assignments in published courses can be submitted.");
     }
-    await this.activeEnrollment(String(assignment.course_id), user.id, user);
+    await this.activeAssignmentEnrollment(assignment, user);
     const existingResult = await this.db.query<Record<string, unknown>>(
         `SELECT * FROM lms_assignment_submissions
         WHERE tenant_id = $1 AND assignment_id = $2 AND learner_id = $3
