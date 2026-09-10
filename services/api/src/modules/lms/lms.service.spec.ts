@@ -37,7 +37,15 @@ const builderProgrammeId = "11111111-1111-4111-8111-111111111111";
 const builderParent = { id: builderProgrammeId, institution_id: "institution-1", campus_id: null };
 const builderRequest = request;
 
-function builderPayload(overrides: Record<string, unknown> = {}) {
+function builderPayload(overrides: Record<string, unknown> = {}): {
+  course: Record<string, unknown>;
+  modules: Array<{
+    title: string;
+    lessons: Array<{ title: string; resources: Array<Record<string, unknown>> }>;
+    assignments: Array<Record<string, unknown>>;
+    assessments: Array<Record<string, unknown>>;
+  }>;
+} {
   return {
     course: {
       programmeId: builderProgrammeId,
