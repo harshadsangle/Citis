@@ -590,13 +590,13 @@ async function main() {
         ? await client.query(
           `SELECT id, tenant_id
            FROM institutions
-           WHERE id = $1 AND status <> 'ARCHIVED'`,
+           WHERE id = $1 AND status = 'ACTIVE'`,
           [process.env.INSTITUTION_ID],
         )
         : await client.query(
           `SELECT id, tenant_id
            FROM institutions
-           WHERE status <> 'ARCHIVED'
+           WHERE status = 'ACTIVE'
            ORDER BY created_at ASC, id ASC`,
         );
       if (!institutionResult.rows[0]) throw new Error("No active institution is available for the import.");
@@ -610,7 +610,7 @@ async function main() {
          FROM users u
          JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
-         WHERE u.tenant_id = $1 AND u.status <> 'ARCHIVED'
+         WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
            AND r.code IN ('CITIS_SUPER_ADMIN', 'INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
          ORDER BY u.created_at ASC, u.id ASC
          LIMIT 1`,
@@ -627,7 +627,7 @@ async function main() {
            JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
            JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
            WHERE u.tenant_id = $1 AND lower(u.email) = lower($2)
-             AND u.status <> 'ARCHIVED' AND r.code = 'STUDENT'
+             AND u.status = 'ACTIVE' AND r.code = 'STUDENT'
            LIMIT 1`,
           [institution.tenant_id, DEMO_LEARNER_EMAIL],
         );

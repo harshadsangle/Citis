@@ -422,11 +422,11 @@ async function main() {
 
       const institutionResult = process.env.INSTITUTION_ID
         ? await client.query(
-          `SELECT id, tenant_id FROM institutions WHERE id = $1 AND status <> 'ARCHIVED'`,
+          `SELECT id, tenant_id FROM institutions WHERE id = $1 AND status = 'ACTIVE'`,
           [process.env.INSTITUTION_ID],
         )
         : await client.query(
-          `SELECT id, tenant_id FROM institutions WHERE status <> 'ARCHIVED' ORDER BY created_at ASC, id ASC`,
+          `SELECT id, tenant_id FROM institutions WHERE status = 'ACTIVE' ORDER BY created_at ASC, id ASC`,
         );
       if (!institutionResult.rows[0]) throw new Error("No active institution is available for the import.");
       if (!process.env.INSTITUTION_ID && institutionResult.rows.length !== 1) {
@@ -439,7 +439,7 @@ async function main() {
          FROM users u
          JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
-         WHERE u.tenant_id = $1 AND u.status <> 'ARCHIVED'
+         WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
            AND r.code IN ('CITIS_SUPER_ADMIN', 'INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
          ORDER BY u.created_at ASC, u.id ASC
          LIMIT 1`,

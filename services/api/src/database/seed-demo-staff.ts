@@ -6,6 +6,10 @@ loadLocalEnvironment();
 
 const { Pool } = pg;
 
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Demo seed commands are disabled in production.");
+}
+
 const DEMO_TENANT_SLUG = "citis-platform";
 const DEMO_INSTITUTION_SLUG = "citis-lms-demo";
 const DEMO_INSTITUTION_NAME = "CITIS LMS Demo Institution";
