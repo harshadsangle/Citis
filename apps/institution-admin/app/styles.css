@@ -1055,6 +1055,12 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .builder-counts span { display: grid; gap: 1px; min-width: 62px; color: #6b8594; font-size: 11px; text-align: center; text-transform: capitalize; }
 .builder-counts strong { color: #0e766f; font-size: 19px; }
 .builder-alert { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #efc9bd; border-radius: 9px; color: #9b4c39; background: #fff3ef; font-size: 13px; }
+.builder-success-body { display: grid; min-height: 380px; place-items: center; }
+.builder-success { display: grid; justify-items: center; gap: 10px; padding: 40px 20px; color: #547a79; text-align: center; }
+.builder-success-icon { display: grid; place-items: center; width: 62px; height: 62px; border-radius: 50%; color: #fff; background: #0f8e84; box-shadow: 0 10px 24px #0f8e8438; font-size: 32px; font-weight: 800; }
+.builder-success h3 { margin: 5px 0 0; color: #0a4968; font-size: 25px; }
+.builder-success p { margin: 0; color: #668398; font-size: 15px; }
+.builder-success span { margin-top: 10px; color: #0f8e84; font-size: 13px; font-weight: 700; }
 .builder-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 17px 34px; border-top: 1px solid #dce8ef; background: #fff; }
 .builder-progress { flex: 1; color: #7690a2; font-size: 13px; text-align: center; }
 

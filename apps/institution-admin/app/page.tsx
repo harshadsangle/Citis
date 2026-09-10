@@ -744,10 +744,10 @@ export default function InstitutionAdminPage() {
           apiBase={API_BASE}
           programmeId={courseCreateProgrammeId}
           onClose={() => setBuilderOpen(false)}
-          onCreated={(courseTitle) => {
+          onCreated={() => {
             setBuilderOpen(false);
+            showSection("courses");
             setRefreshToken((current) => current + 1);
-            setToast(`${courseTitle} and its course structure were created.`);
           }}
         />
       )}
