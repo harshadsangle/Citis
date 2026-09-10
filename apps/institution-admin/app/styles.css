@@ -1011,6 +1011,9 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .builder-form-grid input:focus, .builder-form-grid textarea:focus, .builder-inline-form input:focus, .builder-inline-form textarea:focus, .builder-inline-form select:focus, .builder-activity-card input:focus, .builder-activity-card textarea:focus, .builder-activity-card select:focus, .builder-picker-grid select:focus { border-color: #0f8e84; box-shadow: 0 0 0 3px #0f8e8418; }
 .builder-form-grid input[aria-invalid="true"], .builder-form-grid textarea[aria-invalid="true"], .builder-inline-form input[aria-invalid="true"], .builder-inline-form textarea[aria-invalid="true"], .builder-inline-form select[aria-invalid="true"] { border-color: #d47763; background: #fff8f5; }
 .builder-field-error { color: #ae5141; font-size: 11px; font-weight: 700; line-height: 1.35; }
+.builder-review-errors { display: grid; gap: 4px; margin-bottom: 16px; padding: 12px 14px; border: 1px solid #efc9bd; border-radius: 9px; color: #9b4c39; background: #fff3ef; font-size: 13px; }
+.builder-review-errors strong { color: #8f3f2f; }
+.builder-review-error { display: block; margin-top: 4px; color: #ae5141; font-size: 11px; font-weight: 700; line-height: 1.35; }
 .builder-character-count { color: #8497a5; font-size: 10px; font-weight: 600; text-align: right; }
 .builder-span-two { grid-column: span 2; }
 .builder-check { display: flex !important; align-items: center; align-self: end; gap: 9px !important; min-height: 41px; }
