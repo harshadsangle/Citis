@@ -28,3 +28,4 @@
 - [Permission guard scope](permission-guard-scope.md) — institution-scoped LMS administrator roles must not globally bypass unrelated permission checks.
 - [Refund concurrency safety](refund-concurrency.md) — reserve refundable balance under a payment-row lock before calling Razorpay.
 - [Video completion authority](video-completion-authority.md) — browser playback state never authorizes lesson, course, or certificate completion.
+- [Public frontend dependency install](public-frontend-dependency-install.md) — keep its separate lockfile aligned; optional Tailwind WASI fetches may fail through the package firewall.
