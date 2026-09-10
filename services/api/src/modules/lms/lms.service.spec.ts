@@ -702,7 +702,7 @@ test("lesson completion requires an active enrollment and audits only the first 
     if (text.startsWith("SELECT l.id")) {
       return { rows: [{ id: "lesson-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_status: "PUBLISHED", module_status: "PUBLISHED", course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
     }
-    if (text.startsWith("SELECT e.id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
+    if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
     if (text.startsWith("SELECT * FROM lms_lesson_progress")) return { rows: [] };
     if (text.startsWith("INSERT INTO lms_lesson_progress")) return { rows: [{ id: "progress-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", lesson_id: "lesson-1", learner_id: user.id, status: "COMPLETED" }] };
     return { rows: [] };
@@ -1081,7 +1081,7 @@ test("graded learner assignment submissions cannot be replaced", async () => {
   let insertAttempted = false;
   const { service } = serviceWith(async (text) => {
     if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
-    if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
+    if (text.startsWith("SELECT e.id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
     if (text.startsWith("SELECT * FROM lms_assignment_submissions")) {
       return { rows: [{ id: "submission-1", status: "GRADED", grade: 90 }] };
     }
