@@ -432,7 +432,6 @@ export default function InstitutionAdminPage() {
     if (!editing && isLesson) body.moduleId = ids.moduleId;
     if (!editing && activeKind === "learning-resources") body.lessonId = ids.lessonId;
     body.title = formValue("title").trim();
-    if (!editing && isCourse) body.code = formValue("code").trim();
     body.description = formValue("description").trim();
     if (["course-modules", "lessons", "learning-resources"].includes(activeKind)) {
       body.sequence = Number(formValue("sequence"));
@@ -702,7 +701,6 @@ export default function InstitutionAdminPage() {
              <p className="modal-intro">Fields marked with <span>*</span> are required.</p>
             <form onSubmit={submitForm}>
               <label>{activeKind === "learning-resources" ? "Resource title" : `${labelFor(activeKind).slice(0, -1)} title`} *<input required minLength={2} value={formValue("title")} onChange={(event) => updateForm("title", event.target.value)} placeholder="Give this content a clear title" /></label>
-              {!editing && activeKind === "courses" && <label>Course code *<input required minLength={2} value={formValue("code")} onChange={(event) => updateForm("code", event.target.value)} placeholder="e.g. DSF-101" /></label>}
               {activeKind === "learning-resources" && <label>Resource type *<select required value={formValue("resourceType")} onChange={(event) => updateForm("resourceType", event.target.value)}>{resourceTypes.map((type) => <option key={type} value={type}>{type.charAt(0) + type.slice(1).toLowerCase()}</option>)}</select></label>}
               <label>Description<textarea value={formValue("description")} onChange={(event) => updateForm("description", event.target.value)} placeholder="What will learners or administrators find here?" rows={3} /></label>
               {(supportsOrdering || activeKind === "learning-resources") && <label>Order *<input required type="number" min={1} value={formValue("sequence")} onChange={(event) => updateForm("sequence", event.target.value)} /></label>}

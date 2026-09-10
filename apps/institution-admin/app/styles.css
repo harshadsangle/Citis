@@ -1003,6 +1003,10 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .builder-required { color: #b26b50; font-size: 12px; font-weight: 700; }
 .builder-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 17px; padding: 24px; border: 1px solid #dce8ef; border-radius: 14px; background: #fff; }
 .builder-form-grid label, .builder-inline-form label, .builder-activity-card label { display: grid; gap: 6px; color: #36556e; font-size: 13px; font-weight: 700; }
+.builder-generated-code { display: grid; align-content: center; gap: 5px; min-height: 74px; padding: 11px; border: 1px solid #bfe6df; border-radius: 8px; color: #36556e; background: #eefaf8; }
+.builder-generated-code span { font-size: 13px; font-weight: 700; }
+.builder-generated-code strong { color: #0a7169; font-size: 16px; letter-spacing: .04em; }
+.builder-generated-code small { color: #678b88; font-size: 11px; }
 .builder-form-grid input, .builder-form-grid textarea, .builder-inline-form input, .builder-inline-form textarea, .builder-inline-form select, .builder-activity-card input, .builder-activity-card textarea, .builder-activity-card select, .builder-picker-grid select { width: 100%; border: 1px solid #cbdde8; border-radius: 8px; padding: 10px 11px; color: #163b57; background: #fbfdfe; outline: none; }
 .builder-form-grid input:focus, .builder-form-grid textarea:focus, .builder-inline-form input:focus, .builder-inline-form textarea:focus, .builder-inline-form select:focus, .builder-activity-card input:focus, .builder-activity-card textarea:focus, .builder-activity-card select:focus, .builder-picker-grid select:focus { border-color: #0f8e84; box-shadow: 0 0 0 3px #0f8e8418; }
 .builder-form-grid input[aria-invalid="true"], .builder-form-grid textarea[aria-invalid="true"], .builder-inline-form input[aria-invalid="true"], .builder-inline-form textarea[aria-invalid="true"], .builder-inline-form select[aria-invalid="true"] { border-color: #d47763; background: #fff8f5; }
