@@ -176,8 +176,8 @@ export default function CourseBuilder({
 
   function selectModule(id: string) {
     setSelectedModuleId(id);
-    const module = modules.find((item) => item.id === id);
-    setSelectedLessonId(module?.lessons[0]?.id || "");
+    const selected = modules.find((item) => item.id === id);
+    setSelectedLessonId(selected?.lessons[0]?.id || "");
     setLessonDraft(null);
     setResourceDraft(null);
   }
@@ -200,12 +200,14 @@ export default function CourseBuilder({
   function saveLesson(event: FormEvent) {
     event.preventDefault();
     if (!lessonDraft?.title.trim() || !selectedModuleId) return;
-    setModules((current) => current.map((module) => module.id !== selectedModuleId ? module : {
-      ...module,
+    const savedLesson = editingId ? { ...lessonDraft, id: editingId } : { ...lessonDraft, id: newId("lesson") };
+    setModules((current) => current.map((item) => item.id !== selectedModuleId ? item : {
+      ...item,
       lessons: editingId
-        ? module.lessons.map((item) => item.id === editingId ? { ...lessonDraft, id: editingId } : item)
-        : [...module.lessons, { ...lessonDraft, id: newId("lesson") }],
+        ? item.lessons.map((entry) => entry.id === editingId ? savedLesson : entry)
+        : [...item.lessons, savedLesson],
     }));
+    if (!editingId) setSelectedLessonId(savedLesson.id);
     setLessonDraft(null);
     setEditingId("");
   }
@@ -364,17 +366,17 @@ export default function CourseBuilder({
       const courseId = createdCourse.data.id;
 
       for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex += 1) {
-        const module = modules[moduleIndex];
+        const courseModule = modules[moduleIndex];
         setProgress(`Creating module ${moduleIndex + 1} of ${modules.length}…`);
         const createdModule = await request<ApiResponse>(apiBase, "/course-modules", {
           method: "POST",
-          body: JSON.stringify({ courseId, title: module.title.trim(), description: module.description.trim() || undefined, sequence: moduleIndex + 1 }),
+          body: JSON.stringify({ courseId, title: courseModule.title.trim(), description: courseModule.description.trim() || undefined, sequence: moduleIndex + 1 }),
         });
         const moduleId = createdModule.data.id;
 
-        for (let lessonIndex = 0; lessonIndex < module.lessons.length; lessonIndex += 1) {
-          const lesson = module.lessons[lessonIndex];
-          setProgress(`Creating lesson ${lessonIndex + 1} in ${module.title}…`);
+        for (let lessonIndex = 0; lessonIndex < courseModule.lessons.length; lessonIndex += 1) {
+          const lesson = courseModule.lessons[lessonIndex];
+          setProgress(`Creating lesson ${lessonIndex + 1} in ${courseModule.title}…`);
           const createdLesson = await request<ApiResponse>(apiBase, "/lessons", {
             method: "POST",
             body: JSON.stringify({
@@ -408,8 +410,8 @@ export default function CourseBuilder({
           }
         }
 
-        for (const assignment of module.assignments) {
-          setProgress(`Adding assignment in ${module.title}…`);
+        for (const assignment of courseModule.assignments) {
+          setProgress(`Adding assignment in ${courseModule.title}…`);
           await request(apiBase, "/assignments", {
             method: "POST",
             body: JSON.stringify({
@@ -424,8 +426,8 @@ export default function CourseBuilder({
           });
         }
 
-        for (const assessment of module.assessments) {
-          setProgress(`Adding assessment in ${module.title}…`);
+        for (const assessment of courseModule.assessments) {
+          setProgress(`Adding assessment in ${courseModule.title}…`);
           const createdAssessment = await request<ApiResponse>(apiBase, "/assessments", {
             method: "POST",
             body: JSON.stringify({
