@@ -4,7 +4,7 @@ import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows, isLm
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
-import { ResourceStorageService, mimeTypeForFilename, safeArchivePath, type LmsUpload } from "./resource-storage.service";
+import { ResourceStorageService, mimeTypeForFilename, safeArchivePath, type LmsUpload, type StoredFile } from "./resource-storage.service";
 import { CertificateService } from "./certificate.service";
 import type {
   ContentListQueryDto,
@@ -40,6 +40,72 @@ type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 
 const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
+const BUILDER_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+type CourseBuilderResource = {
+  title: string;
+  resourceType: LmsResourceType;
+  url?: string;
+  duration?: number;
+  fileField?: string;
+};
+
+type CourseBuilderLesson = {
+  title: string;
+  description?: string;
+  estimatedDuration?: number;
+  resources: CourseBuilderResource[];
+};
+
+type CourseBuilderAssignment = {
+  title: string;
+  description?: string;
+  instructions: string;
+  dueAt?: string;
+  maxMarks: number;
+};
+
+type CourseBuilderQuestion = {
+  prompt: string;
+  questionType: string;
+  marks: number;
+  options: Array<{ value: string; label: string; isCorrect: boolean }>;
+};
+
+type CourseBuilderAssessment = {
+  title: string;
+  description?: string;
+  assessmentType: string;
+  totalMarks?: number;
+  passingMarks?: number;
+  durationMinutes?: number;
+  attemptLimit?: number;
+  questions: CourseBuilderQuestion[];
+};
+
+type CourseBuilderModule = {
+  title: string;
+  description?: string;
+  lessons: CourseBuilderLesson[];
+  assignments: CourseBuilderAssignment[];
+  assessments: CourseBuilderAssessment[];
+};
+
+type CourseBuilderPayload = {
+  course: {
+    programmeId: string;
+    title: string;
+    code: string;
+    description?: string;
+    thumbnail?: string;
+    priceMinor?: number;
+    currency?: string;
+    purchasable?: boolean;
+  };
+  modules: CourseBuilderModule[];
+};
+
+type CourseBuilderUpload = LmsUpload & { fieldname: string };
 
 function progressState(completed: number, total: number): ProgressState {
   if (completed === 0) return "NOT_STARTED";
@@ -75,6 +141,159 @@ export class LmsService {
       if ((error as { code?: string }).code === "23514") throw new BadRequestException("The LMS content does not satisfy its resource or status rules.");
       throw error;
     }
+  }
+
+  private validateCourseBuilderPayload(raw: unknown, files: CourseBuilderUpload[], user: AuthenticatedUser) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      throw new BadRequestException("The complete course structure is required.");
+    }
+    const payload = raw as Partial<CourseBuilderPayload>;
+    const course = payload.course;
+    if (!course || typeof course !== "object") throw new BadRequestException("Course details are required.");
+    const text = (value: unknown, label: string, minimum: number, maximum: number) => {
+      if (typeof value !== "string" || value.trim().length < minimum || value.trim().length > maximum) {
+        throw new BadRequestException(`${label} must be between ${minimum} and ${maximum} characters.`);
+      }
+      return value.trim();
+    };
+    const number = (value: unknown, label: string, minimum: number, maximum: number, integer = false) => {
+      if (typeof value !== "number" || !Number.isFinite(value) || value < minimum || value > maximum || (integer && !Number.isInteger(value))) {
+        throw new BadRequestException(`${label} is outside the allowed range.`);
+      }
+      return value;
+    };
+    if (typeof course.programmeId !== "string" || !BUILDER_UUID_PATTERN.test(course.programmeId)) {
+      throw new BadRequestException("A valid programme is required.");
+    }
+    text(course.title, "Course title", 2, 180);
+    const code = text(course.code, "Course code", 2, 48);
+    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(code)) throw new BadRequestException("Course code contains unsupported characters.");
+    if (course.description !== undefined) text(course.description, "Course description", 0, 2000);
+    if (course.thumbnail !== undefined) {
+      const thumbnail = text(course.thumbnail, "Course thumbnail", 0, 2048);
+      if (thumbnail) {
+        try {
+          const parsed = new URL(thumbnail);
+          if (!["http:", "https:"].includes(parsed.protocol)) throw new Error();
+        } catch {
+          throw new BadRequestException("Course thumbnails must use HTTP or HTTPS.");
+        }
+      }
+    }
+    if (course.priceMinor !== undefined) number(course.priceMinor, "Course price", 0, 1_000_000_000, true);
+    if (course.currency !== undefined && course.currency !== "INR") throw new BadRequestException("Course currency must be INR.");
+
+    if (!Array.isArray(payload.modules) || payload.modules.length === 0) {
+      throw new BadRequestException("Add at least one module before creating the course.");
+    }
+
+    const filesByField = new Map<string, CourseBuilderUpload>();
+    for (const file of files) {
+      if (!file.fieldname || filesByField.has(file.fieldname)) {
+        throw new BadRequestException("Each course resource may have only one uploaded file.");
+      }
+      filesByField.set(file.fieldname, file);
+    }
+    const referencedFileFields = new Set<string>();
+    const hasPermission = (permission: string) => isLmsAdministrator(user) || user.permissions.includes(permission);
+    const requirePermission = (permission: string) => {
+      if (!hasPermission(permission)) throw new ForbiddenException(`Missing permission: ${permission}.`);
+    };
+    requirePermission("lms.course_module.create");
+
+    for (const [moduleIndex, module] of payload.modules.entries()) {
+      if (!module || typeof module !== "object") throw new BadRequestException(`Module ${moduleIndex + 1} is invalid.`);
+      text(module.title, `Module ${moduleIndex + 1} title`, 2, 180);
+      if (module.description !== undefined) text(module.description, `Module ${moduleIndex + 1} description`, 0, 2000);
+      if (!Array.isArray(module.lessons) || !Array.isArray(module.assignments) || !Array.isArray(module.assessments)) {
+        throw new BadRequestException(`Module ${moduleIndex + 1} must include lessons, assignments, and assessments arrays.`);
+      }
+      if (module.lessons.length > 0) requirePermission("lms.lesson.create");
+      if (module.assignments.length > 0) requirePermission("lms.assignment.create");
+      if (module.assessments.length > 0) requirePermission("lms.assessment.create");
+
+      for (const [lessonIndex, lesson] of module.lessons.entries()) {
+        text(lesson.title, `Lesson ${lessonIndex + 1} title`, 2, 180);
+        if (lesson.description !== undefined) text(lesson.description, `Lesson ${lessonIndex + 1} description`, 0, 2000);
+        if (lesson.estimatedDuration !== undefined) number(lesson.estimatedDuration, "Lesson duration", 0, 100_000, true);
+        if (!Array.isArray(lesson.resources)) throw new BadRequestException(`Lesson ${lessonIndex + 1} must include a resources array.`);
+        if (lesson.resources.length > 0) requirePermission("lms.learning_resource.create");
+        for (const [resourceIndex, resource] of lesson.resources.entries()) {
+          text(resource.title, `Resource ${resourceIndex + 1} title`, 2, 180);
+          if (!resourceTypes.includes(resource.resourceType)) throw new BadRequestException("Unsupported learning resource type.");
+          if (resource.url !== undefined) text(resource.url, "Resource URL", 0, 2048);
+          if (resource.duration !== undefined) number(resource.duration, "Resource duration", 0, 100_000, true);
+          const file = resource.fileField ? filesByField.get(resource.fileField) : undefined;
+          if (resource.fileField) {
+            if (referencedFileFields.has(resource.fileField) || !file) throw new BadRequestException("A resource upload is missing or referenced more than once.");
+            referencedFileFields.add(resource.fileField);
+          }
+          if (["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resource.resourceType) && !resource.url && !file) {
+            throw new BadRequestException(`${resource.resourceType} resources require a URL or uploaded file.`);
+          }
+          if (resource.resourceType === "SCORM" && !file) throw new BadRequestException("SCORM resources require an uploaded package.");
+          this.validateResource(resource.resourceType, resource.url, file ? "uploaded-file" : undefined);
+        }
+      }
+
+      for (const assignment of module.assignments) {
+        text(assignment.title, "Assignment title", 2, 180);
+        text(assignment.instructions, "Assignment instructions", 2, 12_000);
+        if (assignment.description !== undefined) text(assignment.description, "Assignment description", 0, 4_000);
+        number(assignment.maxMarks, "Assignment marks", 0.01, 100_000);
+        if (assignment.dueAt !== undefined && Number.isNaN(Date.parse(assignment.dueAt))) throw new BadRequestException("Assignment due date is invalid.");
+      }
+
+      for (const assessment of module.assessments) {
+        text(assessment.title, "Assessment title", 2, 180);
+        if (assessment.description !== undefined) text(assessment.description, "Assessment description", 0, 4_000);
+        if (!["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"].includes(assessment.assessmentType)) {
+          throw new BadRequestException("Unsupported assessment type.");
+        }
+        if (assessment.totalMarks !== undefined) number(assessment.totalMarks, "Assessment total marks", 0, 100_000);
+        if (assessment.passingMarks !== undefined) {
+          number(assessment.passingMarks, "Assessment passing marks", 0, 100_000);
+          if (assessment.totalMarks !== undefined && assessment.passingMarks > assessment.totalMarks) {
+            throw new BadRequestException("Assessment passing marks cannot exceed total marks.");
+          }
+        }
+        if (assessment.durationMinutes !== undefined) number(assessment.durationMinutes, "Assessment duration", 1, 1_440, true);
+        if (assessment.attemptLimit !== undefined) number(assessment.attemptLimit, "Assessment attempts", 1, 100, true);
+        if (!Array.isArray(assessment.questions)) throw new BadRequestException("Each assessment must include a questions array.");
+        if (assessment.questions.length > 0) requirePermission("lms.assessment_question.create");
+        for (const question of assessment.questions) {
+          text(question.prompt, "Question prompt", 2, 2_000);
+          if (!["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"].includes(question.questionType)) {
+            throw new BadRequestException("Unsupported question type.");
+          }
+          number(question.marks, "Question marks", 0.01, 100_000);
+          if (!Array.isArray(question.options) || question.options.length === 0) throw new BadRequestException("Each question needs at least one answer option.");
+          const values = question.options.map((option) => text(option.value, "Question option value", 1, 300));
+          if (new Set(values).size !== values.length || question.options.some((option) => !option.isCorrect && option.isCorrect !== false)) {
+            throw new BadRequestException("Question options are invalid.");
+          }
+          const correctCount = question.options.filter((option) => option.isCorrect).length;
+          if (["SINGLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"].includes(question.questionType) && correctCount !== 1) {
+            throw new BadRequestException("This question type needs exactly one correct option.");
+          }
+          if (question.questionType === "MULTIPLE_CHOICE" && correctCount < 1) throw new BadRequestException("Multiple-choice questions need at least one correct option.");
+          if (["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"].includes(question.questionType) && question.options.length < 2) {
+            throw new BadRequestException("Choice questions need at least two options.");
+          }
+          for (const option of question.options) text(option.label, "Question option label", 1, 300);
+          if (question.questionType === "TRUE_FALSE") {
+            const optionValues = new Set(values.map((value) => value.toLowerCase()));
+            if (optionValues.size !== 2 || !optionValues.has("true") || !optionValues.has("false")) {
+              throw new BadRequestException("True/false questions need true and false options.");
+            }
+          }
+        }
+      }
+    }
+    for (const field of filesByField.keys()) {
+      if (!referencedFileFields.has(field)) throw new BadRequestException("An uploaded resource file is not part of the course structure.");
+    }
+    return { payload: payload as CourseBuilderPayload, filesByField };
   }
 
   private async institutionFor(user: AuthenticatedUser, institutionId: string) {
