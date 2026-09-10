@@ -160,6 +160,47 @@ test("course builder removes a staged document when a later database step fails"
   assert.ok(stored);
 });
 
+test("course builder commits a complete course and uploaded document", async () => {
+  let managedFileInserted = false;
+  const storage = {
+    storeDocument: async () => ({
+      storageKey: "tenant-1/resource-1",
+      originalFilename: "lesson.pdf",
+      mimeType: "application/pdf",
+      byteSize: 4,
+      sha256: "a".repeat(64),
+    }),
+    storeScormPackage: async () => { throw new Error("unexpected SCORM upload"); },
+    remove: async () => undefined,
+  };
+  const payload = builderPayload();
+  payload.modules[0].lessons[0].resources.push({ title: "Handout", resourceType: "PDF", fileField: "resource-file-1" });
+  const { db, wasRolledBack } = builderDb(async (text) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("INSERT INTO courses")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO course_modules")) return { rows: [{ id: "module-1" }] };
+    if (text.startsWith("INSERT INTO lessons")) return { rows: [{ id: "lesson-1" }] };
+    if (text.startsWith("INSERT INTO learning_resources")) return { rows: [{ id: "resource-1" }] };
+    if (text.startsWith("INSERT INTO managed_files")) {
+      managedFileInserted = true;
+      return { rows: [{ id: "managed-1" }] };
+    }
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, storage as never);
+
+  const created = await service.createCourseBuilder(payload, [{
+    fieldname: "resource-file-1",
+    originalname: "lesson.pdf",
+    mimetype: "application/pdf",
+    size: 4,
+    buffer: Buffer.from("pdf"),
+  }], builderRequest);
+  assert.equal(created.id, "course-1");
+  assert.equal(managedFileInserted, true);
+  assert.equal(wasRolledBack(), false);
+});
+
 test("course builder cleans a SCORM package when question creation fails", async () => {
   const removed: string[] = [];
   const storage = {
