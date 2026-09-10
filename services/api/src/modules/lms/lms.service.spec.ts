@@ -79,6 +79,7 @@ test("course builder generates a stable server-owned code and ignores a supplied
       return { rows: [{ id: "course-1", code: values[5], tenant_id: user.tenantId }] };
     }
     if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-1", tenant_id: user.tenantId }] };
+    if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "lesson-1", tenant_id: user.tenantId }] };
     return { rows: [] };
   });
   const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
@@ -111,6 +112,7 @@ test("course builder retries a generated code when the candidate is already used
       return { rows: [{ id: "course-2", code: insertedCode, tenant_id: user.tenantId }] };
     }
     if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-2", tenant_id: user.tenantId }] };
+    if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "lesson-2", tenant_id: user.tenantId }] };
     return { rows: [] };
   });
   const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
