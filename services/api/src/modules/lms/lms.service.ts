@@ -40,6 +40,7 @@ type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 
 const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
+const ALL_RESOURCE_TYPES: LmsResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 const BUILDER_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type CourseBuilderResource = {
@@ -220,7 +221,7 @@ export class LmsService {
         if (lesson.resources.length > 0) requirePermission("lms.learning_resource.create");
         for (const [resourceIndex, resource] of lesson.resources.entries()) {
           text(resource.title, `Resource ${resourceIndex + 1} title`, 2, 180);
-          if (!resourceTypes.includes(resource.resourceType)) throw new BadRequestException("Unsupported learning resource type.");
+          if (!ALL_RESOURCE_TYPES.includes(resource.resourceType)) throw new BadRequestException("Unsupported learning resource type.");
           if (resource.url !== undefined) text(resource.url, "Resource URL", 0, 2048);
           if (resource.duration !== undefined) number(resource.duration, "Resource duration", 0, 100_000, true);
           const file = resource.fileField ? filesByField.get(resource.fileField) : undefined;
