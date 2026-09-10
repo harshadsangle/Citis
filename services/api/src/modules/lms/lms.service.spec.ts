@@ -33,6 +33,186 @@ function serviceWith(query: (text: string, values: unknown[]) => Promise<{ rows:
   return { service: new LmsService(db as never, audit as never, new ResourceStorageService()), audits };
 }
 
+const builderProgrammeId = "11111111-1111-4111-8111-111111111111";
+const builderParent = { id: builderProgrammeId, institution_id: "institution-1", campus_id: null };
+const builderRequest = request;
+
+function builderPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    course: {
+      programmeId: builderProgrammeId,
+      title: "Atomic course",
+      code: "ATOMIC-101",
+      ...overrides,
+    },
+    modules: [{
+      title: "Module one",
+      lessons: [{
+        title: "Lesson one",
+        resources: [],
+      }],
+      assignments: [],
+      assessments: [],
+    }],
+  };
+}
+
+function builderDb(
+  clientQuery: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }>,
+) {
+  let rolledBack = false;
+  const db = {
+    query: async (text: string, values: unknown[]) => {
+      if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) return { rows: [builderParent] };
+      return { rows: [] };
+    },
+    transaction: async <T>(work: (client: { query: typeof clientQuery }) => Promise<T>) => {
+      try {
+        return await work({ query: clientQuery });
+      } catch (error) {
+        rolledBack = true;
+        throw error;
+      }
+    },
+  };
+  return { db, wasRolledBack: () => rolledBack };
+}
+
+test("course builder validates the full structure before opening a transaction", async () => {
+  let transactionStarted = false;
+  const db = {
+    query: async () => ({ rows: [builderParent] }),
+    transaction: async () => {
+      transactionStarted = true;
+      throw new Error("transaction should not start");
+    },
+  };
+  const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
+
+  await assert.rejects(
+    service.createCourseBuilder({
+      course: builderPayload().course,
+      modules: [{ title: "Missing children" }],
+    }, [], builderRequest),
+    BadRequestException,
+  );
+  assert.equal(transactionStarted, false);
+});
+
+test("course builder rolls back database records when module creation fails", async () => {
+  let courseInserted = false;
+  const { db, wasRolledBack } = builderDb(async (text) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("INSERT INTO courses")) {
+      courseInserted = true;
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    }
+    if (text.startsWith("INSERT INTO course_modules")) throw new Error("module insert failed");
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
+
+  await assert.rejects(service.createCourseBuilder(builderPayload(), [], builderRequest), /module insert failed/);
+  assert.equal(courseInserted, true);
+  assert.equal(wasRolledBack(), true);
+});
+
+test("course builder removes a staged document when a later database step fails", async () => {
+  const removed: string[] = [];
+  let stored: { storageKey: string; originalFilename: string; mimeType: string; byteSize: number; sha256: string } | undefined;
+  const storage = {
+    storeDocument: async () => {
+      stored = { storageKey: "tenant-1/resource-1", originalFilename: "lesson.pdf", mimeType: "application/pdf", byteSize: 4, sha256: "a".repeat(64) };
+      return stored;
+    },
+    storeScormPackage: async () => { throw new Error("unexpected SCORM upload"); },
+    remove: async (key: string) => { removed.push(key); },
+  };
+  const payload = builderPayload();
+  (payload.modules[0].lessons[0].resources as unknown[]).push({
+    title: "Handout",
+    resourceType: "PDF",
+    fileField: "resource-file-1",
+  });
+  const { db, wasRolledBack } = builderDb(async (text) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("INSERT INTO courses")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO course_modules")) return { rows: [{ id: "module-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO lessons")) return { rows: [{ id: "lesson-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO learning_resources")) return { rows: [{ id: "resource-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO managed_files")) throw new Error("managed file insert failed");
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, storage as never);
+
+  await assert.rejects(
+    service.createCourseBuilder(payload, [{
+      fieldname: "resource-file-1",
+      originalname: "lesson.pdf",
+      mimetype: "application/pdf",
+      size: 4,
+      buffer: Buffer.from("pdf"),
+    }], builderRequest),
+    /managed file insert failed/,
+  );
+  assert.equal(wasRolledBack(), true);
+  assert.deepEqual(removed, ["tenant-1/resource-1"]);
+  assert.ok(stored);
+});
+
+test("course builder cleans a SCORM package when question creation fails", async () => {
+  const removed: string[] = [];
+  const storage = {
+    storeDocument: async () => { throw new Error("unexpected document upload"); },
+    storeScormPackage: async () => ({
+      storageKey: "tenant-1/scorm-1",
+      originalFilename: "course.zip",
+      mimeType: "application/zip",
+      byteSize: 4,
+      sha256: "b".repeat(64),
+      entrypoint: "index.html",
+    }),
+    remove: async (key: string) => { removed.push(key); },
+  };
+  const payload = builderPayload();
+  payload.modules[0].lessons[0].resources.push({ title: "Package", resourceType: "SCORM", fileField: "scorm-file-1" });
+  payload.modules[0].assessments.push({
+    title: "Quiz",
+    assessmentType: "PRACTICE_QUIZ",
+    questions: [{
+      prompt: "Question?",
+      questionType: "SINGLE_CHOICE",
+      marks: 1,
+      options: [{ value: "a", label: "A", isCorrect: true }, { value: "b", label: "B", isCorrect: false }],
+    }],
+  });
+  const { db, wasRolledBack } = builderDb(async (text) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("INSERT INTO courses")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO course_modules")) return { rows: [{ id: "module-1" }] };
+    if (text.startsWith("INSERT INTO lessons")) return { rows: [{ id: "lesson-1" }] };
+    if (text.startsWith("INSERT INTO learning_resources")) return { rows: [{ id: "scorm-1" }] };
+    if (text.startsWith("INSERT INTO managed_files")) return { rows: [{ id: "managed-1" }] };
+    if (text.startsWith("INSERT INTO lms_assessments")) return { rows: [{ id: "assessment-1" }] };
+    if (text.startsWith("INSERT INTO lms_assessment_questions")) throw new Error("question insert failed");
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, storage as never);
+
+  await assert.rejects(
+    service.createCourseBuilder(payload, [{
+      fieldname: "scorm-file-1",
+      originalname: "course.zip",
+      mimetype: "application/zip",
+      size: 4,
+      buffer: Buffer.from("zip"),
+    }], builderRequest),
+    /question insert failed/,
+  );
+  assert.equal(wasRolledBack(), true);
+  assert.deepEqual(removed, ["tenant-1/scorm-1"]);
+});
+
 test("course creation rejects a parent outside the authenticated tenant", async () => {
   const { service } = serviceWith(async () => ({ rows: [] }));
 
