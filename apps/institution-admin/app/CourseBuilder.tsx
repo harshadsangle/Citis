@@ -352,6 +352,18 @@ export default function CourseBuilder({
     setError("Fix the highlighted fields before creating the course.");
   }
 
+  function courseApiValidationErrors(reason: unknown): ValidationErrors {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    const errors: ValidationErrors = {};
+    if (/description.*(greater|length|characters)|description.*2000/i.test(message)) {
+      errors["course.description"] = "Description must be 2000 characters or fewer.";
+    }
+    if (/thumbnail.*(greater|length|characters)|thumbnail.*2048/i.test(message)) {
+      errors["course.thumbnail"] = "Thumbnail URL must be 2048 characters or fewer.";
+    }
+    return errors;
+  }
+
   function selectModule(id: string) {
     setSelectedModuleId(id);
     const selected = modules.find((item) => item.id === id);
@@ -534,19 +546,31 @@ export default function CourseBuilder({
     setValidationErrors({});
     try {
       setProgress("Creating course details…");
-      const createdCourse = await request<ApiResponse>(apiBase, "/courses", {
-        method: "POST",
-        body: JSON.stringify({
-          programmeId,
-          title: course.title.trim(),
-          code: course.code.trim(),
-          description: course.description.trim() || undefined,
-          thumbnail: course.thumbnail.trim() || undefined,
-          priceMinor: numberOrUndefined(course.price) === undefined ? undefined : Math.round(Number(course.price) * 100),
-          currency: course.price.trim() ? "INR" : undefined,
-          purchasable: course.purchasable,
-        }),
-      });
+      let createdCourse: ApiResponse;
+      try {
+        createdCourse = await request<ApiResponse>(apiBase, "/courses", {
+          method: "POST",
+          body: JSON.stringify({
+            programmeId,
+            title: course.title.trim(),
+            code: course.code.trim(),
+            description: course.description.trim() || undefined,
+            thumbnail: course.thumbnail.trim() || undefined,
+            priceMinor: numberOrUndefined(course.price) === undefined ? undefined : Math.round(Number(course.price) * 100),
+            currency: course.price.trim() ? "INR" : undefined,
+            purchasable: course.purchasable,
+          }),
+        });
+      } catch (reason) {
+        const apiErrors = courseApiValidationErrors(reason);
+        if (Object.keys(apiErrors).length > 0) {
+          showValidationErrors(apiErrors);
+        } else {
+          setError(reason instanceof Error ? reason.message : "The course details could not be created.");
+        }
+        setProgress("");
+        return;
+      }
       const courseId = createdCourse.data.id;
 
       for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex += 1) {
