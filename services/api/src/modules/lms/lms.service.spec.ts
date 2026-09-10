@@ -69,6 +69,7 @@ test("course builder generates a stable server-owned code and ignores a supplied
   const seed = "33333333-3333-4333-8333-333333333333";
   const insertedValues: unknown[] = [];
   const { db } = builderDb(async (text, values) => {
+    console.log("builder generation query", JSON.stringify(text));
     if (text.includes("FOR SHARE")) return { rows: [builderParent] };
     if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) {
       assert.deepEqual(values, [user.tenantId, courseCodeFromSeed(seed)]);
