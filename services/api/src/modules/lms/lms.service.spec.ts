@@ -69,7 +69,6 @@ test("course builder generates a stable server-owned code and ignores a supplied
   const seed = "33333333-3333-4333-8333-333333333333";
   const insertedValues: unknown[] = [];
   const { db } = builderDb(async (text, values) => {
-    console.log("builder generation query", JSON.stringify(text));
     if (text.includes("FOR SHARE")) return { rows: [builderParent] };
     if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) {
       assert.deepEqual(values, [user.tenantId, courseCodeFromSeed(seed)]);
@@ -79,6 +78,7 @@ test("course builder generates a stable server-owned code and ignores a supplied
       insertedValues.push(...values);
       return { rows: [{ id: "course-1", code: values[5], tenant_id: user.tenantId }] };
     }
+    if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-1", tenant_id: user.tenantId }] };
     return { rows: [] };
   });
   const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
@@ -110,6 +110,7 @@ test("course builder retries a generated code when the candidate is already used
       insertedCode = values[5];
       return { rows: [{ id: "course-2", code: insertedCode, tenant_id: user.tenantId }] };
     }
+    if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-2", tenant_id: user.tenantId }] };
     return { rows: [] };
   });
   const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
