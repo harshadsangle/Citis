@@ -74,7 +74,7 @@ test("course builder generates a stable server-owned code and ignores a supplied
       assert.deepEqual(values, [user.tenantId, courseCodeFromSeed(seed)]);
       return { rows: [] };
     }
-    if (text.startsWith("INSERT INTO courses")) {
+    if (text.includes("INSERT INTO courses")) {
       insertedValues.push(...values);
       return { rows: [{ id: "course-1", code: values[5], tenant_id: user.tenantId }] };
     }
@@ -105,7 +105,7 @@ test("course builder retries a generated code when the candidate is already used
       }
       return { rows: [] };
     }
-    if (text.startsWith("INSERT INTO courses")) {
+    if (text.includes("INSERT INTO courses")) {
       insertedCode = values[5];
       return { rows: [{ id: "course-2", code: insertedCode, tenant_id: user.tenantId }] };
     }
