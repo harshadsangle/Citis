@@ -1004,6 +1004,9 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .builder-form-grid label, .builder-inline-form label, .builder-activity-card label { display: grid; gap: 6px; color: #36556e; font-size: 13px; font-weight: 700; }
 .builder-form-grid input, .builder-form-grid textarea, .builder-inline-form input, .builder-inline-form textarea, .builder-inline-form select, .builder-activity-card input, .builder-activity-card textarea, .builder-activity-card select, .builder-picker-grid select { width: 100%; border: 1px solid #cbdde8; border-radius: 8px; padding: 10px 11px; color: #163b57; background: #fbfdfe; outline: none; }
 .builder-form-grid input:focus, .builder-form-grid textarea:focus, .builder-inline-form input:focus, .builder-inline-form textarea:focus, .builder-inline-form select:focus, .builder-activity-card input:focus, .builder-activity-card textarea:focus, .builder-activity-card select:focus, .builder-picker-grid select:focus { border-color: #0f8e84; box-shadow: 0 0 0 3px #0f8e8418; }
+.builder-form-grid input[aria-invalid="true"], .builder-form-grid textarea[aria-invalid="true"], .builder-inline-form input[aria-invalid="true"], .builder-inline-form textarea[aria-invalid="true"], .builder-inline-form select[aria-invalid="true"] { border-color: #d47763; background: #fff8f5; }
+.builder-field-error { color: #ae5141; font-size: 11px; font-weight: 700; line-height: 1.35; }
+.builder-character-count { color: #8497a5; font-size: 10px; font-weight: 600; text-align: right; }
 .builder-span-two { grid-column: span 2; }
 .builder-check { display: flex !important; align-items: center; align-self: end; gap: 9px !important; min-height: 41px; }
 .builder-check input { width: 17px; height: 17px; accent-color: #0f8e84; }
