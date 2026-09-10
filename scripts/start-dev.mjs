@@ -19,6 +19,14 @@ const require = createRequire(import.meta.url);
 const children = [];
 let stopping = false;
 
+// Windows local development is driven by the repository-root .env.local.
+// Load it before spawning any child so the API, portals, and public frontend
+// inherit the same local DATABASE_URL and origin configuration. Linux/Replit
+// keeps its existing API-local environment loading path unchanged.
+if (process.platform === "win32") {
+  await import("./load-local-env.mjs");
+}
+
 function clearNextCaches() {
   for (const projectDir of nextProjectDirs) {
     rmSync(path.join(projectDir, ".next"), { recursive: true, force: true });
