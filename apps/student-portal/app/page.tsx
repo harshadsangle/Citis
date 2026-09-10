@@ -501,12 +501,13 @@ function readVideoWatchState(lessonId: string, resource: LearningResource) {
   try {
     const stored = JSON.parse(window.localStorage.getItem(videoProgressStorageKey(lessonId, resource.id)) || "null") as Partial<VideoWatchState> | null;
     if (!stored || !Array.isArray(stored.watchedRanges)) return fallback;
-       return {
+        return {
       duration: Math.max(Number(stored.duration) || 0, resource.duration || 0),
       watchedRanges: stored.watchedRanges
         .filter((range): range is [number, number] => Array.isArray(range) && range.length === 2 && Number.isFinite(range[0]) && Number.isFinite(range[1]) && range[1] > range[0])
         .map(([start, end]) => [Math.max(0, start), Math.max(0, end)] as [number, number]),
-      completed: stored.completed === true,
+      // Completion is server-owned. Browser storage only restores playback UX.
+      completed: false,
         resumeSeconds: Math.max(0, Number(stored.resumeSeconds) || 0),
     };
   } catch {
@@ -589,7 +590,7 @@ function LearningResourceViewer({
               [resource.id]: {
                 ...local,
                 duration: Math.max(local.duration, Number(server.duration_seconds) || 0),
-                completed: local.completed || server.completed === true,
+                completed: server.completed === true,
                 resumeSeconds: Math.max(local.resumeSeconds || 0, Number(server.position_seconds) || 0),
               },
             };
@@ -664,7 +665,15 @@ function LearningResourceViewer({
         durationSeconds: state.duration || 0,
         completed: state.completed,
       }),
-    }).catch(() => undefined);
+      }).then(async (response) => {
+        const body = await response.json().catch(() => null) as { data?: { completed?: boolean } } | null;
+        if (!response.ok || !body?.data) return;
+        setVideoStates((current) => {
+          const existing = current[resourceId];
+          if (!existing) return current;
+          return { ...current, [resourceId]: { ...existing, completed: body.data?.completed === true } };
+        });
+      }).catch(() => undefined);
   }, []);
 
   const recordVideoProgress = useCallback((resourceId: string, currentTime: number, duration: number, forceSync = false) => {
@@ -709,7 +718,7 @@ function LearningResourceViewer({
       const nextState = {
         ...existing,
         duration: Math.max(existing.duration, video.duration || 0),
-        completed: existing.completed || (video.duration > 0 && watchedSeconds(existing) >= video.duration - 0.5),
+        completed: existing.completed,
       };
       const resumeSeconds = nextState.resumeSeconds || 0;
       if (resumeSeconds > 0 && resumeSeconds < video.duration - 0.5) video.currentTime = resumeSeconds;
