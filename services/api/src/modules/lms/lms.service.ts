@@ -192,8 +192,9 @@ export class LmsService {
       throw new BadRequestException("A valid programme is required.");
     }
     text(course.title, "Course title", 2, 180);
-    const code = text(course.code, "Course code", 2, 48);
-    if (!/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(code)) throw new BadRequestException("Course code contains unsupported characters.");
+    const codeSeed = typeof course.codeSeed === "string" && BUILDER_UUID_PATTERN.test(course.codeSeed)
+      ? course.codeSeed
+      : randomUUID();
     if (course.description !== undefined) text(course.description, "Course description", 0, 2000);
     if (course.thumbnail !== undefined) {
       const thumbnail = text(course.thumbnail, "Course thumbnail", 0, 2048);
@@ -319,7 +320,13 @@ export class LmsService {
     for (const field of filesByField.keys()) {
       if (!referencedFileFields.has(field)) throw new BadRequestException("An uploaded resource file is not part of the course structure.");
     }
-    return { payload: payload as CourseBuilderPayload, filesByField };
+    return {
+      payload: {
+        ...payload,
+        course: { ...course, codeSeed },
+      } as CourseBuilderPayload,
+      filesByField,
+    };
   }
 
   private async institutionFor(user: AuthenticatedUser, institutionId: string) {
@@ -647,6 +654,7 @@ export class LmsService {
           [payload.course.programmeId, user.tenantId],
         );
         if (!currentParent.rows[0]) throw new NotFoundException("Programme is no longer available.");
+        const generatedCourseCode = await generateUniqueCourseCode(client, user.tenantId, payload.course.codeSeed);
 
         const courseResult = await client.query<Record<string, unknown>>(
           `INSERT INTO courses
@@ -659,8 +667,8 @@ export class LmsService {
             currentParent.rows[0].institution_id,
             campusId,
             payload.course.programmeId,
-            payload.course.title.trim(),
-            payload.course.code.trim().toUpperCase(),
+             payload.course.title.trim(),
+             generatedCourseCode,
             payload.course.description?.trim() || null,
             payload.course.thumbnail?.trim() || null,
             payload.course.priceMinor ?? 0,
