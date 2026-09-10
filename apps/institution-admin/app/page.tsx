@@ -20,6 +20,7 @@ type ContentRecord = {
   name?: string;
   title?: string;
   code?: string;
+  programme_id?: string | null;
   programme_name?: string | null;
   description?: string | null;
   status: Status;
@@ -60,7 +61,6 @@ function providerForProgrammeName(value?: string | null): LmsCourseProvider | nu
 }
 
 const sections: Array<{ kind: Kind; label: string; shortLabel: string; icon: string }> = [
-  { kind: "programmes", label: "Programmes", shortLabel: "Programmes", icon: "P" },
   { kind: "courses", label: "Courses", shortLabel: "Courses", icon: "C" },
   { kind: "course-modules", label: "Course modules", shortLabel: "Modules", icon: "M" },
   { kind: "lessons", label: "Lessons", shortLabel: "Lessons", icon: "L" },
@@ -71,14 +71,14 @@ const sectionOrder = Object.fromEntries(sections.map((section, index) => [sectio
 
 const sectionCopy: Record<Kind, { kicker: string; title: string; description: string }> = {
   programmes: {
-    kicker: "Curriculum library",
-    title: "Programmes",
-    description: "Organise your institution’s learning catalogue into clear, publishable pathways.",
+    kicker: "Course catalogue",
+    title: "Courses",
+    description: "Manage the courses available in your institution’s learning catalogue.",
   },
   courses: {
-    kicker: "Programme structure",
+    kicker: "Course catalogue",
     title: "Courses",
-    description: "Shape the courses that sit inside the selected programme.",
+    description: "Manage the courses available in your institution’s learning catalogue.",
   },
   "course-modules": {
     kicker: "Course structure",
@@ -189,13 +189,14 @@ function uploadResource(id: string, file: File, resourceType: ResourceType) {
 }
 
 export default function InstitutionAdminPage() {
-  const [activeKind, setActiveKind] = useState<Kind>("programmes");
+  const [activeKind, setActiveKind] = useState<Kind>("courses");
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
   const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
   const [status, setStatus] = useState<"ALL" | Status>("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
   const [ids, setIds] = useState({ programmeId: "", courseId: "", moduleId: "", lessonId: "" });
+  const [courseCreateProgrammeId, setCourseCreateProgrammeId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
@@ -231,7 +232,7 @@ export default function InstitutionAdminPage() {
   const draftCount = visibleRecords.filter((record) => record.status === "DRAFT").length;
   const archivedCount = visibleRecords.filter((record) => record.status === "ARCHIVED").length;
 
-  const canLoad = activeKind === "programmes" || Boolean(activeParentId);
+  const canLoad = activeKind === "programmes" || activeKind === "courses" || Boolean(activeParentId);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,7 +254,16 @@ export default function InstitutionAdminPage() {
         const payload = await request<ApiList<ContentRecord>>(
           `${endpointFor(activeKind)}?page=1&pageSize=100${parentQuery(activeKind, ids)}${query}`,
         );
-        if (!cancelled) setRecords(payload.data);
+        if (!cancelled) {
+          setRecords(payload.data);
+          if (activeKind === "courses") {
+            const existingParent = payload.data.find((record) => (
+              record.programme_id
+              && (!provider || providerForProgrammeName(record.programme_name) === provider)
+            ))?.programme_id;
+            if (existingParent) setCourseCreateProgrammeId((current) => current || existingParent);
+          }
+        }
       } catch (loadError) {
         if (!cancelled) {
           setRecords([]);
@@ -277,7 +287,7 @@ export default function InstitutionAdminPage() {
 
   const navSummary = useMemo(() => {
     if (relationshipMode) return `${trail.map((node) => node.label).join(" / ")} / ${relationshipCopy[relationshipMode].title}`;
-    if (!trail.length) return "Start with a programme";
+    if (!trail.length) return "All courses";
     return trail.map((node) => node.label).join(" / ");
   }, [relationshipMode, trail]);
 
@@ -286,7 +296,7 @@ export default function InstitutionAdminPage() {
     setRelationshipMode(null);
     setActiveKind(kind);
     setStatus("ALL");
-    if (kind === "programmes") {
+    if (kind === "programmes" || kind === "courses") {
       setTrail([]);
       setIds({ programmeId: "", courseId: "", moduleId: "", lessonId: "" });
     }
@@ -333,11 +343,7 @@ export default function InstitutionAdminPage() {
   function selectRecord(record: ContentRecord) {
     if (activeKind === "learning-resources") return;
     const node = { kind: activeKind, id: record.id, label: titleFor(record) };
-    if (activeKind === "programmes") {
-      setIds({ programmeId: record.id, courseId: "", moduleId: "", lessonId: "" });
-      setTrail([node]);
-      setActiveKind("courses");
-    } else if (activeKind === "courses") {
+    if (activeKind === "courses") {
       setIds((current) => ({ ...current, courseId: record.id, moduleId: "", lessonId: "" }));
       setTrail((current) => [...current.slice(0, 1), node]);
       setActiveKind("course-modules");
@@ -357,9 +363,7 @@ export default function InstitutionAdminPage() {
     const nodeIndex = sectionOrder[node.kind];
     setTrail((current) => current.slice(0, nodeIndex + 1));
     setActiveKind(node.kind);
-    if (node.kind === "programmes") {
-      setIds((current) => ({ ...current, programmeId: node.id, courseId: "", moduleId: "", lessonId: "" }));
-    } else if (node.kind === "courses") {
+    if (node.kind === "courses") {
       setIds((current) => ({ ...current, courseId: node.id, moduleId: "", lessonId: "" }));
     } else if (node.kind === "course-modules") {
       setIds((current) => ({ ...current, moduleId: node.id, lessonId: "" }));
@@ -425,7 +429,14 @@ export default function InstitutionAdminPage() {
     const body: Record<string, string | number> = {};
 
     if (!editing && isProgramme) body.institutionId = formValue("institutionId").trim();
-    if (!editing && isCourse) body.programmeId = ids.programmeId;
+    if (!editing && isCourse) {
+      if (!courseCreateProgrammeId) {
+        setError("No existing course catalogue is available for this course.");
+        setSaving(false);
+        return;
+      }
+      body.programmeId = courseCreateProgrammeId;
+    }
     if (!editing && isModule) body.courseId = ids.courseId;
     if (!editing && isLesson) body.moduleId = ids.moduleId;
     if (!editing && activeKind === "learning-resources") body.lessonId = ids.lessonId;
@@ -506,7 +517,9 @@ export default function InstitutionAdminPage() {
     }
   }
 
-  const formTitle = editing ? `Edit ${labelFor(activeKind).slice(0, -1).toLowerCase()}` : `Create ${labelFor(activeKind).slice(0, -1).toLowerCase()}`;
+  const formTitle = activeKind === "courses"
+    ? editing ? "Edit Course" : "Create Course"
+    : editing ? `Edit ${labelFor(activeKind).slice(0, -1).toLowerCase()}` : `Create ${labelFor(activeKind).slice(0, -1).toLowerCase()}`;
   const supportsOrdering = ["course-modules", "lessons", "learning-resources"].includes(activeKind);
 
   return (
@@ -630,20 +643,20 @@ export default function InstitutionAdminPage() {
               <h1>{currentSection.title}</h1>
               <p>{currentSection.description}</p>
            </div>
-             <button className="primary-button" type="button" onClick={openCreate} disabled={Boolean(relationshipMode || insightMode) || (activeKind !== "programmes" && !activeParentId)}>
-              <span>+</span> New {labelFor(activeKind).slice(0, -1)}
+              <button className="primary-button" type="button" onClick={openCreate} disabled={Boolean(relationshipMode || insightMode) || (activeKind !== "courses" && !activeParentId)}>
+               <span>+</span> {activeKind === "courses" ? "Create Course" : `New ${labelFor(activeKind).slice(0, -1)}`}
             </button>
           </div>
 
            <div className="breadcrumb-bar">
-            <button type="button" className={trail.length === 0 ? "crumb current" : "crumb"} onClick={() => showSection("programmes")}>All programmes</button>
+             <button type="button" className={trail.length === 0 ? "crumb current" : "crumb"} onClick={() => showSection("courses")}>All courses</button>
             {trail.map((node) => (
               <span className="crumb-group" key={node.id}>
                 <span className="crumb-separator">/</span>
                 <button type="button" className={node.kind === activeKind ? "crumb current" : "crumb"} onClick={() => selectTrail(node)}>{node.label}</button>
               </span>
             ))}
-             {!relationshipMode && activeKind !== "programmes" && <><span className="crumb-separator">/</span><span className="crumb current">{labelFor(activeKind)}</span></>}
+             {!relationshipMode && activeKind !== "courses" && <><span className="crumb-separator">/</span><span className="crumb current">{labelFor(activeKind)}</span></>}
              {relationshipMode && <><span className="crumb-separator">/</span><span className="crumb current">{relationshipCopy[relationshipMode].title}</span></>}
           </div>
 
@@ -665,7 +678,7 @@ export default function InstitutionAdminPage() {
            ) : <section className="content-panel">
             <div className="panel-toolbar">
               <div>
-                <h2>{activeKind === "programmes" ? "Your programmes" : selectedParent ? `${labelFor(activeKind)} in ${selectedParent.label}` : labelFor(activeKind)}</h2>
+                 <h2>{activeKind === "courses" ? "Your courses" : selectedParent ? `${labelFor(activeKind)} in ${selectedParent.label}` : labelFor(activeKind)}</h2>
                 <span className="panel-subtitle">{navSummary}</span>
               </div>
               <div className="toolbar-controls">
@@ -688,8 +701,8 @@ export default function InstitutionAdminPage() {
             {!error && loading && (
               <div className="state-box"><div className="spinner" /><div><strong>Loading {labelFor(activeKind).toLowerCase()}…</strong><p>Checking your tenant-scoped catalogue.</p></div></div>
             )}
-            {!error && !loading && !canLoad && (
-              <div className="state-box"><div className="state-symbol soft">→</div><div><strong>Choose a parent to continue</strong><p>Select a {labelFor(activeKind === "courses" ? "programmes" : activeKind === "course-modules" ? "courses" : activeKind === "lessons" ? "course-modules" : "lessons").slice(0, -1).toLowerCase()} from the previous level.</p></div></div>
+             {!error && !loading && !canLoad && (
+               <div className="state-box"><div className="state-symbol soft">→</div><div><strong>Choose a parent to continue</strong><p>Select a {labelFor(activeKind === "course-modules" ? "courses" : activeKind === "lessons" ? "course-modules" : "lessons").slice(0, -1).toLowerCase()} from the previous level.</p></div></div>
             )}
             {!error && !loading && canLoad && visibleRecords.length === 0 && (
               <div className="state-box empty-box"><div className="state-symbol soft">+</div><div><strong>No {labelFor(activeKind).toLowerCase()} yet</strong><p>Start building this part of the learning hierarchy. New items begin as drafts.</p><button className="text-button" type="button" onClick={openCreate}>Create the first one →</button></div></div>
@@ -714,7 +727,7 @@ export default function InstitutionAdminPage() {
               </div>
             )}
            </section>}
-           <p className="scope-note"><span>✓</span> {relationshipMode ? "All relationships are institution-scoped and recorded in the audit trail." : "All content is isolated to your authenticated tenant and recorded in the audit trail."}</p>
+            <p className="scope-note"><span>✓</span> {relationshipMode ? "All relationships are institution-scoped and recorded in the audit trail." : "All content is isolated to your authenticated tenant and recorded in the audit trail."}</p>
         </div>
       </section>
 
@@ -722,7 +735,7 @@ export default function InstitutionAdminPage() {
         <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setModalOpen(false); }}>
           <section className="modal" role="dialog" aria-modal="true" aria-labelledby="content-form-title">
             <div className="modal-heading"><div><div className="eyebrow">{editing ? "Update content" : "Add to hierarchy"}</div><h2 id="content-form-title">{formTitle}</h2></div><button type="button" className="close-button" onClick={() => setModalOpen(false)} aria-label="Close form">×</button></div>
-            <p className="modal-intro">Fields marked with <span>*</span> are required. New content is saved as a draft.</p>
+             <p className="modal-intro">Fields marked with <span>*</span> are required.</p>
             <form onSubmit={submitForm}>
               {activeKind === "programmes" && !editing && <label>Institution ID *<input required value={formValue("institutionId")} onChange={(event) => updateForm("institutionId", event.target.value)} placeholder="UUID from your institution profile" /></label>}
               {(activeKind === "programmes") ? <label>Programme name *<input required minLength={2} value={formValue("name")} onChange={(event) => updateForm("name", event.target.value)} placeholder="e.g. Digital Skills Foundation" /></label> : <label>{activeKind === "learning-resources" ? "Resource title" : `${labelFor(activeKind).slice(0, -1)} title`} *<input required minLength={2} value={formValue("title")} onChange={(event) => updateForm("title", event.target.value)} placeholder="Give this content a clear title" /></label>}
@@ -732,7 +745,7 @@ export default function InstitutionAdminPage() {
               {(supportsOrdering || activeKind === "learning-resources") && <label>Order *<input required type="number" min={1} value={formValue("sequence")} onChange={(event) => updateForm("sequence", event.target.value)} /></label>}
               {activeKind === "lessons" && <label>Estimated duration (minutes)<input type="number" min={0} value={formValue("estimatedDuration")} onChange={(event) => updateForm("estimatedDuration", event.target.value)} placeholder="Optional" /></label>}
               {activeKind === "learning-resources" && <><label>URL<input type="url" value={formValue("url")} onChange={(event) => updateForm("url", event.target.value)} placeholder="https://…" /></label>{["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(formValue("resourceType")) && <label>{formValue("resourceType") === "SCORM" ? "SCORM package (.zip)" : "Managed file"}<input type="file" accept={formValue("resourceType") === "SCORM" ? ".zip,application/zip" : ".pdf,.doc,.docx,.odt,.ppt,.pptx,.odp"} onChange={(event) => setSelectedFile(event.target.files?.[0] || null)} />{selectedFile && <span className="selected-file">{selectedFile.name} · {(selectedFile.size / 1024 / 1024).toFixed(1)} MB</span>}</label>}<label>Duration (minutes)<input type="number" min={0} value={formValue("duration")} onChange={(event) => updateForm("duration", event.target.value)} placeholder="Optional" /></label><p className="field-hint">Files are stored inside your tenant, scanned for safe paths, and served only after permission checks. SCORM packages must contain imsmanifest.xml.</p></>}
-              <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? "Saving…" : editing ? "Save changes" : "Create draft"}</button></div>
+              <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? "Saving…" : editing ? "Save changes" : activeKind === "courses" ? "Create Course" : "Create"}</button></div>
             </form>
           </section>
         </div>
