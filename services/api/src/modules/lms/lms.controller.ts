@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
-import { FileInterceptor } from "@nestjs/platform-express";
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from "@nestjs/common";
+import { AnyFilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
 import { paginationFrom } from "../../common/pagination";
@@ -125,6 +125,23 @@ export class LmsController {
   @RequirePermission("lms.course.create")
   async createCourse(@Body() input: CreateCourseDto, @Req() request: ContextRequest) {
     return successResponse(await this.lms.createCourse(input, request), request);
+  }
+
+  @Post("course-builder")
+  @RequirePermission("lms.course.create")
+  @UseInterceptors(AnyFilesInterceptor({ limits: { files: 100, fileSize: 250 * 1024 * 1024 } }))
+  async createCourseBuilder(
+    @Body("structure") structure: string,
+    @UploadedFiles() files: Array<LmsUpload & { fieldname: string }>,
+    @Req() request: ContextRequest,
+  ) {
+    let payload: unknown;
+    try {
+      payload = JSON.parse(structure);
+    } catch {
+      throw new BadRequestException("The course structure must be valid JSON.");
+    }
+    return successResponse(await this.lms.createCourseBuilder(payload, files ?? [], request), request);
   }
 
   @Get("courses/:id")
