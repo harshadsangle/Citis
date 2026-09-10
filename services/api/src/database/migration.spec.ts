@@ -26,6 +26,7 @@ const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packag
 const paymentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/023_razorpay_course_payments.sql"), "utf8");
 const progressIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/024_lms_progress_assessment_assignment_integrity.sql"), "utf8");
 const certificateLifecycleMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/025_lms_certificate_lifecycle.sql"), "utf8");
+const tenantParentIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/026_lms_tenant_parent_integrity.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -259,4 +260,13 @@ test("Step 7 migration supports certificate review lifecycle and admin reporting
   assert.match(certificateLifecycleMigration, /lms\.report\.export/);
   assert.match(certificateLifecycleMigration, /r\.code = 'CITIS_ADMIN'/);
   assert.match(certificateLifecycleMigration, /025_lms_certificate_lifecycle/);
+});
+
+test("Step 8 migration enforces tenant-matched LMS parent hierarchy", () => {
+  assert.match(tenantParentIntegrityMigration, /courses_tenant_institution_programme_fk/);
+  assert.match(tenantParentIntegrityMigration, /course_modules_tenant_course_fk/);
+  assert.match(tenantParentIntegrityMigration, /lessons_tenant_module_fk/);
+  assert.match(tenantParentIntegrityMigration, /learning_resources_tenant_lesson_fk/);
+  assert.match(tenantParentIntegrityMigration, /Existing course hierarchy violations prevent tenant-parent integrity migration/);
+  assert.match(tenantParentIntegrityMigration, /026_lms_tenant_parent_integrity/);
 });
