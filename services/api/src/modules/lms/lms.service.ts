@@ -1963,6 +1963,38 @@ export class LmsService {
     return result.rows[0];
   }
 
+  private async activeAssignmentEnrollment(assignment: Record<string, unknown>, user: AuthenticatedUser) {
+    if (!user.roles.some((role) => role.code === "STUDENT")) {
+      throw new ForbiddenException("An authenticated learner is required.");
+    }
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT e.id, e.tenant_id, e.institution_id, e.campus_id, e.course_id, e.learner_id, e.status, e.enrolled_at
+       FROM lms_enrollments e
+       JOIN courses c ON c.id = e.course_id AND c.tenant_id = e.tenant_id
+       JOIN lms_student_profiles sp ON sp.tenant_id = e.tenant_id AND sp.user_id = e.learner_id
+       WHERE e.tenant_id = $1 AND e.course_id = $2 AND e.learner_id = $3 AND e.status = 'ACTIVE'
+         AND e.institution_id = $4
+         AND e.campus_id IS NOT DISTINCT FROM $5
+         AND e.institution_id = c.institution_id
+         AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+         AND sp.status = 'ACTIVE'
+         AND (
+           (sp.student_type = 'DIRECT_STUDENT' AND sp.institution_id IS NULL)
+           OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = c.institution_id)
+         )
+       LIMIT 1`,
+      [
+        user.tenantId,
+        assignment.course_id,
+        user.id,
+        assignment.institution_id,
+        assignment.campus_id ?? null,
+      ],
+    );
+    if (!result.rows[0]) throw new ForbiddenException("An active enrollment in this institution and course is required.");
+    return result.rows[0];
+  }
+
   private async assertProgressViewer(course: Record<string, unknown>, user: AuthenticatedUser, learnerId: string) {
     const selfEnrollment = await this.db.query(
       `SELECT 1
