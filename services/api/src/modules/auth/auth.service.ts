@@ -972,11 +972,30 @@ export class AuthService {
        WHERE tenant_id = $1 AND mobile = $2 AND purpose = 'LOGIN' AND consumed_at IS NULL`,
       [tenant.rows[0].id, input.mobile.trim()],
     );
-    await this.db.query(
+    const challenge = await this.db.query<{ id: string }>(
       `INSERT INTO auth_challenges (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at)
-        VALUES ($1, $2, $2, 'SMS', 'LOGIN', $3, now() + interval '10 minutes')`,
+        VALUES ($1, $2, $2, 'SMS', 'LOGIN', $3, now() + interval '10 minutes')
+        RETURNING id`,
       [tenant.rows[0].id, input.mobile.trim(), hashToken(code)],
     );
+    const challengeId = challenge.rows[0]?.id;
+    if (!challengeId) throw new UnauthorizedException("Unable to create a verification challenge.");
+
+    try {
+      await this.otpDelivery.deliver({
+        channel: "SMS",
+        destination: input.mobile.trim(),
+        code,
+        purpose: "LOGIN",
+      });
+    } catch (error) {
+      await this.db.query(
+        "UPDATE auth_challenges SET consumed_at = now() WHERE id = $1 AND consumed_at IS NULL",
+        [challengeId],
+      );
+      throw error;
+    }
+
     return { accepted: true, expiresInSeconds: 600 };
   }
 
