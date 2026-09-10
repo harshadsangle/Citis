@@ -101,7 +101,7 @@ test("concurrent refunds reserve the refundable amount under the payment lock", 
   const refunds: Array<Record<string, any>> = [];
   let nextRefundId = 1;
   let releaseTransaction: Promise<void> = Promise.resolve();
-  let unlockTransaction = () => undefined;
+  let unlockTransaction: () => void = () => undefined;
   const transactionLock = new Promise<void>((resolve) => { unlockTransaction = resolve; });
   let firstTransaction = true;
   const transaction = async (work: (client: any) => Promise<unknown>) => {

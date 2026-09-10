@@ -531,11 +531,10 @@ function mergeWatchedRange(state: VideoWatchState, start: number, end: number, d
       return merged;
     }, []);
   const nextDuration = Math.max(state.duration, duration || 0, safeEnd);
-  const watchedSeconds = ranges.reduce((total, [rangeStart, rangeEnd]) => total + (rangeEnd - rangeStart), 0);
   return {
     duration: nextDuration,
     watchedRanges: ranges,
-    completed: nextDuration > 0 && watchedSeconds >= nextDuration - 0.5,
+    completed: state.completed,
     resumeSeconds: safeEnd,
   };
 }
