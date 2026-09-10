@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import type { AuthenticatedUser } from "../../common/request-context";
 import { PaymentsService } from "./payments.service";
 
@@ -80,4 +80,82 @@ test("invalid signatures cannot activate an enrollment", async () => {
     UnauthorizedException,
   );
   assert.equal(fetchCalled, false);
+});
+
+test("concurrent refunds reserve the refundable amount under the payment lock", async () => {
+  const admin: AuthenticatedUser = {
+    ...directStudent,
+    id: "admin-1",
+    studentType: undefined,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  };
+  const payment = {
+    id: "payment-1",
+    tenant_id: admin.tenantId,
+    student_id: "student-1",
+    course_id: "course-1",
+    amount_minor: "1000",
+    status: "CAPTURED",
+    razorpay_payment_id: "pay-1",
+  };
+  const refunds: Array<Record<string, any>> = [];
+  let nextRefundId = 1;
+  let releaseTransaction: Promise<void> = Promise.resolve();
+  let unlockTransaction = () => undefined;
+  const transactionLock = new Promise<void>((resolve) => { unlockTransaction = resolve; });
+  let firstTransaction = true;
+  const transaction = async (work: (client: any) => Promise<unknown>) => {
+    if (firstTransaction) {
+      firstTransaction = false;
+      releaseTransaction = transactionLock;
+    } else {
+      await releaseTransaction;
+    }
+    const client = {
+      query: async (text: string, values: unknown[] = []) => {
+        if (text.includes("SELECT * FROM lms_payments")) return { rows: [payment] };
+        if (text.includes("SELECT COALESCE(sum(amount_minor), 0)::text AS total") && text.includes("PENDING")) {
+          return { rows: [{ total: String(refunds.filter((refund) => ["PENDING", "PROCESSED"].includes(refund.status)).reduce((sum, refund) => sum + refund.amount_minor, 0)) }] };
+        }
+        if (text.startsWith("INSERT INTO lms_refunds")) {
+          const refund = { id: `refund-${nextRefundId++}`, tenant_id: admin.tenantId, payment_id: payment.id, initiated_by: admin.id, amount_minor: Number(values[3]), status: "PENDING" };
+          refunds.push(refund);
+          return { rows: [refund] };
+        }
+        if (text.startsWith("SELECT r.*")) return { rows: [refunds.find((refund) => refund.id === values[0])] };
+        if (text.startsWith("UPDATE lms_refunds")) {
+          const refund = refunds.find((item) => item.id === values[0]);
+          if (!refund || refund.status === "PROCESSED") return { rows: [] };
+          refund.status = "PROCESSED";
+          refund.razorpay_refund_id = values[1];
+          return { rows: [refund] };
+        }
+        if (text.includes("SELECT COALESCE(sum(amount_minor), 0)::text AS total") && text.includes("PROCESSED")) {
+          return { rows: [{ total: String(refunds.filter((refund) => refund.status === "PROCESSED").reduce((sum, refund) => sum + refund.amount_minor, 0)) }] };
+        }
+        return { rows: [] };
+      },
+    };
+    const result = await work(client);
+    if (firstTransaction === false && refunds.some((refund) => refund.status === "PENDING")) unlockTransaction();
+    return result;
+  };
+  const service = serviceWith(async (text, values) => {
+    if (text.startsWith("UPDATE lms_refunds SET status = 'FAILED'")) return { rows: [] };
+    return { rows: [] };
+  }, transaction, {
+    refundPayment: async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return { id: "provider-refund-1", amount: 1000 };
+    },
+  });
+
+  const first = service.initiateRefund("payment-1", { amountMinor: 1000, reason: "Duplicate payment" }, admin);
+  const second = service.initiateRefund("payment-1", { amountMinor: 1000, reason: "Duplicate payment" }, admin);
+  const [firstResult, secondResult] = await Promise.allSettled([first, second]);
+
+  assert.equal(firstResult.status, "fulfilled");
+  assert.equal(secondResult.status, "rejected");
+  if (secondResult.status === "rejected") assert.ok(secondResult.reason instanceof BadRequestException);
+  assert.equal(refunds.filter((refund) => refund.status === "PROCESSED").length, 1);
 });

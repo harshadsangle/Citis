@@ -554,6 +554,58 @@ test("resource progress is clamped, persisted, and rate limited", async () => {
   assert.equal(queries.at(-1)?.values[10], 100);
 });
 
+test("resource progress ignores a forged completion flag until server progress reaches the end", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "learner-forged-progress",
+    roles: [{ code: "STUDENT", name: "Student" }],
+  };
+  const queries: Array<{ text: string; values: unknown[] }> = [];
+  const db = {
+    query: async (text: string, values: unknown[]) => {
+      queries.push({ text, values });
+      if (text.startsWith("SELECT lr.*")) {
+        return {
+          rows: [{
+            id: "resource-1",
+            tenant_id: user.tenantId,
+            institution_id: "institution-1",
+            campus_id: null,
+            course_id: "course-1",
+            module_id: "module-1",
+            lesson_id: "lesson-1",
+            resource_type: "VIDEO",
+            resource_status: "PUBLISHED",
+            lesson_status: "PUBLISHED",
+            module_status: "PUBLISHED",
+            course_status: "PUBLISHED",
+            programme_status: "PUBLISHED",
+            institution_status: "ACTIVE",
+          }],
+        };
+      }
+      return { rows: [{ resource_id: "resource-1", progress_percent: 0, completed: false, position_seconds: 1, duration_seconds: 120 }] };
+    },
+  };
+  const service = new LmsService(
+    db as never,
+    { record: async () => undefined } as never,
+    new ResourceStorageService(),
+    undefined,
+    new LmsContentRateLimiter(),
+  );
+
+  const result = await service.updateResourceProgress("resource-1", {
+    positionSeconds: 1,
+    durationSeconds: 120,
+    completed: true,
+  }, { context: { ...request.context, user: learner } } as unknown as ContextRequest);
+
+  assert.equal(result.completed, false);
+  assert.equal(queries.at(-1)?.values[10], 0.83);
+  assert.equal(queries.at(-1)?.values[11], false);
+});
+
 test("enrollment accepts an active institution Student and audits the mutation", async () => {
   const audits: Array<Record<string, unknown>> = [];
   const queries: string[] = [];
