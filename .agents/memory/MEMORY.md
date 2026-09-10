@@ -24,3 +24,4 @@
 - [LMS content access boundary](lms-content-access-boundary.md) — protect both hierarchy lists and direct lesson/file/SCORM reads with the same scoped course-access rules.
 - [Security audit remediation](security-audit-remediation.md) — audit every nested lockfile and centralize importer storage containment with traversal tests.
 - [Class-validator string limits](class-validator-string-limits.md) — use `@MaxLength` for text and URL limits instead of numeric `@Max`.
+- [Permission guard scope](permission-guard-scope.md) — institution-scoped LMS administrator roles must not globally bypass unrelated permission checks.
