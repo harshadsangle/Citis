@@ -26,3 +26,5 @@
 - [Security audit remediation](security-audit-remediation.md) — audit every nested lockfile and centralize importer storage containment with traversal tests.
 - [Class-validator string limits](class-validator-string-limits.md) — use `@MaxLength` for text and URL limits instead of numeric `@Max`.
 - [Permission guard scope](permission-guard-scope.md) — institution-scoped LMS administrator roles must not globally bypass unrelated permission checks.
+- [Refund concurrency safety](refund-concurrency.md) — reserve refundable balance under a payment-row lock before calling Razorpay.
+- [Video completion authority](video-completion-authority.md) — browser playback state never authorizes lesson, course, or certificate completion.
