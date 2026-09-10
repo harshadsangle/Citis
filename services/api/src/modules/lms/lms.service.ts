@@ -2257,10 +2257,12 @@ export class LmsService {
       throw new ForbiddenException("Only enrolled learners can update resource progress.");
     }
     const resource = await this.resourceFor(resourceId, user);
-    const duration = Math.max(0, Number(input.durationSeconds));
+    const suppliedDuration = Math.max(0, Number(input.durationSeconds));
+    const resourceDuration = Math.max(0, Number(resource.duration || 0));
+    const duration = resourceDuration > 0 ? resourceDuration : suppliedDuration;
     const position = Math.min(Math.max(0, Number(input.positionSeconds)), duration || Number(input.positionSeconds));
-    const percentage = duration > 0 ? Math.min(100, Math.round((position / duration) * 10000) / 100) : (input.completed ? 100 : 0);
-    const completed = Boolean(input.completed) || percentage >= 99.5;
+    const percentage = duration > 0 ? Math.min(100, Math.round((position / duration) * 10000) / 100) : 0;
+    const completed = duration > 0 && position >= duration - 0.5;
     await this.recordActivity(user, "RESOURCE_PROGRESS_UPDATED", resource.institution_id as string | null, user.id, "resource", resourceId, {
       progressPercent: percentage,
       completed,
@@ -2274,7 +2276,7 @@ export class LmsService {
        DO UPDATE SET position_seconds = EXCLUDED.position_seconds,
                      duration_seconds = EXCLUDED.duration_seconds,
                      progress_percent = EXCLUDED.progress_percent,
-                     completed = EXCLUDED.completed,
+                      completed = lms_resource_progress.completed OR EXCLUDED.completed,
                      last_accessed_at = now(),
                      updated_at = now()
        RETURNING id, resource_id, learner_id, position_seconds, duration_seconds, progress_percent,

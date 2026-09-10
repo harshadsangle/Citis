@@ -389,83 +389,89 @@ export class PaymentsService {
 
   async initiateRefund(id: string, input: CreateRefundDto, user: AuthenticatedUser, requestId = "payment-refund") {
     this.assertCitisAdmin(user);
-    const paymentResult = await this.db.query<Record<string, unknown>>(
-      "SELECT * FROM lms_payments WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
-      [id, user.tenantId],
-    );
-    const payment = paymentResult.rows[0];
-    if (!payment || !["CAPTURED", "PARTIALLY_REFUNDED"].includes(String(payment.status)) || !payment.razorpay_payment_id) {
-      throw new ConflictException("Only a captured payment can be refunded.");
-    }
-    const refundedResult = await this.db.query<{ total: string }>(
-      "SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM lms_refunds WHERE payment_id = $1 AND status IN ('PENDING', 'PROCESSED')",
-      [id],
-    );
-    const remaining = Number(payment.amount_minor) - Number(refundedResult.rows[0]?.total || 0);
-    const amount = input.amountMinor ?? remaining;
-    if (amount <= 0 || amount > remaining) throw new BadRequestException("The refund amount is invalid.");
-    const refund = await this.db.query<Record<string, unknown>>(
-      `INSERT INTO lms_refunds (tenant_id, payment_id, initiated_by, amount_minor, reason, status)
-       VALUES ($1, $2, $3, $4, $5, 'PENDING') RETURNING *`,
-      [user.tenantId, id, user.id, amount, input.reason.trim()],
-    );
+    const reservation = await this.db.transaction(async (client) => {
+      const paymentResult = await client.query<Record<string, unknown>>(
+        "SELECT * FROM lms_payments WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
+        [id, user.tenantId],
+      );
+      const payment = paymentResult.rows[0];
+      if (!payment || !["CAPTURED", "PARTIALLY_REFUNDED"].includes(String(payment.status)) || !payment.razorpay_payment_id) {
+        throw new ConflictException("Only a captured payment can be refunded.");
+      }
+      const refundedResult = await client.query<{ total: string }>(
+        "SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM lms_refunds WHERE payment_id = $1 AND status IN ('PENDING', 'PROCESSED')",
+        [id],
+      );
+      const remaining = Number(payment.amount_minor) - Number(refundedResult.rows[0]?.total || 0);
+      const amount = input.amountMinor ?? remaining;
+      if (amount <= 0 || amount > remaining) throw new BadRequestException("The refund amount is invalid.");
+      const refund = await client.query<Record<string, unknown>>(
+        `INSERT INTO lms_refunds (tenant_id, payment_id, initiated_by, amount_minor, reason, status)
+         VALUES ($1, $2, $3, $4, $5, 'PENDING') RETURNING *`,
+        [user.tenantId, id, user.id, amount, input.reason.trim()],
+      );
+      return { payment, refund: refund.rows[0], amount };
+    });
     try {
-      const providerRefund = await this.razorpay.refundPayment(String(payment.razorpay_payment_id), {
-        amount,
+      const providerRefund = await this.razorpay.refundPayment(String(reservation.payment.razorpay_payment_id), {
+        amount: reservation.amount,
         notes: { reason: input.reason.trim(), paymentReference: id },
       });
-      const processed = await this.markRefundProcessed(String(providerRefund.id), Number(providerRefund.amount), String(refund.rows[0].id));
+      const processed = await this.markRefundProcessed(String(providerRefund.id), Number(providerRefund.amount), String(reservation.refund.id));
       await this.audit.record({
         tenantId: user.tenantId,
         actorUserId: user.id,
         requestId,
         module: "payments",
         resource: "refund",
-        resourceId: String(refund.rows[0].id),
+        resourceId: String(reservation.refund.id),
         action: "CREATE",
-        newValue: { paymentId: id, amountMinor: amount, reason: input.reason.trim(), providerRefundId: providerRefund.id, status: "PROCESSED" },
+        newValue: { paymentId: id, amountMinor: reservation.amount, reason: input.reason.trim(), providerRefundId: providerRefund.id, status: "PROCESSED" },
       });
       return processed;
     } catch (error) {
       await this.db.query(
         "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE id = $1",
-        [refund.rows[0].id, "Razorpay refund request failed."],
+        [reservation.refund.id, "Razorpay refund request failed."],
       );
       throw error;
     }
   }
 
   private async markRefundProcessed(providerRefundId: string, amount: number, refundId?: string, providerPaymentId?: string) {
-    const refundResult = await this.db.query<Record<string, unknown>>(
-      `SELECT r.*, p.student_id, p.course_id, p.amount_minor AS payment_amount
-       FROM lms_refunds r JOIN lms_payments p ON p.id = r.payment_id
-       WHERE ${refundId ? "r.id = $1" : "(r.razorpay_refund_id = $1 OR (r.status = 'PENDING' AND p.razorpay_payment_id = $2))"}
-       LIMIT 1`,
-      refundId ? [refundId] : [providerRefundId, providerPaymentId || null],
-    );
-    const refund = refundResult.rows[0];
-    if (!refund) return { received: true, ignored: true };
-    const updated = await this.db.query<Record<string, unknown>>(
-      `UPDATE lms_refunds SET razorpay_refund_id = COALESCE(razorpay_refund_id, $2), status = 'PROCESSED',
-         processed_at = COALESCE(processed_at, now()), updated_at = now()
-       WHERE id = $1 AND status <> 'PROCESSED' RETURNING *`,
-      [refund.id, providerRefundId],
-    );
-    if (!updated.rows[0]) return updated.rows[0] || refund;
-    const total = await this.db.query<{ total: string }>(
-      "SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM lms_refunds WHERE payment_id = $1 AND status = 'PROCESSED'",
-      [refund.payment_id],
-    );
-    const paymentStatus = Number(total.rows[0]?.total || 0) >= Number(refund.payment_amount) ? "REFUNDED" : "PARTIALLY_REFUNDED";
-    await this.db.query(
-      "UPDATE lms_payments SET status = $2, refunded_at = now(), updated_at = now() WHERE id = $1",
-      [refund.payment_id, paymentStatus],
-    );
-    await this.db.query(
-      `UPDATE lms_enrollments SET status = 'REMOVED', removed_by = $3, removed_at = now(), updated_at = now()
-       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $4 AND assignment_source = 'DIRECT' AND status = 'ACTIVE'`,
-      [refund.tenant_id, refund.course_id, refund.initiated_by, refund.student_id],
-    );
-    return updated.rows[0];
+    return this.db.transaction(async (client) => {
+      const refundResult = await client.query<Record<string, unknown>>(
+        `SELECT r.*, p.student_id, p.course_id, p.amount_minor AS payment_amount
+         FROM lms_refunds r JOIN lms_payments p ON p.id = r.payment_id
+         WHERE ${refundId ? "r.id = $1" : "(r.razorpay_refund_id = $1 OR (r.status = 'PENDING' AND p.razorpay_payment_id = $2))"}
+         LIMIT 1
+         FOR UPDATE`,
+        refundId ? [refundId] : [providerRefundId, providerPaymentId || null],
+      );
+      const refund = refundResult.rows[0];
+      if (!refund) return { received: true, ignored: true };
+      const updated = await client.query<Record<string, unknown>>(
+        `UPDATE lms_refunds SET razorpay_refund_id = COALESCE(razorpay_refund_id, $2), status = 'PROCESSED',
+           processed_at = COALESCE(processed_at, now()), updated_at = now()
+         WHERE id = $1 AND status <> 'PROCESSED' RETURNING *`,
+        [refund.id, providerRefundId],
+      );
+      if (!updated.rows[0]) return updated.rows[0] || refund;
+      const total = await client.query<{ total: string }>(
+        "SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM lms_refunds WHERE payment_id = $1 AND status = 'PROCESSED'",
+        [refund.payment_id],
+      );
+      const paymentStatus = Number(total.rows[0]?.total || 0) >= Number(refund.payment_amount) ? "REFUNDED" : "PARTIALLY_REFUNDED";
+      await client.query(
+        "UPDATE lms_payments SET status = $2, refunded_at = now(), updated_at = now() WHERE id = $1",
+        [refund.payment_id, paymentStatus],
+      );
+      await client.query(
+        `UPDATE lms_enrollments SET status = 'REMOVED', removed_by = $3, removed_at = now(), updated_at = now()
+         WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $4 AND assignment_source = 'DIRECT' AND status = 'ACTIVE'`,
+        [refund.tenant_id, refund.course_id, refund.initiated_by, refund.student_id],
+      );
+      return updated.rows[0];
+    });
   }
 }
