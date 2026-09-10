@@ -104,11 +104,6 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 .record-meta { display: block; max-width: 300px; overflow: hidden; margin-top: 5px; color: #a0adba; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .record-detail, .updated-detail { overflow: hidden; color: #7d90a5; font-size: 10px; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
 .updated-detail { color: #a2afbd; }
-.status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: 100px; font-size: 9px; font-weight: 800; }
-.status-badge > span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.status-badge.draft { color: #bd8138; background: #fff4e1; }
-.status-badge.published { color: #299674; background: #e5f7f0; }
-.status-badge.archived { color: #8292a2; background: #eef2f5; }
 .row-actions { display: flex; justify-content: flex-end; gap: 10px; }
 .row-actions button { padding: 4px 0; border: 0; color: #5680a4; background: transparent; font-size: 10px; font-weight: 800; }
 .row-actions button:hover { color: #0c669b; }
@@ -285,9 +280,6 @@ h1 { color: #0a3454; font-size: clamp(31px, 3vw, 44px); }
 .record-row:hover { background: #f1f7f9; }
 .record-avatar { color: #bd6530; background: #fff0e7; }
 .record-title { color: #174c6e; font-family: var(--font-lms); }
-.status-badge { border: 1px solid transparent; padding: 6px 9px; }
-.status-badge.published { border-color: #bfe0d8; }
-.status-badge.draft { border-color: #f0d8c8; }
 .state-box { min-height: 300px; }
 .modal-backdrop { background: #082f508f; backdrop-filter: blur(6px); }
 .modal { border-color: #c9dce4; border-radius: 18px; box-shadow: 0 28px 80px #082f5035; }
@@ -938,7 +930,7 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
 }
 .panel-toolbar h2 { font-size: 16px; }
 .panel-subtitle { font-size: 13px; line-height: 1.55; }
-.list-head, .status-badge { font-size: 10px; }
+.list-head { font-size: 10px; }
 .record-title { font-size: 13px; }
 .record-meta, .record-detail, .updated-detail { font-size: 13px; }
 .relationship-heading p, .relationship-add p, .relationship-empty p, .relationship-alert, .relationship-alert p { font-size: 14px; line-height: 1.6; }
@@ -962,7 +954,7 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .brand small, .sidebar-footer span, .profile-trigger-copy small, .profile-menu-item small,
 .field-hint, .selected-file, .metric-foot, .relationship-count span { font-size: 12px; line-height: 1.45; }
 .sidebar-label, .eyebrow, .environment-pill, .help-link, .profile-trigger-copy strong,
-.profile-menu-item strong, .metric-label, .filter-label, .list-head, .status-badge { font-size: 13px; line-height: 1.45; }
+.profile-menu-item strong, .metric-label, .filter-label, .list-head { font-size: 13px; line-height: 1.45; }
 .nav-link, .sidebar-footer strong, .primary-button, .secondary-button, .crumb, .breadcrumb-bar,
 .record-meta, .record-detail, .updated-detail, .row-actions button, .row-action-link, .state-box a,
 .text-button, .modal label, .relationship-row, .relationship-person strong,
