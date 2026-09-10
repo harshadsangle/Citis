@@ -370,8 +370,6 @@ export default function InstitutionAdminPage() {
     setEditing(null);
     setSelectedFile(null);
     setForm({
-      institutionId: "",
-      name: "",
       title: "",
       code: "",
       description: "",
@@ -415,13 +413,11 @@ export default function InstitutionAdminPage() {
     event.preventDefault();
     setSaving(true);
     setError("");
-    const isProgramme = activeKind === "programmes";
     const isCourse = activeKind === "courses";
     const isModule = activeKind === "course-modules";
     const isLesson = activeKind === "lessons";
     const body: Record<string, string | number> = {};
 
-    if (!editing && isProgramme) body.institutionId = formValue("institutionId").trim();
     if (!editing && isCourse) {
       if (!courseCreateProgrammeId) {
         setError("No existing course catalogue is available for this course.");
@@ -433,13 +429,8 @@ export default function InstitutionAdminPage() {
     if (!editing && isModule) body.courseId = ids.courseId;
     if (!editing && isLesson) body.moduleId = ids.moduleId;
     if (!editing && activeKind === "learning-resources") body.lessonId = ids.lessonId;
-    if (isProgramme) {
-      body.name = formValue("name").trim();
-      if (!editing) body.code = formValue("code").trim();
-    } else {
-      body.title = formValue("title").trim();
-      if (!editing && isCourse) body.code = formValue("code").trim();
-    }
+    body.title = formValue("title").trim();
+    if (!editing && isCourse) body.code = formValue("code").trim();
     body.description = formValue("description").trim();
     if (["course-modules", "lessons", "learning-resources"].includes(activeKind)) {
       body.sequence = Number(formValue("sequence"));
