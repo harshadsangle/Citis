@@ -11,8 +11,6 @@ import {
   runMigrations,
 } from "./migrate";
 
-const migrationTest = process.env.DATABASE_URL ? test : test.skip;
-
 function newSchemaName() {
   return `migration_test_${randomBytes(8).toString("hex")}`;
 }
