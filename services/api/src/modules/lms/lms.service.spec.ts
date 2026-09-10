@@ -844,7 +844,7 @@ test("a learner submission is graded by a CITIS administrator and completes assi
   const reviewerRequest = { context: { ...request.context, user: reviewer } } as unknown as ContextRequest;
   const { service, audits } = serviceWith(async (text) => {
     if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
-    if (text.startsWith("SELECT e.id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
+    if (text.startsWith("SELECT e.id, e.tenant_id")) return { rows: [{ id: "enrollment-1" }] };
     if (text.startsWith("SELECT * FROM lms_assignment_submissions")) return { rows: submission ? [submission] : [] };
     if (text.startsWith("INSERT INTO lms_assignment_submissions")) {
       submission = { id: "submission-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", module_id: "module-1", assignment_id: "assignment-1", learner_id: "student-1", status: "SUBMITTED", submission_text: "My work" };
@@ -1081,7 +1081,7 @@ test("graded learner assignment submissions cannot be replaced", async () => {
   let insertAttempted = false;
   const { service } = serviceWith(async (text) => {
     if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
-    if (text.startsWith("SELECT e.id, tenant_id")) return { rows: [{ id: "enrollment-1" }] };
+    if (text.startsWith("SELECT e.id, e.tenant_id")) return { rows: [{ id: "enrollment-1" }] };
     if (text.startsWith("SELECT * FROM lms_assignment_submissions")) {
       return { rows: [{ id: "submission-1", status: "GRADED", grade: 90 }] };
     }
