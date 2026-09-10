@@ -1,0 +1,59 @@
+The previous implementation did NOT visibly change the course blocks on the actual `/lms` page.
+
+Do NOT just report completion.
+
+First inspect the ACTUAL rendered `/lms` page and identify the exact React component responsible for these visible course blocks.
+
+Then modify THAT component and its active styles.
+
+IMPORTANT:
+
+* Verify the component is actually imported/rendered by `citis-infotech/frontend/app/lms/page.tsx`.
+* Do not modify an unused/duplicate course-card component.
+* Do not modify only a non-active stylesheet.
+* Confirm the browser is rendering the changed source.
+
+I want a CLEAR visible redesign of the existing course blocks:
+
+1. Keep the current horizontal course-block structure and existing data.
+2. Give each block a premium card appearance with stronger depth, border and spacing.
+3. Improve the course-number/icon area.
+4. Make provider/category label visually prominent.
+5. Make course title more premium and readable.
+6. Improve metadata layout and icons.
+7. Add a dedicated right-side circular arrow/action area.
+8. Add a REAL hover interaction:
+
+   * card lifts slightly
+   * shadow increases
+   * border/accent becomes visible
+   * arrow moves/animates slightly
+   * existing action/details becomes more prominent
+9. Keep card height/layout stable on hover.
+10. Use the new attractive CITIS blue/indigo/purple light-theme palette.
+11. Make the effect work on ALL course blocks.
+12. Mobile must remain clean and responsive.
+
+DO NOT:
+
+* change backend/API/database
+* change routes/auth/permissions
+* change course content/data
+* add dummy data
+* create another course-card component
+* redesign the corporate website
+* spend time on Admin/CITIS_ADMIN verification
+
+CRITICAL FINAL CHECK:
+After editing, open the actual public `/lms` URL in the browser.
+Take/inspect the rendered course blocks.
+Hover an actual course block and verify the visual effect.
+If the blocks still look like the old design, continue debugging the active component/styles instead of reporting success.
+
+Report:
+
+* exact component file changed
+* exact stylesheet changed
+* confirmation that the changed component is rendered on `/lms`
+* what is visibly different
+* desktop + mobile verification result

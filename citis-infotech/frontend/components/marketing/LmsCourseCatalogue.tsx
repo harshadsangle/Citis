@@ -53,19 +53,39 @@ function searchableCourseText(course: LmsCourse) {
   return [course.title, course.description, course.audience, ...course.details.flatMap((detail) => [detail.label, detail.value]), ...course.objectiveAreas.flatMap((area) => [area.title, area.description])].join(" ").toLowerCase();
 }
 
-function CourseCard({ course, providerQuery, index }: { course: LmsCourse; providerQuery: string; index: number }) {
-  const firstDetail = course.details[0];
-  const secondDetail = course.details[1];
+function DetailIcon({ label }: { label: string }) {
+  const normalizedLabel = label.toLowerCase();
+  if (normalizedLabel.includes("objective") || normalizedLabel.includes("lesson")) return <Layers3 className="size-3.5" />;
+  if (normalizedLabel.includes("exam") || normalizedLabel.includes("experience") || normalizedLabel.includes("hour")) return <Clock3 className="size-3.5" />;
+  if (normalizedLabel.includes("source") || normalizedLabel.includes("pdf")) return <FileText className="size-3.5" />;
+  return <Award className="size-3.5" />;
+}
+
+function CourseCard({
+  course,
+  providerQuery,
+  index,
+  category,
+}: {
+  course: LmsCourse;
+  providerQuery: string;
+  index: number;
+  category: LmsCourseCategory;
+}) {
   return (
     <details className="lms-discovery-card" style={{ animationDelay: `${Math.min(index, 8) * 45}ms` }}>
       <summary className="lms-discovery-card-summary">
-        <span className="lms-card-art"><BookOpen className="size-5" /><span>{String(index + 1).padStart(2, "0")}</span></span>
+        <span className="lms-card-art"><span className="lms-card-index">{String(index + 1).padStart(2, "0")}</span><BookOpen className="size-4" /></span>
         <span className="lms-card-summary-copy">
-          <span className="lms-card-label"><span />Certification pathway</span>
+          <span className="lms-card-label"><span />{category.eyebrow}<i />{category.name}</span>
           <span className="lms-card-title">{course.title}</span>
-          <span className="lms-card-meta"><span><Clock3 className="size-3.5" />{firstDetail?.value ?? "Objective-led"}</span><span><Layers3 className="size-3.5" />{secondDetail?.value ?? `${course.objectiveAreas.length} areas`}</span></span>
+          <span className="lms-card-meta">
+            {course.details.slice(0, 3).map((detail) => (
+              <span key={detail.label}><DetailIcon label={detail.label} /><small>{detail.label}</small><strong>{detail.value}</strong></span>
+            ))}
+          </span>
         </span>
-        <span className="lms-card-open"><ChevronDown className="size-4" /></span>
+        <span className="lms-card-action"><span>View details</span><span className="lms-card-open"><ArrowRight className="size-4" /></span></span>
       </summary>
       <div className="lms-discovery-card-detail">
         <div className="lms-detail-intro"><div><span className="lms-detail-pill"><FileText className="size-3.5" />Official exam objectives</span><span className="lms-detail-pill lms-detail-pill-orange"><Sparkles className="size-3.5" />Career-ready pathway</span></div><p>{course.description}</p></div>
@@ -85,7 +105,7 @@ function CategoryPanel({ category, index, providerQuery }: { category: LmsCourse
         <div className="lms-provider-heading-main"><span className="lms-provider-mark"><ProviderLogo provider={category.id as LmsCourseProvider} /></span><div><span className="lms-provider-eyebrow">{category.eyebrow}</span><h3>{category.name}</h3><p>{category.description}</p></div></div>
         <div className="lms-provider-count"><strong>{category.courses.length}</strong><span>{category.courses.length === 1 ? "course" : "courses"}</span></div>
       </div>
-      <div className="lms-course-grid">{category.courses.map((course, courseIndex) => <CourseCard key={course.id} course={course} providerQuery={providerQuery} index={courseIndex} />)}</div>
+      <div className="lms-course-grid">{category.courses.map((course, courseIndex) => <CourseCard key={course.id} course={course} category={category} providerQuery={providerQuery} index={courseIndex} />)}</div>
     </section>
   );
 }
