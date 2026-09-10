@@ -70,6 +70,7 @@ type CourseForm = {
   purchasable: boolean;
 };
 
+type ValidationErrors = Record<string, string>;
 type ApiResponse<T = { id: string }> = { success: true; data: T };
 
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
@@ -139,6 +140,28 @@ function labelForType(value: string) {
   return value.replaceAll("_", " ").toLowerCase().replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
+function isValidUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function isNumberInRange(value: string, minimum: number, maximum: number, integer = false) {
+  if (!value.trim()) return false;
+  const number = Number(value);
+  return Number.isFinite(number)
+    && number >= minimum
+    && number <= maximum
+    && (!integer || Number.isInteger(number));
+}
+
+function hasAtMostTwoDecimals(value: string) {
+  return !value.includes(".") || value.split(".")[1].length <= 2;
+}
+
 export default function CourseBuilder({
   apiBase,
   programmeId,
@@ -163,6 +186,7 @@ export default function CourseBuilder({
   const [questionDraft, setQuestionDraft] = useState<BuilderQuestion | null>(null);
   const [editingId, setEditingId] = useState("");
   const [error, setError] = useState("");
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState("");
   const [created, setCreated] = useState(false);
@@ -178,6 +202,148 @@ export default function CourseBuilder({
 
   function updateCourse(key: keyof CourseForm, value: string | boolean) {
     setCourse((current) => ({ ...current, [key]: value }));
+    setValidationErrors((current) => {
+      const next = { ...current };
+      delete next[`course.${key}`];
+      return next;
+    });
+  }
+
+  function fieldError(key: string) {
+    const message = validationErrors[key];
+    return message ? <span className="builder-field-error" id={`${key.replaceAll(".", "-")}-error`}>{message}</span> : null;
+  }
+
+  function validateCourseDetails(): ValidationErrors {
+    const errors: ValidationErrors = {};
+    const title = course.title.trim();
+    const code = course.code.trim();
+    const description = course.description.trim();
+    const thumbnail = course.thumbnail.trim();
+
+    if (title.length < 2 || title.length > 180) errors["course.title"] = "Course title must be between 2 and 180 characters.";
+    if (code.length < 2 || code.length > 48 || !/^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(code)) {
+      errors["course.code"] = "Course code must be 2–48 characters and use only letters, numbers, hyphens, or underscores.";
+    }
+    if (description.length > 2000) errors["course.description"] = "Description must be 2000 characters or fewer.";
+    if (thumbnail.length > 2048) errors["course.thumbnail"] = "Thumbnail URL must be 2048 characters or fewer.";
+    else if (thumbnail && !isValidUrl(thumbnail)) errors["course.thumbnail"] = "Thumbnail must be a valid HTTP or HTTPS URL.";
+    if (course.price.trim() && (!isNumberInRange(course.price, 0, 10_000_000) || !hasAtMostTwoDecimals(course.price))) {
+      errors["course.price"] = "Price must be a number from 0 to 10,000,000 with at most two decimal places.";
+    }
+    return errors;
+  }
+
+  function validateStructure(): ValidationErrors {
+    const errors: ValidationErrors = {};
+    if (modules.length === 0) errors.modules = "Add at least one module before creating the course.";
+    modules.forEach((module, moduleIndex) => {
+      const modulePrefix = `modules.${moduleIndex}`;
+      if (module.title.trim().length < 2 || module.title.trim().length > 180) {
+        errors[`${modulePrefix}.title`] = `Module ${moduleIndex + 1} title must be between 2 and 180 characters.`;
+      }
+      if (module.description.trim().length > 2000) {
+        errors[`${modulePrefix}.description`] = `Module ${moduleIndex + 1} description must be 2000 characters or fewer.`;
+      }
+      module.lessons.forEach((lesson, lessonIndex) => {
+        const lessonPrefix = `${modulePrefix}.lessons.${lessonIndex}`;
+        if (lesson.title.trim().length < 2 || lesson.title.trim().length > 180) {
+          errors[`${lessonPrefix}.title`] = `Lesson ${lessonIndex + 1} in module ${moduleIndex + 1} must be between 2 and 180 characters.`;
+        }
+        if (lesson.description.trim().length > 2000) {
+          errors[`${lessonPrefix}.description`] = `Lesson ${lessonIndex + 1} description must be 2000 characters or fewer.`;
+        }
+        if (lesson.estimatedDuration.trim() && !isNumberInRange(lesson.estimatedDuration, 0, 100_000, true)) {
+          errors[`${lessonPrefix}.estimatedDuration`] = "Lesson duration must be a whole number from 0 to 100,000 minutes.";
+        }
+      });
+    });
+    if (moduleDraft) {
+      if (moduleDraft.title.trim().length < 2 || moduleDraft.title.trim().length > 180) errors["moduleDraft.title"] = "Finish the module title before continuing.";
+      if (moduleDraft.description.trim().length > 2000) errors["moduleDraft.description"] = "Module description must be 2000 characters or fewer.";
+    }
+    if (lessonDraft) {
+      if (lessonDraft.title.trim().length < 2 || lessonDraft.title.trim().length > 180) errors["lessonDraft.title"] = "Finish the lesson title before continuing.";
+      if (lessonDraft.description.trim().length > 2000) errors["lessonDraft.description"] = "Lesson description must be 2000 characters or fewer.";
+      if (lessonDraft.estimatedDuration.trim() && !isNumberInRange(lessonDraft.estimatedDuration, 0, 100_000, true)) errors["lessonDraft.estimatedDuration"] = "Lesson duration must be a whole number from 0 to 100,000 minutes.";
+    }
+    return errors;
+  }
+
+  function validateActivities(): ValidationErrors {
+    const errors: ValidationErrors = {};
+    modules.forEach((module, moduleIndex) => {
+      const modulePrefix = `modules.${moduleIndex}`;
+      module.lessons.forEach((lesson, lessonIndex) => {
+        lesson.resources.forEach((resource, resourceIndex) => {
+          const prefix = `${modulePrefix}.lessons.${lessonIndex}.resources.${resourceIndex}`;
+          if (resource.title.trim().length < 2 || resource.title.trim().length > 180) errors[`${prefix}.title`] = "Resource title must be between 2 and 180 characters.";
+          if (resource.url.trim().length > 2048) errors[`${prefix}.url`] = "Resource URL must be 2048 characters or fewer.";
+          else if (resource.url.trim() && !isValidUrl(resource.url.trim())) errors[`${prefix}.url`] = "Resource URL must be a valid HTTP or HTTPS URL.";
+          if (resource.duration.trim() && !isNumberInRange(resource.duration, 0, 100_000, true)) errors[`${prefix}.duration`] = "Resource duration must be a whole number from 0 to 100,000 minutes.";
+        });
+      });
+      module.assignments.forEach((assignment, assignmentIndex) => {
+        const prefix = `${modulePrefix}.assignments.${assignmentIndex}`;
+        if (assignment.title.trim().length < 2 || assignment.title.trim().length > 180) errors[`${prefix}.title`] = "Assignment title must be between 2 and 180 characters.";
+        if (assignment.description.trim().length > 4000) errors[`${prefix}.description`] = "Assignment description must be 4000 characters or fewer.";
+        if (assignment.instructions.trim().length < 2 || assignment.instructions.trim().length > 12_000) errors[`${prefix}.instructions`] = "Assignment instructions must be between 2 and 12,000 characters.";
+        if (!isNumberInRange(assignment.maxMarks, 0.01, 100_000) || !hasAtMostTwoDecimals(assignment.maxMarks)) errors[`${prefix}.maxMarks`] = "Maximum marks must be from 0.01 to 100,000 with at most two decimal places.";
+        if (assignment.dueAt && Number.isNaN(new Date(assignment.dueAt).getTime())) errors[`${prefix}.dueAt`] = "Due date must be valid.";
+      });
+      module.assessments.forEach((assessment, assessmentIndex) => {
+        const prefix = `${modulePrefix}.assessments.${assessmentIndex}`;
+        const totalMarks = Number(assessment.totalMarks);
+        const passingMarks = Number(assessment.passingMarks);
+        if (assessment.title.trim().length < 2 || assessment.title.trim().length > 180) errors[`${prefix}.title`] = "Assessment title must be between 2 and 180 characters.";
+        if (assessment.description.trim().length > 4000) errors[`${prefix}.description`] = "Assessment description must be 4000 characters or fewer.";
+        if (!Number.isFinite(totalMarks) || totalMarks < 0 || totalMarks > 100_000 || !hasAtMostTwoDecimals(assessment.totalMarks)) errors[`${prefix}.totalMarks`] = "Total marks must be from 0 to 100,000 with at most two decimal places.";
+        if (!Number.isFinite(passingMarks) || passingMarks < 0 || passingMarks > totalMarks || passingMarks > 100_000 || !hasAtMostTwoDecimals(assessment.passingMarks)) errors[`${prefix}.passingMarks`] = "Passing marks must not exceed total marks.";
+        if (assessment.durationMinutes.trim() && !isNumberInRange(assessment.durationMinutes, 1, 1_440, true)) errors[`${prefix}.durationMinutes`] = "Assessment duration must be a whole number from 1 to 1,440 minutes.";
+        if (!isNumberInRange(assessment.attemptLimit, 1, 100, true)) errors[`${prefix}.attemptLimit`] = "Attempts must be a whole number from 1 to 100.";
+        assessment.questions.forEach((question, questionIndex) => {
+          const questionPrefix = `${prefix}.questions.${questionIndex}`;
+          if (question.prompt.trim().length < 2 || question.prompt.trim().length > 2_000) errors[`${questionPrefix}.prompt`] = "Question prompt must be between 2 and 2,000 characters.";
+          if (!isNumberInRange(question.marks, 0.01, 100_000) || !hasAtMostTwoDecimals(question.marks)) errors[`${questionPrefix}.marks`] = "Question marks must be from 0.01 to 100,000 with at most two decimal places.";
+          const optionLines = question.options.split("\n").map((line) => line.trim()).filter(Boolean);
+          if (optionLines.some((line) => {
+            const [value = "", label = "", correct = ""] = line.split("|");
+            return !value.trim() || !label.trim() || !["true", "false"].includes(correct.trim().toLowerCase()) || value.trim().length > 300 || label.trim().length > 300;
+          })) errors[`${questionPrefix}.options`] = "Each option must use value|label|true or value|label|false, with values and labels up to 300 characters.";
+        });
+      });
+    });
+    if (resourceDraft) {
+      if (resourceDraft.title.trim().length < 2 || resourceDraft.title.trim().length > 180) errors["resourceDraft.title"] = "Finish the resource title before continuing.";
+      if (resourceDraft.url.trim().length > 2048) errors["resourceDraft.url"] = "Resource URL must be 2048 characters or fewer.";
+      else if (resourceDraft.url.trim() && !isValidUrl(resourceDraft.url.trim())) errors["resourceDraft.url"] = "Resource URL must be a valid HTTP or HTTPS URL.";
+      if (resourceDraft.duration.trim() && !isNumberInRange(resourceDraft.duration, 0, 100_000, true)) errors["resourceDraft.duration"] = "Resource duration must be a whole number from 0 to 100,000 minutes.";
+    }
+    if (assignmentDraft) {
+      if (assignmentDraft.title.trim().length < 2 || assignmentDraft.title.trim().length > 180) errors["assignmentDraft.title"] = "Finish the assignment title before continuing.";
+      if (assignmentDraft.instructions.trim().length < 2 || assignmentDraft.instructions.trim().length > 12_000) errors["assignmentDraft.instructions"] = "Assignment instructions must be between 2 and 12,000 characters.";
+      if (!isNumberInRange(assignmentDraft.maxMarks, 0.01, 100_000) || !hasAtMostTwoDecimals(assignmentDraft.maxMarks)) errors["assignmentDraft.maxMarks"] = "Maximum marks must be from 0.01 to 100,000 with at most two decimal places.";
+    }
+    if (assessmentDraft) {
+      if (assessmentDraft.title.trim().length < 2 || assessmentDraft.title.trim().length > 180) errors["assessmentDraft.title"] = "Finish the assessment title before continuing.";
+      if (assessmentDraft.description.trim().length > 4_000) errors["assessmentDraft.description"] = "Assessment description must be 4000 characters or fewer.";
+    }
+    if (questionDraft) {
+      if (questionDraft.prompt.trim().length < 2 || questionDraft.prompt.trim().length > 2_000) errors["questionDraft.prompt"] = "Question prompt must be between 2 and 2,000 characters.";
+      if (!isNumberInRange(questionDraft.marks, 0.01, 100_000) || !hasAtMostTwoDecimals(questionDraft.marks)) errors["questionDraft.marks"] = "Question marks must be from 0.01 to 100,000 with at most two decimal places.";
+    }
+    return errors;
+  }
+
+  function validateAll(): ValidationErrors {
+    return { ...validateCourseDetails(), ...validateStructure(), ...validateActivities() };
+  }
+
+  function showValidationErrors(errors: ValidationErrors) {
+    setValidationErrors(errors);
+    const firstKey = Object.keys(errors)[0] || "";
+    setStep(firstKey.startsWith("course.") ? 0 : firstKey.startsWith("modules.") || firstKey.startsWith("moduleDraft.") || firstKey.startsWith("lessonDraft.") ? 1 : 2);
+    setError("Fix the highlighted fields before creating the course.");
   }
 
   function selectModule(id: string) {
