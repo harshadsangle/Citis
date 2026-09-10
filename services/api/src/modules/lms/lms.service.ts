@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
 import { AuditService } from "../../common/audit.service";
 import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
@@ -42,6 +43,7 @@ const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "INTERACTIV
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
 const ALL_RESOURCE_TYPES: LmsResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 const BUILDER_UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const GENERATED_COURSE_CODE_PREFIX = "CRS";
 
 type CourseBuilderResource = {
   title: string;
@@ -96,7 +98,8 @@ type CourseBuilderPayload = {
   course: {
     programmeId: string;
     title: string;
-    code: string;
+    code?: string;
+    codeSeed?: string;
     description?: string;
     thumbnail?: string;
     priceMinor?: number;
@@ -107,6 +110,28 @@ type CourseBuilderPayload = {
 };
 
 type CourseBuilderUpload = LmsUpload & { fieldname: string };
+
+export function courseCodeFromSeed(seed: string) {
+  return `${GENERATED_COURSE_CODE_PREFIX}-${seed.replaceAll("-", "").toUpperCase()}`;
+}
+
+async function generateUniqueCourseCode(
+  client: { query: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> },
+  tenantId: string,
+  preferredSeed?: string,
+) {
+  let seed = preferredSeed && BUILDER_UUID_PATTERN.test(preferredSeed) ? preferredSeed : randomUUID();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const code = courseCodeFromSeed(seed);
+    const existing = await client.query(
+      "SELECT 1 FROM courses WHERE tenant_id = $1 AND code = $2 LIMIT 1",
+      [tenantId, code],
+    );
+    if (existing.rows.length === 0) return code;
+    seed = randomUUID();
+  }
+  throw new ConflictException("A unique course code could not be generated. Please try again.");
+}
 
 function progressState(completed: number, total: number): ProgressState {
   if (completed === 0) return "NOT_STARTED";
