@@ -79,7 +79,7 @@ export class CreateProgrammeDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 }
 
@@ -91,7 +91,7 @@ export class UpdateProgrammeDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 }
 
@@ -176,7 +176,7 @@ export class CreateCourseModuleDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 
   @IsInt()
@@ -192,7 +192,7 @@ export class UpdateCourseModuleDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 
   @IsOptional()
@@ -211,7 +211,7 @@ export class CreateLessonDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 
   @IsInt()
@@ -233,7 +233,7 @@ export class UpdateLessonDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 
   @IsOptional()
