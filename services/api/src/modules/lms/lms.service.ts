@@ -2472,7 +2472,7 @@ export class LmsService {
     ) {
       throw new NotFoundException("Assignment not found.");
     }
-    await this.activeEnrollment(String(assignment.course_id), user.id, user);
+    await this.activeAssignmentEnrollment(assignment, user);
   }
 
   async listAssignments(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: AssignmentListQueryDto) {
@@ -2483,7 +2483,11 @@ export class LmsService {
       const course = await this.assignmentCourse(query.courseId, user);
       const staff = await this.hasAssignmentStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id as string | null);
       if (!staff) {
-        await this.activeEnrollment(String(course.id), user.id, user);
+        await this.activeAssignmentEnrollment({
+          course_id: course.id,
+          institution_id: course.institution_id,
+          campus_id: course.campus_id,
+        }, user);
         clauses.push(
           "a.status = 'PUBLISHED'",
           "c.status = 'PUBLISHED'",
@@ -2501,7 +2505,18 @@ export class LmsService {
       }
       if (!isLmsAdministrator(user)) {
         const enrolled = await this.db.query<{ course_id: string }>(
-          `SELECT course_id FROM lms_enrollments WHERE tenant_id = $1 AND learner_id = $2 AND status = 'ACTIVE'`,
+          `SELECT course_id
+           FROM lms_enrollments e
+           JOIN courses c ON c.id = e.course_id AND c.tenant_id = e.tenant_id
+           JOIN lms_student_profiles sp ON sp.tenant_id = e.tenant_id AND sp.user_id = e.learner_id
+           WHERE e.tenant_id = $1 AND e.learner_id = $2 AND e.status = 'ACTIVE'
+             AND e.institution_id = c.institution_id
+             AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+             AND sp.status = 'ACTIVE'
+             AND (
+               (sp.student_type = 'DIRECT_STUDENT' AND sp.institution_id IS NULL)
+               OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = c.institution_id)
+             )`,
           [user.tenantId, user.id],
         );
         if (!enrolled.rows.length) return { data: [], meta: paginationMeta(page, pageSize, 0) };
