@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, Min, ValidateNested } from "class-validator";
+import { IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, MaxLength, Min, ValidateNested } from "class-validator";
 
 export const LMS_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
 export const LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"] as const;
@@ -114,12 +114,12 @@ export class CreateCourseDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 
   @IsOptional()
   @IsUrl({ require_tld: false })
-  @Max(2048)
+  @MaxLength(2048)
   thumbnail?: string;
 
   @IsOptional()
@@ -146,12 +146,12 @@ export class UpdateCourseDto {
 
   @IsOptional()
   @IsString()
-  @Max(2000)
+  @MaxLength(2000)
   description?: string;
 
   @IsOptional()
   @IsUrl({ require_tld: false })
-  @Max(2048)
+  @MaxLength(2048)
   thumbnail?: string;
 
   @IsOptional()
