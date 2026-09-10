@@ -197,7 +197,6 @@ export function Navbar() {
       <div className="container-site flex h-full items-center justify-between">
         <div className="flex h-full min-w-0 items-center gap-2 sm:gap-3">
           <Brand />
-          {!isLms && <LoginMenu open={loginOpen} onToggle={() => setLoginOpen((value) => !value)} />}
         </div>
         <nav className="hidden h-full items-center gap-0.5 lg:flex" aria-label="Primary navigation" onMouseLeave={() => setOpenMenu(null)}>
           {NAV_LINKS.map((item) => {
