@@ -1,0 +1,58 @@
+Update the Admin "Create Course" flow into a complete Course Builder.
+
+When Admin clicks "Create Course":
+
+1. Open a Course Builder screen/modal.
+2. First add basic course details:
+   - Course title
+   - Course code
+   - Description
+   - Existing course fields required by the current API
+
+3. Then allow Admin to add and manage:
+   - Modules
+   - Lessons inside each module
+   - PDF / document learning resources
+   - Video links
+   - Assignments
+   - Assessments / quizzes
+   - Required completion settings where supported
+
+4. Admin must be able to:
+   - Add multiple modules
+   - Add multiple lessons per module
+   - Add/reorder/edit/delete modules and lessons
+   - Attach PDFs/documents to lessons
+   - Add video URLs/links
+   - Add assignments
+   - Add assessments/questions using the existing LMS functionality
+
+5. Show a clear Course Builder hierarchy:
+   Course
+   → Module
+   → Lesson
+   → PDF / Video / Assignment / Assessment
+
+6. Do NOT create the course as a visible catalogue course immediately after entering only the basic details.
+   The final "Create Course" action should create the complete course structure after Admin finishes the builder.
+
+7. Do NOT use "Create draft" wording.
+
+8. Use the EXISTING course/module/lesson/resource/assignment/assessment APIs and database models. Do not create duplicate models or dummy data.
+
+9. Preserve all existing authorization:
+   Only CITIS Admin can create/edit courses.
+
+10. Existing 100 courses and existing catalogue data must remain unchanged.
+
+11. Keep existing routes, authentication, permissions and APIs intact unless the existing APIs need to be called to build the course.
+
+12. Make the builder clean, premium and easy to use, with clear Add Module / Add Lesson / Add PDF / Add Video / Add Assignment / Add Assessment actions.
+
+13. The final action should be clearly:
+   "Create Course"
+
+14. Verify the ACTUAL rendered browser flow:
+   Create Course → complete course details → add modules → add lessons → add PDFs/videos/assignments/assessments → final Create Course → course appears in Courses.
+
+Do not redesign unrelated Admin sections.
