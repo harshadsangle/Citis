@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { CheckCircle2, Eye, EyeOff, LoaderCircle, Send, Upload } from "lucide-react";
+import { ArrowRight, CheckCircle2, Eye, EyeOff, KeyRound, LoaderCircle, Mail, Send, Upload } from "lucide-react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -285,9 +285,11 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
           <p className="mt-1.5 text-sm text-muted-foreground">
             Enter the 6-digit code sent by {mfaChallenge.channel === "EMAIL" ? "email" : "SMS"}. It expires in {Math.ceil(mfaChallenge.expiresInSeconds / 60)} minutes.
           </p>
+          <div className="auth-field-wrap">
+            <KeyRound className="auth-field-icon" aria-hidden="true" />
           <Input
             id="login-mfa-code"
-            className="mt-2 min-h-12 rounded-xl bg-background/70 px-4 tracking-[0.35em]"
+            className="auth-input mt-2 min-h-12 rounded-xl bg-background/70 px-4 pl-11 tracking-[0.35em]"
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
@@ -295,10 +297,11 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
             onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
             autoFocus
           />
+          </div>
         </div>
         {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
-        <Button className="h-12 w-full rounded-xl text-sm shadow-[0_12px_25px_rgba(239,125,60,.2)]" variant="accent" size="lg" disabled={mfaSubmitting || mfaCode.length !== 6}>
-          {mfaSubmitting ? <LoaderCircle className="animate-spin" /> : "Verify and continue"}
+        <Button className="auth-submit-button h-12 w-full rounded-xl text-sm" variant="accent" size="lg" disabled={mfaSubmitting || mfaCode.length !== 6}>
+          {mfaSubmitting ? <LoaderCircle className="animate-spin" /> : <>Verify and continue <ArrowRight className="size-4" /></>}
         </Button>
         <button type="button" className="w-full text-center text-sm font-semibold text-primary hover:underline" onClick={() => { setMfaChallenge(null); setMfaCode(""); setServerError(""); }}>
           Return to sign in
@@ -308,12 +311,12 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
   }
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
-      <div><Label htmlFor="login-email">Email</Label><Input id="login-email" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} />{message(errors.email?.message)}</div>
-      <div><div className="flex justify-between"><Label htmlFor="login-password">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="text-xs font-semibold text-primary hover:underline">Forgot password?</Link></div><div className="relative mt-2"><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="min-h-12 rounded-xl bg-background/70 px-4 pr-12" {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="absolute top-1/2 right-3 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-primary" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message)}</div>
-      <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="font-normal">Keep me signed in</Label></div>} />
+      <div><Label htmlFor="login-email" className="auth-field-label">Email address</Label><div className="auth-field-wrap mt-2"><Mail className="auth-field-icon" aria-hidden="true" /><Input id="login-email" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pl-11" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} /></div>{message(errors.email?.message)}</div>
+      <div><div className="flex items-center justify-between"><Label htmlFor="login-password" className="auth-field-label">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="auth-forgot-link text-xs font-semibold">Forgot password?</Link></div><div className="auth-field-wrap mt-2"><EyeOff className="auth-field-icon" aria-hidden="true" /><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pr-12 pl-11" {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="auth-password-toggle absolute top-1/2 right-2.5 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message)}</div>
+      <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="auth-remember-label font-normal">Keep me signed in</Label></Controller>} />
       {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
-      <Button className="h-12 w-full rounded-xl text-sm shadow-[0_12px_25px_rgba(239,125,60,.2)]" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Sign in"}</Button>
-      <p className="text-center text-sm text-muted-foreground">New to CITIS? <Link href={`/auth/register?portal=${portal}`} className="font-semibold text-primary hover:underline">Create new account</Link></p>
+      <Button className="auth-submit-button h-12 w-full rounded-xl text-sm" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : <>Sign in <ArrowRight className="size-4" /></>}</Button>
+      <p className="auth-register-copy text-center text-sm">New to CITIS? <Link href={`/auth/register?portal=${portal}`} className="font-semibold">Create new account</Link></p>
     </form>
   );
 }

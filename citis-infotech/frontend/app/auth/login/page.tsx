@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, GraduationCap, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Check, ShieldCheck } from "lucide-react";
+import { CitisLogo } from "@/components/layout/CitisLogo";
 import { LoginForm } from "@/components/marketing/InteractiveForms";
 import { LMS_PORTALS, normalizeLmsPortal } from "@/lib/lms-roles";
 import { generatePageMetadata } from "@/lib/seo";
@@ -17,14 +18,30 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const provider = normalizeLmsCourseProvider(params?.provider);
   const portalOption = LMS_PORTALS[portal];
   return (
-    <section className="auth-shell relative isolate min-h-[calc(100vh-var(--header-height))] overflow-hidden py-10 sm:py-16">
-      <div className="container-site grid items-stretch gap-8 lg:grid-cols-2">
-        <div className="auth-brand-panel hidden min-h-[34rem] flex-col justify-between overflow-hidden rounded-[1.75rem] p-10 text-white shadow-2xl lg:flex">
-          <div className="flex items-center gap-3"><GraduationCap className="size-8 text-orange-300" /><span className="font-heading text-xl font-semibold">CITIS InfoTech</span></div>
-          <div><p className="text-xs font-bold tracking-[0.2em] text-orange-300 uppercase">{portalOption.label}</p><h1 className="mt-5 font-heading text-4xl leading-tight font-semibold">{portalOption.eyebrow}.</h1><p className="mt-5 leading-7 text-blue-100">{portalOption.description}</p></div>
-          <p className="flex items-center gap-2 text-sm text-blue-100"><ShieldCheck className="size-4 text-orange-300" />Secure access for learners, educators, and partners</p>
+    <section className="auth-shell relative isolate min-h-[calc(100vh-var(--header-height))] overflow-hidden py-8 sm:py-12 lg:py-16">
+      <div className="auth-orbit auth-orbit-one" aria-hidden="true" />
+      <div className="auth-orbit auth-orbit-two" aria-hidden="true" />
+      <div className="container-site relative z-10 flex justify-center">
+        <div className="auth-panel auth-card surface w-full max-w-[31rem] rounded-[2rem] p-6 sm:p-10">
+          <div className="auth-card-header">
+            <CitisLogo href={null} className="text-[0.86rem] sm:text-[0.96rem]" />
+            <span className="auth-role-chip"><Check className="size-3.5" />Secure workspace access</span>
+          </div>
+          <Link href={provider ? `/lms?provider=${provider}` : "/lms"} className="auth-back-link mt-8 inline-flex items-center gap-2 text-sm font-semibold">
+            <ArrowLeft className="size-4" />Choose another portal
+          </Link>
+          <div className="mt-8">
+            <p className="auth-kicker">{portalOption.label}</p>
+            <h1 className="mt-3 font-heading text-4xl font-semibold tracking-tight sm:text-[2.65rem]">Welcome back</h1>
+            <p className="auth-intro mt-3">Sign in to continue to your {portalOption.label.toLowerCase()} workspace.</p>
+          </div>
+          <div className="auth-portal-note mt-6">
+            <span className="auth-portal-icon"><ShieldCheck className="size-4" /></span>
+            <span><strong>{portalOption.eyebrow}</strong><small>{portalOption.description}</small></span>
+          </div>
+          <div className="mt-7"><LoginForm portal={portal} provider={provider} /></div>
+          <p className="auth-support-copy mt-7 text-center text-sm">Need access? <Link href="/contact" className="font-semibold">Contact your programme team</Link></p>
         </div>
-         <div className="auth-panel surface flex items-center rounded-[1.75rem] p-6 sm:p-10"><div className="mx-auto w-full max-w-md"><Link href={provider ? `/lms?provider=${provider}` : "/lms"} className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary"><ArrowLeft className="size-4" />Choose another portal</Link><p className="mt-9 text-xs font-bold tracking-[0.14em] text-primary uppercase">{portalOption.label}</p><h1 className="mt-3 font-heading text-4xl font-semibold tracking-tight">Welcome back</h1><p className="mt-3 text-sm leading-6 text-muted-foreground">Use the account assigned to your {portal} role.</p><div className="mt-8"><LoginForm portal={portal} provider={provider} /></div><p className="mt-7 text-center text-sm text-muted-foreground">Need access? <Link href="/contact" className="font-semibold text-primary hover:underline">Contact your programme team</Link></p></div></div>
       </div>
     </section>
   );

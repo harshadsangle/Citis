@@ -53,8 +53,8 @@ function LoginMenu({ open, onToggle, alignRight = false }: { open: boolean; onTo
         className={cn(
           "inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:h-10 sm:px-3.5 sm:text-sm",
           open
-            ? "border-primary/30 bg-primary text-primary-foreground shadow-sm"
-            : "border-primary/15 bg-background/70 text-primary hover:border-primary/30 hover:bg-primary/5",
+            ? "border-accent bg-accent text-accent-foreground shadow-[0_10px_24px_rgba(239,125,60,.28)]"
+            : "border-accent bg-accent text-accent-foreground shadow-[0_8px_20px_rgba(239,125,60,.2)] hover:border-[#d9682f] hover:bg-[#d9682f] hover:shadow-[0_12px_26px_rgba(239,125,60,.3)]",
         )}
       >
         <LogIn className="size-3.5 sm:size-4" />
