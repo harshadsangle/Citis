@@ -596,6 +596,242 @@ export class LmsService {
     });
   }
 
+  async createCourseBuilder(rawPayload: unknown, files: CourseBuilderUpload[], request: ContextRequest) {
+    const user = request.context.user!;
+    let payload: CourseBuilderPayload;
+    let filesByField: Map<string, CourseBuilderUpload>;
+    try {
+      ({ payload, filesByField } = this.validateCourseBuilderPayload(rawPayload, files, user));
+    } catch (error) {
+      throw error;
+    }
+
+    const parent = await this.db.query<{ id: string; institution_id: string; campus_id: string | null }>(
+      "SELECT id, institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'",
+      [payload.course.programmeId, user.tenantId],
+    );
+    if (!parent.rows[0]) throw new NotFoundException("Programme not found in the current tenant.");
+    assertScope(user, parent.rows[0].institution_id, parent.rows[0].campus_id);
+    const campusId = await this.campusFor(user, parent.rows[0].institution_id, parent.rows[0].campus_id);
+    const storedFiles: StoredFile[] = [];
+
+    try {
+      return await this.run(() => this.db.transaction(async (client) => {
+        const currentParent = await client.query<{ id: string; institution_id: string; campus_id: string | null }>(
+          "SELECT id, institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED' FOR SHARE",
+          [payload.course.programmeId, user.tenantId],
+        );
+        if (!currentParent.rows[0]) throw new NotFoundException("Programme is no longer available.");
+
+        const courseResult = await client.query<Record<string, unknown>>(
+          `INSERT INTO courses
+             (tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail,
+              price_minor, currency, purchasable, created_by, updated_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+           RETURNING *`,
+          [
+            user.tenantId,
+            currentParent.rows[0].institution_id,
+            campusId,
+            payload.course.programmeId,
+            payload.course.title.trim(),
+            payload.course.code.trim().toUpperCase(),
+            payload.course.description?.trim() || null,
+            payload.course.thumbnail?.trim() || null,
+            payload.course.priceMinor ?? 0,
+            payload.course.currency ?? "INR",
+            payload.course.purchasable ?? false,
+            user.id,
+          ],
+        );
+        const course = courseResult.rows[0];
+        await this.auditMutation(request, "course", "CREATE", course);
+
+        for (const [moduleIndex, module] of payload.modules.entries()) {
+          const moduleResult = await client.query<Record<string, unknown>>(
+            `INSERT INTO course_modules
+               (tenant_id, course_id, title, description, sequence, created_by, updated_by)
+             VALUES ($1, $2, $3, $4, $5, $6, $6)
+             RETURNING *`,
+            [user.tenantId, course.id, module.title.trim(), module.description?.trim() || null, moduleIndex + 1, user.id],
+          );
+          const moduleRow = moduleResult.rows[0];
+          await this.auditMutation(request, "course_module", "CREATE", moduleRow);
+
+          for (const [lessonIndex, lesson] of module.lessons.entries()) {
+            const lessonResult = await client.query<Record<string, unknown>>(
+              `INSERT INTO lessons
+                 (tenant_id, course_id, module_id, title, description, sequence, estimated_duration, created_by, updated_by)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+               RETURNING *`,
+              [
+                user.tenantId,
+                course.id,
+                moduleRow.id,
+                lesson.title.trim(),
+                lesson.description?.trim() || null,
+                lessonIndex + 1,
+                lesson.estimatedDuration ?? null,
+                user.id,
+              ],
+            );
+            const lessonRow = lessonResult.rows[0];
+            await this.auditMutation(request, "lesson", "CREATE", lessonRow);
+
+            for (const [resourceIndex, resource] of lesson.resources.entries()) {
+              const resourceResult = await client.query<Record<string, unknown>>(
+                `INSERT INTO learning_resources
+                   (tenant_id, course_id, module_id, lesson_id, title, resource_type, url, duration, sequence, created_by, updated_by)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+                 RETURNING *`,
+                [
+                  user.tenantId,
+                  course.id,
+                  moduleRow.id,
+                  lessonRow.id,
+                  resource.title.trim(),
+                  resource.resourceType,
+                  resource.url?.trim() || null,
+                  resource.duration ?? null,
+                  resourceIndex + 1,
+                  user.id,
+                ],
+              );
+              const resourceRow = resourceResult.rows[0];
+              const file = resource.fileField ? filesByField.get(resource.fileField) : undefined;
+              if (file) {
+                const stored = resource.resourceType === "SCORM"
+                  ? await this.storage.storeScormPackage(user.tenantId, String(resourceRow.id), file)
+                  : await this.storage.storeDocument(user.tenantId, String(resourceRow.id), file);
+                storedFiles.push(stored);
+                await client.query(
+                  `INSERT INTO lms_managed_files
+                     (tenant_id, institution_id, campus_id, course_id, module_id, lesson_id, resource_id,
+                      storage_key, original_filename, mime_type, byte_size, sha256, entrypoint)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                  [
+                    user.tenantId,
+                    currentParent.rows[0].institution_id,
+                    campusId,
+                    course.id,
+                    moduleRow.id,
+                    lessonRow.id,
+                    resourceRow.id,
+                    stored.storageKey,
+                    stored.originalFilename,
+                    stored.mimeType,
+                    stored.byteSize,
+                    stored.sha256,
+                    stored.entrypoint ?? null,
+                  ],
+                );
+              }
+              await this.auditMutation(request, "learning_resource", "CREATE", resourceRow);
+            }
+          }
+
+          for (const assignment of module.assignments) {
+            const assignmentResult = await client.query<Record<string, unknown>>(
+              `INSERT INTO lms_assessments
+                 (tenant_id, institution_id, campus_id, course_id, module_id, title, description, instructions,
+                  due_at, total_marks, assessment_type, attempt_limit)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNMENT', 1)
+               RETURNING *`,
+              [
+                user.tenantId,
+                currentParent.rows[0].institution_id,
+                campusId,
+                course.id,
+                moduleRow.id,
+                assignment.title.trim(),
+                assignment.description?.trim() || null,
+                assignment.instructions.trim(),
+                assignment.dueAt ?? null,
+                assignment.maxMarks,
+              ],
+            );
+            await this.auditMutation(request, "assignment", "CREATE", assignmentResult.rows[0]);
+          }
+
+          for (const assessment of module.assessments) {
+            const assessmentResult = await client.query<Record<string, unknown>>(
+              `INSERT INTO lms_assessments
+                 (tenant_id, institution_id, campus_id, course_id, module_id, title, description, assessment_type,
+                  total_marks, passing_marks, duration_minutes, attempt_limit)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+               RETURNING *`,
+              [
+                user.tenantId,
+                currentParent.rows[0].institution_id,
+                campusId,
+                course.id,
+                moduleRow.id,
+                assessment.title.trim(),
+                assessment.description?.trim() || null,
+                assessment.assessmentType,
+                assessment.totalMarks ?? null,
+                assessment.passingMarks ?? null,
+                assessment.durationMinutes ?? null,
+                assessment.attemptLimit ?? null,
+              ],
+            );
+            const assessmentRow = assessmentResult.rows[0];
+            await this.auditMutation(request, "assessment", "CREATE", assessmentRow);
+            for (const [questionIndex, question] of assessment.questions.entries()) {
+              const questionResult = await client.query<Record<string, unknown>>(
+                `INSERT INTO lms_assessment_questions
+                   (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, prompt, question_type, marks, sequence)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                 RETURNING *`,
+                [
+                  user.tenantId,
+                  currentParent.rows[0].institution_id,
+                  campusId,
+                  course.id,
+                  moduleRow.id,
+                  assessmentRow.id,
+                  question.prompt.trim(),
+                  question.questionType,
+                  question.marks,
+                  questionIndex + 1,
+                ],
+              );
+              for (const [optionIndex, option] of question.options.entries()) {
+                await client.query(
+                  `INSERT INTO lms_assessment_options
+                     (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, question_id,
+                      option_value, option_label, is_correct, sequence)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+                  [
+                    user.tenantId,
+                    currentParent.rows[0].institution_id,
+                    campusId,
+                    course.id,
+                    moduleRow.id,
+                    assessmentRow.id,
+                    questionResult.rows[0].id,
+                    option.value.trim(),
+                    option.label.trim(),
+                    option.isCorrect,
+                    optionIndex + 1,
+                  ],
+                );
+              }
+              await this.auditMutation(request, "assessment_question", "CREATE", {
+                ...questionResult.rows[0],
+                options: question.options,
+              });
+            }
+          }
+        }
+        return course;
+      }));
+    } catch (error) {
+      await Promise.allSettled(storedFiles.map((file) => this.storage.remove(file.storageKey)));
+      throw error;
+    }
+  }
+
   async updateCourse(id: string, input: UpdateCourseDto, request: ContextRequest) {
     const before = await this.getCourse(id, request.context.user!);
     return this.run(async () => {
