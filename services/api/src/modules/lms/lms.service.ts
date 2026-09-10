@@ -705,24 +705,22 @@ export class LmsService {
                   : await this.storage.storeDocument(user.tenantId, String(resourceRow.id), file);
                 storedFiles.push(stored);
                 await client.query(
-                  `INSERT INTO lms_managed_files
-                     (tenant_id, institution_id, campus_id, course_id, module_id, lesson_id, resource_id,
-                      storage_key, original_filename, mime_type, byte_size, sha256, entrypoint)
-                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+                  `INSERT INTO managed_files
+                     (tenant_id, institution_id, resource_id, kind, storage_key, original_filename,
+                      mime_type, byte_size, sha256, entrypoint, created_by)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
                   [
                     user.tenantId,
                     currentParent.rows[0].institution_id,
-                    campusId,
-                    course.id,
-                    moduleRow.id,
-                    lessonRow.id,
                     resourceRow.id,
+                    resource.resourceType === "SCORM" ? "SCORM" : "FILE",
                     stored.storageKey,
                     stored.originalFilename,
                     stored.mimeType,
                     stored.byteSize,
                     stored.sha256,
                     stored.entrypoint ?? null,
+                    user.id,
                   ],
                 );
               }
