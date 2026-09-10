@@ -74,7 +74,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS lessons_tenant_id_key
 DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'courses_tenant_institution_programme_fk'
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'courses_tenant_institution_programme_fk'
+      AND connamespace = current_schema()::regnamespace
   ) THEN
     ALTER TABLE courses
       ADD CONSTRAINT courses_tenant_institution_programme_fk
@@ -83,7 +86,10 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'course_modules_tenant_course_fk'
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'course_modules_tenant_course_fk'
+      AND connamespace = current_schema()::regnamespace
   ) THEN
     ALTER TABLE course_modules
       ADD CONSTRAINT course_modules_tenant_course_fk
@@ -92,7 +98,10 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'lessons_tenant_module_fk'
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'lessons_tenant_module_fk'
+      AND connamespace = current_schema()::regnamespace
   ) THEN
     ALTER TABLE lessons
       ADD CONSTRAINT lessons_tenant_module_fk
@@ -101,7 +110,10 @@ BEGIN
   END IF;
 
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'learning_resources_tenant_lesson_fk'
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'learning_resources_tenant_lesson_fk'
+      AND connamespace = current_schema()::regnamespace
   ) THEN
     ALTER TABLE learning_resources
       ADD CONSTRAINT learning_resources_tenant_lesson_fk
