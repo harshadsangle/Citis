@@ -90,8 +90,8 @@ test("database rejects cross-tenant and wrong-parent LMS hierarchy rows", { skip
     );
     await client.query(
       `INSERT INTO courses (id, tenant_id, institution_id, programme_id, title, code) VALUES
-       ($1, $3, $5, $7, 'Course A', $9)`,
-      [courseA, randomUUID(), tenantA, tenantA, institutionA, institutionA, programmeA, programmeA, `COURSE-A-${courseA}`],
+       ($1, $2, $3, $4, 'Course A', $5)`,
+      [courseA, tenantA, institutionA, programmeA, `COURSE-A-${courseA}`],
     );
 
     await assertForeignKeyViolation(
@@ -151,6 +151,18 @@ test("database rejects cross-tenant and wrong-parent LMS hierarchy rows", { skip
         [randomUUID(), tenantB, lessonA],
       ),
       "learning_resources_tenant_lesson_fk",
+    );
+
+    const directLearner = randomUUID();
+    await client.query(
+      `INSERT INTO users (id, tenant_id, email, first_name, last_name)
+       VALUES ($1, $2, $3, 'Direct', 'Learner')`,
+      [directLearner, tenantA, `direct-${directLearner}@example.com`],
+    );
+    await client.query(
+      `INSERT INTO lms_enrollments (tenant_id, institution_id, course_id, learner_id, assignment_source)
+       VALUES ($1, NULL, $2, $3, 'DIRECT')`,
+      [tenantA, courseA, directLearner],
     );
 
     const validCounts = await client.query<{ courses: string; modules: string; lessons: string; resources: string }>(
