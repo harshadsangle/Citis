@@ -119,7 +119,7 @@ test("database rejects cross-tenant and wrong-parent LMS hierarchy rows", { skip
     await assertForeignKeyViolation(
       () => client.query(
         `INSERT INTO course_modules (id, tenant_id, course_id, title, sequence)
-         VALUES ($1, $2, $3, 'Cross-tenant course module', 1)`,
+         VALUES ($1, $2, $3, 'Cross-tenant course module', 2)`,
         [randomUUID(), tenantB, courseA],
       ),
       "course_modules_tenant_course_fk",
@@ -133,7 +133,7 @@ test("database rejects cross-tenant and wrong-parent LMS hierarchy rows", { skip
     await assertForeignKeyViolation(
       () => client.query(
         `INSERT INTO lessons (id, tenant_id, module_id, title, sequence)
-         VALUES ($1, $2, $3, 'Cross-tenant module lesson', 1)`,
+         VALUES ($1, $2, $3, 'Cross-tenant module lesson', 2)`,
         [randomUUID(), tenantB, moduleA],
       ),
       "lessons_tenant_module_fk",
@@ -147,7 +147,7 @@ test("database rejects cross-tenant and wrong-parent LMS hierarchy rows", { skip
     await assertForeignKeyViolation(
       () => client.query(
         `INSERT INTO learning_resources (id, tenant_id, lesson_id, resource_type, title, url, sequence)
-         VALUES ($1, $2, $3, 'LINK', 'Cross-tenant lesson resource', 'https://example.com/resource-b', 1)`,
+         VALUES ($1, $2, $3, 'LINK', 'Cross-tenant lesson resource', 'https://example.com/resource-b', 2)`,
         [randomUUID(), tenantB, lessonA],
       ),
       "learning_resources_tenant_lesson_fk",
