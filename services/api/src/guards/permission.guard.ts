@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@
 import { Reflector } from "@nestjs/core";
 import { REQUIRED_PERMISSION } from "./permission.decorator";
 import type { ContextRequest } from "../common/request-context";
-import { isLmsAdministrator } from "../common/access-scope";
+import { isLmsAdministrator, isPlatformPermission, isPlatformUser } from "../common/access-scope";
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -17,7 +17,11 @@ export class PermissionGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<ContextRequest>();
     const user = request.context.user;
     if (!user) throw new ForbiddenException("Authenticated context is required.");
-    if (isLmsAdministrator(user) || user.permissions.includes(required)) return true;
+    if (isPlatformUser(user)) return true;
+    if (isLmsAdministrator(user) && isPlatformPermission(required)) {
+      throw new ForbiddenException(`Platform permission required: ${required}`);
+    }
+    if (user.permissions.includes(required)) return true;
     throw new ForbiddenException(`Permission required: ${required}`);
   }
 }
