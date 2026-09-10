@@ -545,132 +545,74 @@ export default function CourseBuilder({
     setError("");
     setValidationErrors({});
     try {
-      setProgress("Creating course details…");
-      let createdCourse: ApiResponse;
-      try {
-        createdCourse = await request<ApiResponse>(apiBase, "/courses", {
-          method: "POST",
-          body: JSON.stringify({
-            programmeId,
-            title: course.title.trim(),
-            code: course.code.trim(),
-            description: course.description.trim() || undefined,
-            thumbnail: course.thumbnail.trim() || undefined,
-            priceMinor: numberOrUndefined(course.price) === undefined ? undefined : Math.round(Number(course.price) * 100),
-            currency: course.price.trim() ? "INR" : undefined,
-            purchasable: course.purchasable,
-          }),
-        });
-      } catch (reason) {
-        const apiErrors = courseApiValidationErrors(reason);
-        if (Object.keys(apiErrors).length > 0) {
-          showValidationErrors(apiErrors);
-        } else {
-          setError(reason instanceof Error ? reason.message : "The course details could not be created.");
-        }
-        setProgress("");
-        return;
-      }
-      const courseId = createdCourse.data.id;
-
-      for (let moduleIndex = 0; moduleIndex < modules.length; moduleIndex += 1) {
-        const courseModule = modules[moduleIndex];
-        setProgress(`Creating module ${moduleIndex + 1} of ${modules.length}…`);
-        const createdModule = await request<ApiResponse>(apiBase, "/course-modules", {
-          method: "POST",
-          body: JSON.stringify({ courseId, title: courseModule.title.trim(), description: courseModule.description.trim() || undefined, sequence: moduleIndex + 1 }),
-        });
-        const moduleId = createdModule.data.id;
-
-        for (let lessonIndex = 0; lessonIndex < courseModule.lessons.length; lessonIndex += 1) {
-          const lesson = courseModule.lessons[lessonIndex];
-          setProgress(`Creating lesson ${lessonIndex + 1} in ${courseModule.title}…`);
-          const createdLesson = await request<ApiResponse>(apiBase, "/lessons", {
-            method: "POST",
-            body: JSON.stringify({
-              moduleId,
-              title: lesson.title.trim(),
-              description: lesson.description.trim() || undefined,
-              sequence: lessonIndex + 1,
-              estimatedDuration: numberOrUndefined(lesson.estimatedDuration),
-            }),
-          });
-          const lessonId = createdLesson.data.id;
-          for (let resourceIndex = 0; resourceIndex < lesson.resources.length; resourceIndex += 1) {
-            const resource = lesson.resources[resourceIndex];
-            setProgress(`Adding resource ${resourceIndex + 1} in ${lesson.title}…`);
-            const createdResource = await request<ApiResponse>(apiBase, "/learning-resources", {
-              method: "POST",
-              body: JSON.stringify({
-                lessonId,
-                resourceType: resource.resourceType,
-                title: resource.title.trim(),
-                url: resource.url.trim() || undefined,
-                duration: numberOrUndefined(resource.duration),
-                sequence: resourceIndex + 1,
-              }),
-            });
-            if (resource.file) {
-              const formData = new FormData();
-              formData.append("file", resource.file);
-              await request(apiBase, `/learning-resources/${createdResource.data.id}/${resource.resourceType === "SCORM" ? "scorm" : "file"}`, { method: "POST", body: formData });
-            }
-          }
-        }
-
-        for (const assignment of courseModule.assignments) {
-          setProgress(`Adding assignment in ${courseModule.title}…`);
-          await request(apiBase, "/assignments", {
-            method: "POST",
-            body: JSON.stringify({
-              courseId,
-              moduleId,
-              title: assignment.title.trim(),
-              description: assignment.description.trim() || undefined,
-              instructions: assignment.instructions.trim(),
-              dueAt: assignment.dueAt ? new Date(assignment.dueAt).toISOString() : undefined,
-              maxMarks: Number(assignment.maxMarks),
-            }),
-          });
-        }
-
-        for (const assessment of courseModule.assessments) {
-          setProgress(`Adding assessment in ${courseModule.title}…`);
-          const createdAssessment = await request<ApiResponse>(apiBase, "/assessments", {
-            method: "POST",
-            body: JSON.stringify({
-              courseId,
-              moduleId,
-              title: assessment.title.trim(),
-              description: assessment.description.trim() || undefined,
-              assessmentType: assessment.assessmentType,
-              totalMarks: Number(assessment.totalMarks),
-              passingMarks: Number(assessment.passingMarks),
-              durationMinutes: numberOrUndefined(assessment.durationMinutes),
-              attemptLimit: Number(assessment.attemptLimit),
-            }),
-          });
-          for (let questionIndex = 0; questionIndex < assessment.questions.length; questionIndex += 1) {
-            const question = assessment.questions[questionIndex];
-            setProgress(`Adding question ${questionIndex + 1} in ${assessment.title}…`);
-            await request(apiBase, `/assessments/${createdAssessment.data.id}/questions`, {
-              method: "POST",
-              body: JSON.stringify({
-                prompt: question.prompt.trim(),
-                questionType: question.questionType,
-                marks: Number(question.marks),
-                sequence: questionIndex + 1,
-                options: parseOptions(question.options),
-              }),
-            });
+      setProgress("Validating and creating the complete course…");
+      const structure = {
+        course: {
+          programmeId,
+          title: course.title.trim(),
+          code: course.code.trim(),
+          description: course.description.trim() || undefined,
+          thumbnail: course.thumbnail.trim() || undefined,
+          priceMinor: numberOrUndefined(course.price) === undefined ? undefined : Math.round(Number(course.price) * 100),
+          currency: course.price.trim() ? "INR" : undefined,
+          purchasable: course.purchasable,
+        },
+        modules: modules.map((courseModule) => ({
+          title: courseModule.title.trim(),
+          description: courseModule.description.trim() || undefined,
+          lessons: courseModule.lessons.map((lesson) => ({
+            title: lesson.title.trim(),
+            description: lesson.description.trim() || undefined,
+            estimatedDuration: numberOrUndefined(lesson.estimatedDuration),
+            resources: lesson.resources.map((resource) => ({
+              title: resource.title.trim(),
+              resourceType: resource.resourceType,
+              url: resource.url.trim() || undefined,
+              duration: numberOrUndefined(resource.duration),
+              fileField: resource.file ? `resource-file-${resource.id}` : undefined,
+            })),
+          })),
+          assignments: courseModule.assignments.map((assignment) => ({
+            title: assignment.title.trim(),
+            description: assignment.description.trim() || undefined,
+            instructions: assignment.instructions.trim(),
+            dueAt: assignment.dueAt ? new Date(assignment.dueAt).toISOString() : undefined,
+            maxMarks: Number(assignment.maxMarks),
+          })),
+          assessments: courseModule.assessments.map((assessment) => ({
+            title: assessment.title.trim(),
+            description: assessment.description.trim() || undefined,
+            assessmentType: assessment.assessmentType,
+            totalMarks: Number(assessment.totalMarks),
+            passingMarks: Number(assessment.passingMarks),
+            durationMinutes: numberOrUndefined(assessment.durationMinutes),
+            attemptLimit: Number(assessment.attemptLimit),
+            questions: assessment.questions.map((question) => ({
+              prompt: question.prompt.trim(),
+              questionType: question.questionType,
+              marks: Number(question.marks),
+              options: parseOptions(question.options),
+            })),
+          })),
+        })),
+      };
+      const formData = new FormData();
+      formData.append("structure", JSON.stringify(structure));
+      for (const courseModule of modules) {
+        for (const lesson of courseModule.lessons) {
+          for (const resource of lesson.resources) {
+            if (resource.file) formData.append(`resource-file-${resource.id}`, resource.file);
           }
         }
       }
+      await request<ApiResponse>(apiBase, "/course-builder", { method: "POST", body: formData });
       setProgress("");
       setCreated(true);
       completionTimer.current = window.setTimeout(() => onCreated(course.title.trim()), 5000);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "The course could not be created. No course was added.");
+      const apiErrors = courseApiValidationErrors(reason);
+      if (Object.keys(apiErrors).length > 0) showValidationErrors(apiErrors);
+      else setError(reason instanceof Error ? reason.message : "The course could not be created. No course was added.");
       setProgress("");
     } finally {
       setSaving(false);
