@@ -1113,3 +1113,71 @@ test("assignment grades cannot exceed the configured maximum", async () => {
     BadRequestException,
   );
 });
+
+test("assignment access rejects a student enrollment from another college or campus", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "student-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    studentType: "COLLEGE_STUDENT",
+  };
+  const assignment = {
+    id: "assignment-1",
+    tenant_id: learner.tenantId,
+    institution_id: "institution-1",
+    campus_id: "campus-1",
+    course_id: "course-1",
+    module_id: "module-1",
+    assessment_type: "ASSIGNMENT",
+    status: "PUBLISHED",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+    programme_status: "PUBLISHED",
+    institution_status: "ACTIVE",
+  };
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
+    if (text.startsWith("SELECT e.id")) return { rows: [] };
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.getAssignment("assignment-1", learner), ForbiddenException);
+});
+
+test("assignment access is bound to the authenticated learner and preserves staff access", async () => {
+  const assignment = {
+    id: "assignment-1",
+    tenant_id: user.tenantId,
+    institution_id: "institution-1",
+    campus_id: null,
+    course_id: "course-1",
+    module_id: "module-1",
+    assessment_type: "ASSIGNMENT",
+    status: "PUBLISHED",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+    programme_status: "PUBLISHED",
+    institution_status: "ACTIVE",
+  };
+  let enrollmentLearnerId: unknown;
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "student-2",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    studentType: "DIRECT_STUDENT",
+  };
+  const { service } = serviceWith(async (text, values) => {
+    if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
+    if (text.startsWith("SELECT e.id")) {
+      enrollmentLearnerId = values[2];
+      return values[2] === "student-1" ? { rows: [{ id: "enrollment-1" }] } : { rows: [] };
+    }
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.getAssignment("assignment-1", learner), ForbiddenException);
+  assert.equal(enrollmentLearnerId, "student-2");
+
+  const adminResult = await service.getAssignment("assignment-1", user);
+  assert.equal(adminResult.id, "assignment-1");
+});
