@@ -2267,6 +2267,9 @@ export default function TeacherPortalPage() {
           /* Profile identity: keep account name and role readable without changing headings or metrics. */
           .sidebar-foot strong, .profile-trigger-copy strong, .heading-identity strong { font-size: 16px; line-height: 1.3; }
           .sidebar-foot span, .profile-trigger-copy small, .heading-identity small { font-size: 14px; line-height: 1.45; }
+           @media (max-width: 780px) {
+             .nav-item { font-size: 14px; line-height: 1.35; }
+           }
       `}</style>
     </main>
   );
