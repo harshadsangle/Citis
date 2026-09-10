@@ -2252,7 +2252,8 @@ export default function TeacherPortalPage() {
           .eyebrow, .metric-label, .heading-identity strong, .course-side em, .status-pill,
           .scope-note, .submission-body a, .submission-detail > a, .form-grid label,
           .grade-bar label, .attempt-grade-form label { font-size: 13px; line-height: 1.45; }
-          .nav-item, .primary-button, .secondary-button, .course-main strong, .action-row strong,
+           .nav-item { font-size: 15px; line-height: 1.4; }
+           .primary-button, .secondary-button, .course-main strong, .action-row strong,
           .module-title strong, .lesson-title strong, .resource-row strong, .assignment-title strong,
           .assessment-title strong, .submission-course strong, th, td { font-size: 14px; line-height: 1.5; }
           .intro, .panel-copy, .panel-subtitle, .assignment-description, .assessment-description,

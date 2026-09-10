@@ -955,7 +955,8 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .field-hint, .selected-file, .metric-foot, .relationship-count span { font-size: 12px; line-height: 1.45; }
 .sidebar-label, .eyebrow, .environment-pill, .help-link, .profile-trigger-copy strong,
 .profile-menu-item strong, .metric-label, .filter-label, .list-head { font-size: 13px; line-height: 1.45; }
-.nav-link, .sidebar-footer strong, .primary-button, .secondary-button, .crumb, .breadcrumb-bar,
+.nav-link { font-size: 15px; line-height: 1.4; }
+.sidebar-footer strong, .primary-button, .secondary-button, .crumb, .breadcrumb-bar,
 .record-meta, .record-detail, .updated-detail, .row-actions button, .row-action-link, .state-box a,
 .text-button, .modal label, .relationship-row, .relationship-person strong,
 .relationship-row .danger-action, .assignment-review-row a, .grade-controls input { font-size: 14px; line-height: 1.45; }
@@ -977,6 +978,10 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 /* Profile identity: keep account name and role readable without changing headings or metrics. */
 .sidebar-footer strong, .profile-trigger-copy strong { font-size: 16px; line-height: 1.3; }
 .sidebar-footer span, .profile-trigger-copy small { font-size: 14px; line-height: 1.45; }
+
+@media (max-width: 780px) {
+  .sidebar > .primary-nav:last-of-type .nav-link { font-size: 14px; line-height: 1.35; }
+}
 
 /* Course builder */
 .builder-backdrop { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 24px; background: #082b4db8; backdrop-filter: blur(5px); }
