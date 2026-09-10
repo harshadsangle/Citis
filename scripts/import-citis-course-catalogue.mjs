@@ -539,6 +539,38 @@ async function upsertDemoEnrollment(client, institution, course, learnerId, acto
   counts.demoEnrollmentsCreated += 1;
 }
 
+async function reconcileImportedCourse(client, course, definition, counts) {
+  const expectedLessons = definition.modules.reduce((total, module) => total + module.lessons.length, 0);
+  const result = await client.query(
+    `SELECT c.status AS course_status, p.status AS programme_status, i.status AS institution_status,
+            count(DISTINCT cm.id)::int AS module_count,
+            count(DISTINCT l.id)::int AS lesson_count,
+            count(DISTINCT lr.id) FILTER (WHERE lr.resource_type = 'DOCUMENT' AND lr.sequence = 1)::int AS source_resource_count
+     FROM courses c
+     JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+     JOIN institutions i ON i.id = c.institution_id AND i.tenant_id = c.tenant_id
+     LEFT JOIN course_modules cm ON cm.course_id = c.id AND cm.tenant_id = c.tenant_id
+     LEFT JOIN lessons l ON l.module_id = cm.id AND l.tenant_id = c.tenant_id
+     LEFT JOIN learning_resources lr ON lr.lesson_id = l.id AND lr.tenant_id = c.tenant_id
+     WHERE c.id = $1 AND c.tenant_id = $2
+     GROUP BY c.id, c.status, p.status, i.status`,
+    [course.id, course.tenant_id],
+  );
+  const row = result.rows[0];
+  if (
+    !row
+    || row.course_status !== "PUBLISHED"
+    || row.programme_status !== "PUBLISHED"
+    || row.institution_status !== "ACTIVE"
+    || Number(row.module_count) < definition.modules.length
+    || Number(row.lesson_count) < expectedLessons
+    || Number(row.source_resource_count) < 1
+  ) {
+    throw new Error(`Imported course "${definition.title}" failed status or hierarchy reconciliation.`);
+  }
+  counts.coursesReconciled += 1;
+}
+
 async function importCourse(client, institution, programme, definition, source, actorId, counts, learnerId) {
   const course = await upsertCourse(client, programme, definition, actorId, counts);
   let firstLesson = null;
@@ -551,6 +583,7 @@ async function importCourse(client, institution, programme, definition, source, 
   }
   if (!firstLesson) throw new Error(`Course "${definition.title}" does not contain any lessons.`);
   await upsertSourceResource(client, firstLesson, institution, source, definition.title, actorId, counts);
+  await reconcileImportedCourse(client, course, definition, counts);
   if (learnerId) await upsertDemoEnrollment(client, institution, course, learnerId, actorId, counts);
   return course;
 }
@@ -575,6 +608,7 @@ async function main() {
     resourcesCreated: 0,
     resourcesUpdated: 0,
     courseCodesUpdated: 0,
+    coursesReconciled: 0,
     demoEnrollmentsCreated: 0,
     demoEnrollmentsReactivated: 0,
   };
