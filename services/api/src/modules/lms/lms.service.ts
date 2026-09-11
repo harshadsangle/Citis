@@ -726,12 +726,11 @@ export class LmsService {
           for (const [lessonIndex, lesson] of module.lessons.entries()) {
             const lessonResult = await client.query<Record<string, unknown>>(
               `INSERT INTO lessons
-                  (tenant_id, course_id, module_id, title, description, sequence, estimated_duration, created_by, updated_by)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+                  (tenant_id, module_id, title, description, sequence, estimated_duration, created_by, updated_by)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
                RETURNING *`,
               [
                 user.tenantId,
-                course.id,
                 moduleRow.id,
                 lesson.title.trim(),
                 lesson.description?.trim() || null,
@@ -746,13 +745,11 @@ export class LmsService {
             for (const [resourceIndex, resource] of lesson.resources.entries()) {
               const resourceResult = await client.query<Record<string, unknown>>(
                 `INSERT INTO learning_resources
-                    (tenant_id, course_id, module_id, lesson_id, title, resource_type, url, duration, sequence, created_by, updated_by)
-                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+                    (tenant_id, lesson_id, title, resource_type, url, duration, sequence, created_by, updated_by)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
                  RETURNING *`,
                 [
                   user.tenantId,
-                  course.id,
-                  moduleRow.id,
                   lessonRow.id,
                   resource.title.trim(),
                   resource.resourceType,

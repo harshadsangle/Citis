@@ -315,6 +315,8 @@ test("course builder removes a staged document when a later database step fails"
 
 test("course builder commits a complete course and uploaded document", async () => {
   let managedFileInserted = false;
+  let schemaCompatibleLessonInserted = false;
+  let schemaCompatibleResourceInserted = false;
   const storage = {
     storeDocument: async () => ({
       storageKey: "tenant-1/resource-1",
@@ -328,12 +330,22 @@ test("course builder commits a complete course and uploaded document", async () 
   };
   const payload = builderPayload();
   payload.modules[0].lessons[0].resources.push({ title: "Handout", resourceType: "PDF", fileField: "resource-file-1" });
-  const { db, wasRolledBack } = builderDb(async (text) => {
+  const { db, wasRolledBack } = builderDb(async (text, values) => {
     if (text.includes("FOR SHARE")) return { rows: [builderParent] };
     if (text.startsWith("INSERT INTO courses")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
     if (text.startsWith("INSERT INTO course_modules")) return { rows: [{ id: "module-1" }] };
-    if (text.startsWith("INSERT INTO lessons")) return { rows: [{ id: "lesson-1" }] };
-    if (text.startsWith("INSERT INTO learning_resources")) return { rows: [{ id: "resource-1" }] };
+    if (text.startsWith("INSERT INTO lessons")) {
+      assert.doesNotMatch(text, /\bcourse_id\b/);
+      assert.deepEqual(values, [user.tenantId, "module-1", "Lesson one", null, 1, null, user.id]);
+      schemaCompatibleLessonInserted = true;
+      return { rows: [{ id: "lesson-1" }] };
+    }
+    if (text.startsWith("INSERT INTO learning_resources")) {
+      assert.doesNotMatch(text, /\bcourse_id\b|\bmodule_id\b/);
+      assert.deepEqual(values, [user.tenantId, "lesson-1", "Handout", "PDF", null, null, 1, user.id]);
+      schemaCompatibleResourceInserted = true;
+      return { rows: [{ id: "resource-1" }] };
+    }
     if (text.startsWith("INSERT INTO managed_files")) {
       managedFileInserted = true;
       return { rows: [{ id: "managed-1" }] };
@@ -351,6 +363,8 @@ test("course builder commits a complete course and uploaded document", async () 
   }], builderRequest);
   assert.equal(created.id, "course-1");
   assert.equal(managedFileInserted, true);
+  assert.equal(schemaCompatibleLessonInserted, true);
+  assert.equal(schemaCompatibleResourceInserted, true);
   assert.equal(wasRolledBack(), false);
 });
 
