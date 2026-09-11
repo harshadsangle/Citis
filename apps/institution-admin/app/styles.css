@@ -331,7 +331,7 @@ h1, h2, h3, h4, h5, h6 { line-height: 1.1; }
 .sidebar {
   position: sticky;
   top: 0;
-  max-height: 100dvh;
+  max-height: none;
   box-shadow: 18px 0 42px rgb(10 52 84 / .1);
 }
 
