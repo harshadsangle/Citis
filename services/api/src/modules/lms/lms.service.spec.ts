@@ -132,6 +132,53 @@ test("course builder resolves its hidden programme relationship and creates a va
   assert.equal(created.id, "course-resolved");
 });
 
+test("course builder publishes the course for the existing published-courses listing", async () => {
+  let createdCourse: Record<string, unknown> | undefined;
+  const db = {
+    query: async (text: string, values: unknown[]) => {
+      if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) return { rows: [builderParent] };
+      if (text.startsWith("SELECT c.id")) {
+        assert.match(text, /c\.status = \$2/);
+        return { rows: createdCourse?.status === values[1] ? [createdCourse] : [] };
+      }
+      if (text.startsWith("SELECT count(*)::text AS count")) {
+        assert.match(text, /c\.status = \$2/);
+        return { rows: [{ count: createdCourse?.status === values[1] ? "1" : "0" }] };
+      }
+      return { rows: [] };
+    },
+    transaction: async <T>(work: (client: { query: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<T>) => work({
+      query: async (text: string, values: unknown[]) => {
+        if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+        if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) return { rows: [] };
+        if (text.includes("INSERT INTO courses")) {
+          createdCourse = {
+            id: "published-course",
+            tenant_id: user.tenantId,
+            institution_id: builderParent.institution_id,
+            campus_id: null,
+            programme_id: builderProgrammeId,
+            title: values[4],
+            code: values[5],
+            status: values[12],
+          };
+          return { rows: [createdCourse] };
+        }
+        if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "published-course-module" }] };
+        if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "published-course-lesson" }] };
+        return { rows: [] };
+      },
+    }),
+  };
+  const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
+
+  const created = await service.createCourseBuilder(builderPayload(), [], builderRequest);
+  const published = await service.listCourses(user, 1, 100, 0, { status: "PUBLISHED" });
+
+  assert.equal(created.status, "PUBLISHED");
+  assert.deepEqual(published.data.map((course) => course.id), ["published-course"]);
+});
+
 test("course builder retries a generated code when the candidate is already used", async () => {
   const seed = "44444444-4444-4444-8444-444444444444";
   let candidateChecks = 0;
