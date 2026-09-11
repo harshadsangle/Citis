@@ -714,7 +714,6 @@ export default function InstitutionAdminPage() {
       {builderOpen && (
         <CourseBuilder
           apiBase={API_BASE}
-          programmeId={courseCreateProgrammeId}
           onClose={() => setBuilderOpen(false)}
           onCreated={() => {
             setBuilderOpen(false);

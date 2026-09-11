@@ -99,12 +99,17 @@ test("course builder resolves its hidden programme relationship and creates a va
   delete payload.course.programmeId;
   let resolvedProgramme = false;
   let insertedProgrammeId: unknown;
+  const inaccessibleProgramme = {
+    id: "99999999-9999-4999-8999-999999999999",
+    institution_id: "institution-2",
+    campus_id: null,
+  };
   const db = {
     query: async (text: string, values: unknown[]) => {
       if (text.includes("FROM programmes p")) {
         resolvedProgramme = true;
         assert.deepEqual(values, [user.tenantId]);
-        return { rows: [builderParent] };
+        return { rows: [inaccessibleProgramme, builderParent] };
       }
       if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) return { rows: [builderParent] };
       return { rows: [] };

@@ -222,12 +222,10 @@ function validationFieldLabel(key: string) {
 
 export default function CourseBuilder({
   apiBase,
-  programmeId,
   onClose,
   onCreated,
 }: {
   apiBase: string;
-  programmeId: string;
   onClose: () => void;
   onCreated: (title: string) => void;
 }) {
@@ -617,7 +615,6 @@ export default function CourseBuilder({
       setProgress("Validating and creating the complete course…");
       const structure = {
         course: {
-          programmeId: programmeId || undefined,
           codeSeed: courseCodeSeed,
           title: course.title.trim(),
           description: course.description.trim() || undefined,
