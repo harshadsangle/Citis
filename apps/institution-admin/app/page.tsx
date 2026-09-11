@@ -719,6 +719,7 @@ export default function InstitutionAdminPage() {
           onCreated={() => {
             setBuilderOpen(false);
             showSection("courses");
+             setCourseView("PUBLISHED");
             setRefreshToken((current) => current + 1);
           }}
         />

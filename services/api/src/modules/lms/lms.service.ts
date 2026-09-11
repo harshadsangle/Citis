@@ -690,8 +690,8 @@ export class LmsService {
         const courseResult = await client.query<Record<string, unknown>>(
           `INSERT INTO courses
              (tenant_id, institution_id, campus_id, programme_id, title, code, description, thumbnail,
-              price_minor, currency, purchasable, created_by, updated_by)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+              price_minor, currency, purchasable, created_by, updated_by, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12, $13)
            RETURNING *`,
           [
             user.tenantId,
@@ -706,6 +706,7 @@ export class LmsService {
             payload.course.currency ?? "INR",
             payload.course.purchasable ?? false,
             user.id,
+             "PUBLISHED",
           ],
         );
         const course = courseResult.rows[0];
@@ -714,10 +715,10 @@ export class LmsService {
         for (const [moduleIndex, module] of payload.modules.entries()) {
           const moduleResult = await client.query<Record<string, unknown>>(
             `INSERT INTO course_modules
-               (tenant_id, course_id, title, description, sequence, created_by, updated_by)
-             VALUES ($1, $2, $3, $4, $5, $6, $6)
+                (tenant_id, course_id, title, description, sequence, created_by, updated_by, status)
+              VALUES ($1, $2, $3, $4, $5, $6, $6, $7)
              RETURNING *`,
-            [user.tenantId, course.id, module.title.trim(), module.description?.trim() || null, moduleIndex + 1, user.id],
+            [user.tenantId, course.id, module.title.trim(), module.description?.trim() || null, moduleIndex + 1, user.id, "PUBLISHED"],
           );
           const moduleRow = moduleResult.rows[0];
           await this.auditMutation(request, "course_module", "CREATE", moduleRow);
@@ -725,8 +726,8 @@ export class LmsService {
           for (const [lessonIndex, lesson] of module.lessons.entries()) {
             const lessonResult = await client.query<Record<string, unknown>>(
               `INSERT INTO lessons
-                 (tenant_id, course_id, module_id, title, description, sequence, estimated_duration, created_by, updated_by)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+                  (tenant_id, course_id, module_id, title, description, sequence, estimated_duration, created_by, updated_by, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8, $9)
                RETURNING *`,
               [
                 user.tenantId,
@@ -737,6 +738,7 @@ export class LmsService {
                 lessonIndex + 1,
                 lesson.estimatedDuration ?? null,
                 user.id,
+                "PUBLISHED",
               ],
             );
             const lessonRow = lessonResult.rows[0];
@@ -745,8 +747,8 @@ export class LmsService {
             for (const [resourceIndex, resource] of lesson.resources.entries()) {
               const resourceResult = await client.query<Record<string, unknown>>(
                 `INSERT INTO learning_resources
-                   (tenant_id, course_id, module_id, lesson_id, title, resource_type, url, duration, sequence, created_by, updated_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+                    (tenant_id, course_id, module_id, lesson_id, title, resource_type, url, duration, sequence, created_by, updated_by, status)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, $11)
                  RETURNING *`,
                 [
                   user.tenantId,
@@ -759,6 +761,7 @@ export class LmsService {
                   resource.duration ?? null,
                   resourceIndex + 1,
                   user.id,
+                  "PUBLISHED",
                 ],
               );
               const resourceRow = resourceResult.rows[0];
@@ -796,8 +799,8 @@ export class LmsService {
             const assignmentResult = await client.query<Record<string, unknown>>(
               `INSERT INTO lms_assessments
                  (tenant_id, institution_id, campus_id, course_id, module_id, title, description, instructions,
-                  due_at, total_marks, assessment_type, attempt_limit)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNMENT', 1)
+                   due_at, total_marks, assessment_type, attempt_limit, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'ASSIGNMENT', 1, 'PUBLISHED')
                RETURNING *`,
               [
                 user.tenantId,
@@ -819,8 +822,8 @@ export class LmsService {
             const assessmentResult = await client.query<Record<string, unknown>>(
               `INSERT INTO lms_assessments
                  (tenant_id, institution_id, campus_id, course_id, module_id, title, description, assessment_type,
-                  total_marks, passing_marks, duration_minutes, attempt_limit)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                   total_marks, passing_marks, duration_minutes, attempt_limit, status)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'PUBLISHED')
                RETURNING *`,
               [
                 user.tenantId,

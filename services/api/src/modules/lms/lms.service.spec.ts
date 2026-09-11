@@ -91,6 +91,7 @@ test("course builder generates a stable server-owned code and ignores a supplied
 
   assert.equal(insertedValues[5], courseCodeFromSeed(seed));
   assert.notEqual(insertedValues[5], "MANUAL-101");
+  assert.equal(insertedValues[12], "PUBLISHED");
 });
 
 test("course builder resolves its hidden programme relationship and creates a valid course", async () => {
