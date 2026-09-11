@@ -93,6 +93,44 @@ test("course builder generates a stable server-owned code and ignores a supplied
   assert.notEqual(insertedValues[5], "MANUAL-101");
 });
 
+test("course builder resolves its hidden programme relationship and creates a valid course", async () => {
+  const payload = builderPayload();
+  delete payload.course.programmeId;
+  let resolvedProgramme = false;
+  let insertedProgrammeId: unknown;
+  const db = {
+    query: async (text: string, values: unknown[]) => {
+      if (text.includes("FROM programmes p")) {
+        resolvedProgramme = true;
+        assert.deepEqual(values, [user.tenantId]);
+        return { rows: [builderParent] };
+      }
+      if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) return { rows: [builderParent] };
+      return { rows: [] };
+    },
+    transaction: async <T>(work: (client: { query: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<T>) => work({
+      query: async (text: string, values: unknown[]) => {
+        if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+        if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) return { rows: [] };
+        if (text.includes("INSERT INTO courses")) {
+          insertedProgrammeId = values[3];
+          return { rows: [{ id: "course-resolved", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+        }
+        if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-resolved" }] };
+        if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "lesson-resolved" }] };
+        return { rows: [] };
+      },
+    }),
+  };
+  const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
+
+  const created = await service.createCourseBuilder(payload, [], builderRequest);
+
+  assert.equal(resolvedProgramme, true);
+  assert.equal(insertedProgrammeId, builderProgrammeId);
+  assert.equal(created.id, "course-resolved");
+});
+
 test("course builder retries a generated code when the candidate is already used", async () => {
   const seed = "44444444-4444-4444-8444-444444444444";
   let candidateChecks = 0;

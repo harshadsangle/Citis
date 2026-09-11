@@ -29,3 +29,4 @@
 - [Refund concurrency safety](refund-concurrency.md) — reserve refundable balance under a payment-row lock before calling Razorpay.
 - [Video completion authority](video-completion-authority.md) — browser playback state never authorizes lesson, course, or certificate completion.
 - [Public frontend dependency install](public-frontend-dependency-install.md) — keep its separate lockfile aligned; optional Tailwind WASI fetches may fail through the package firewall.
+- [Hidden Course Builder programme](hidden-course-builder-programme.md) — programme linkage is internal and must resolve server-side rather than blocking the visible builder flow.

@@ -329,6 +329,36 @@ export class LmsService {
     };
   }
 
+  private async resolveCourseBuilderProgramme(raw: unknown, user: AuthenticatedUser) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
+    const payload = raw as { course?: Record<string, unknown> };
+    if (!payload.course || typeof payload.course !== "object" || Array.isArray(payload.course)) return raw;
+    const suppliedProgrammeId = payload.course.programmeId;
+    if (suppliedProgrammeId !== undefined && suppliedProgrammeId !== null && suppliedProgrammeId !== "") return raw;
+
+    const candidates = await this.db.query<{ id: string; institution_id: string; campus_id: string | null }>(
+      `SELECT p.id, p.institution_id, p.campus_id
+       FROM programmes p
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = p.tenant_id
+       WHERE p.tenant_id = $1 AND p.status <> 'ARCHIVED' AND i.status = 'ACTIVE'
+       ORDER BY CASE WHEN p.status = 'PUBLISHED' THEN 0 ELSE 1 END, p.created_at DESC, p.id ASC`,
+      [user.tenantId],
+    );
+    const programme = candidates.rows.find((candidate) => (
+      canAccessScope(user, candidate.institution_id, candidate.campus_id)
+    ));
+    if (!programme) {
+      throw new BadRequestException("No accessible course catalogue programme is available.");
+    }
+    return {
+      ...payload,
+      course: {
+        ...payload.course,
+        programmeId: programme.id,
+      },
+    };
+  }
+
   private async institutionFor(user: AuthenticatedUser, institutionId: string) {
     const result = await this.db.query<{ id: string; tenant_id: string }>(
       "SELECT id, tenant_id FROM institutions WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'",
@@ -633,7 +663,8 @@ export class LmsService {
     let payload: CourseBuilderPayload;
     let filesByField: Map<string, CourseBuilderUpload>;
     try {
-      ({ payload, filesByField } = this.validateCourseBuilderPayload(rawPayload, files, user));
+      const resolvedPayload = await this.resolveCourseBuilderProgramme(rawPayload, user);
+      ({ payload, filesByField } = this.validateCourseBuilderPayload(resolvedPayload, files, user));
     } catch (error) {
       throw error;
     }

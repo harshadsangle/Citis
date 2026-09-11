@@ -235,7 +235,6 @@ export default function CourseBuilder({
     const description = course.description.trim();
     const thumbnail = course.thumbnail.trim();
 
-    if (!programmeId) errors["course.programme"] = "This course is missing its catalogue relationship. Return to Courses and try again after a programme is available.";
     if (title.length < 2 || title.length > 180) errors["course.title"] = "Course title must be between 2 and 180 characters.";
     if (description.length > 2000) errors["course.description"] = "Description must be 2000 characters or fewer.";
     if (thumbnail.length > 2048) errors["course.thumbnail"] = "Thumbnail URL must be 2048 characters or fewer.";
@@ -551,11 +550,6 @@ export default function CourseBuilder({
       showValidationErrors(preflightErrors, step === 3);
       return;
     }
-    if (!programmeId) {
-      setValidationErrors({ "course.programme": "This course is missing its catalogue relationship. Return to Courses and try again after a programme is available." });
-      setError("This workspace has no existing course catalogue relationship available.");
-      return;
-    }
     setSaving(true);
     setError("");
     setValidationErrors({});
@@ -563,7 +557,7 @@ export default function CourseBuilder({
       setProgress("Validating and creating the complete course…");
       const structure = {
         course: {
-          programmeId,
+          programmeId: programmeId || undefined,
           codeSeed: courseCodeSeed,
           title: course.title.trim(),
           description: course.description.trim() || undefined,
