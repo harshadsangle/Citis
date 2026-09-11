@@ -169,6 +169,57 @@ function hasAtMostTwoDecimals(value: string) {
   return !value.includes(".") || value.split(".")[1].length <= 2;
 }
 
+function validationFieldLabel(key: string) {
+  const draftLabels: Record<string, string> = {
+    moduleDraft: "Open module editor",
+    lessonDraft: "Open lesson editor",
+    resourceDraft: "Open resource editor",
+    assignmentDraft: "Open assignment editor",
+    assessmentDraft: "Open assessment editor",
+    questionDraft: "Open question editor",
+  };
+  const draftKey = key.split(".")[0];
+  if (draftLabels[draftKey]) return draftLabels[draftKey];
+  if (key === "modules") return "Course structure";
+
+  const parts = key.split(".");
+  if (parts[0] !== "modules" || !Number.isInteger(Number(parts[1]))) {
+    return key.replaceAll(".", " ");
+  }
+  const labels = [`Module ${Number(parts[1]) + 1}`];
+  let index = 2;
+  const collectionLabels: Record<string, string> = {
+    lessons: "lesson",
+    resources: "resource",
+    assignments: "assignment",
+    assessments: "assessment",
+    questions: "question",
+  };
+  while (collectionLabels[parts[index]] && Number.isInteger(Number(parts[index + 1]))) {
+    labels.push(`${collectionLabels[parts[index]]} ${Number(parts[index + 1]) + 1}`);
+    index += 2;
+  }
+  const fieldLabels: Record<string, string> = {
+    title: "title",
+    description: "description",
+    estimatedDuration: "duration",
+    url: "URL",
+    duration: "duration",
+    instructions: "instructions",
+    maxMarks: "maximum marks",
+    dueAt: "due date",
+    totalMarks: "total marks",
+    passingMarks: "passing marks",
+    durationMinutes: "duration",
+    attemptLimit: "attempt limit",
+    prompt: "prompt",
+    marks: "marks",
+    options: "options",
+  };
+  if (parts[index]) labels.push(fieldLabels[parts[index]] || parts[index]);
+  return labels.join(" · ");
+}
+
 export default function CourseBuilder({
   apiBase,
   programmeId,
@@ -362,7 +413,7 @@ export default function CourseBuilder({
     if (!keepCurrentStep) {
       setStep(firstKey.startsWith("course.") ? 0 : firstKey.startsWith("modules.") || firstKey.startsWith("moduleDraft.") || firstKey.startsWith("lessonDraft.") ? 1 : 2);
     }
-    setError("Fix the highlighted fields before creating the course.");
+    setError(firstKey ? `${validationFieldLabel(firstKey)}: ${errors[firstKey]}` : "Fix the highlighted fields before creating the course.");
   }
 
   function courseApiValidationErrors(reason: unknown): ValidationErrors {
@@ -471,26 +522,35 @@ export default function CourseBuilder({
   }
 
   function beginModule(module?: BuilderModule) {
+    setStep(1);
     setEditingId(module?.id || "");
     setModuleDraft(module ? { ...module, lessons: [...module.lessons], assignments: [...module.assignments], assessments: [...module.assessments] } : newModule());
   }
 
-  function beginLesson(lesson?: BuilderLesson) {
+  function beginLesson(lesson?: BuilderLesson, moduleId = selectedModuleId) {
+    setStep(1);
+    setSelectedModuleId(moduleId);
+    if (lesson) setSelectedLessonId(lesson.id);
     setEditingId(lesson?.id || "");
     setLessonDraft(lesson ? { ...lesson, resources: [...lesson.resources] } : newLesson());
   }
 
   function beginResource(resource?: BuilderResource) {
+    setStep(2);
     setEditingId(resource?.id || "");
     setResourceDraft(resource ? { ...resource } : newResource());
   }
 
-  function beginAssignment(assignment?: BuilderAssignment) {
+  function beginAssignment(assignment?: BuilderAssignment, moduleId = selectedModuleId) {
+    setStep(2);
+    setSelectedModuleId(moduleId);
     setEditingId(assignment?.id || "");
     setAssignmentDraft(assignment ? { ...assignment } : newAssignment());
   }
 
-  function beginAssessment(assessment?: BuilderAssessment) {
+  function beginAssessment(assessment?: BuilderAssessment, moduleId = selectedModuleId) {
+    setStep(2);
+    setSelectedModuleId(moduleId);
     setEditingId(assessment?.id || "");
     setAssessmentDraft(assessment ? { ...assessment, questions: [...assessment.questions] } : newAssessment());
   }
@@ -731,17 +791,17 @@ export default function CourseBuilder({
           {selectedModuleId === module.id && <div className="builder-children">
             {module.lessons.map((lesson, lessonIndex) => {
               const lessonPrefix = `${modulePrefix}.lessons.${lessonIndex}`;
-              return <div className={`builder-lesson-row ${selectedLessonId === lesson.id ? "selected" : ""}`} key={lesson.id}><button type="button" className="builder-node-title" onClick={() => { setSelectedLessonId(lesson.id); setResourceDraft(null); }}><span className="builder-child-mark">L</span><span><strong>{lesson.title || "Untitled lesson"}</strong><small>{lesson.resources.length} resource{lesson.resources.length === 1 ? "" : "s"}</small>{reviewErrors(lessonPrefix)}</span></button><span className="builder-row-actions"><button type="button" className="builder-link" onClick={() => moveLesson(lessonIndex, -1)} disabled={lessonIndex === 0}>↑</button><button type="button" className="builder-link" onClick={() => moveLesson(lessonIndex, 1)} disabled={lessonIndex === module.lessons.length - 1}>↓</button><button type="button" className="builder-link" onClick={() => beginLesson(lesson)}>Edit</button><button type="button" className="builder-danger" onClick={() => removeLesson(lesson.id)}>Remove</button></span></div>;
+              return <div className={`builder-lesson-row ${selectedLessonId === lesson.id ? "selected" : ""}`} key={lesson.id}><button type="button" className="builder-node-title" onClick={() => { setSelectedModuleId(module.id); setSelectedLessonId(lesson.id); setResourceDraft(null); }}><span className="builder-child-mark">L</span><span><strong>{lesson.title || "Untitled lesson"}</strong><small>{lesson.resources.length} resource{lesson.resources.length === 1 ? "" : "s"}</small>{reviewErrors(lessonPrefix)}</span></button><span className="builder-row-actions"><button type="button" className="builder-link" onClick={() => moveLesson(lessonIndex, -1)} disabled={lessonIndex === 0}>↑</button><button type="button" className="builder-link" onClick={() => moveLesson(lessonIndex, 1)} disabled={lessonIndex === module.lessons.length - 1}>↓</button><button type="button" className="builder-link" onClick={() => beginLesson(lesson, module.id)}>Edit</button><button type="button" className="builder-danger" onClick={() => removeLesson(lesson.id)}>Remove</button></span></div>;
             })}
             {module.assignments.map((assignment, assignmentIndex) => {
               const assignmentPrefix = `${modulePrefix}.assignments.${assignmentIndex}`;
-              return <div className="builder-asset-row" key={assignment.id}><span className="builder-child-mark">A</span><span><strong>{assignment.title || "Untitled assignment"}</strong><small>Assignment · {assignment.maxMarks} marks</small>{reviewErrors(assignmentPrefix)}</span><button type="button" className="builder-link" onClick={() => beginAssignment(assignment)}>Edit</button><button type="button" className="builder-danger" onClick={() => setModules((current) => current.map((item) => item.id === module.id ? { ...item, assignments: item.assignments.filter((entry) => entry.id !== assignment.id) } : item))}>Remove</button></div>;
+              return <div className="builder-asset-row" key={assignment.id}><span className="builder-child-mark">A</span><span><strong>{assignment.title || "Untitled assignment"}</strong><small>Assignment · {assignment.maxMarks} marks</small>{reviewErrors(assignmentPrefix)}</span><button type="button" className="builder-link" onClick={() => beginAssignment(assignment, module.id)}>Edit</button><button type="button" className="builder-danger" onClick={() => setModules((current) => current.map((item) => item.id === module.id ? { ...item, assignments: item.assignments.filter((entry) => entry.id !== assignment.id) } : item))}>Remove</button></div>;
             })}
             {module.assessments.map((assessment, assessmentIndex) => {
               const assessmentPrefix = `${modulePrefix}.assessments.${assessmentIndex}`;
-              return <div className="builder-asset-row" key={assessment.id}><span className="builder-child-mark">Q</span><span><strong>{assessment.title || "Untitled assessment"}</strong><small>Assessment · {assessment.questions.length} question{assessment.questions.length === 1 ? "" : "s"}</small>{reviewErrors(assessmentPrefix)}</span><button type="button" className="builder-link" onClick={() => beginAssessment(assessment)}>Edit</button><button type="button" className="builder-danger" onClick={() => setModules((current) => current.map((item) => item.id === module.id ? { ...item, assessments: item.assessments.filter((entry) => entry.id !== assessment.id) } : item))}>Remove</button></div>;
+              return <div className="builder-asset-row" key={assessment.id}><span className="builder-child-mark">Q</span><span><strong>{assessment.title || "Untitled assessment"}</strong><small>Assessment · {assessment.questions.length} question{assessment.questions.length === 1 ? "" : "s"}</small>{reviewErrors(assessmentPrefix)}</span><button type="button" className="builder-link" onClick={() => beginAssessment(assessment, module.id)}>Edit</button><button type="button" className="builder-danger" onClick={() => setModules((current) => current.map((item) => item.id === module.id ? { ...item, assessments: item.assessments.filter((entry) => entry.id !== assessment.id) } : item))}>Remove</button></div>;
             })}
-            <button type="button" className="builder-add-child" onClick={() => beginLesson()}>+ Add lesson to this module</button>
+            <button type="button" className="builder-add-child" onClick={() => beginLesson(undefined, module.id)}>+ Add lesson to this module</button>
           </div>}
         </article>;
       })}
@@ -766,7 +826,7 @@ export default function CourseBuilder({
          {step === 0 && <div className="builder-panel"><div className="builder-panel-heading"><div><h3>Basic course details</h3><p>These details become the course catalogue record on final creation.</p></div><span className="builder-required">* Required</span></div><div className="builder-form-grid"><label>Course title *<input autoFocus required minLength={2} maxLength={180} aria-invalid={Boolean(validationErrors["course.title"])} aria-describedby={validationErrors["course.title"] ? "course-title-error" : undefined} value={course.title} onChange={(event) => updateCourse("title", event.target.value)} placeholder="e.g. Digital Productivity Essentials" />{fieldError("course.title")}</label><div className="builder-generated-code" aria-label="Generated course code"><span>Generated course code</span><strong>{courseCode}</strong><small>Assigned automatically and locked for this course.</small></div><label className="builder-span-two">Description<textarea rows={5} maxLength={2000} aria-invalid={Boolean(validationErrors["course.description"])} aria-describedby={validationErrors["course.description"] ? "course-description-error" : undefined} value={course.description} onChange={(event) => updateCourse("description", event.target.value)} placeholder="Describe what learners will achieve." />{fieldError("course.description")}<span className="builder-character-count">{course.description.length}/2000</span></label><label className="builder-span-two">Thumbnail URL (optional)<input type="url" maxLength={2048} aria-invalid={Boolean(validationErrors["course.thumbnail"])} aria-describedby={validationErrors["course.thumbnail"] ? "course-thumbnail-error" : undefined} value={course.thumbnail} onChange={(event) => updateCourse("thumbnail", event.target.value)} placeholder="https://…" />{fieldError("course.thumbnail")}<span className="builder-character-count">{course.thumbnail.length}/2048</span></label><label>Price in INR (optional)<input min={0} step="0.01" type="number" aria-invalid={Boolean(validationErrors["course.price"])} aria-describedby={validationErrors["course.price"] ? "course-price-error" : undefined} value={course.price} onChange={(event) => updateCourse("price", event.target.value)} placeholder="0.00" />{fieldError("course.price")}</label><label className="builder-check"><input type="checkbox" checked={course.purchasable} onChange={(event) => updateCourse("purchasable", event.target.checked)} /> Available for learner purchase</label></div><div className="builder-note"><strong>Completion settings</strong><span>Lesson completion is tracked by the existing learner progress service. Add resources, assignments, and assessments to define the learning path; no unsupported completion fields are added here.</span></div></div>}
         {step === 1 && <div className="builder-panel"><div className="builder-panel-heading"><div><h3>Course structure</h3><p>Arrange the Course → Module → Lesson hierarchy. Assignments and assessments are attached to modules.</p></div><button type="button" className="primary-button compact-button" onClick={() => beginModule()}>+ Add module</button></div>{renderModuleForm()}{renderLessonForm()}{renderHierarchy()}{selectedModule && selectedLesson && <div className="builder-selection-note">Selected: <strong>{selectedModule.title}</strong> / {selectedLesson.title}</div>}</div>}
         {step === 2 && <div className="builder-panel"><div className="builder-panel-heading"><div><h3>Add learning content</h3><p>Choose a lesson for resources, or a module for assignments and assessments.</p></div></div><div className="builder-picker-grid"><label>Lesson resources<select value={selectedLessonId} onChange={(event) => { setSelectedLessonId(event.target.value); setResourceDraft(null); }}>{allLessons.length === 0 && <option value="">Add a lesson first</option>}{allLessons.map(({ module, lesson }) => <option key={lesson.id} value={lesson.id}>{module.title || "Module"} / {lesson.title || "Lesson"}</option>)}</select></label><label>Module activities<select value={selectedModuleId} onChange={(event) => selectModule(event.target.value)}>{modules.length === 0 && <option value="">Add a module first</option>}{modules.map((module) => <option key={module.id} value={module.id}>{module.title || "Module"}</option>)}</select></label></div><div className="builder-activity-columns"><div className="builder-activity-card"><div className="builder-form-heading"><strong>Resources {selectedLesson ? `in ${selectedLesson.title}` : ""}</strong><button type="button" className="builder-link" disabled={!selectedLesson} onClick={() => beginResource()}>+ Add resource</button></div>{selectedLesson?.resources.map((resource) => <div className="builder-mini-row" key={resource.id}><span><strong>{resource.title || "Untitled resource"}</strong><small>{labelForType(resource.resourceType)}{resource.file ? ` · ${resource.file.name}` : ""}</small></span><button type="button" className="builder-link" onClick={() => beginResource(resource)}>Edit</button><button type="button" className="builder-danger" onClick={() => removeResource(resource.id)}>Remove</button></div>)}{resourceDraft && renderResourceForm()}</div><div className="builder-activity-card"><div className="builder-form-heading"><strong>Assignments {selectedModule ? `in ${selectedModule.title}` : ""}</strong><button type="button" className="builder-link" disabled={!selectedModule} onClick={() => beginAssignment()}>+ Add assignment</button></div>{selectedModule?.assignments.map((assignment) => <div className="builder-mini-row" key={assignment.id}><span><strong>{assignment.title || "Untitled assignment"}</strong><small>{assignment.maxMarks} marks</small></span><button type="button" className="builder-link" onClick={() => beginAssignment(assignment)}>Edit</button><button type="button" className="builder-danger" onClick={() => setModules((current) => current.map((module) => module.id === selectedModule.id ? { ...module, assignments: module.assignments.filter((item) => item.id !== assignment.id) } : module))}>Remove</button></div>)}{assignmentDraft && renderAssignmentForm()}</div><div className="builder-activity-card"><div className="builder-form-heading"><strong>Assessments {selectedModule ? `in ${selectedModule.title}` : ""}</strong><button type="button" className="builder-link" disabled={!selectedModule} onClick={() => beginAssessment()}>+ Add assessment</button></div>{selectedModule?.assessments.map((assessment) => <div className="builder-mini-row" key={assessment.id}><span><strong>{assessment.title || "Untitled assessment"}</strong><small>{assessment.questions.length} question{assessment.questions.length === 1 ? "" : "s"}</small></span><button type="button" className="builder-link" onClick={() => beginAssessment(assessment)}>Edit</button><button type="button" className="builder-danger" onClick={() => setModules((current) => current.map((module) => module.id === selectedModule.id ? { ...module, assessments: module.assessments.filter((item) => item.id !== assessment.id) } : module))}>Remove</button></div>)}{assessmentDraft && renderAssessmentForm()}</div></div></div>}
-         {step === 3 && <div className="builder-panel"><div className="builder-panel-heading"><div><h3>Review course hierarchy</h3><p>Check the complete structure before creating the catalogue record.</p></div></div>{Object.keys(validationErrors).length > 0 && <div className="builder-review-errors" role="alert"><strong>Course cannot be created yet.</strong><span>Fix the highlighted item below, then select Create Course again.</span></div>}<div className="builder-review-head"><div><span className="eyebrow">Course</span><h3>{course.title || "Untitled course"}</h3><p>{courseCode}{course.purchasable ? " · Purchasable" : ""}</p>{reviewErrors("course")}</div><div className="builder-counts">{Object.entries(counts).map(([key, value]) => <span key={key}><strong>{value}</strong>{key}</span>)}</div></div>{renderHierarchy()}<div className="builder-note"><strong>Final create</strong><span>All details, structure, and activities are validated before the first course record is created.</span></div></div>}
+         {step === 3 && <div className="builder-panel"><div className="builder-panel-heading"><div><h3>Review course hierarchy</h3><p>Check the complete structure before creating the catalogue record.</p></div></div>{Object.keys(validationErrors).length > 0 && <div className="builder-review-errors" role="alert"><strong>Course cannot be created yet.</strong><span>Fix the following item, then select Create Course again.</span><ul>{Object.entries(validationErrors).map(([key, message]) => <li key={key}><strong>{validationFieldLabel(key)} <code>{key}</code></strong><span>{message}</span></li>)}</ul></div>}<div className="builder-review-head"><div><span className="eyebrow">Course</span><h3>{course.title || "Untitled course"}</h3><p>{courseCode}{course.purchasable ? " · Purchasable" : ""}</p>{reviewErrors("course")}</div><div className="builder-counts">{Object.entries(counts).map(([key, value]) => <span key={key}><strong>{value}</strong>{key}</span>)}</div></div>{renderHierarchy()}<div className="builder-note"><strong>Final create</strong><span>All details, structure, and activities are validated before the first course record is created.</span></div></div>}
         </>}
       </div>
         {!created && <footer className="builder-footer"><button type="button" className="secondary-button" onClick={step === 0 ? onClose : () => goToStep(step - 1)} disabled={saving}>{step === 0 ? "Cancel" : "Back"}</button><span className="builder-progress">{saving ? progress : `${step + 1} of 4`}</span>{step < 3 ? <button type="button" className="primary-button" onClick={() => goToStep(step + 1)} disabled={saving}>{step === 2 ? "Review course" : "Continue"}</button> : <button type="button" className="primary-button" onClick={() => void createCourse()} disabled={saving}>{saving ? "Creating course…" : "Create Course"}</button>}</footer>}
