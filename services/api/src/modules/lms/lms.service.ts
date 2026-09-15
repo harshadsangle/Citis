@@ -255,7 +255,7 @@ export class LmsService {
             if (referencedFileFields.has(resource.fileField) || !file) throw new BadRequestException("A resource upload is missing or referenced more than once.");
             referencedFileFields.add(resource.fileField);
           }
-          if (["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resource.resourceType) && !resource.url && !file) {
+           if (["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resource.resourceType) && !resource.url && !file) {
             throw new BadRequestException(`${resource.resourceType} resources require a URL or uploaded file.`);
           }
           if (resource.resourceType === "SCORM" && !file) throw new BadRequestException("SCORM resources require an uploaded package.");
@@ -715,8 +715,8 @@ export class LmsService {
         for (const [moduleIndex, module] of payload.modules.entries()) {
           const moduleResult = await client.query<Record<string, unknown>>(
             `INSERT INTO course_modules
-                (tenant_id, course_id, title, description, sequence, created_by, updated_by)
-              VALUES ($1, $2, $3, $4, $5, $6, $6)
+                (tenant_id, course_id, title, description, sequence, status, created_by, updated_by)
+              VALUES ($1, $2, $3, $4, $5, 'PUBLISHED', $6, $6)
              RETURNING *`,
             [user.tenantId, course.id, module.title.trim(), module.description?.trim() || null, moduleIndex + 1, user.id],
           );
@@ -726,8 +726,8 @@ export class LmsService {
           for (const [lessonIndex, lesson] of module.lessons.entries()) {
             const lessonResult = await client.query<Record<string, unknown>>(
               `INSERT INTO lessons
-                  (tenant_id, module_id, title, description, sequence, estimated_duration, created_by, updated_by)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+                  (tenant_id, module_id, title, description, sequence, estimated_duration, status, created_by, updated_by)
+                VALUES ($1, $2, $3, $4, $5, $6, 'PUBLISHED', $7, $7)
                RETURNING *`,
               [
                 user.tenantId,
@@ -745,8 +745,8 @@ export class LmsService {
             for (const [resourceIndex, resource] of lesson.resources.entries()) {
               const resourceResult = await client.query<Record<string, unknown>>(
                 `INSERT INTO learning_resources
-                    (tenant_id, lesson_id, title, resource_type, url, duration, sequence, created_by, updated_by)
-                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+                    (tenant_id, lesson_id, title, resource_type, url, duration, sequence, status, created_by, updated_by)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, 'PUBLISHED', $8, $8)
                  RETURNING *`,
                 [
                   user.tenantId,
@@ -762,9 +762,11 @@ export class LmsService {
               const resourceRow = resourceResult.rows[0];
               const file = resource.fileField ? filesByField.get(resource.fileField) : undefined;
               if (file) {
-                const stored = resource.resourceType === "SCORM"
-                  ? await this.storage.storeScormPackage(user.tenantId, String(resourceRow.id), file)
-                  : await this.storage.storeDocument(user.tenantId, String(resourceRow.id), file);
+                 const stored = resource.resourceType === "SCORM"
+                   ? await this.storage.storeScormPackage(user.tenantId, String(resourceRow.id), file)
+                   : resource.resourceType === "VIDEO"
+                     ? await this.storage.storeVideo(user.tenantId, String(resourceRow.id), file)
+                     : await this.storage.storeDocument(user.tenantId, String(resourceRow.id), file);
                 storedFiles.push(stored);
                 await client.query(
                   `INSERT INTO managed_files
@@ -1571,7 +1573,7 @@ export class LmsService {
         throw new BadRequestException("Learning resource URLs must use HTTP or HTTPS.");
       }
     }
-    if (RESOURCE_TYPES_WITH_URL.includes(resourceType as LmsResourceType) && !url) {
+     if (RESOURCE_TYPES_WITH_URL.includes(resourceType as LmsResourceType) && !url && filePath !== "uploaded-file") {
       throw new BadRequestException(`${resourceType} resources require a URL.`);
     }
     if (RESOURCE_TYPES_WITH_FILE_OR_URL.includes(resourceType as LmsResourceType) && !url && !filePath) return;

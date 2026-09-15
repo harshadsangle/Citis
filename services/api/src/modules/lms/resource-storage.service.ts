@@ -22,6 +22,7 @@ export interface StoredFile {
 }
 
 const MAX_MANAGED_FILE_BYTES = 50 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 250 * 1024 * 1024;
 const MAX_SCORM_BYTES = 250 * 1024 * 1024;
 const MAX_SCORM_ENTRIES = 5_000;
 const MAX_SCORM_UNCOMPRESSED_BYTES = 500 * 1024 * 1024;
@@ -35,6 +36,8 @@ const DOCUMENT_MIME_TYPES = new Set([
   "application/vnd.oasis.opendocument.presentation",
 ]);
 const DOCUMENT_EXTENSIONS = new Set([".pdf", ".doc", ".docx", ".odt", ".ppt", ".pptx", ".odp"]);
+const VIDEO_MIME_TYPES = new Set(["video/mp4", "video/webm", "video/ogg", "video/quicktime", "video/x-m4v"]);
+const VIDEO_EXTENSIONS = new Set([".mp4", ".webm", ".ogv", ".ogg", ".mov", ".m4v"]);
 
 export function mimeTypeForFilename(filename: string) {
   switch (extname(filename).toLowerCase()) {
@@ -92,6 +95,28 @@ export class ResourceStorageService {
     const extension = extname(file.originalname).toLowerCase();
     if (!DOCUMENT_EXTENSIONS.has(extension) || !DOCUMENT_MIME_TYPES.has(file.mimetype)) {
       throw new BadRequestException("Only PDF, Word, OpenDocument text, PowerPoint, and presentation files are supported.");
+    }
+    const storageKey = `${tenantId}/${resourceId}/${randomUUID()}${extension}`;
+    const { destination } = safeStorageKey(storageKey);
+    await mkdir(dirname(destination), { recursive: true });
+    await writeFile(destination, file.buffer, { flag: "wx" });
+    return {
+      storageKey,
+      originalFilename: basename(file.originalname).slice(0, 255),
+      mimeType: file.mimetype,
+      byteSize: file.buffer.length,
+      sha256: createHash("sha256").update(file.buffer).digest("hex"),
+    };
+  }
+
+  async storeVideo(tenantId: string, resourceId: string, file: LmsUpload): Promise<StoredFile> {
+    if (!file || !file.buffer?.length) throw new BadRequestException("A video file is required.");
+    if (file.size > MAX_VIDEO_BYTES || file.buffer.length > MAX_VIDEO_BYTES) {
+      throw new BadRequestException("Video files must be 250 MB or smaller.");
+    }
+    const extension = extname(file.originalname).toLowerCase();
+    if (!VIDEO_EXTENSIONS.has(extension) || !VIDEO_MIME_TYPES.has(file.mimetype)) {
+      throw new BadRequestException("Only MP4, WebM, Ogg, QuickTime, and M4V video files are supported.");
     }
     const storageKey = `${tenantId}/${resourceId}/${randomUUID()}${extension}`;
     const { destination } = safeStorageKey(storageKey);

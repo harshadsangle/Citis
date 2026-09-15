@@ -51,3 +51,34 @@ test("SCORM uploads reject invalid archives before creating a package directory"
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("video uploads keep the original extension and reject unsupported MIME types", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "citis-video-"));
+  const previousDirectory = process.env.LMS_STORAGE_DIR;
+  process.env.LMS_STORAGE_DIR = directory;
+  try {
+    const storage = new ResourceStorageService();
+    const stored = await storage.storeVideo("tenant-a", "resource-a", {
+      originalname: "intro.MP4",
+      mimetype: "video/mp4",
+      size: 7,
+      buffer: Buffer.from("content"),
+    });
+    assert.match(stored.storageKey, /^tenant-a\/resource-a\/[0-9a-f-]+\.mp4$/);
+    assert.equal(stored.mimeType, "video/mp4");
+    assert.deepEqual(await storage.read(stored.storageKey), Buffer.from("content"));
+    await assert.rejects(
+      storage.storeVideo("tenant-a", "resource-a", {
+        originalname: "intro.mp4",
+        mimetype: "application/octet-stream",
+        size: 7,
+        buffer: Buffer.from("content"),
+      }),
+      BadRequestException,
+    );
+  } finally {
+    if (previousDirectory === undefined) delete process.env.LMS_STORAGE_DIR;
+    else process.env.LMS_STORAGE_DIR = previousDirectory;
+    await rm(directory, { recursive: true, force: true });
+  }
+});

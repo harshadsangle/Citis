@@ -373,6 +373,92 @@ test("course builder commits a complete course and uploaded document", async () 
   assert.equal(wasRolledBack(), false);
 });
 
+test("course builder stores an uploaded video as a managed FILE", async () => {
+  let storedVideo = false;
+  let managedFileKind = "";
+  const storage = {
+    storeDocument: async () => { throw new Error("unexpected document upload"); },
+    storeVideo: async () => {
+      storedVideo = true;
+      return {
+        storageKey: "tenant-1/resource-1",
+        originalFilename: "intro.mp4",
+        mimeType: "video/mp4",
+        byteSize: 4,
+        sha256: "c".repeat(64),
+      };
+    },
+    storeScormPackage: async () => { throw new Error("unexpected SCORM upload"); },
+    remove: async () => undefined,
+  };
+  const payload = builderPayload();
+  payload.modules[0].lessons[0].resources.push({ title: "Intro video", resourceType: "VIDEO", fileField: "video-file-1" });
+  const { db } = builderDb(async (text, values) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("INSERT INTO courses")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO course_modules")) return { rows: [{ id: "module-1" }] };
+    if (text.startsWith("INSERT INTO lessons")) return { rows: [{ id: "lesson-1" }] };
+    if (text.startsWith("INSERT INTO learning_resources")) return { rows: [{ id: "resource-1" }] };
+    if (text.startsWith("INSERT INTO managed_files")) {
+      managedFileKind = String(values[3]);
+      return { rows: [{ id: "managed-1" }] };
+    }
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, storage as never);
+
+  await service.createCourseBuilder(payload, [{
+    fieldname: "video-file-1",
+    originalname: "intro.mp4",
+    mimetype: "video/mp4",
+    size: 4,
+    buffer: Buffer.from("mp4"),
+  }], builderRequest);
+  assert.equal(storedVideo, true);
+  assert.equal(managedFileKind, "FILE");
+});
+
+test("course builder removes a staged video when a later database step fails", async () => {
+  const removed: string[] = [];
+  const storage = {
+    storeDocument: async () => { throw new Error("unexpected document upload"); },
+    storeVideo: async () => ({
+      storageKey: "tenant-1/resource-1",
+      originalFilename: "intro.webm",
+      mimeType: "video/webm",
+      byteSize: 5,
+      sha256: "d".repeat(64),
+    }),
+    storeScormPackage: async () => { throw new Error("unexpected SCORM upload"); },
+    remove: async (key: string) => { removed.push(key); },
+  };
+  const payload = builderPayload();
+  payload.modules[0].lessons[0].resources.push({ title: "Intro video", resourceType: "VIDEO", fileField: "video-file-1" });
+  const { db, wasRolledBack } = builderDb(async (text) => {
+    if (text.includes("FOR SHARE")) return { rows: [builderParent] };
+    if (text.startsWith("INSERT INTO courses")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
+    if (text.startsWith("INSERT INTO course_modules")) return { rows: [{ id: "module-1" }] };
+    if (text.startsWith("INSERT INTO lessons")) return { rows: [{ id: "lesson-1" }] };
+    if (text.startsWith("INSERT INTO learning_resources")) return { rows: [{ id: "resource-1" }] };
+    if (text.startsWith("INSERT INTO managed_files")) throw new Error("managed video insert failed");
+    return { rows: [] };
+  });
+  const service = new LmsService(db as never, { record: async () => undefined } as never, storage as never);
+
+  await assert.rejects(
+    service.createCourseBuilder(payload, [{
+      fieldname: "video-file-1",
+      originalname: "intro.webm",
+      mimetype: "video/webm",
+      size: 5,
+      buffer: Buffer.from("webm"),
+    }], builderRequest),
+    /managed video insert failed/,
+  );
+  assert.equal(wasRolledBack(), true);
+  assert.deepEqual(removed, ["tenant-1/resource-1"]);
+});
+
 test("course builder cleans a SCORM package when question creation fails", async () => {
   const removed: string[] = [];
   const storage = {

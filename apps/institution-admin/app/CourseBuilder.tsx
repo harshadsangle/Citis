@@ -122,21 +122,41 @@ function newAssessment(): BuilderAssessment {
   };
 }
 
-async function request<T>(apiBase: string, path: string, init?: RequestInit) {
-  const headers = new Headers(init?.headers);
-  if (init?.body instanceof FormData) headers.delete("Content-Type");
-  else headers.set("Content-Type", "application/json");
-  const response = await fetch(`${apiBase}${path}`, { ...init, credentials: "include", headers });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = typeof payload?.message === "string"
-      ? payload.message
-      : typeof payload?.error?.message === "string"
-        ? payload.error.message
-        : typeof payload?.error === "string" ? payload.error : "The request could not be completed.";
-    throw new Error(message);
-  }
-  return payload as T;
+async function requestMultipartWithProgress<T>(
+  apiBase: string,
+  path: string,
+  body: FormData,
+  onProgress: (loaded: number, total: number) => void,
+) {
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${apiBase}${path}`);
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) onProgress(event.loaded, event.total);
+    };
+    xhr.onerror = () => reject(new Error("The upload could not be completed."));
+    xhr.onload = () => {
+      const payload = (() => {
+        try {
+          return JSON.parse(xhr.responseText);
+        } catch {
+          return null;
+        }
+      })();
+      if (xhr.status < 200 || xhr.status >= 300) {
+        const message = typeof payload?.message === "string"
+          ? payload.message
+          : typeof payload?.error?.message === "string"
+            ? payload.error.message
+            : typeof payload?.error === "string" ? payload.error : "The request could not be completed.";
+        reject(new Error(message));
+        return;
+      }
+      resolve(payload as T);
+    };
+    xhr.send(body);
+  });
 }
 
 function numberOrUndefined(value: string) {
@@ -144,6 +164,7 @@ function numberOrUndefined(value: string) {
 }
 
 function labelForType(value: string) {
+  if (value === "VIDEO") return "Upload Video";
   return value.replaceAll("_", " ").toLowerCase().replace(/^\w/, (letter) => letter.toUpperCase());
 }
 
@@ -342,6 +363,7 @@ export default function CourseBuilder({
           if (resource.title.trim().length < 2 || resource.title.trim().length > 180) errors[`${prefix}.title`] = "Resource title must be between 2 and 180 characters.";
           if (resource.url.trim().length > 2048) errors[`${prefix}.url`] = "Resource URL must be 2048 characters or fewer.";
           else if (resource.url.trim() && !isValidUrl(resource.url.trim())) errors[`${prefix}.url`] = "Resource URL must be a valid HTTP or HTTPS URL.";
+           else if (resource.resourceType === "VIDEO" && !resource.url.trim() && !resource.file) errors[`${prefix}.url`] = "Add a video URL or upload a video file.";
           if (resource.duration.trim() && !isNumberInRange(resource.duration, 0, 100_000, true)) errors[`${prefix}.duration`] = "Resource duration must be a whole number from 0 to 100,000 minutes.";
         });
       });
@@ -380,6 +402,7 @@ export default function CourseBuilder({
       if (resourceDraft.title.trim().length < 2 || resourceDraft.title.trim().length > 180) errors["resourceDraft.title"] = "Finish the resource title before continuing.";
       if (resourceDraft.url.trim().length > 2048) errors["resourceDraft.url"] = "Resource URL must be 2048 characters or fewer.";
       else if (resourceDraft.url.trim() && !isValidUrl(resourceDraft.url.trim())) errors["resourceDraft.url"] = "Resource URL must be a valid HTTP or HTTPS URL.";
+       else if (resourceDraft.resourceType === "VIDEO" && !resourceDraft.url.trim() && !resourceDraft.file) errors["resourceDraft.url"] = "Add a video URL or upload a video file.";
       if (resourceDraft.duration.trim() && !isNumberInRange(resourceDraft.duration, 0, 100_000, true)) errors["resourceDraft.duration"] = "Resource duration must be a whole number from 0 to 100,000 minutes.";
     }
     if (assignmentDraft) {
@@ -612,7 +635,7 @@ export default function CourseBuilder({
     setError("");
     setValidationErrors({});
     try {
-      setProgress("Validating and creating the complete course…");
+      setProgress("Preparing the course upload…");
       const structure = {
         course: {
           codeSeed: courseCodeSeed,
@@ -671,7 +694,11 @@ export default function CourseBuilder({
           }
         }
       }
-      await request<ApiResponse>(apiBase, "/course-builder", { method: "POST", body: formData });
+      const hasVideo = modules.some((courseModule) => courseModule.lessons.some((lesson) => lesson.resources.some((resource) => resource.resourceType === "VIDEO" && resource.file)));
+      await requestMultipartWithProgress<ApiResponse>(apiBase, "/course-builder", formData, (loaded, total) => {
+        const percentage = total > 0 ? Math.round((loaded / total) * 100) : 0;
+        setProgress(hasVideo ? `Uploading video… ${percentage}%` : `Creating course… ${percentage}%`);
+      });
       setProgress("");
       setCreated(true);
       completionTimer.current = window.setTimeout(() => onCreated(course.title.trim()), 5000);
@@ -739,8 +766,8 @@ export default function CourseBuilder({
       <div className="builder-form-heading"><strong>{editingId ? "Edit resource" : "Add resource"}</strong><button type="button" className="builder-link" onClick={() => { setResourceDraft(null); setEditingId(""); }}>Cancel</button></div>
       <label>Resource title *<input autoFocus required minLength={2} value={resourceDraft.title} onChange={(event) => setResourceDraft({ ...resourceDraft, title: event.target.value })} placeholder="e.g. Workbook or lesson video" /></label>
       <div className="builder-two-col"><label>Type<select value={resourceDraft.resourceType} onChange={(event) => setResourceDraft({ ...resourceDraft, resourceType: event.target.value as ResourceType })}>{resourceTypes.map((type) => <option key={type} value={type}>{labelForType(type)}</option>)}</select></label><label>Duration (minutes)<input min={0} type="number" value={resourceDraft.duration} onChange={(event) => setResourceDraft({ ...resourceDraft, duration: event.target.value })} /></label></div>
-      <label>Video or external URL<input type="url" value={resourceDraft.url} onChange={(event) => setResourceDraft({ ...resourceDraft, url: event.target.value })} placeholder="https://…" /></label>
-      {["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resourceDraft.resourceType) && <label>{resourceDraft.resourceType === "SCORM" ? "SCORM package (.zip)" : "Managed document"}<input type="file" accept={resourceDraft.resourceType === "SCORM" ? ".zip,application/zip" : ".pdf,.doc,.docx,.odt,.ppt,.pptx,.odp"} onChange={onFile} />{resourceDraft.file && <span className="selected-file">{resourceDraft.file.name} · {(resourceDraft.file.size / 1024 / 1024).toFixed(1)} MB</span>}</label>}
+       {resourceDraft.resourceType === "VIDEO" && <label>Video URL (optional)<input type="url" value={resourceDraft.url} onChange={(event) => setResourceDraft({ ...resourceDraft, url: event.target.value })} placeholder="https://…" /></label>}
+       {["PDF", "DOCUMENT", "PRESENTATION", "SCORM", "VIDEO"].includes(resourceDraft.resourceType) && <label>{resourceDraft.resourceType === "SCORM" ? "SCORM package (.zip)" : resourceDraft.resourceType === "VIDEO" ? "Upload Video" : "Managed document"}<input type="file" accept={resourceDraft.resourceType === "SCORM" ? ".zip,application/zip" : resourceDraft.resourceType === "VIDEO" ? "video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v,.mp4,.webm,.ogg,.ogv,.mov,.m4v" : ".pdf,.doc,.docx,.odt,.ppt,.pptx,.odp"} onChange={onFile} />{resourceDraft.file && <span className="selected-file">{resourceDraft.file.name} · {(resourceDraft.file.size / 1024 / 1024).toFixed(1)} MB selected</span>}</label>}
       <p className="field-hint">Resources are stored securely and remain attached to this lesson.</p>
       <button className="primary-button compact-button" type="submit">{editingId ? "Save resource" : "Add resource"}</button>
     </form>;
