@@ -20,6 +20,9 @@ const adminAccessMigration = readFileSync(resolve(process.cwd(), "../../packages
 const emailSmsMfaMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/017_auth_email_sms_mfa.sql"), "utf8");
 const resourceProgressMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/018_lms_resource_progress.sql"), "utf8");
 const resourceProgressPermissionMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/019_lms_resource_progress_permission.sql"), "utf8");
+const uploadedVideoResourceMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/028_lms_uploaded_video_resources.sql"), "utf8");
+const studentResourceViewMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/029_lms_student_resource_view.sql"), "utf8");
+const courseApprovalMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/030_lms_course_approval_workflow.sql"), "utf8");
 const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/020_lms_foundation_roles_profiles.sql"), "utf8");
 const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/021_college_student_csv_onboarding.sql"), "utf8");
 const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
@@ -61,6 +64,27 @@ test("resource progress permission migration grants writes only to learners", ()
   assert.match(resourceProgressPermissionMigration, /lms\.resource_progress\.update/);
   assert.match(resourceProgressPermissionMigration, /r\.code = 'STUDENT'/);
   assert.match(resourceProgressPermissionMigration, /019_lms_resource_progress_permission/);
+});
+
+test("uploaded video resources may use managed files instead of URLs", () => {
+  assert.match(uploadedVideoResourceMigration, /resource_type = 'VIDEO'/);
+  assert.match(uploadedVideoResourceMigration, /resource_type IN \('LINK', 'INTERACTIVE'\).*url IS NOT NULL/s);
+  assert.match(uploadedVideoResourceMigration, /028_lms_uploaded_video_resources/);
+});
+
+test("students may view enrolled learning resources", () => {
+  assert.match(studentResourceViewMigration, /r\.code = 'STUDENT'/);
+  assert.match(studentResourceViewMigration, /p\.code = 'lms\.learning_resource\.view'/);
+  assert.match(studentResourceViewMigration, /029_lms_student_resource_view/);
+});
+
+test("course approval migration adds instructor review states and permissions", () => {
+  assert.match(courseApprovalMigration, /'INSTRUCTOR_PENDING'/);
+  assert.match(courseApprovalMigration, /'REJECTED'/);
+  assert.match(courseApprovalMigration, /rejection_reason text/);
+  assert.match(courseApprovalMigration, /lms\.course\.reject/);
+  assert.match(courseApprovalMigration, /r\.code IN \('TEACHER', 'INSTRUCTOR'\)/);
+  assert.match(courseApprovalMigration, /030_lms_course_approval_workflow/);
 });
 
 for (const table of ["programmes", "courses", "course_modules", "lessons", "learning_resources"]) {

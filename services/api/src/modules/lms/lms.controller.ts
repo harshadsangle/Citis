@@ -28,6 +28,7 @@ import {
   GradeAssessmentAttemptDto,
   GradeAssignmentSubmissionDto,
   ProgressViewerQueryDto,
+  RejectCourseDto,
   RelationshipListQueryDto,
   SubmitAssignmentDto,
   SubmitAssessmentAttemptDto,
@@ -159,7 +160,13 @@ export class LmsController {
   @Post("courses/:id/publish")
   @RequirePermission("lms.course.publish")
   async publishCourse(@Param("id") id: string, @Req() request: ContextRequest) {
-    return successResponse(await this.lms.changeStatus(id, "course", "PUBLISHED", request), request);
+    return successResponse(await this.lms.publishReviewedCourse(id, request), request);
+  }
+
+  @Post("courses/:id/reject")
+  @RequirePermission("lms.course.reject")
+  async rejectCourse(@Param("id") id: string, @Body() input: RejectCourseDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.rejectReviewedCourse(id, input, request), request);
   }
 
   @Post("courses/:id/archive")
@@ -574,7 +581,7 @@ export class LmsController {
 
   @Post("learning-resources/:id/file")
   @RequirePermission("lms.learning_resource.update")
-  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 50 * 1024 * 1024 } }))
+  @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 250 * 1024 * 1024 } }))
   async uploadLearningResourceFile(@Param("id") id: string, @UploadedFile() file: LmsUpload, @Req() request: ContextRequest) {
     return successResponse(await this.lms.uploadResourceFile(id, file, request), request);
   }

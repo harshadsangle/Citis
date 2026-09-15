@@ -91,7 +91,7 @@ test("course builder generates a stable server-owned code and ignores a supplied
 
   assert.equal(insertedValues[5], courseCodeFromSeed(seed));
   assert.notEqual(insertedValues[5], "MANUAL-101");
-  assert.equal(insertedValues[12], "PUBLISHED");
+  assert.equal(insertedValues[12], "INSTRUCTOR_PENDING");
 });
 
 test("course builder resolves its hidden programme relationship and creates a valid course", async () => {
@@ -103,15 +103,16 @@ test("course builder resolves its hidden programme relationship and creates a va
     id: "99999999-9999-4999-8999-999999999999",
     institution_id: "institution-2",
     campus_id: null,
+    name: "Microsoft Certified Educator",
   };
   const db = {
     query: async (text: string, values: unknown[]) => {
-      if (text.includes("FROM programmes p")) {
+      if (text.includes("FROM programmes p") && text.includes("ORDER BY")) {
         resolvedProgramme = true;
         assert.deepEqual(values, [user.tenantId]);
         return { rows: [inaccessibleProgramme, builderParent] };
       }
-      if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) return { rows: [builderParent] };
+      if (text.includes("JOIN institutions i")) return { rows: [builderParent] };
       return { rows: [] };
     },
     transaction: async <T>(work: (client: { query: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<T>) => work({
@@ -137,11 +138,57 @@ test("course builder resolves its hidden programme relationship and creates a va
   assert.equal(created.id, "course-resolved");
 });
 
-test("course builder publishes the course for the existing published-courses listing", async () => {
+test("course builder resolves the programme matching its provider-scoped catalogue", async () => {
+  const payload = builderPayload();
+  delete payload.course.programmeId;
+  const providerPayload = { ...payload, catalogueProvider: "comptia" };
+  const comptiaProgramme = {
+    id: "33333333-3333-4333-8333-333333333333",
+    institution_id: "institution-1",
+    campus_id: null,
+    name: "CompTIA Certifications",
+  };
+  const microsoftProgramme = {
+    ...builderParent,
+    name: "Microsoft Certified Educator",
+  };
+  let insertedProgrammeId: unknown;
+  const db = {
+    query: async (text: string) => {
+      if (text.includes("FROM programmes p") && text.includes("ORDER BY")) {
+        assert.match(text, /p\.status = 'PUBLISHED'/);
+        assert.match(text, /i\.status = 'ACTIVE'/);
+        return { rows: [microsoftProgramme, comptiaProgramme] };
+      }
+      if (text.includes("JOIN institutions i")) return { rows: [comptiaProgramme] };
+      return { rows: [] };
+    },
+    transaction: async <T>(work: (client: { query: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<T>) => work({
+      query: async (text: string, values: unknown[]) => {
+        if (text.includes("FOR SHARE")) return { rows: [comptiaProgramme] };
+        if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) return { rows: [] };
+        if (text.includes("INSERT INTO courses")) {
+          insertedProgrammeId = values[3];
+          return { rows: [{ id: "course-comptia", tenant_id: user.tenantId, institution_id: "institution-1", status: values[12] }] };
+        }
+        if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-comptia" }] };
+        if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "lesson-comptia" }] };
+        return { rows: [] };
+      },
+    }),
+  };
+  const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
+
+  const created = await service.createCourseBuilder(providerPayload, [], builderRequest);
+
+  assert.equal(insertedProgrammeId, comptiaProgramme.id);
+  assert.equal(created.status, "INSTRUCTOR_PENDING");
+});
+
+test("course builder sends the course to the instructor-pending listing", async () => {
   let createdCourse: Record<string, unknown> | undefined;
   const db = {
     query: async (text: string, values: unknown[]) => {
-      if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) return { rows: [builderParent] };
       if (text.startsWith("SELECT c.id")) {
         assert.match(text, /c\.status = \$2/);
         return { rows: createdCourse?.status === values[1] ? [createdCourse] : [] };
@@ -150,6 +197,7 @@ test("course builder publishes the course for the existing published-courses lis
         assert.match(text, /c\.status = \$2/);
         return { rows: [{ count: createdCourse?.status === values[1] ? "1" : "0" }] };
       }
+      if (text.includes("JOIN institutions i")) return { rows: [builderParent] };
       return { rows: [] };
     },
     transaction: async <T>(work: (client: { query: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => Promise<T>) => work({
@@ -158,7 +206,7 @@ test("course builder publishes the course for the existing published-courses lis
         if (text.startsWith("SELECT 1 FROM courses WHERE tenant_id")) return { rows: [] };
         if (text.includes("INSERT INTO courses")) {
           createdCourse = {
-            id: "published-course",
+            id: "pending-course",
             tenant_id: user.tenantId,
             institution_id: builderParent.institution_id,
             campus_id: null,
@@ -169,8 +217,8 @@ test("course builder publishes the course for the existing published-courses lis
           };
           return { rows: [createdCourse] };
         }
-        if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "published-course-module" }] };
-        if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "published-course-lesson" }] };
+        if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "pending-course-module" }] };
+        if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "pending-course-lesson" }] };
         return { rows: [] };
       },
     }),
@@ -178,10 +226,10 @@ test("course builder publishes the course for the existing published-courses lis
   const service = new LmsService(db as never, { record: async () => undefined } as never, new ResourceStorageService());
 
   const created = await service.createCourseBuilder(builderPayload(), [], builderRequest);
-  const published = await service.listCourses(user, 1, 100, 0, { status: "PUBLISHED" });
+  const pending = await service.listCourses(user, 1, 100, 0, { status: "INSTRUCTOR_PENDING" });
 
-  assert.equal(created.status, "PUBLISHED");
-  assert.deepEqual(published.data.map((course) => course.id), ["published-course"]);
+  assert.equal(created.status, "INSTRUCTOR_PENDING");
+  assert.deepEqual(pending.data.map((course) => course.id), ["pending-course"]);
 });
 
 test("course builder retries a generated code when the candidate is already used", async () => {
@@ -221,7 +269,7 @@ function builderDb(
   let rolledBack = false;
   const db = {
     query: async (text: string, values: unknown[]) => {
-      if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) return { rows: [builderParent] };
+      if (text.includes("JOIN institutions i")) return { rows: [builderParent] };
       return { rows: [] };
     },
     transaction: async <T>(work: (client: { query: typeof clientQuery }) => Promise<T>) => {
@@ -725,6 +773,64 @@ test("publishing content writes an auditable status mutation", async () => {
   assert.equal(audits.length, 1);
   assert.equal(audits[0].action, "PUBLISH");
   assert.equal(audits[0].tenantId, user.tenantId);
+});
+
+test("only the explicitly assigned instructor can finally publish a pending course", async () => {
+  const teacher: AuthenticatedUser = {
+    id: "teacher-1",
+    tenantId: user.tenantId,
+    email: "teacher@example.com",
+    firstName: "Teacher",
+    lastName: "One",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: ["lms.course.view", "lms.course.publish"],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
+  };
+  const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  const { service, audits } = serviceWith(async (text) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: teacher.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM lms_instructor_assignments")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "PUBLISHED", published_by: teacher.id }] };
+    return { rows: [] };
+  });
+
+  const published = await service.publishReviewedCourse("course-1", teacherRequest);
+
+  assert.equal(published.status, "PUBLISHED");
+  assert.equal(published.published_by, teacher.id);
+  assert.equal(audits.at(-1)?.action, "PUBLISH");
+  await assert.rejects(service.publishReviewedCourse("course-1", request), ForbiddenException);
+});
+
+test("instructor rejection requires a reason and returns the course to Admin", async () => {
+  const teacher: AuthenticatedUser = {
+    id: "teacher-1",
+    tenantId: user.tenantId,
+    email: "teacher@example.com",
+    firstName: "Teacher",
+    lastName: "One",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: ["lms.course.view", "lms.course.reject"],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
+  };
+  const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  const { service, audits } = serviceWith(async (text, values) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: teacher.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM lms_instructor_assignments")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "REJECTED", rejection_reason: values[1] }] };
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: " " }, teacherRequest), BadRequestException);
+  const rejected = await service.rejectReviewedCourse("course-1", { reason: "Add a transcript to the video." }, teacherRequest);
+
+  assert.equal(rejected.status, "REJECTED");
+  assert.equal(rejected.rejection_reason, "Add a transcript to the video.");
+  assert.equal(audits.at(-1)?.action, "REJECT");
 });
 
 test("managed file delivery is tenant-scoped and auditable", async () => {

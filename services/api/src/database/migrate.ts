@@ -33,6 +33,9 @@ export const MIGRATION_VERSIONS = [
   "025_lms_certificate_lifecycle",
   "026_lms_tenant_parent_integrity",
   "027_lms_course_code_uniqueness",
+  "028_lms_uploaded_video_resources",
+  "029_lms_student_resource_view",
+  "030_lms_course_approval_workflow",
 ] as const;
 
 const MIGRATION_LOCK_ID = 728431;

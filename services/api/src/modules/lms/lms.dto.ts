@@ -1,7 +1,7 @@
 import { Type } from "class-transformer";
 import { IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, MaxLength, Min, ValidateNested } from "class-validator";
 
-export const LMS_STATUSES = ["DRAFT", "PUBLISHED", "ARCHIVED"] as const;
+export const LMS_STATUSES = ["DRAFT", "INSTRUCTOR_PENDING", "REJECTED", "PUBLISHED", "ARCHIVED"] as const;
 export const LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"] as const;
 
 export class ContentListQueryDto {
@@ -166,6 +166,12 @@ export class UpdateCourseDto {
   purchasable?: boolean;
 }
 
+export class RejectCourseDto {
+  @IsString()
+  @Length(2, 2000)
+  reason!: string;
+}
+
 export class CreateCourseModuleDto {
   @IsUUID()
   courseId!: string;
@@ -316,11 +322,37 @@ export const LMS_RELATIONSHIP_STATUSES = ["ACTIVE", "REMOVED"] as const;
 
 export class RelationshipListQueryDto {
   @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
+
+  @IsOptional()
   @IsIn(LMS_RELATIONSHIP_STATUSES)
   status?: string;
 }
 
 export class CandidateListQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
+
   @IsOptional()
   @IsString()
   @Length(0, 120)

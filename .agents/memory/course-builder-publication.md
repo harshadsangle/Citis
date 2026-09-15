@@ -1,10 +1,10 @@
 ---
-name: Course Builder publication
-description: Defines the required status and Admin handoff after final Course Builder creation.
+name: Course approval workflow
+description: Defines the required Admin-to-Instructor review lifecycle for Course Builder courses.
 ---
 
-Final Course Builder submission must create the course with the existing `PUBLISHED` course status inside the atomic transaction. After the five-second success state, Admin must return to the Published Courses view and refresh through the existing Courses API.
+Final Course Builder submission must create the complete hierarchy atomically in an instructor-pending state. Admin assigns an instructor; only that explicitly assigned instructor can publish or reject with a reason. Rejection returns the course to Admin, while instructor publication is the only transition that exposes it to learners.
 
-**Why:** The database defaults a course to `DRAFT`, which excludes a successfully built course from the Published Courses list and makes creation appear unsuccessful.
+**Why:** Admin creation is content preparation, not final approval. Learners must never receive a course until an assigned instructor has reviewed it, while rejected work needs clear feedback and a safe route back through Admin.
 
-**How to apply:** Override the course status only in final builder creation; do not expose Draft or Archive choices, modify existing records, or bypass the normal status behavior of nested content.
+**How to apply:** Keep builder creation atomic and provider-scoped, allow instructor assignment before publication, require an explicit course assignment for review actions, require rejection text, and keep learner APIs limited to published courses.

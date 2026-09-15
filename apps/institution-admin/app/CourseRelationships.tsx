@@ -178,7 +178,7 @@ export default function CourseRelationships({ apiBase, courseId, courseLabel, mo
       <div className="relationship-list">
         <div className="relationship-list-heading"><span>{title}</span><span>Contact</span><span>Action</span></div>
         {!loading && relationships.length === 0 && (
-          <div className="relationship-empty"><div className="state-symbol soft">+</div><div><strong>No active {plural} yet</strong><p>Add the first {noun} to this published course using the selector above.</p></div></div>
+          <div className="relationship-empty"><div className="state-symbol soft">+</div><div><strong>No active {plural} yet</strong><p>Add the first {noun} to this course using the selector above.</p></div></div>
         )}
         {loading && <div className="relationship-empty"><div className="spinner" /><div><strong>Loading {plural}…</strong><p>Checking your institution-scoped roster.</p></div></div>}
         {!loading && relationships.map((relationship) => (

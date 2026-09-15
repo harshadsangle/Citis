@@ -15,8 +15,9 @@ type Course = {
   title: string;
   code: string;
   description?: string | null;
-  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  status: "DRAFT" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED" | "ARCHIVED";
   programme_name?: string | null;
+  rejection_reason?: string | null;
 };
 
 type Enrollment = {
@@ -489,6 +490,7 @@ export default function TeacherPortalPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   async function loadDashboard(showRefresh = false) {
     if (showRefresh) setRefreshing(true);
@@ -502,12 +504,13 @@ export default function TeacherPortalPage() {
       setName(displayName(principal));
 
       const selectedProvider = normalizeLmsCourseProvider(new URLSearchParams(window.location.search).get("provider"));
-      const visibleCourses = selectedProvider
+      const providerCourses = selectedProvider
         ? courses.filter((course) => providerForProgrammeName(course.programme_name) === selectedProvider)
         : courses;
+      const visibleCourses = providerCourses.filter((course) => course.status !== "REJECTED");
       const details = await Promise.all(visibleCourses.map(async (course): Promise<CourseData> => {
         const [enrollmentResult, assignments, assessmentResult, structure] = await Promise.all([
-          list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`)
+          (course.status === "PUBLISHED" ? list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`) : Promise.resolve([]))
             .then((data) => ({ data, error: undefined }))
             .catch((reason: unknown) => ({ data: [], error: errorMessage(reason, "The learner roster could not be loaded.") })),
           list<Assignment>(`/assignments?courseId=${encodeURIComponent(course.id)}`),
@@ -598,6 +601,8 @@ export default function TeacherPortalPage() {
   }, []);
 
   const selected = courseData.find((item) => item.course.id === selectedCourseId) || courseData[0];
+  const pendingCourses = courseData.filter((item) => item.course.status === "INSTRUCTOR_PENDING");
+  const activeCourses = courseData.filter((item) => item.course.status === "PUBLISHED");
   const selectedProgressErrors = selected?.progress.filter(({ error }) => Boolean(error)) || [];
   const pendingSubmissions = useMemo(
     () => courseData.flatMap((item) => item.submissions
@@ -620,6 +625,49 @@ export default function TeacherPortalPage() {
   function selectCourse(courseId: string, scrollToSubmissions = false) {
     setSelectedCourseId(courseId);
     if (scrollToSubmissions) window.setTimeout(() => document.getElementById("submissions")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+  }
+
+  async function publishCourseReview() {
+    if (!selected || selected.course.status !== "INSTRUCTOR_PENDING") return;
+    if (!window.confirm(`Publish “${selected.course.title}” for final learner delivery?`)) return;
+    setBusyAction(`publish-course:${selected.course.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/courses/${encodeURIComponent(selected.course.id)}/publish`, { method: "POST" });
+      setNotice(`${selected.course.title} is now published.`);
+      setRejectReason("");
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The course could not be published."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function rejectCourseReview() {
+    if (!selected || selected.course.status !== "INSTRUCTOR_PENDING") return;
+    const reason = rejectReason.trim();
+    if (reason.length < 2) {
+      setError("Add a rejection reason before returning the course to Admin.");
+      return;
+    }
+    setBusyAction(`reject-course:${selected.course.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/courses/${encodeURIComponent(selected.course.id)}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      });
+      setNotice(`${selected.course.title} was returned to Admin with your review notes.`);
+      setRejectReason("");
+      await loadDashboard(true);
+    } catch (reasonError) {
+      setError(errorMessage(reasonError, "The course could not be returned to Admin."));
+    } finally {
+      setBusyAction("");
+    }
   }
 
   function openModuleEditor(module?: CourseModule) {
@@ -834,12 +882,12 @@ export default function TeacherPortalPage() {
       setError("Resource duration must be a whole number between 0 and 100,000 minutes.");
       return;
     }
-    if (needsUrl && !resourceEditor.url.trim()) {
+    if (needsUrl && !resourceEditor.url.trim() && !(resourceEditor.resourceType === "VIDEO" && hasUpload)) {
       setError(`${statusLabel(resourceEditor.resourceType)} resources require a URL.`);
       return;
     }
-    if (hasUpload && !["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resourceEditor.resourceType)) {
-      setError("Managed files are supported for PDF, document, presentation, and SCORM resources.");
+    if (hasUpload && !["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resourceEditor.resourceType)) {
+      setError("Managed files are supported for video, PDF, document, presentation, and SCORM resources.");
       return;
     }
     setBusyAction(`save-resource:${resourceEditor.id || "new"}`);
@@ -853,7 +901,7 @@ export default function TeacherPortalPage() {
           resourceType: resourceEditor.resourceType,
           title,
           url: resourceEditor.url.trim() || undefined,
-          filePath: resourceEditor.filePath.trim() || undefined,
+          filePath: resourceEditor.filePath.trim() || (resourceEditor.resourceType === "VIDEO" && hasUpload ? "uploaded-file" : undefined),
           duration,
           sequence,
         }),
@@ -1375,7 +1423,7 @@ export default function TeacherPortalPage() {
           <div className="sidebar-label">Teaching workspace</div>
           <nav className="nav-list" aria-label="Instructor workspace">
             <a className="nav-item active" href="#overview"><span className="nav-icon">⌂</span>Overview</a>
-            <a className="nav-item" href="#courses"><span className="nav-icon">▦</span>Assigned courses</a>
+            <a className="nav-item" href="#courses"><span className="nav-icon">▦</span>Pending courses <b>{pendingCourses.length}</b></a>
              <a className="nav-item" href="#content"><span className="nav-icon">≡</span>Course content</a>
             <a className="nav-item" href="#learners"><span className="nav-icon">♙</span>Learners & progress</a>
              <a className="nav-item" href="#assessments"><span className="nav-icon">◇</span>Assessments <b>{pendingAssessmentAttempts.length}</b></a>
@@ -1450,17 +1498,17 @@ export default function TeacherPortalPage() {
             {notice && <div className="alert success" role="status"><strong>Workspace updated</strong><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
 
              <section className="metrics" aria-label="Teaching summary">
-               <article className="metric-card"><span className="metric-card-icon">▦</span><div><span className="metric-label">Assigned courses</span><strong>{loading ? "—" : courseData.length}</strong><span className="metric-foot">Courses in your teaching scope</span></div></article>
+                <article className="metric-card"><span className="metric-card-icon">▦</span><div><span className="metric-label">Assigned courses</span><strong>{loading ? "—" : activeCourses.length}</strong><span className="metric-foot">Published courses in your teaching scope</span></div></article>
                <article className="metric-card"><span className="metric-card-icon learners">♙</span><div><span className="metric-label">Total learners</span><strong>{loading ? "—" : learnerTotal}</strong><span className="metric-foot">Active course enrollments</span></div></article>
                <article className="metric-card accent"><span className="metric-card-icon">◔</span><div><span className="metric-label">Course progress</span><strong>{loading ? "—" : `${averageProgress}%`}</strong><span className="metric-foot">Average across learner progress</span></div></article>
-                <article className="metric-card warm"><span className="metric-card-icon">!</span><div><span className="metric-label">Pending reviews</span><strong>{loading ? "—" : pendingSubmissions.length + pendingAssessmentAttempts.length}</strong><span className="metric-foot">Assignments and assessments awaiting review</span></div></article>
+                 <article className="metric-card warm"><span className="metric-card-icon">!</span><div><span className="metric-label">Pending reviews</span><strong>{loading ? "—" : pendingCourses.length}</strong><span className="metric-foot">Courses awaiting final instructor approval</span></div></article>
             </section>
 
             <section className="two-column" id="courses">
               <div className="panel course-panel">
-                <div className="panel-heading"><div><p className="eyebrow">Your teaching scope</p><h2>Assigned courses</h2></div><span className="count-badge">{courseData.length}</span></div>
+                 <div className="panel-heading"><div><p className="eyebrow">Your teaching scope</p><h2>Pending Courses & Assigned Courses</h2><p className="panel-copy">{pendingCourses.length} awaiting final approval · {activeCourses.length} published</p></div><span className="count-badge">{courseData.length}</span></div>
                 {loading && <div className="state"><div className="spinner" /><div><strong>Loading assigned courses…</strong><p>Checking your institution-scoped teaching assignments.</p></div></div>}
-                {!loading && courseData.length === 0 && <div className="state"><div className="state-icon">+</div><div><strong>No courses assigned yet</strong><p>Ask an institution administrator to assign a published course to your instructor account.</p></div></div>}
+                 {!loading && courseData.length === 0 && <div className="state"><div className="state-icon">+</div><div><strong>No courses assigned yet</strong><p>Ask an institution administrator to assign a course to your instructor account.</p></div></div>}
                 {!loading && courseData.length > 0 && <div className="course-list">
                   {courseData.map((item) => {
                     const courseProgress = item.progress.map(({ progress }) => progress?.percentage).filter((value): value is number => typeof value === "number");
@@ -1496,6 +1544,22 @@ export default function TeacherPortalPage() {
                 <div className="scope-note"><span>●</span> Data is limited to courses assigned to your instructor account.</div>
               </div>
             </section>
+
+             {selected?.course.status === "INSTRUCTOR_PENDING" && (
+               <section className="panel detail-panel" aria-labelledby="course-review-title">
+                 <div className="panel-heading detail-heading">
+                   <div><p className="eyebrow">Final approval</p><h2 id="course-review-title">Review {selected.course.title}</h2><p className="panel-copy">Review and edit the course structure below. Publish makes it available to Admin and eligible learners. Reject returns it to Admin with a required reason.</p></div>
+                   <StatusPill status={selected.course.status} />
+                 </div>
+                 <div className="content-editor">
+                   <label className="full-field">Rejection reason <span className="optional-label">(required only when rejecting)</span><textarea value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} maxLength={2000} rows={3} placeholder="Explain exactly what Admin needs to change." /></label>
+                   <div className="editor-actions">
+                     <button className="secondary-button" type="button" onClick={() => void rejectCourseReview()} disabled={busyAction === `reject-course:${selected.course.id}`}>{busyAction === `reject-course:${selected.course.id}` ? "Returning…" : "Reject and return to Admin"}</button>
+                     <button className="primary-button" type="button" onClick={() => void publishCourseReview()} disabled={busyAction === `publish-course:${selected.course.id}`}>{busyAction === `publish-course:${selected.course.id}` ? "Publishing…" : "Publish course"}</button>
+                   </div>
+                 </div>
+               </section>
+             )}
 
             <section className="panel detail-panel" id="learners">
               <div className="panel-heading detail-heading">
@@ -1544,7 +1608,7 @@ export default function TeacherPortalPage() {
                </form>}
                {resourceEditor && selected && <form className="content-editor" onSubmit={(event) => { event.preventDefault(); void saveResource(); }}>
                  <div className="editor-heading"><div><p className="eyebrow">{resourceEditor.id ? "Edit resource" : "New resource"} · {resourceEditor.lessonTitle}</p><h3>{resourceEditor.id ? "Update learning resource" : "Attach a draft resource"}</h3></div><button className="icon-button" type="button" onClick={() => setResourceEditor(null)} aria-label="Close resource editor">×</button></div>
-                 <div className="form-grid"><label>Title<input value={resourceEditor.title} onChange={(event) => setResourceEditor((current) => current && { ...current, title: event.target.value })} placeholder="e.g. Download the practice guide" maxLength={180} required /></label><label>Resource type{resourceEditor.id ? <span className="readonly-field">{statusLabel(resourceEditor.resourceType)}</span> : <select value={resourceEditor.resourceType} onChange={(event) => setResourceEditor((current) => current && { ...current, resourceType: event.target.value, url: ["VIDEO", "LINK", "INTERACTIVE"].includes(event.target.value) ? current.url : "" })}>{resourceTypes.map((type) => <option value={type} key={type}>{statusLabel(type)}</option>)}</select>}</label><label className="full-field">URL {["VIDEO", "LINK", "INTERACTIVE"].includes(resourceEditor.resourceType) ? <span className="optional-label">(required)</span> : <span className="optional-label">(optional; SCORM may use the uploaded package)</span>}<input type="url" value={resourceEditor.url} onChange={(event) => setResourceEditor((current) => current && { ...current, url: event.target.value })} placeholder="https://…" maxLength={2048} required={["VIDEO", "LINK", "INTERACTIVE"].includes(resourceEditor.resourceType)} /></label><label>Duration <span className="optional-label">(minutes)</span><input type="number" value={resourceEditor.duration} onChange={(event) => setResourceEditor((current) => current && { ...current, duration: event.target.value })} min="0" max="100000" step="1" placeholder="Optional" /></label><label>Sequence<input type="number" value={resourceEditor.sequence} onChange={(event) => setResourceEditor((current) => current && { ...current, sequence: event.target.value })} min="1" step="1" required /></label><label className="full-field">Managed file <span className="optional-label">(optional; PDF, document, presentation, or SCORM)</span><input type="file" accept={resourceEditor.resourceType === "SCORM" ? ".zip,.scorm" : resourceEditor.resourceType === "PDF" ? ".pdf" : resourceEditor.resourceType === "DOCUMENT" ? ".doc,.docx,.txt" : resourceEditor.resourceType === "PRESENTATION" ? ".ppt,.pptx" : undefined} onChange={(event) => setResourceEditor((current) => current && { ...current, file: event.target.files?.[0] })} /></label></div>
+                 <div className="form-grid"><label>Title<input value={resourceEditor.title} onChange={(event) => setResourceEditor((current) => current && { ...current, title: event.target.value })} placeholder="e.g. Download the practice guide" maxLength={180} required /></label><label>Resource type{resourceEditor.id ? <span className="readonly-field">{statusLabel(resourceEditor.resourceType)}</span> : <select value={resourceEditor.resourceType} onChange={(event) => setResourceEditor((current) => current && { ...current, resourceType: event.target.value, url: ["VIDEO", "LINK", "INTERACTIVE"].includes(event.target.value) ? current.url : "" })}>{resourceTypes.map((type) => <option value={type} key={type}>{statusLabel(type)}</option>)}</select>}</label><label className="full-field">URL {resourceEditor.resourceType === "VIDEO" ? <span className="optional-label">(or upload an MP4 below)</span> : ["LINK", "INTERACTIVE"].includes(resourceEditor.resourceType) ? <span className="optional-label">(required)</span> : <span className="optional-label">(optional; SCORM may use the uploaded package)</span>}<input type="url" value={resourceEditor.url} onChange={(event) => setResourceEditor((current) => current && { ...current, url: event.target.value })} placeholder="https://…" maxLength={2048} required={["LINK", "INTERACTIVE"].includes(resourceEditor.resourceType)} /></label><label>Duration <span className="optional-label">(minutes)</span><input type="number" value={resourceEditor.duration} onChange={(event) => setResourceEditor((current) => current && { ...current, duration: event.target.value })} min="0" max="100000" step="1" placeholder="Optional" /></label><label>Sequence<input type="number" value={resourceEditor.sequence} onChange={(event) => setResourceEditor((current) => current && { ...current, sequence: event.target.value })} min="1" step="1" required /></label><label className="full-field">Managed file <span className="optional-label">(optional; video, PDF, document, presentation, or SCORM)</span><input type="file" accept={resourceEditor.resourceType === "VIDEO" ? ".mp4,video/mp4" : resourceEditor.resourceType === "SCORM" ? ".zip,.scorm" : resourceEditor.resourceType === "PDF" ? ".pdf" : resourceEditor.resourceType === "DOCUMENT" ? ".doc,.docx,.txt" : resourceEditor.resourceType === "PRESENTATION" ? ".ppt,.pptx" : undefined} onChange={(event) => setResourceEditor((current) => current && { ...current, file: event.target.files?.[0] })} /></label></div>
                  <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setResourceEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-resource:${resourceEditor.id || "new"}`}>{busyAction === `save-resource:${resourceEditor.id || "new"}` ? "Saving…" : resourceEditor.id ? "Save changes" : "Save draft"}</button></div>
                </form>}
                {!loading && selected && !selected.structureError && selected.modules.length === 0 && !moduleEditor && <div className="state compact"><div className="state-icon">+</div><div><strong>No modules available</strong><p>Create the first module to start building this assigned course.</p><button className="text-button" type="button" onClick={() => openModuleEditor()}>Create a module →</button></div></div>}

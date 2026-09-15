@@ -13,7 +13,7 @@ import { lmsPortalUrl } from "./lms-portal-url";
 type Kind = "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
 type InsightMode = "certificates" | "reports";
-type Status = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+type Status = "DRAFT" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED" | "ARCHIVED";
 type ResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
 
 type ContentRecord = {
@@ -35,6 +35,8 @@ type ContentRecord = {
   managed_file_name?: string | null;
   managed_file_size?: number | null;
   managed_file_mime_type?: string | null;
+  rejection_reason?: string | null;
+  rejected_at?: string | null;
 };
 
 type TrailNode = { kind: Kind; id: string; label: string };
@@ -187,7 +189,7 @@ export default function InstitutionAdminPage() {
   const [activeKind, setActiveKind] = useState<Kind>("courses");
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
   const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
-  const [courseView, setCourseView] = useState<"ALL" | "PUBLISHED">("ALL");
+  const [courseView, setCourseView] = useState<"ALL" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED">("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
   const [ids, setIds] = useState({ courseId: "", moduleId: "", lessonId: "" });
@@ -240,7 +242,7 @@ export default function InstitutionAdminPage() {
       }
       setLoading(true);
       setError("");
-      const query = activeKind === "courses" && courseView === "PUBLISHED" ? "&status=PUBLISHED" : "";
+      const query = activeKind === "courses" && courseView !== "ALL" ? `&status=${courseView}` : "";
       try {
         const payload = await request<ApiList<ContentRecord>>(
           `${endpointFor(activeKind)}?page=1&pageSize=100${parentQuery(activeKind, ids)}${query}`,
@@ -651,6 +653,8 @@ export default function InstitutionAdminPage() {
                {activeKind === "courses" && (
                  <div className="course-view-tabs" aria-label="Course views">
                    <button className={courseView === "ALL" ? "active" : ""} type="button" onClick={() => setCourseView("ALL")}>All Courses</button>
+                   <button className={courseView === "INSTRUCTOR_PENDING" ? "active" : ""} type="button" onClick={() => setCourseView("INSTRUCTOR_PENDING")}>Instructor Pending</button>
+                   <button className={courseView === "REJECTED" ? "active" : ""} type="button" onClick={() => setCourseView("REJECTED")}>Needs Changes</button>
                    <button className={courseView === "PUBLISHED" ? "active" : ""} type="button" onClick={() => setCourseView("PUBLISHED")}>Active / Published Courses</button>
                  </div>
                )}
@@ -682,7 +686,7 @@ export default function InstitutionAdminPage() {
                       ) : <div className="record-avatar">{(titleFor(record)[0] || "?").toUpperCase()}</div>}
                       <div><button className="record-title" type="button" onClick={() => selectRecord(record)}>{titleFor(record)}</button><span className="record-meta">{record.code || record.resource_type || (record.description ? record.description.slice(0, 44) : "No description")}</span></div>
                     </div>
-                    <div className="record-detail">{record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
+                    <div className="record-detail">{record.rejection_reason ? <><strong>Instructor changes requested:</strong> {record.rejection_reason}</> : record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
                     <div className="updated-detail">Recently edited</div>
                       <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button></>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
                   </article>
@@ -714,17 +718,18 @@ export default function InstitutionAdminPage() {
       {builderOpen && (
         <CourseBuilder
           apiBase={API_BASE}
+          catalogueProvider={provider}
           onClose={() => setBuilderOpen(false)}
           onCreated={async (createdCourse) => {
-            const published = await request<ApiList<ContentRecord>>("/courses?page=1&pageSize=100&status=PUBLISHED");
-            if (!published.data.some((course) => course.id === createdCourse.id)) {
-              throw new Error("The course was published, but it is not visible in Published Courses yet.");
+            const pending = await request<ApiList<ContentRecord>>("/courses?page=1&pageSize=100&status=INSTRUCTOR_PENDING");
+            if (!pending.data.some((course) => course.id === createdCourse.id)) {
+              throw new Error("The course was created, but it is not visible in Instructor Pending yet.");
             }
             showSection("courses");
-            setCourseView("PUBLISHED");
-            setRecords(published.data);
+            setCourseView("INSTRUCTOR_PENDING");
+            setRecords(pending.data);
             setBuilderOpen(false);
-            setToast(`${createdCourse.title} is now published.`);
+            setToast(`${createdCourse.title} is ready for instructor assignment.`);
           }}
         />
       )}

@@ -22,6 +22,7 @@ import type {
   EnrollLearnerDto,
   GradeAssignmentSubmissionDto,
   ProgressViewerQueryDto,
+  RejectCourseDto,
   RelationshipListQueryDto,
   SubmitAssignmentDto,
   UpdateAssignmentDto,
@@ -34,10 +35,11 @@ import type {
 } from "./lms.dto";
 import { LmsContentRateLimiter } from "./lms.rate-limit";
 
-type LmsStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+type LmsStatus = "DRAFT" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED" | "ARCHIVED";
 type LmsResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
 type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
 
 const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
@@ -95,6 +97,7 @@ type CourseBuilderModule = {
 };
 
 type CourseBuilderPayload = {
+  catalogueProvider?: LmsCourseProvider;
   course: {
     programmeId: string;
     title: string;
@@ -143,6 +146,19 @@ function progressPercentage(completed: number, total: number) {
   return total > 0 ? Math.round((completed / total) * 10000) / 100 : 0;
 }
 
+function providerForProgrammeName(value: string): LmsCourseProvider | null {
+  const name = value.trim().toLowerCase();
+  if (name.includes("adobe")) return "adobe";
+  if (name.includes("autodesk")) return "autodesk";
+  if (name.includes("cisco")) return "cisco";
+  if (name.includes("comptia")) return "comptia";
+  if (name.includes("ic3") || name.includes("digital literacy")) return "ic3";
+  if (name.includes("intuit") || name.includes("quickbooks")) return "intuit";
+  if (name.includes("microsoft")) return "microsoft";
+  if (name.includes("unity")) return "unity";
+  return null;
+}
+
 @Injectable()
 export class LmsService {
   constructor(
@@ -155,7 +171,9 @@ export class LmsService {
 
   private statusFilter(status?: string) {
     if (!status) return { clause: "", values: [] as unknown[] };
-    if (!["DRAFT", "PUBLISHED", "ARCHIVED"].includes(status)) throw new BadRequestException("Invalid LMS status.");
+    if (!["DRAFT", "INSTRUCTOR_PENDING", "REJECTED", "PUBLISHED", "ARCHIVED"].includes(status)) {
+      throw new BadRequestException("Invalid LMS status.");
+    }
     return { clause: " AND status = $1", values: [status] };
   }
 
@@ -335,20 +353,36 @@ export class LmsService {
     if (!payload.course || typeof payload.course !== "object" || Array.isArray(payload.course)) return raw;
     const suppliedProgrammeId = payload.course.programmeId;
     if (suppliedProgrammeId !== undefined && suppliedProgrammeId !== null && suppliedProgrammeId !== "") return raw;
+    const suppliedProvider = (raw as { catalogueProvider?: unknown }).catalogueProvider;
+    const allowedProviders: LmsCourseProvider[] = ["adobe", "autodesk", "cisco", "comptia", "ic3", "intuit", "microsoft", "unity"];
+    if (
+      suppliedProvider !== undefined
+      && suppliedProvider !== null
+      && suppliedProvider !== ""
+      && (typeof suppliedProvider !== "string" || !allowedProviders.includes(suppliedProvider as LmsCourseProvider))
+    ) {
+      throw new BadRequestException("The selected course catalogue is invalid.");
+    }
+    const catalogueProvider = suppliedProvider as LmsCourseProvider | undefined;
 
-    const candidates = await this.db.query<{ id: string; institution_id: string; campus_id: string | null }>(
-      `SELECT p.id, p.institution_id, p.campus_id
+    const candidates = await this.db.query<{ id: string; institution_id: string; campus_id: string | null; name: string }>(
+      `SELECT p.id, p.institution_id, p.campus_id, p.name
        FROM programmes p
        JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = p.tenant_id
-       WHERE p.tenant_id = $1 AND p.status <> 'ARCHIVED' AND i.status = 'ACTIVE'
-       ORDER BY CASE WHEN p.status = 'PUBLISHED' THEN 0 ELSE 1 END, p.created_at DESC, p.id ASC`,
+       WHERE p.tenant_id = $1 AND p.status = 'PUBLISHED' AND i.status = 'ACTIVE'
+       ORDER BY p.created_at DESC, p.id ASC`,
       [user.tenantId],
     );
     const programme = candidates.rows.find((candidate) => (
       canAccessScope(user, candidate.institution_id, candidate.campus_id)
+      && (!catalogueProvider || providerForProgrammeName(candidate.name) === catalogueProvider)
     ));
     if (!programme) {
-      throw new BadRequestException("No accessible course catalogue programme is available.");
+      throw new BadRequestException(
+        catalogueProvider
+          ? `No accessible published ${catalogueProvider} course catalogue is available.`
+          : "No accessible published course catalogue programme is available.",
+      );
     }
     return {
       ...payload,
@@ -512,22 +546,26 @@ export class LmsService {
     const learnerOnly = this.isLearnerOnly(user);
     if (instructorOnly) {
       values.push(user.id);
-      clauses.push(`EXISTS (
-        SELECT 1
-        FROM lms_instructor_assignments ia
-        WHERE ia.tenant_id = c.tenant_id
-          AND ia.institution_id = c.institution_id
-          AND ia.course_id = c.id
-          AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
-          AND ia.instructor_id = $${values.length}
-          AND ia.status = 'ACTIVE'
-        UNION ALL
-        SELECT 1
-        FROM lms_instructor_colleges ic
-        WHERE ic.tenant_id = c.tenant_id
-          AND ic.institution_id = c.institution_id
-          AND ic.instructor_id = $${values.length}
-          AND ic.status = 'ACTIVE'
+      clauses.push(`(
+        EXISTS (
+          SELECT 1 FROM lms_instructor_assignments ia
+          WHERE ia.tenant_id = c.tenant_id
+            AND ia.institution_id = c.institution_id
+            AND ia.course_id = c.id
+            AND ia.campus_id IS NOT DISTINCT FROM c.campus_id
+            AND ia.instructor_id = $${values.length}
+            AND ia.status = 'ACTIVE'
+        )
+        OR (
+          c.status = 'PUBLISHED'
+          AND EXISTS (
+            SELECT 1 FROM lms_instructor_colleges ic
+            WHERE ic.tenant_id = c.tenant_id
+              AND ic.institution_id = c.institution_id
+              AND ic.instructor_id = $${values.length}
+              AND ic.status = 'ACTIVE'
+          )
+        )
       )`);
     }
     if (learnerOnly) {
@@ -559,7 +597,8 @@ export class LmsService {
     values.push(pageSize, offset);
     const [rows, total] = await Promise.all([
       this.db.query(
-        `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
+         `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
+                 c.rejection_reason, c.rejected_at, c.published_at,
                  c.price_minor, c.currency, c.purchasable, c.created_at, c.updated_at
          FROM courses c
          JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
@@ -586,6 +625,7 @@ export class LmsService {
   async getCourse(id: string, user: AuthenticatedUser) {
     const result = await this.db.query(
        `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
+                c.rejection_reason, c.rejected_at, c.published_at,
                c.price_minor, c.currency, c.purchasable, c.created_at, c.updated_at, p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
@@ -595,12 +635,11 @@ export class LmsService {
     );
     if (!result.rows[0]) throw new NotFoundException("Course not found.");
     if (this.isInstructorOnly(user)) {
-      await this.assertAssignedTeacherRead(
-        user,
-        String(result.rows[0].institution_id),
-        id,
-        result.rows[0].campus_id as string | null | undefined,
-      );
+      if (result.rows[0].status === "PUBLISHED") {
+        await this.assertAssignedTeacherRead(user, String(result.rows[0].institution_id), id, result.rows[0].campus_id as string | null | undefined);
+      } else if (!await this.hasExplicitInstructorAssignment(user, id, result.rows[0].campus_id as string | null | undefined)) {
+        throw new NotFoundException("The requested resource was not found.");
+      }
     } else {
       if (!this.isDirectStudentLearner(user)) {
         assertScopeForRead(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
@@ -670,10 +709,13 @@ export class LmsService {
     }
 
     const parent = await this.db.query<{ id: string; institution_id: string; campus_id: string | null }>(
-      "SELECT id, institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'",
+      `SELECT p.id, p.institution_id, p.campus_id
+       FROM programmes p
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = p.tenant_id
+       WHERE p.id = $1 AND p.tenant_id = $2 AND p.status = 'PUBLISHED' AND i.status = 'ACTIVE'`,
       [payload.course.programmeId, user.tenantId],
     );
-    if (!parent.rows[0]) throw new NotFoundException("Programme not found in the current tenant.");
+    if (!parent.rows[0]) throw new NotFoundException("Published programme not found in the current active institution.");
     assertScope(user, parent.rows[0].institution_id, parent.rows[0].campus_id);
     const campusId = await this.campusFor(user, parent.rows[0].institution_id, parent.rows[0].campus_id);
     const storedFiles: StoredFile[] = [];
@@ -681,10 +723,14 @@ export class LmsService {
     try {
       return await this.run(() => this.db.transaction(async (client) => {
         const currentParent = await client.query<{ id: string; institution_id: string; campus_id: string | null }>(
-          "SELECT id, institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED' FOR SHARE",
+          `SELECT p.id, p.institution_id, p.campus_id
+           FROM programmes p
+           JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = p.tenant_id
+           WHERE p.id = $1 AND p.tenant_id = $2 AND p.status = 'PUBLISHED' AND i.status = 'ACTIVE'
+           FOR SHARE OF p, i`,
           [payload.course.programmeId, user.tenantId],
         );
-        if (!currentParent.rows[0]) throw new NotFoundException("Programme is no longer available.");
+        if (!currentParent.rows[0]) throw new NotFoundException("Published programme is no longer available in the active institution.");
         const generatedCourseCode = await generateUniqueCourseCode(client, user.tenantId, payload.course.codeSeed);
 
         const courseResult = await client.query<Record<string, unknown>>(
@@ -706,7 +752,7 @@ export class LmsService {
             payload.course.currency ?? "INR",
             payload.course.purchasable ?? false,
             user.id,
-             "PUBLISHED",
+             "INSTRUCTOR_PENDING",
           ],
         );
         const course = courseResult.rows[0];
@@ -922,6 +968,51 @@ export class LmsService {
     });
   }
 
+  async publishReviewedCourse(id: string, request: ContextRequest) {
+    const user = request.context.user!;
+    if (!this.isInstructorOnly(user)) throw new ForbiddenException("Only the assigned instructor can publish a reviewed course.");
+    const before = await this.getCourse(id, user);
+    if (before.status !== "INSTRUCTOR_PENDING") throw new ConflictException("Only a course pending instructor review can be published.");
+    if (!await this.hasExplicitInstructorAssignment(user, id, before.campus_id as string | null | undefined)) {
+      throw new ForbiddenException("Only the assigned instructor can publish this course.");
+    }
+    const result = await this.db.query(
+      `UPDATE courses
+       SET status = 'PUBLISHED', published_by = $2, published_at = now(),
+           rejection_reason = NULL, rejected_by = NULL, rejected_at = NULL,
+           updated_by = $2, updated_at = now()
+       WHERE id = $1 AND tenant_id = $3 AND status = 'INSTRUCTOR_PENDING'
+       RETURNING *`,
+      [id, user.id, user.tenantId],
+    );
+    if (!result.rows[0]) throw new ConflictException("The course review state changed before publication.");
+    await this.auditMutation(request, "course", "PUBLISH", result.rows[0], before);
+    return result.rows[0];
+  }
+
+  async rejectReviewedCourse(id: string, input: RejectCourseDto, request: ContextRequest) {
+    const user = request.context.user!;
+    if (!this.isInstructorOnly(user)) throw new ForbiddenException("Only the assigned instructor can reject a reviewed course.");
+    const reason = input.reason.trim();
+    if (!reason) throw new BadRequestException("A rejection reason is required.");
+    const before = await this.getCourse(id, user);
+    if (before.status !== "INSTRUCTOR_PENDING") throw new ConflictException("Only a course pending instructor review can be rejected.");
+    if (!await this.hasExplicitInstructorAssignment(user, id, before.campus_id as string | null | undefined)) {
+      throw new ForbiddenException("Only the assigned instructor can reject this course.");
+    }
+    const result = await this.db.query(
+      `UPDATE courses
+       SET status = 'REJECTED', rejection_reason = $2, rejected_by = $3, rejected_at = now(),
+           updated_by = $3, updated_at = now()
+       WHERE id = $1 AND tenant_id = $4 AND status = 'INSTRUCTOR_PENDING'
+       RETURNING *`,
+      [id, reason, user.id, user.tenantId],
+    );
+    if (!result.rows[0]) throw new ConflictException("The course review state changed before rejection.");
+    await this.auditMutation(request, "course", "REJECT", result.rows[0], before);
+    return result.rows[0];
+  }
+
   async listCourseModules(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto, courseId?: string) {
     return this.listChild("course_modules", "course_id", "course", user, page, pageSize, offset, query, courseId, "course_module");
   }
@@ -961,22 +1052,26 @@ export class LmsService {
     }
     if (instructorOnly) {
       values.push(user.id);
-      clauses.push(`EXISTS (
-        SELECT 1
-        FROM lms_instructor_assignments ia
-        WHERE ia.tenant_id = x.tenant_id
-          AND ia.institution_id = p.institution_id
-          AND ia.course_id = c.id
-          AND (ia.campus_id IS NULL OR ia.campus_id = c.campus_id)
-          AND ia.instructor_id = $${values.length}
-          AND ia.status = 'ACTIVE'
-        UNION ALL
-        SELECT 1
-        FROM lms_instructor_colleges ic
-        WHERE ic.tenant_id = x.tenant_id
-          AND ic.institution_id = p.institution_id
-          AND ic.instructor_id = $${values.length}
-          AND ic.status = 'ACTIVE'
+      clauses.push(`(
+        EXISTS (
+          SELECT 1 FROM lms_instructor_assignments ia
+          WHERE ia.tenant_id = x.tenant_id
+            AND ia.institution_id = p.institution_id
+            AND ia.course_id = c.id
+            AND ia.campus_id IS NOT DISTINCT FROM c.campus_id
+            AND ia.instructor_id = $${values.length}
+            AND ia.status = 'ACTIVE'
+        )
+        OR (
+          c.status = 'PUBLISHED'
+          AND EXISTS (
+            SELECT 1 FROM lms_instructor_colleges ic
+            WHERE ic.tenant_id = x.tenant_id
+              AND ic.institution_id = p.institution_id
+              AND ic.instructor_id = $${values.length}
+              AND ic.status = 'ACTIVE'
+          )
+        )
       )`);
     }
     if (this.isLearnerOnly(user)) {
@@ -1210,10 +1305,12 @@ export class LmsService {
   async uploadResourceFile(id: string, file: LmsUpload, request: ContextRequest) {
     const resource = await this.resourceFor(id, request.context.user!);
     await this.assertAssignedTeacherManage(request.context.user!, String(resource.course_id), resource.campus_id as string | null);
-    if (!["PDF", "DOCUMENT", "PRESENTATION"].includes(String(resource.resource_type))) {
-      throw new BadRequestException("Only document resources can receive managed files.");
+    if (!["VIDEO", "PDF", "DOCUMENT", "PRESENTATION"].includes(String(resource.resource_type))) {
+      throw new BadRequestException("Only video and document resources can receive managed files.");
     }
-    const stored = await this.storage.storeDocument(request.context.user!.tenantId, id, file);
+    const stored = resource.resource_type === "VIDEO"
+      ? await this.storage.storeVideo(request.context.user!.tenantId, id, file)
+      : await this.storage.storeDocument(request.context.user!.tenantId, id, file);
     return this.replaceManagedFile(resource, stored, "FILE", request);
   }
 
@@ -1514,6 +1611,18 @@ export class LmsService {
     }
   }
 
+  private async hasExplicitInstructorAssignment(user: AuthenticatedUser, courseId: string, campusId?: string | null) {
+    const result = await this.db.query(
+      `SELECT 1
+       FROM lms_instructor_assignments
+       WHERE tenant_id = $1 AND course_id = $2 AND instructor_id = $3
+         AND campus_id IS NOT DISTINCT FROM $4 AND status = 'ACTIVE'
+       LIMIT 1`,
+      [user.tenantId, courseId, user.id, campusId ?? null],
+    );
+    return Boolean(result.rows[0]);
+  }
+
   private async createChild(
     table: "course_modules",
     resource: string,
@@ -1596,7 +1705,7 @@ export class LmsService {
     if (!result.rows[0]) throw new ForbiddenException("You are not authorized for this institution.");
   }
 
-  private async relationshipCourse(courseId: string, user: AuthenticatedUser, allowAssignedTeacher = false) {
+  private async relationshipCourse(courseId: string, user: AuthenticatedUser, allowAssignedTeacher = false, requirePublished = true) {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.status,
               p.status AS programme_status, i.status AS institution_status
@@ -1613,7 +1722,7 @@ export class LmsService {
      } else {
        await this.assertInstitutionAccess(user, String(course.institution_id), course.campus_id as string | null);
      }
-    if (course.status !== "PUBLISHED") throw new BadRequestException("Enrollments and instructor assignments require a published course.");
+    if (requirePublished && course.status !== "PUBLISHED") throw new BadRequestException("Learner enrollment requires a published course.");
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution or programme is not active.");
     }
@@ -1666,12 +1775,12 @@ export class LmsService {
     query: CandidateListQueryDto,
     roleCode: "STUDENT" | "TEACHER",
   ) {
-    const course = await this.relationshipCourse(courseId, user);
+    const course = await this.relationshipCourse(courseId, user, false, roleCode === "STUDENT");
     const relationshipTable = roleCode === "STUDENT" ? "lms_enrollments" : "lms_instructor_assignments";
     const relationshipColumn = roleCode === "STUDENT" ? "learner_id" : "instructor_id";
     const search = query.search?.trim() || "";
     const searchClause = search
-      ? " AND (u.first_name ILIKE $6 OR u.last_name ILIKE $6 OR concat_ws(' ', u.first_name, u.last_name) ILIKE $6 OR COALESCE(u.email, '') ILIKE $6)"
+      ? " AND (u.first_name ILIKE $5 OR u.last_name ILIKE $5 OR concat_ws(' ', u.first_name, u.last_name) ILIKE $5 OR COALESCE(u.email, '') ILIKE $5)"
       : "";
     const profileJoin = roleCode === "STUDENT"
       ? " JOIN lms_student_profiles sp ON sp.user_id = u.id AND sp.tenant_id = u.tenant_id AND sp.status = 'ACTIVE'"
@@ -1685,7 +1794,7 @@ export class LmsService {
       ? "ur.institution_id IS NOT DISTINCT FROM sp.institution_id"
       : "ur.institution_id = $2";
     const roleClause = roleCode === "STUDENT" ? "'STUDENT'" : "'TEACHER', 'INSTRUCTOR'";
-    const values: unknown[] = [user.tenantId, course.institution_id, course.id, roleCode, course.campus_id ?? null];
+    const values: unknown[] = [user.tenantId, course.institution_id, course.id, course.campus_id ?? null];
     if (search) values.push(`%${search}%`);
     const limitParam = values.length + 1;
     const offsetParam = values.length + 2;
@@ -1697,13 +1806,13 @@ export class LmsService {
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
           ${profileJoin}
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-             AND ${institutionScope} AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
+             AND ${institutionScope} AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
              AND r.code IN (${roleClause}) AND r.status = 'ACTIVE'
              ${studentScope}
            AND NOT EXISTS (
              SELECT 1 FROM ${relationshipTable} x
               WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
-                AND x.campus_id IS NOT DISTINCT FROM $5
+                AND x.campus_id IS NOT DISTINCT FROM $4
                AND x.${relationshipColumn} = u.id AND x.status = 'ACTIVE'
            )${searchClause}
          ORDER BY u.first_name ASC, u.last_name ASC, u.id ASC
@@ -1717,13 +1826,13 @@ export class LmsService {
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
           ${profileJoin}
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-             AND ${institutionScope} AND (ur.campus_id IS NULL OR $5::uuid IS NULL OR ur.campus_id = $5)
+             AND ${institutionScope} AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
              AND r.code IN (${roleClause}) AND r.status = 'ACTIVE'
              ${studentScope}
            AND NOT EXISTS (
              SELECT 1 FROM ${relationshipTable} x
               WHERE x.tenant_id = $1 AND x.institution_id = $2 AND x.course_id = $3
-                AND x.campus_id IS NOT DISTINCT FROM $5
+                AND x.campus_id IS NOT DISTINCT FROM $4
                AND x.${relationshipColumn} = u.id AND x.status = 'ACTIVE'
            )${searchClause}`,
         values,
@@ -1749,7 +1858,7 @@ export class LmsService {
     query: RelationshipListQueryDto,
     kind: "enrollment" | "instructor_assignment",
   ) {
-    const course = await this.relationshipCourse(courseId, user, kind === "enrollment");
+    const course = await this.relationshipCourse(courseId, user, kind === "enrollment", kind === "enrollment");
     const table = kind === "enrollment" ? "lms_enrollments" : "lms_instructor_assignments";
     const personColumn = kind === "enrollment" ? "learner_id" : "instructor_id";
     const personAlias = kind === "enrollment" ? "learner" : "instructor";
@@ -1938,7 +2047,7 @@ export class LmsService {
 
   async assignInstructor(courseId: string, input: AssignInstructorDto, request: ContextRequest) {
     const user = request.context.user!;
-    const course = await this.relationshipCourse(courseId, user);
+    const course = await this.relationshipCourse(courseId, user, false, false);
     await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.instructorId, "TEACHER");
     return this.runRelationship(async () => {
       const result = await this.db.query<Record<string, unknown>>(
@@ -1949,6 +2058,17 @@ export class LmsService {
       );
       const row = result.rows[0];
       await this.auditMutation(request, "instructor_assignment", "CREATE", row);
+      if (course.status === "REJECTED") {
+        const resubmitted = await this.db.query<Record<string, unknown>>(
+          `UPDATE courses
+           SET status = 'INSTRUCTOR_PENDING', rejection_reason = NULL, rejected_by = NULL, rejected_at = NULL,
+               updated_by = $2, updated_at = now()
+           WHERE id = $1 AND tenant_id = $3 AND status = 'REJECTED'
+           RETURNING *`,
+          [course.id, user.id, user.tenantId],
+        );
+        if (resubmitted.rows[0]) await this.auditMutation(request, "course", "RESUBMIT", resubmitted.rows[0], course);
+      }
       return row;
     });
   }
@@ -1960,7 +2080,7 @@ export class LmsService {
     kind: "enrollment" | "instructor_assignment",
   ) {
     const user = request.context.user!;
-    const course = await this.relationshipCourse(courseId, user);
+    const course = await this.relationshipCourse(courseId, user, false, kind === "enrollment");
     const table = kind === "enrollment" ? "lms_enrollments" : "lms_instructor_assignments";
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT * FROM ${table}

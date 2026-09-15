@@ -660,13 +660,16 @@ function LearningResourceViewer({
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        positionSeconds: state.resumeSeconds || 0,
-        durationSeconds: state.duration || 0,
+        positionSeconds: Math.round((state.resumeSeconds || 0) * 1000) / 1000,
+        durationSeconds: Math.round((state.duration || 0) * 1000) / 1000,
         completed: state.completed,
       }),
       }).then(async (response) => {
-        const body = await response.json().catch(() => null) as { data?: { completed?: boolean } } | null;
-        if (!response.ok || !body?.data) return;
+        const body = await response.json().catch(() => null) as { data?: { completed?: boolean }; error?: { message?: string } } | null;
+        if (!response.ok || !body?.data) {
+          console.warn("Video progress sync failed:", body?.error?.message || `HTTP ${response.status}`);
+          return;
+        }
         setVideoStates((current) => {
           const existing = current[resourceId];
           if (!existing) return current;

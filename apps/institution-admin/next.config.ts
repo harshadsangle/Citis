@@ -4,6 +4,9 @@ const apiBase = process.env.LMS_API_ORIGIN || "http://127.0.0.1:4000/api/v1";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  experimental: {
+    middlewareClientMaxBodySize: "250mb",
+  },
   async rewrites() {
     return [
       { source: "/api/v1", destination: apiBase },
