@@ -715,11 +715,16 @@ export default function InstitutionAdminPage() {
         <CourseBuilder
           apiBase={API_BASE}
           onClose={() => setBuilderOpen(false)}
-          onCreated={() => {
-            setBuilderOpen(false);
+          onCreated={async (createdCourse) => {
+            const published = await request<ApiList<ContentRecord>>("/courses?page=1&pageSize=100&status=PUBLISHED");
+            if (!published.data.some((course) => course.id === createdCourse.id)) {
+              throw new Error("The course was published, but it is not visible in Published Courses yet.");
+            }
             showSection("courses");
-             setCourseView("PUBLISHED");
-            setRefreshToken((current) => current + 1);
+            setCourseView("PUBLISHED");
+            setRecords(published.data);
+            setBuilderOpen(false);
+            setToast(`${createdCourse.title} is now published.`);
           }}
         />
       )}

@@ -70,7 +70,8 @@ type CourseForm = {
 };
 
 type ValidationErrors = Record<string, string>;
-type ApiResponse<T = { id: string }> = { success: true; data: T };
+type CreatedCourse = { id: string; title: string; status: "PUBLISHED" };
+type ApiResponse<T = CreatedCourse> = { success: true; data: T };
 
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 const assessmentTypes: AssessmentType[] = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"];
@@ -248,7 +249,7 @@ export default function CourseBuilder({
 }: {
   apiBase: string;
   onClose: () => void;
-  onCreated: (title: string) => void;
+  onCreated: (course: CreatedCourse) => Promise<void> | void;
 }) {
   const [step, setStep] = useState(0);
   const [courseCodeSeed] = useState(newCourseCodeSeed);
@@ -269,6 +270,7 @@ export default function CourseBuilder({
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState("");
   const [created, setCreated] = useState(false);
+  const [handoffError, setHandoffError] = useState("");
   const completionTimer = useRef<number | null>(null);
 
   useEffect(() => () => {
@@ -695,13 +697,20 @@ export default function CourseBuilder({
         }
       }
       const hasVideo = modules.some((courseModule) => courseModule.lessons.some((lesson) => lesson.resources.some((resource) => resource.resourceType === "VIDEO" && resource.file)));
-      await requestMultipartWithProgress<ApiResponse>(apiBase, "/course-builder", formData, (loaded, total) => {
+      const response = await requestMultipartWithProgress<ApiResponse>(apiBase, "/course-builder", formData, (loaded, total) => {
         const percentage = total > 0 ? Math.round((loaded / total) * 100) : 0;
         setProgress(hasVideo ? `Uploading video… ${percentage}%` : `Creating course… ${percentage}%`);
       });
+      if (response.data.status !== "PUBLISHED") {
+        throw new Error("The course was created but was not published.");
+      }
       setProgress("");
       setCreated(true);
-      completionTimer.current = window.setTimeout(() => onCreated(course.title.trim()), 5000);
+      completionTimer.current = window.setTimeout(() => {
+        void Promise.resolve(onCreated(response.data)).catch((reason) => {
+          setHandoffError(reason instanceof Error ? reason.message : "The Published Courses list could not be refreshed.");
+        });
+      }, 5000);
     } catch (reason) {
       const apiErrors = courseApiValidationErrors(reason);
       if (Object.keys(apiErrors).length > 0) showValidationErrors(apiErrors, step === 3);
@@ -845,7 +854,7 @@ export default function CourseBuilder({
       <header className="builder-header"><div><div className="eyebrow">Course authoring</div><h2 id="course-builder-title">Create a complete course</h2><p>Build the structure first. Nothing is added to the catalogue until you finish.</p></div><button type="button" className="close-button" onClick={onClose} disabled={saving || created} aria-label="Close course builder">×</button></header>
       {!created && <nav className="builder-steps" aria-label="Course builder steps">{["Details", "Structure", "Activities", "Review"].map((label, index) => <button type="button" className={step === index ? "active" : step > index ? "complete" : ""} key={label} onClick={() => goToStep(index)}><span>{index + 1}</span>{label}</button>)}</nav>}
       <div className={`builder-body ${created ? "builder-success-body" : ""}`}>
-        {created ? <div className="builder-success" role="status"><div className="builder-success-icon">✓</div><h3>Course created successfully!</h3><p>The course and its structure have been added to Courses.</p><span>Returning to Courses…</span></div> : <>
+        {created ? <div className="builder-success" role="status"><div className="builder-success-icon">✓</div><h3>Course created successfully!</h3><p>The course and its structure have been published.</p>{handoffError ? <span role="alert">{handoffError}</span> : <span>Refreshing Published Courses…</span>}</div> : <>
         {error && <div className="builder-alert">{error}</div>}
          {step === 0 && <div className="builder-panel"><div className="builder-panel-heading"><div><h3>Basic course details</h3><p>These details become the course catalogue record on final creation.</p></div><span className="builder-required">* Required</span></div><div className="builder-form-grid"><label>Course title *<input autoFocus required minLength={2} maxLength={180} aria-invalid={Boolean(validationErrors["course.title"])} aria-describedby={validationErrors["course.title"] ? "course-title-error" : undefined} value={course.title} onChange={(event) => updateCourse("title", event.target.value)} placeholder="e.g. Digital Productivity Essentials" />{fieldError("course.title")}</label><div className="builder-generated-code" aria-label="Generated course code"><span>Generated course code</span><strong>{courseCode}</strong><small>Assigned automatically and locked for this course.</small></div><label className="builder-span-two">Description<textarea rows={5} maxLength={2000} aria-invalid={Boolean(validationErrors["course.description"])} aria-describedby={validationErrors["course.description"] ? "course-description-error" : undefined} value={course.description} onChange={(event) => updateCourse("description", event.target.value)} placeholder="Describe what learners will achieve." />{fieldError("course.description")}<span className="builder-character-count">{course.description.length}/2000</span></label><label className="builder-span-two">Thumbnail URL (optional)<input type="url" maxLength={2048} aria-invalid={Boolean(validationErrors["course.thumbnail"])} aria-describedby={validationErrors["course.thumbnail"] ? "course-thumbnail-error" : undefined} value={course.thumbnail} onChange={(event) => updateCourse("thumbnail", event.target.value)} placeholder="https://…" />{fieldError("course.thumbnail")}<span className="builder-character-count">{course.thumbnail.length}/2048</span></label><label>Price in INR (optional)<input min={0} step="0.01" type="number" aria-invalid={Boolean(validationErrors["course.price"])} aria-describedby={validationErrors["course.price"] ? "course-price-error" : undefined} value={course.price} onChange={(event) => updateCourse("price", event.target.value)} placeholder="0.00" />{fieldError("course.price")}</label><label className="builder-check"><input type="checkbox" checked={course.purchasable} onChange={(event) => updateCourse("purchasable", event.target.checked)} /> Available for learner purchase</label></div><div className="builder-note"><strong>Completion settings</strong><span>Lesson completion is tracked by the existing learner progress service. Add resources, assignments, and assessments to define the learning path; no unsupported completion fields are added here.</span></div></div>}
         {step === 1 && <div className="builder-panel"><div className="builder-panel-heading"><div><h3>Course structure</h3><p>Arrange the Course → Module → Lesson hierarchy. Assignments and assessments are attached to modules.</p></div><button type="button" className="primary-button compact-button" onClick={() => beginModule()}>+ Add module</button></div>{renderModuleForm()}{renderLessonForm()}{renderHierarchy()}{selectedModule && selectedLesson && <div className="builder-selection-note">Selected: <strong>{selectedModule.title}</strong> / {selectedLesson.title}</div>}</div>}
