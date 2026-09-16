@@ -7,6 +7,7 @@ import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import AdminInsights from "./AdminInsights";
 import CourseBuilder from "./CourseBuilder";
+import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { lmsPortalUrl } from "./lms-portal-url";
 
@@ -130,6 +131,11 @@ const insightCopy: Record<InsightMode, { kicker: string; title: string; descript
     description: "Explore scoped learning, activity, finance, and certificate data.",
   },
 };
+const instructorCopy = {
+  kicker: "People & access",
+  title: "Instructors",
+  description: "Create teaching accounts, assign institutional scope, and keep access current.",
+};
 
 function titleFor(record: ContentRecord) {
   return record.name || record.title || "Untitled";
@@ -189,6 +195,7 @@ export default function InstitutionAdminPage() {
   const [activeKind, setActiveKind] = useState<Kind>("courses");
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
   const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
+  const [instructorMode, setInstructorMode] = useState(false);
   const [courseView, setCourseView] = useState<"ALL" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED">("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
@@ -209,7 +216,7 @@ export default function InstitutionAdminPage() {
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("provider"),
   ));
 
-  const currentSection = insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
+  const currentSection = instructorMode ? instructorCopy : insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
   const activeParentId = activeKind === "courses"
     ? ""
@@ -230,7 +237,7 @@ export default function InstitutionAdminPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (relationshipMode || insightMode) {
+      if (relationshipMode || insightMode || instructorMode) {
         setRecords([]);
         setLoading(false);
         return;
@@ -270,7 +277,7 @@ export default function InstitutionAdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeKind, canLoad, courseView, ids, provider, refreshToken, relationshipMode, insightMode]);
+  }, [activeKind, canLoad, courseView, ids, provider, refreshToken, relationshipMode, insightMode, instructorMode]);
 
   useEffect(() => {
     if (!toast) return;
@@ -285,6 +292,7 @@ export default function InstitutionAdminPage() {
   }, [relationshipMode, trail]);
 
   function showSection(kind: Kind) {
+    setInstructorMode(false);
     setInsightMode(null);
     setRelationshipMode(null);
     setActiveKind(kind);
@@ -296,7 +304,15 @@ export default function InstitutionAdminPage() {
   }
 
   function showInsights(mode: InsightMode) {
+    setInstructorMode(false);
     setInsightMode(mode);
+    setRelationshipMode(null);
+    setError("");
+  }
+
+  function showInstructors() {
+    setInstructorMode(true);
+    setInsightMode(null);
     setRelationshipMode(null);
     setError("");
   }
@@ -508,7 +524,7 @@ export default function InstitutionAdminPage() {
           <button className="nav-link active" type="button"><span className="nav-icon">▦</span> Overview</button>
           <button className="nav-link" type="button"><span className="nav-icon">⌂</span> Institution profile</button>
           <button className="nav-link" type="button"><span className="nav-icon">⌘</span> Campuses</button>
-          <button className="nav-link" type="button"><span className="nav-icon">♙</span> Users</button>
+           <button className={`nav-link ${instructorMode ? "active" : ""}`} type="button" onClick={showInstructors}><span className="nav-icon">♙</span> Users</button>
           <button className="nav-link" type="button"><span className="nav-icon">◈</span> Roles & permissions</button>
         </nav>
         <div className="sidebar-divider" />
@@ -524,19 +540,20 @@ export default function InstitutionAdminPage() {
               <span className="nav-icon">{section.icon}</span>{section.shortLabel}
             </button>
           ))}
+             <button
+              className={`nav-link ${instructorMode ? "active" : ""}`}
+              type="button"
+              onClick={showInstructors}
+            >
+              <span className="nav-icon">T</span>Instructors
+            </button>
+            {/* CourseRelationships remains the course-level assignment workflow. */}
             <button
               className="nav-link"
              type="button"
               onClick={() => window.location.assign(lmsPortalUrl("learner"))}
            >
              <span className="nav-icon">E</span>Learners
-           </button>
-           <button
-              className="nav-link"
-             type="button"
-              onClick={() => window.location.assign(lmsPortalUrl("instructor"))}
-           >
-             <span className="nav-icon">T</span>Instructors
            </button>
             <button
               className={`nav-link ${relationshipMode === "assignments" ? "active" : ""}`}
@@ -617,8 +634,8 @@ export default function InstitutionAdminPage() {
               <h1>{currentSection.title}</h1>
               <p>{currentSection.description}</p>
            </div>
-              <button className="primary-button" type="button" onClick={openCreate} disabled={Boolean(relationshipMode || insightMode) || (activeKind !== "courses" && !activeParentId)}>
-               <span>+</span> {activeKind === "courses" ? "Create Course" : `New ${labelFor(activeKind).slice(0, -1)}`}
+               <button className="primary-button" type="button" onClick={instructorMode ? undefined : openCreate} disabled={Boolean(instructorMode || relationshipMode || insightMode) || (activeKind !== "courses" && !activeParentId)}>
+                <span>+</span> {instructorMode ? "Add instructor" : activeKind === "courses" ? "Create Course" : `New ${labelFor(activeKind).slice(0, -1)}`}
             </button>
           </div>
 
@@ -636,7 +653,9 @@ export default function InstitutionAdminPage() {
 
              </>}
 
-             {insightMode ? (
+              {instructorMode ? (
+                <InstructorManager apiBase={API_BASE} />
+              ) : insightMode ? (
                <AdminInsights apiBase={API_BASE} mode={insightMode} onModeChange={showInsights} />
              ) : relationshipMode ? (
              relationshipMode === "assignments"

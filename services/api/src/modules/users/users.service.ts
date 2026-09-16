@@ -26,7 +26,21 @@ export class UsersService {
     if (scope) values.push(scope);
     if (scopedToActor) values.push(user.id);
     const [rows, total] = await Promise.all([
-      this.db.query(`SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at
+      this.db.query(`SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at,
+          COALESCE((
+            SELECT jsonb_agg(jsonb_build_object(
+              'id', r.id,
+              'code', r.code,
+              'name', r.name,
+              'institution_id', ur.institution_id,
+              'campus_id', ur.campus_id
+            ) ORDER BY r.name)
+            FROM user_roles ur
+            JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+            WHERE ur.user_id = u.id
+              AND ur.tenant_id = u.tenant_id
+              AND r.status = 'ACTIVE'
+          ), '[]'::jsonb) AS roles
         FROM users u ${where} ORDER BY u.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`, [...values, pageSize, offset]),
       this.db.query<{ count: string }>(`SELECT count(*)::text AS count FROM users u ${where}`, values),
     ]);
@@ -36,7 +50,21 @@ export class UsersService {
   async get(id: string, user: AuthenticatedUser) {
     const scopedToActor = !isLmsAdministrator(user);
     const result = await this.db.query(
-      `SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at
+      `SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at,
+          COALESCE((
+            SELECT jsonb_agg(jsonb_build_object(
+              'id', r.id,
+              'code', r.code,
+              'name', r.name,
+              'institution_id', ur.institution_id,
+              'campus_id', ur.campus_id
+            ) ORDER BY r.name)
+            FROM user_roles ur
+            JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+            WHERE ur.user_id = u.id
+              AND ur.tenant_id = u.tenant_id
+              AND r.status = 'ACTIVE'
+          ), '[]'::jsonb) AS roles
        FROM users u WHERE u.id = $1 AND ($2::uuid IS NULL OR u.tenant_id = $2)${scopedToActor ? this.userScopePredicate(user, "u", 3) : ""}`,
       scopedToActor ? [id, user.tenantId, user.id] : [id, this.platform(user) ? null : user.tenantId],
     );
