@@ -22,7 +22,15 @@ const portalConfig: Record<LmsPortal, { environmentKey: string; localPort: numbe
 };
 
 function configuredOrigin(portal: LmsPortal) {
-  const configured = process.env[portalConfig[portal].environmentKey]?.trim();
+  // NEXT_PUBLIC_* values are inlined by Next.js only when referenced
+  // statically. A computed process.env lookup is undefined in Vercel builds.
+  const configured = (
+    portal === "learner"
+      ? process.env.NEXT_PUBLIC_STUDENT_PORTAL_URL
+      : portal === "admin"
+        ? process.env.NEXT_PUBLIC_INSTITUTION_PORTAL_URL
+        : process.env.NEXT_PUBLIC_TEACHER_PORTAL_URL
+  )?.trim();
   if (!configured) return null;
 
   try {
