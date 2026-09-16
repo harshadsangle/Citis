@@ -3,8 +3,8 @@ name: API local environment loading
 description: How API entrypoints select local database configuration in npm workspace commands.
 ---
 
-On Linux/Replit, `services/api/.env.local` is authoritative; on Windows, only the repository-root `.env.local` is allowed so Replit-internal database hosts cannot be selected accidentally. API entrypoints must resolve both locations from source paths rather than the shell cwd.
+In local development, `services/api/.env.local` is authoritative on Linux/Replit; on Windows, only the repository-root `.env.local` is allowed so Replit-internal database hosts cannot be selected accidentally. Published production processes must never load `.env.local` because platform-provided production values are authoritative.
 
-**Why:** The API source is nested under `services/api/src/config`, and an off-by-one parent calculation silently looked in `services/.env.local`, causing Windows API startup to fail even when the documented root file was valid.
+**Why:** An off-by-one path once broke Windows startup, and loading the Linux development file in Autoscale later replaced the managed production database URL with the unreachable development hostname.
 
-**How to apply:** Branch on `process.platform`: choose the repository root on Windows and API-local first on Linux/Replit, with local files overriding inherited values before constructing database clients or bootstrapping Nest.
+**How to apply:** Skip local-file loading when `NODE_ENV=production`. Otherwise branch on `process.platform`: choose the repository root on Windows and API-local first on Linux/Replit.
