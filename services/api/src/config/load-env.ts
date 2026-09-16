@@ -30,7 +30,12 @@ export function getLocalEnvironmentPath() {
 export function loadLocalEnvironment() {
   // Published deployments receive environment-specific values from the
   // platform. Never replace them with development-only .env.local entries.
-  if (process.env.NODE_ENV === "production") return;
+  if (
+    process.env.NODE_ENV === "production" ||
+    process.env.REPLIT_DEPLOYMENT === "1"
+  ) {
+    return;
+  }
 
   const localEnvPath = getLocalEnvironmentPath();
   if (!localEnvPath) return;
