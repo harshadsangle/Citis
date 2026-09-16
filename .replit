@@ -65,3 +65,13 @@ externalPort = 80
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 180000
+
+[userenv]
+
+[userenv.production]
+WEB_ORIGIN = "https://citis-institution-admin-pbhs.vercel.app,https://citis-institution-admin.vercel.app"
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start", "--workspace", "@citis/api"]
+build = ["npm", "run", "build:api"]
