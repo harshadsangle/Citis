@@ -30,7 +30,18 @@ export function getLocalEnvironmentPath() {
 export function loadLocalEnvironment() {
   // Published deployments receive environment-specific values from the
   // platform. Never replace them with development-only .env.local entries.
-  if (process.env.NODE_ENV === "production") return;
+  // REPLIT_DEPLOYMENT is the primary signal, but preserving a supplied
+  // DATABASE_URL outside Replit's development domain also protects runtimes
+  // where that indicator is unavailable to the child process.
+  if (
+    process.env.NODE_ENV === "production" ||
+    process.env.REPLIT_DEPLOYMENT === "1" ||
+    (process.platform !== "win32" &&
+      Boolean(process.env.DATABASE_URL) &&
+      !process.env.REPLIT_DEV_DOMAIN)
+  ) {
+    return;
+  }
 
   const localEnvPath = getLocalEnvironmentPath();
   if (!localEnvPath) return;

@@ -7,4 +7,4 @@ In local development, `services/api/.env.local` is authoritative on Linux/Replit
 
 **Why:** An off-by-one path once broke Windows startup, and loading the Linux development file in Autoscale later replaced the managed production database URL with the unreachable development hostname.
 
-**How to apply:** Skip local-file loading when `NODE_ENV=production`. Otherwise branch on `process.platform`: choose the repository root on Windows and API-local first on Linux/Replit.
+**How to apply:** Skip local files for production or `REPLIT_DEPLOYMENT=1`. Also preserve a supplied Linux database URL when `REPLIT_DEV_DOMAIN` is absent because published child processes may expose neither primary flag. Keep Windows local loading unchanged.
