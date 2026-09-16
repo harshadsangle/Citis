@@ -18,6 +18,7 @@
     "test:foundation": "npm run test --workspace @citis/api",
     "test:learner-auth": "npm run test:auth --workspace @citis/api",
     "db:init": "node scripts/init-lms-db.mjs",
+    "db:repair-course-approval": "node scripts/repair-course-approval-db.mjs",
     "db:setup-local": "node scripts/setup-local-db.mjs",
     "db:migrate": "npm run db:migrate --workspace @citis/api",
     "db:seed-demo-learner": "npm run db:seed-demo-learner --workspace @citis/api",
