@@ -31,4 +31,5 @@
 - [Public frontend dependency install](public-frontend-dependency-install.md) — keep its separate lockfile aligned; optional Tailwind WASI fetches may fail through the package firewall.
 - [Hidden Course Builder programme](hidden-course-builder-programme.md) — programme linkage is internal and must resolve server-side rather than blocking the visible builder flow.
 - [Course approval workflow](course-builder-publication.md) — Admin creation stays pending until an explicitly assigned instructor publishes or rejects it with a reason.
+- [Instructor course visibility](instructor-course-visibility.md) — catalogue visibility through a college relationship must not imply teaching authority without an explicit course assignment.
 - [Development migration checksum](development-migration-checksum.md) — migration 026’s stored checksum currently blocks the normal dev migration runner; do not rewrite history silently.

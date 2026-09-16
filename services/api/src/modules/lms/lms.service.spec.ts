@@ -1093,7 +1093,7 @@ test("teacher course listing is limited to active instructor assignments", async
   const { service } = serviceWith(async (text) => {
     queries.push(text);
     if (text.startsWith("SELECT c.id")) {
-      return { rows: [{ id: "assigned-course", tenant_id: teacher.tenantId, institution_id: "institution-1", title: "Assigned course", code: "AC-101", status: "PUBLISHED" }] };
+      return { rows: [{ id: "assigned-course", tenant_id: teacher.tenantId, institution_id: "institution-1", title: "Assigned course", code: "AC-101", status: "PUBLISHED", is_explicitly_assigned: true }] };
     }
     return { rows: [{ count: "1" }] };
   });
@@ -1103,6 +1103,8 @@ test("teacher course listing is limited to active instructor assignments", async
   assert.equal(result.data.length, 1);
   assert.ok(queries.some((query) => query.includes("lms_instructor_assignments")));
   assert.ok(queries.some((query) => query.includes("ia.instructor_id")));
+  assert.ok(queries.some((query) => query.includes("AS is_explicitly_assigned")));
+  assert.equal(result.data[0].is_explicitly_assigned, true);
 });
 
 test("lesson completion requires an active enrollment and audits only the first transition", async () => {

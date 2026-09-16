@@ -8,6 +8,7 @@ type Principal = {
   lastName?: string;
   first_name?: string;
   last_name?: string;
+  roles?: Array<{ code: string; name?: string }>;
 };
 
 type Course = {
@@ -18,6 +19,7 @@ type Course = {
   status: "DRAFT" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED" | "ARCHIVED";
   programme_name?: string | null;
   rejection_reason?: string | null;
+  is_explicitly_assigned?: boolean;
 };
 
 type Enrollment = {
@@ -507,7 +509,12 @@ export default function TeacherPortalPage() {
       const providerCourses = selectedProvider
         ? courses.filter((course) => providerForProgrammeName(course.programme_name) === selectedProvider)
         : courses;
-      const visibleCourses = providerCourses.filter((course) => course.status !== "REJECTED");
+      const instructorSession = principal.roles?.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR") ?? false;
+      const canReviewAssignmentSubmissions = principal.roles?.some((role) => role.code === "CITIS_ADMIN") ?? false;
+      const visibleCourses = providerCourses.filter((course) => (
+        course.status !== "REJECTED"
+        && (!instructorSession || course.is_explicitly_assigned === true)
+      ));
       const details = await Promise.all(visibleCourses.map(async (course): Promise<CourseData> => {
         const [enrollmentResult, assignments, assessmentResult, structure] = await Promise.all([
           (course.status === "PUBLISHED" ? list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`) : Promise.resolve([]))
@@ -537,10 +544,12 @@ export default function TeacherPortalPage() {
             };
           }
         }));
-        const submissionGroups = await Promise.all(assignments.map(async (assignment) => ({
-          assignment,
-          submissions: await list<Submission>(`/assignments/${encodeURIComponent(assignment.id)}/submissions?page=1&pageSize=100`),
-        })));
+        const submissionGroups = canReviewAssignmentSubmissions
+          ? await Promise.all(assignments.map(async (assignment) => ({
+              assignment,
+              submissions: await list<Submission>(`/assignments/${encodeURIComponent(assignment.id)}/submissions?page=1&pageSize=100`),
+            })))
+          : [];
         const assessmentAttemptGroups = await Promise.all(assessmentResult.data.map(async (assessment) => ({
           assessment,
           attempts: await list<AssessmentAttempt>(`/assessments/${encodeURIComponent(assessment.id)}/attempts`).catch(() => []),

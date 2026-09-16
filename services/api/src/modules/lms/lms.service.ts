@@ -544,6 +544,17 @@ export class LmsService {
     const clauses = ["c.tenant_id = $1"];
     const instructorOnly = this.isInstructorOnly(user);
     const learnerOnly = this.isLearnerOnly(user);
+    const explicitInstructorAssignment = instructorOnly
+      ? `EXISTS (
+          SELECT 1 FROM lms_instructor_assignments assigned
+          WHERE assigned.tenant_id = c.tenant_id
+            AND assigned.institution_id = c.institution_id
+            AND assigned.course_id = c.id
+            AND assigned.campus_id IS NOT DISTINCT FROM c.campus_id
+            AND assigned.instructor_id = $2
+            AND assigned.status = 'ACTIVE'
+        )`
+      : "false";
     if (instructorOnly) {
       values.push(user.id);
       clauses.push(`(
@@ -599,6 +610,7 @@ export class LmsService {
       this.db.query(
          `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.programme_id, p.name AS programme_name, c.title, c.code, c.description, c.thumbnail, c.status,
                  c.rejection_reason, c.rejected_at, c.published_at,
+                  ${explicitInstructorAssignment} AS is_explicitly_assigned,
                  c.price_minor, c.currency, c.purchasable, c.created_at, c.updated_at
          FROM courses c
          JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
