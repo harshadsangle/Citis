@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "npm install --ignore-scripts",
+  "installCommand": "node ../../scripts/prepare-vercel-install.mjs && npm install --ignore-scripts --registry=https://registry.npmjs.org",
   "buildCommand": "npm run build",
   "outputDirectory": ".next"
 }

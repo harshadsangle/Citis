@@ -1,7 +1,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const projectRoot = process.cwd();
+const scriptDirectory = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(scriptDirectory, "..");
 const lockfiles = [
   "package-lock.json",
   "citis-infotech/frontend/package-lock.json",

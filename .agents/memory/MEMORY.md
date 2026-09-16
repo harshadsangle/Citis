@@ -33,3 +33,4 @@
 - [Course approval workflow](course-builder-publication.md) — Admin creation stays pending until an explicitly assigned instructor publishes or rejects it with a reason.
 - [Instructor course visibility](instructor-course-visibility.md) — catalogue visibility through a college relationship must not imply teaching authority without an explicit course assignment.
 - [Development migration checksum](development-migration-checksum.md) — migration 026’s stored checksum currently blocks the normal dev migration runner; do not rewrite history silently.
+- [Vercel workspace lockfiles](vercel-workspace-lockfiles.md) — app-root Vercel installs can still consume the repository workspace lockfile and its registry URLs.
