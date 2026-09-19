@@ -36,3 +36,4 @@
 - [Vercel workspace lockfiles](vercel-workspace-lockfiles.md) — app-root Vercel installs can still consume the repository workspace lockfile and its registry URLs.
 - [Next public environment lookup](next-public-environment-lookup.md) — reference NEXT_PUBLIC variables statically so Next can inline them during Vercel builds.
 - [Scoped admin capability routes](scoped-admin-capability-routes.md) — institution admins need scoped LMS-capability routes for directory option data because platform-prefixed permissions are intentionally blocked.
+- [External production database access](external-production-database.md) — production auth uses external Neon; Replit’s frozen managed database cannot identify or replace that endpoint.
