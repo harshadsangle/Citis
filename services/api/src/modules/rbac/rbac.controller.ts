@@ -19,6 +19,13 @@ export class RbacController {
     return successResponse(result.rows, request);
   }
 
+  @Get("roles/instructor-options")
+  @RequirePermission("lms.instructor_assignment.create")
+  async instructorOptions(@Req() request: ContextRequest) {
+    const result = await this.rbac.listInstructorRoles(request.context.user!.tenantId);
+    return successResponse(result.rows, request);
+  }
+
   @Post("roles")
   @RequirePermission("identity.role.create")
   async createRole(@Body() input: CreateRoleDto, @Req() request: ContextRequest) {

@@ -14,7 +14,7 @@ export class UsersController {
   constructor(private readonly users: UsersService) {}
 
   @Get()
-  @RequirePermission("identity.user.view")
+  @RequirePermission("lms.instructor_assignment.view")
   async list(@Req() request: ContextRequest, @Query("tenantId") tenantId?: string) {
     const pagination = paginationFrom(request);
     const result = await this.users.list(request.context.user!, pagination.page, pagination.pageSize, pagination.offset, tenantId);
@@ -22,25 +22,25 @@ export class UsersController {
   }
 
   @Get(":id")
-  @RequirePermission("identity.user.view")
+  @RequirePermission("lms.instructor_assignment.view")
   async get(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.users.get(id, request.context.user!), request);
   }
 
   @Post()
-  @RequirePermission("identity.user.create")
+  @RequirePermission("lms.instructor_assignment.create")
   async create(@Body() input: CreateUserDto, @Req() request: ContextRequest) {
     return successResponse(await this.users.create(input, request), request);
   }
 
   @Patch(":id")
-  @RequirePermission("identity.user.update")
+  @RequirePermission("lms.instructor_assignment.create")
   async update(@Param("id") id: string, @Body() input: UpdateUserDto, @Req() request: ContextRequest) {
     return successResponse(await this.users.update(id, input, request), request);
   }
 
   @Post(":id/roles")
-  @RequirePermission("identity.role.update")
+  @RequirePermission("lms.instructor_assignment.create")
   async assignRole(@Param("id") id: string, @Body() input: AssignRoleDto, @Req() request: ContextRequest) {
     return successResponse(await this.users.assignRole(id, input, request), request);
   }

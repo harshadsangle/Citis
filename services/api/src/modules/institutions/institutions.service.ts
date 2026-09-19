@@ -34,6 +34,24 @@ export class InstitutionsService {
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
+  async scopedOptions(user: AuthenticatedUser) {
+    if (isPlatformUser(user)) {
+      const result = await this.db.query(
+        "SELECT id, tenant_id, name, slug, institution_type, status FROM institutions WHERE tenant_id = $1 AND status <> 'ARCHIVED' ORDER BY name",
+        [user.tenantId],
+      );
+      return result.rows;
+    }
+
+    const institutionIds = user.scopes.map((scope) => scope.institutionId);
+    if (!institutionIds.length) return [];
+    const result = await this.db.query(
+      "SELECT id, tenant_id, name, slug, institution_type, status FROM institutions WHERE tenant_id = $1 AND id = ANY($2::uuid[]) AND status <> 'ARCHIVED' ORDER BY name",
+      [user.tenantId, institutionIds],
+    );
+    return result.rows;
+  }
+
   async get(id: string, user: AuthenticatedUser) {
     const result = await this.db.query(
       `SELECT id, tenant_id, name, slug, institution_type, logo_url, email, phone, website, status, created_at, updated_at

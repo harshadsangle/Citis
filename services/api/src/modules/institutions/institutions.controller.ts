@@ -21,6 +21,12 @@ export class InstitutionsController {
     return paginatedResponse(result.data, result.meta, request);
   }
 
+  @Get("scoped-options")
+  @RequirePermission("lms.instructor_assignment.create")
+  async scopedOptions(@Req() request: ContextRequest) {
+    return successResponse(await this.institutions.scopedOptions(request.context.user!), request);
+  }
+
   @Get(":id")
   @RequirePermission("platform.institution.view")
   async get(@Param("id") id: string, @Req() request: ContextRequest) {
