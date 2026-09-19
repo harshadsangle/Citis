@@ -30,6 +30,19 @@ export class CampusesService {
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
+  async scopedOptions(user: AuthenticatedUser, institutionId?: string) {
+    if (institutionId) assertScopeForRead(user, institutionId);
+    const result = await this.db.query(
+      `SELECT id, tenant_id, institution_id, name, address, city, state, country, timezone, status
+       FROM campuses
+       WHERE tenant_id = $1
+         AND ($2::uuid IS NULL OR institution_id = $2)
+       ORDER BY name`,
+      [user.tenantId, institutionId ?? null],
+    );
+    return filterScopedRows(user, result.rows as Array<Record<string, unknown>>, "institution_id", "id");
+  }
+
   async get(id: string, user: AuthenticatedUser) {
     const tenantId = user.tenantId;
     const result = await this.db.query(

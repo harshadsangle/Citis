@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
-import { assertScope, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
+import { assertScope, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
@@ -20,7 +20,7 @@ export class UsersService {
 
   async list(user: AuthenticatedUser, page: number, pageSize: number, offset: number, tenantId?: string) {
     const scope = this.platform(user) ? tenantId : user.tenantId;
-    const scopedToActor = !isLmsAdministrator(user);
+    const scopedToActor = !isPlatformUser(user);
     const values: unknown[] = [];
     const where = scope ? `WHERE u.tenant_id = $1${scopedToActor ? this.userScopePredicate(user, "u", 2) : ""}` : "";
     if (scope) values.push(scope);
@@ -48,7 +48,7 @@ export class UsersService {
   }
 
   async get(id: string, user: AuthenticatedUser) {
-    const scopedToActor = !isLmsAdministrator(user);
+    const scopedToActor = !isPlatformUser(user);
     const result = await this.db.query(
       `SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at,
           COALESCE((
@@ -106,7 +106,7 @@ export class UsersService {
 
   async assignRole(id: string, input: AssignRoleDto, request: ContextRequest) {
     const actor = request.context.user!;
-    const scopedToActor = !isLmsAdministrator(actor);
+    const scopedToActor = !isPlatformUser(actor);
     const userResult = await this.db.query<{ id: string; tenant_id: string }>(
       "SELECT id, tenant_id FROM users WHERE id = $1 AND ($2::uuid IS NULL OR tenant_id = $2)",
       [id, this.platform(actor) ? null : actor.tenantId],
@@ -164,7 +164,7 @@ export class UsersService {
   }
 
   private userScopePredicate(user: AuthenticatedUser, alias: string, actorParameter: number) {
-    if (isLmsAdministrator(user)) return "";
+    if (isPlatformUser(user)) return "";
     return ` AND EXISTS (
       SELECT 1
       FROM user_roles target_scope

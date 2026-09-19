@@ -67,9 +67,9 @@ export default function InstructorManager({ apiBase }: { apiBase: string }) {
     try {
       const [userPayload, rolePayload, institutionPayload, campusPayload] = await Promise.all([
         request<List<User>>(apiBase, "/users?page=1&pageSize=100"),
-        request<List<Role>>(apiBase, "/roles"),
-        request<List<Institution>>(apiBase, "/institutions?page=1&pageSize=100"),
-        request<List<Campus>>(apiBase, "/campuses?page=1&pageSize=100"),
+        request<List<Role>>(apiBase, "/roles/instructor-options"),
+        request<List<Institution> | Institution[]>(apiBase, "/institutions/scoped-options"),
+        request<List<Campus> | Campus[]>(apiBase, "/campuses/scoped-options"),
       ]);
       setUsers(listData(userPayload));
       setRoles(listData(rolePayload));

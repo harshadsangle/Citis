@@ -15,6 +15,13 @@ export class RbacService {
     return this.db.query("SELECT id, tenant_id, name, code, description, status, created_at, updated_at FROM roles WHERE tenant_id = $1 ORDER BY name", [tenantId]);
   }
 
+  listInstructorRoles(tenantId: string) {
+    return this.db.query(
+      "SELECT id, tenant_id, name, code, description, status, created_at, updated_at FROM roles WHERE tenant_id = $1 AND code IN ('TEACHER', 'INSTRUCTOR') AND status = 'ACTIVE' ORDER BY name",
+      [tenantId],
+    );
+  }
+
   listPermissions() {
     return this.db.query("SELECT id, module, resource, action, code, description FROM permissions ORDER BY module, resource, action");
   }
