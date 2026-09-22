@@ -15,6 +15,7 @@ export const LMS_PORTALS: Record<LmsPortal, {
     eyebrow: "Manage institutions and learning",
     description: "For platform and institution teams managing programmes, courses, people, assessments, and reporting.",
     roleCodes: [
+      "CITIS_ADMIN",
       "CITIS_SUPER_ADMIN",
       "CITIS_PLATFORM_SUPPORT",
       "INSTITUTION_ADMINISTRATOR",
