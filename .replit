@@ -69,7 +69,7 @@ timeoutMs = 180000
 [userenv]
 
 [userenv.production]
-WEB_ORIGIN = "https://citis-institution-admin-pbhs.vercel.app,https://citis-institution-admin.vercel.app"
+WEB_ORIGIN = "https://citis-institution-admin-pbhs.vercel.app,https://citis-institution-admin.vercel.app,https://www.citisinfotech.in,https://lms.citisinfotech.in"
 
 [deployment]
 deploymentTarget = "autoscale"

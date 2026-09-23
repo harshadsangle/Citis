@@ -42,7 +42,10 @@ type ContentRecord = {
 
 type TrailNode = { kind: Kind; id: string; label: string };
 type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: number } } };
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "/api/v1").replace(/\/$/, "");
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
+  || (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1")
+).replace(/\/$/, "");
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 
 type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
