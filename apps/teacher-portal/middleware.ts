@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const API_BASE = process.env.LMS_API_ORIGIN || "http://127.0.0.1:4000/api/v1";
-const ADMIN_ROLES = ["CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
 const AUTH_ME_TIMEOUT_MS = 3000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -48,8 +47,7 @@ function publicPortal(request: NextRequest, portal: "admin" | "learner") {
 export async function middleware(request: NextRequest) {
   const roles = await rolesForRequest(request);
   if (!roles) return NextResponse.redirect(new URL("/auth/login", request.url));
-  if (roles.has("TEACHER")) return NextResponse.next();
-  if (ADMIN_ROLES.some((role) => roles.has(role))) return NextResponse.next();
+  if (roles.has("TEACHER") || roles.has("INSTRUCTOR")) return NextResponse.next();
   if (roles.has("STUDENT")) {
     const destination = publicPortal(request, "learner");
     return destination ? NextResponse.redirect(destination) : new NextResponse("NEXT_PUBLIC_WEBSITE_URL is required", { status: 500 });

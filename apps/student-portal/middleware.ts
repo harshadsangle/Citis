@@ -48,9 +48,7 @@ export async function middleware(request: NextRequest) {
   const roles = await rolesForRequest(request);
   if (!roles) return NextResponse.redirect(new URL("/auth/login", request.url));
   if (roles.has("STUDENT")) return NextResponse.next();
-  const isAdmin = ["CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"].some((role) => roles.has(role));
-  if (isAdmin) return NextResponse.next();
-  if (roles.has("TEACHER")) {
+  if (roles.has("TEACHER") || roles.has("INSTRUCTOR")) {
     const destination = publicPortal(request, "instructor");
     return destination ? NextResponse.redirect(destination) : new NextResponse("NEXT_PUBLIC_WEBSITE_URL is required", { status: 500 });
   }
