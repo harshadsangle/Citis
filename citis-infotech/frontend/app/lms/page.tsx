@@ -8,7 +8,6 @@ import {
   UsersRound,
 } from "lucide-react";
 import { generatePageMetadata } from "@/lib/seo";
-import { redirect } from "next/navigation";
 import { redirectToLmsPortal } from "@/lib/lms-portal";
 import { normalizeLmsPortal } from "@/lib/lms-roles";
 import { LMS_COURSE_CATEGORIES, normalizeLmsCourseProvider } from "@/lib/lms-catalog";
@@ -30,13 +29,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
   const params = await searchParams;
   const provider = normalizeLmsCourseProvider(params?.provider);
   const portal = normalizeLmsPortal(params?.portal);
-  if (portal) {
-  if (portal === "admin") {
-    redirect("/admin");
-  }
-
-  await redirectToLmsPortal(portal, provider);
-}
+  if (portal) await redirectToLmsPortal(portal, provider);
   const providerQuery = provider ? `&provider=${provider}` : "";
   const courseCategories = provider
     ? LMS_COURSE_CATEGORIES.filter((category) => category.id === provider)
