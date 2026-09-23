@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { setAdminSession, type AdminUser } from "@/lib/admin-auth";
+import { loginErrorMessage } from "@/lib/auth-error";
 import { authService } from "@/services/api";
 
 export function AdminLoginGate({ onSuccess }: { onSuccess: (user: AdminUser) => void }) {
@@ -34,7 +35,7 @@ export function AdminLoginGate({ onSuccess }: { onSuccess: (user: AdminUser) => 
       setAdminSession(token, user);
       onSuccess(user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(loginErrorMessage(err, "login"));
     } finally {
       setLoading(false);
     }

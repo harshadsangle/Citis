@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ApiError, apiFetch } from "@/lib/api";
+import { loginErrorMessage } from "@/lib/auth-error";
 import { applyJobSchema, loginSchema, partnerSchema, type ApplyJobInput, type LoginInput, type PartnerInput } from "@/lib/validations";
 import { authService } from "@/services/api";
 import { CAREERS_EMAIL, SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
@@ -42,16 +43,6 @@ const applyFieldIds: Record<ApplyField, string> = {
 function formatFileSize(bytes: number) {
   if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   return `${(bytes / 1024).toFixed(1)} KB`;
-}
-
-function loginErrorMessage(error: unknown, stage: string) {
-  if (error instanceof ApiError && stage === "auth/me") {
-    return `Sign-in succeeded, but session validation failed (HTTP ${error.status}). Please try again.`;
-  }
-  if (error instanceof ApiError && error.message === `Request failed with status ${error.status}`) {
-    return `Sign-in request failed (HTTP ${error.status}). Please try again.`;
-  }
-  return error instanceof Error ? error.message : "Sign in failed. Check your details and try again.";
 }
 
 export function PartnerInquiryForm() {
