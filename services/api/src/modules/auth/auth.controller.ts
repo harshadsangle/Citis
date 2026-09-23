@@ -22,6 +22,29 @@ import {
 } from "./auth.dto";
 import { CollegeStudentLoginDto } from "../college-students/college-students.dto";
 
+const isProduction = process.env.NODE_ENV === "production";
+
+function sessionCookieOptions(expires: Date) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: isProduction,
+    ...(isProduction ? { domain: ".citisinfotech.in" } : {}),
+    expires,
+    path: "/",
+  };
+}
+
+function clearSessionCookieOptions() {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: isProduction,
+    ...(isProduction ? { domain: ".citisinfotech.in" } : {}),
+    path: "/",
+  };
+}
+
 @Controller("auth")
 export class AuthController {
   constructor(private readonly auth: AuthService) {}
@@ -34,13 +57,7 @@ export class AuthController {
       response.setHeader("Cache-Control", "no-store");
       return successResponse(session, request);
     }
-    response.cookie("citis_session", session.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    response.cookie("citis_session", session.token, sessionCookieOptions(session.expiresAt));
     return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
   }
 
@@ -52,13 +69,7 @@ export class AuthController {
       response.setHeader("Cache-Control", "no-store");
       return successResponse(session, request);
     }
-    response.cookie("citis_session", session.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    response.cookie("citis_session", session.token, sessionCookieOptions(session.expiresAt));
     return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
   }
 
@@ -97,13 +108,7 @@ export class AuthController {
       ipAddress: request.context.ipAddress,
       userAgent: request.context.userAgent,
     });
-    response.cookie("citis_session", session.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    response.cookie("citis_session", session.token, sessionCookieOptions(session.expiresAt));
     return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
   }
 
@@ -225,13 +230,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
   ) {
     const session = await this.auth.verifyMfaLogin(input, request.context);
-    response.cookie("citis_session", session.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    response.cookie("citis_session", session.token, sessionCookieOptions(session.expiresAt));
     return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
   }
 
@@ -246,7 +245,7 @@ export class AuthController {
   async logout(@Req() request: ContextRequest, @Res({ passthrough: true }) response: Response) {
     const token = AuthGuard.tokenFrom(request);
     if (token) await this.auth.logout(token);
-    response.clearCookie("citis_session", { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/" });
+    response.clearCookie("citis_session", clearSessionCookieOptions());
     return successResponse({ loggedOut: true }, request);
   }
 
@@ -267,13 +266,7 @@ export class AuthController {
   @HttpCode(200)
   async verifyOtp(@Body() input: OtpVerifyDto, @Req() request: ContextRequest, @Res({ passthrough: true }) response: Response) {
     const session = await this.auth.verifyOtp(input, request.context);
-    response.cookie("citis_session", session.token, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      expires: session.expiresAt,
-      path: "/",
-    });
+    response.cookie("citis_session", session.token, sessionCookieOptions(session.expiresAt));
     return successResponse({ expiresAt: session.expiresAt.toISOString() }, request);
   }
 

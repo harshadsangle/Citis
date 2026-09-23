@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const API_BASE = process.env.LMS_API_ORIGIN || "http://127.0.0.1:4000/api/v1";
-const ADMIN_ROLES = ["CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
+const ADMIN_ROLES = ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
 const AUTH_ME_TIMEOUT_MS = 3000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
