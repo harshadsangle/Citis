@@ -7,4 +7,4 @@ Keep the public login site and administrator, instructor, and learner portals on
 
 **Why:** The HTTP-only session cookie is host-scoped and shared across ports, not unrelated hostnames. Proxy-internal request URLs can also contain `0.0.0.0`, while blindly trusting forwarded host headers can create unsafe redirects.
 
-**How to apply:** When changing LMS deployment topology or redirect helpers, verify same-host cookie delivery, canonical production origins, hostile forwarded-host handling, and local/Replit proxy behavior.
+**How to apply:** When changing LMS deployment topology or redirect helpers, verify same-host cookie delivery, canonical production origins, hostile forwarded-host handling, and local/Replit proxy behavior. If a portal moves from a same-origin proxy to the API host, add the portal origin to the API CORS allowlist and republish the API before testing browser requests.
