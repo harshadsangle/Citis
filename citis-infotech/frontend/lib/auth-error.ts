@@ -1,7 +1,7 @@
 import { ApiError } from "@/lib/api";
 
 export function loginErrorMessage(error: unknown, stage: string) {
-  if (error instanceof ApiError && error.status === 401) {
+  if (error instanceof ApiError && stage === "login" && error.status === 401) {
     return "Incorrect email or password.";
   }
   if (error instanceof ApiError && stage === "auth/me") {
