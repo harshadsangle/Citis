@@ -1,5 +1,11 @@
-/** The integrated site always uses its same-origin Next rewrite for API calls. */
-const API_URL = "/api/v1";
+/**
+ * Use the direct production API origin so a stale host-only `www` session
+ * cookie cannot shadow the shared `.citisinfotech.in` session cookie.
+ * Development keeps the same-origin Next rewrite.
+ */
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL?.trim() ||
+  (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1");
 
 export class ApiError extends Error {
   constructor(
