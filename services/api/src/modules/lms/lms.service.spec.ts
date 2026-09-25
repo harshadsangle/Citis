@@ -775,7 +775,7 @@ test("publishing content writes an auditable status mutation", async () => {
   assert.equal(audits[0].tenantId, user.tenantId);
 });
 
-test("only the explicitly assigned instructor can finally publish a pending course", async () => {
+test("an LMS administrator or the explicitly assigned instructor can publish a pending course", async () => {
   const teacher: AuthenticatedUser = {
     id: "teacher-1",
     tenantId: user.tenantId,
@@ -787,12 +787,12 @@ test("only the explicitly assigned instructor can finally publish a pending cour
     scopes: [{ institutionId: "institution-1", campusId: null }],
   };
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
-  const { service, audits } = serviceWith(async (text) => {
+  const { service, audits } = serviceWith(async (text, values) => {
     if (text.includes("FROM courses c") && text.includes("programme_status")) {
       return { rows: [{ id: "course-1", tenant_id: teacher.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
     }
     if (text.includes("FROM lms_instructor_assignments")) return { rows: [{ allowed: 1 }] };
-    if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "PUBLISHED", published_by: teacher.id }] };
+    if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "PUBLISHED", published_by: values[1] }] };
     return { rows: [] };
   });
 
@@ -801,7 +801,33 @@ test("only the explicitly assigned instructor can finally publish a pending cour
   assert.equal(published.status, "PUBLISHED");
   assert.equal(published.published_by, teacher.id);
   assert.equal(audits.at(-1)?.action, "PUBLISH");
-  await assert.rejects(service.publishReviewedCourse("course-1", request), ForbiddenException);
+
+  const adminPublished = await service.publishReviewedCourse("course-1", request);
+  assert.equal(adminPublished.status, "PUBLISHED");
+  assert.equal(adminPublished.published_by, user.id);
+  assert.equal(audits.at(-1)?.action, "PUBLISH");
+});
+
+test("institution administrators remain limited to courses in their assigned institution scope", async () => {
+  const outOfScopeAdmin: AuthenticatedUser = {
+    ...user,
+    scopes: [{ institutionId: "institution-2", campusId: null }],
+  };
+  const outOfScopeRequest = { context: { ...request.context, user: outOfScopeAdmin } } as unknown as ContextRequest;
+  let courseUpdated = false;
+  const { service } = serviceWith(async (text) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("UPDATE courses")) {
+      courseUpdated = true;
+      return { rows: [{ id: "course-1", status: "PUBLISHED" }] };
+    }
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.publishReviewedCourse("course-1", outOfScopeRequest), NotFoundException);
+  assert.equal(courseUpdated, false);
 });
 
 test("instructor rejection requires a reason and returns the course to Admin", async () => {

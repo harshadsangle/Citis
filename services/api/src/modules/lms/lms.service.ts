@@ -982,10 +982,13 @@ export class LmsService {
 
   async publishReviewedCourse(id: string, request: ContextRequest) {
     const user = request.context.user!;
-    if (!this.isInstructorOnly(user)) throw new ForbiddenException("Only the assigned instructor can publish a reviewed course.");
+    const instructorOnly = this.isInstructorOnly(user);
+    if (!instructorOnly && !isLmsAdministrator(user)) {
+      throw new ForbiddenException("Only an LMS administrator or the assigned instructor can publish a reviewed course.");
+    }
     const before = await this.getCourse(id, user);
     if (before.status !== "INSTRUCTOR_PENDING") throw new ConflictException("Only a course pending instructor review can be published.");
-    if (!await this.hasExplicitInstructorAssignment(user, id, before.campus_id as string | null | undefined)) {
+    if (instructorOnly && !await this.hasExplicitInstructorAssignment(user, id, before.campus_id as string | null | undefined)) {
       throw new ForbiddenException("Only the assigned instructor can publish this course.");
     }
     const result = await this.db.query(

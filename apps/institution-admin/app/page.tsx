@@ -213,6 +213,7 @@ export default function InstitutionAdminPage() {
   const [form, setForm] = useState<Record<string, string>>({});
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [publishingCourseId, setPublishingCourseId] = useState("");
   const [toast, setToast] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
   const [provider] = useState<LmsCourseProvider | null>(() => normalizeLmsCourseProvider(
@@ -333,6 +334,30 @@ export default function InstitutionAdminPage() {
       // Continue to the LMS homepage even if the network is already down.
     } finally {
       window.location.assign(lmsHomepageUrl());
+    }
+  }
+
+  async function publishPendingCourse(record: ContentRecord) {
+    if (record.status !== "INSTRUCTOR_PENDING" || publishingCourseId) return;
+    const title = titleFor(record);
+    if (!window.confirm(`Publish “${title}” and make it available to learners?`)) return;
+    setPublishingCourseId(record.id);
+    setError("");
+    try {
+      const response = await request<{ success: true; data: ContentRecord }>(
+        `/courses/${encodeURIComponent(record.id)}/publish`,
+        { method: "POST" },
+      );
+      if (response.data.status !== "PUBLISHED") throw new Error("The course was not marked as published.");
+      setRecords((current) => current.map((course) => (
+        course.id === record.id ? { ...course, ...response.data } : course
+      )));
+      if (courseView === "INSTRUCTOR_PENDING") setCourseView("PUBLISHED");
+      setToast(`${title} is published and available to learners.`);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "The course could not be published.");
+    } finally {
+      setPublishingCourseId("");
     }
   }
 
@@ -706,11 +731,11 @@ export default function InstitutionAdminPage() {
                       {supportsOrdering ? (
                         <div className="order-controls"><button type="button" onClick={() => moveRecord(index, -1)} disabled={index === 0} aria-label="Move up">↑</button><span>{record.sequence || index + 1}</span><button type="button" onClick={() => moveRecord(index, 1)} disabled={index === visibleRecords.length - 1} aria-label="Move down">↓</button></div>
                       ) : <div className="record-avatar">{(titleFor(record)[0] || "?").toUpperCase()}</div>}
-                      <div><button className="record-title" type="button" onClick={() => selectRecord(record)}>{titleFor(record)}</button><span className="record-meta">{record.code || record.resource_type || (record.description ? record.description.slice(0, 44) : "No description")}</span></div>
+                      <div><button className="record-title" type="button" onClick={() => selectRecord(record)}>{titleFor(record)}</button><span className="record-meta">{record.code || record.resource_type || (record.description ? record.description.slice(0, 44) : "No description")}{activeKind === "courses" ? ` · ${record.status.replaceAll("_", " ")}` : ""}</span></div>
                     </div>
                     <div className="record-detail">{record.rejection_reason ? <><strong>Instructor changes requested:</strong> {record.rejection_reason}</> : record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
                     <div className="updated-detail">Recently edited</div>
-                      <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button></>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
+                       <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button>{record.status === "INSTRUCTOR_PENDING" && <button type="button" onClick={() => void publishPendingCourse(record)} disabled={publishingCourseId !== ""}>{publishingCourseId === record.id ? "Publishing…" : "Publish"}</button>}</>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
                   </article>
                 ))}
               </div>

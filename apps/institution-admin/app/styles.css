@@ -104,7 +104,7 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
 .record-meta { display: block; max-width: 300px; overflow: hidden; margin-top: 5px; color: #a0adba; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .record-detail, .updated-detail { overflow: hidden; color: #7d90a5; font-size: 10px; line-height: 1.5; text-overflow: ellipsis; white-space: nowrap; }
 .updated-detail { color: #a2afbd; }
-.row-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.row-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 10px; }
 .row-actions button { padding: 4px 0; border: 0; color: #5680a4; background: transparent; font-size: 10px; font-weight: 800; }
 .row-actions button:hover { color: #0c669b; }
 .row-actions .danger-action { color: #b57a7d; }
