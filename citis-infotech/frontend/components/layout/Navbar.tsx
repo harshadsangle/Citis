@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, BookOpenCheck, ChevronDown, LogIn, Menu, ShieldCheck, X } from "lucide-react";
+import { ArrowRight, BookOpenCheck, ChevronDown, GraduationCap, LogIn, Menu, ShieldCheck, X } from "lucide-react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { CitisLogo } from "@/components/layout/CitisLogo";
@@ -92,6 +92,15 @@ function LoginMenu({ open, onToggle, alignRight = false }: { open: boolean; onTo
             >
               <span className="grid size-8 place-items-center rounded-lg bg-accent/15 text-accent-foreground"><BookOpenCheck className="size-4" /></span>
               <span className="flex-1"><span className="block">Instructor Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Teach and review work</span></span>
+              <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+            </Link>
+            <Link
+              href="/auth/login?portal=learner"
+              role="menuitem"
+              className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="grid size-8 place-items-center rounded-lg bg-success/10 text-success"><GraduationCap className="size-4" /></span>
+              <span className="flex-1"><span className="block">Learner Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Access courses and progress</span></span>
               <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
             </Link>
           </motion.div>
