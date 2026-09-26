@@ -687,6 +687,7 @@ export class LmsService {
 
   async createCourse(input: CreateCourseDto, request: ContextRequest) {
     const user = request.context.user!;
+    this.assertCourseAdministrator(user);
     const parent = await this.db.query<{ id: string; institution_id: string; campus_id: string | null }>(
       "SELECT id, institution_id, campus_id FROM programmes WHERE id = $1 AND tenant_id = $2 AND status <> 'ARCHIVED'",
       [input.programmeId, user.tenantId],
@@ -733,6 +734,7 @@ export class LmsService {
 
   async createCourseBuilder(rawPayload: unknown, files: CourseBuilderUpload[], request: ContextRequest) {
     const user = request.context.user!;
+    this.assertCourseAdministrator(user);
     let payload: CourseBuilderPayload;
     let filesByField: Map<string, CourseBuilderUpload>;
     try {
@@ -980,7 +982,9 @@ export class LmsService {
   }
 
   async updateCourse(id: string, input: UpdateCourseDto, request: ContextRequest) {
-    const before = await this.getCourse(id, request.context.user!);
+    const user = request.context.user!;
+    this.assertCourseAdministrator(user);
+    const before = await this.getCourse(id, user);
     return this.run(async () => {
       const result = await this.db.query(
          `UPDATE courses
@@ -1009,17 +1013,11 @@ export class LmsService {
 
   async publishReviewedCourse(id: string, request: ContextRequest, input: PublishCourseDto = {}) {
     const user = request.context.user!;
-    const instructorOnly = this.isInstructorOnly(user);
-    if (!instructorOnly && !isLmsAdministrator(user)) {
-      throw new ForbiddenException("Only an LMS administrator or the assigned instructor can publish a reviewed course.");
-    }
+    this.assertCourseAdministrator(user);
     const before = await this.getCourse(id, user);
     if (before.status !== "INSTRUCTOR_PENDING") throw new ConflictException("Only a course pending instructor review can be published.");
-    if (instructorOnly && !await this.hasExplicitInstructorAssignment(user, id, before.campus_id as string | null | undefined)) {
-      throw new ForbiddenException("Only the assigned instructor can publish this course.");
-    }
     const publish = async (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => {
-      if (!instructorOnly && input.institutionIds !== undefined) {
+      if (input.institutionIds !== undefined) {
         const ids = [...new Set(input.institutionIds)];
         if (ids.length === 0) throw new BadRequestException("Select at least one active institution to publish this course.");
         const valid = await client.query(
@@ -1168,14 +1166,11 @@ export class LmsService {
 
   async rejectReviewedCourse(id: string, input: RejectCourseDto, request: ContextRequest) {
     const user = request.context.user!;
-    if (!this.isInstructorOnly(user)) throw new ForbiddenException("Only the assigned instructor can reject a reviewed course.");
+    this.assertCourseAdministrator(user);
     const reason = input.reason.trim();
     if (!reason) throw new BadRequestException("A rejection reason is required.");
     const before = await this.getCourse(id, user);
     if (before.status !== "INSTRUCTOR_PENDING") throw new ConflictException("Only a course pending instructor review can be rejected.");
-    if (!await this.hasExplicitInstructorAssignment(user, id, before.campus_id as string | null | undefined)) {
-      throw new ForbiddenException("Only the assigned instructor can reject this course.");
-    }
     const result = await this.db.query(
       `UPDATE courses
        SET status = 'REJECTED', rejection_reason = $2, rejected_by = $3, rejected_at = now(),
@@ -1754,6 +1749,12 @@ export class LmsService {
   private isInstructorOnly(user: AuthenticatedUser) {
     return user.roles.some((role) => role.code === "TEACHER" || role.code === "INSTRUCTOR")
       && !isLmsAdministrator(user);
+  }
+
+  private assertCourseAdministrator(user: AuthenticatedUser) {
+    if (!isLmsAdministrator(user)) {
+      throw new ForbiddenException("Only an LMS administrator can create or manage courses.");
+    }
   }
 
   private isLearnerOnly(user: AuthenticatedUser) {
@@ -3317,6 +3318,7 @@ export class LmsService {
   }
 
   async changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest) {
+    if (kind === "course") this.assertCourseAdministrator(request.context.user!);
     const table = kind === "programme" ? "programmes" : kind === "course" ? "courses" : kind === "course_module" ? "course_modules" : kind === "lesson" ? "lessons" : "learning_resources";
     const before = await this.getChild(id, table, request.context.user!);
     return this.run(async () => {
