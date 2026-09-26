@@ -206,7 +206,7 @@ export class UsersService {
     return assignment;
   }
 
-  private userScopePredicate(user: AuthenticatedUser, alias: string, actorParameter: number) {
+  private userScopePredicate(alias: string, actorParameter: number) {
     return `EXISTS (
       SELECT 1
       FROM user_roles target_scope
