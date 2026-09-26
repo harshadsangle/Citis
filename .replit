@@ -71,6 +71,9 @@ timeoutMs = 180000
 [userenv.production]
 WEB_ORIGIN = "https://citis-institution-admin-pbhs.vercel.app,https://citis-institution-admin.vercel.app,https://www.citisinfotech.in,https://lms.citisinfotech.in"
 
+[userenv.development]
+NEXT_PUBLIC_API_URL = "http://localhost:4000/api/v1"
+
 [deployment]
 deploymentTarget = "autoscale"
 run = ["npm", "run", "start", "--workspace", "@citis/api"]
