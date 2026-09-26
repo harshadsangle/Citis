@@ -600,6 +600,9 @@ export class LmsService {
           JOIN lms_course_institution_allocations ca
             ON ca.tenant_id = c.tenant_id AND ca.course_id = c.id
            AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+          JOIN institutions allocated_i
+            ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+           AND allocated_i.status = 'ACTIVE'
           WHERE sp.tenant_id = c.tenant_id AND sp.user_id = $${values.length}
             AND sp.status = 'ACTIVE' AND sp.student_type = 'COLLEGE_STUDENT'
         ) OR EXISTS (
@@ -1162,6 +1165,9 @@ export class LmsService {
           JOIN lms_course_institution_allocations ca
             ON ca.tenant_id = x.tenant_id AND ca.course_id = c.id
            AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+          JOIN institutions allocated_i
+            ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+           AND allocated_i.status = 'ACTIVE'
           WHERE sp.tenant_id = x.tenant_id AND sp.user_id = $${values.length}
             AND sp.status = 'ACTIVE' AND sp.student_type = 'COLLEGE_STUDENT'
         ) OR EXISTS (
@@ -1672,6 +1678,11 @@ export class LmsService {
                  SELECT 1 FROM lms_course_institution_allocations ca
                  WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
                    AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+                    AND EXISTS (
+                      SELECT 1 FROM institutions allocated_i
+                      WHERE allocated_i.tenant_id = ca.tenant_id
+                        AND allocated_i.id = ca.institution_id AND allocated_i.status = 'ACTIVE'
+                    )
                ))
          )
        LIMIT 1`,
