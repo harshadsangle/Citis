@@ -6,7 +6,7 @@ import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import AdminInsights from "./AdminInsights";
-import AdminAccessView, { type AdminAccessMode } from "./AdminAccessView";
+import AdminAccessView, { isPendingAccountRequest, type AccountRequest, type AdminAccessMode } from "./AdminAccessView";
 import CourseBuilder from "./CourseBuilder";
 import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
@@ -160,6 +160,11 @@ const adminAccessCopy: Record<AdminAccessMode, { kicker: string; title: string; 
     title: "Roles & permissions",
     description: "Review the teaching roles available to this institution portal.",
   },
+  "account-requests": {
+    kicker: "People & access",
+    title: "Account requests",
+    description: "Review staff registration details awaiting administrator review. Opening a request does not change its status.",
+  },
 };
 
 function titleFor(record: ContentRecord) {
@@ -239,6 +244,7 @@ export default function InstitutionAdminPage() {
   const [publishingCourseId, setPublishingCourseId] = useState("");
   const [toast, setToast] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+  const [pendingAccountRequestCount, setPendingAccountRequestCount] = useState<number | null>(null);
   const [provider] = useState<LmsCourseProvider | null>(() => normalizeLmsCourseProvider(
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("provider"),
   ));
@@ -311,6 +317,28 @@ export default function InstitutionAdminPage() {
     const timeout = window.setTimeout(() => setToast(""), 3600);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadPendingAccountRequests() {
+      try {
+        const payload = await request<ApiList<AccountRequest>>(
+          "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTITUTION_ADMINISTRATOR",
+        );
+        if (!cancelled) setPendingAccountRequestCount(payload.data.filter(isPendingAccountRequest).length);
+      } catch {
+        if (!cancelled) setPendingAccountRequestCount(null);
+      }
+    }
+    void loadPendingAccountRequests();
+    const refreshInterval = window.setInterval(() => void loadPendingAccountRequests(), 60_000);
+    window.addEventListener("focus", loadPendingAccountRequests);
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshInterval);
+      window.removeEventListener("focus", loadPendingAccountRequests);
+    };
+  }, []);
 
   const navSummary = useMemo(() => {
     if (relationshipMode) return `${trail.map((node) => node.label).join(" / ")} / ${relationshipCopy[relationshipMode].title}`;
@@ -651,7 +679,14 @@ export default function InstitutionAdminPage() {
           <div className="mobile-brand"><span className="brand-mark">C</span><strong>CITIS</strong></div>
           <div className="topbar-actions">
             <span className="environment-pill"><span className="online-dot" /> Connected workspace</span>
-            <button className="icon-button" type="button" aria-label="Notifications">♢<span className="notification-dot" /></button>
+            <button
+              className="icon-button"
+              type="button"
+              aria-label={pendingAccountRequestCount ? `${pendingAccountRequestCount} pending account requests` : "Account requests"}
+              onClick={() => showAdminAccess("account-requests")}
+            >
+              ♢{Boolean(pendingAccountRequestCount) && <span className="notification-dot" />}
+            </button>
             <a className="help-link" href="/auth/login">Need help?</a>
             <details className="profile-menu">
               <summary className="profile-trigger" aria-label="Open profile menu">
@@ -665,6 +700,14 @@ export default function InstitutionAdminPage() {
                 </button>
                 <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); setToast("Favourites will appear here when you save learning resources."); }}>
                   <span className="profile-menu-icon" aria-hidden="true">☆</span><span><strong>Favourites</strong><small>Keep useful resources close</small></span>
+                </button>
+                <button className="profile-menu-item" type="button" onClick={(event) => {
+                  event.currentTarget.closest("details")?.removeAttribute("open");
+                  showAdminAccess("account-requests");
+                }}>
+                  <span className="profile-menu-icon" aria-hidden="true">♙</span>
+                  <span><strong>Account requests</strong><small>{pendingAccountRequestCount === null ? "Check pending staff registrations" : pendingAccountRequestCount === 0 ? "No pending staff requests" : `${pendingAccountRequestCount} awaiting review`}</small></span>
+                  {Boolean(pendingAccountRequestCount) && <span className="profile-menu-count">{pendingAccountRequestCount}</span>}
                 </button>
                  <button className="profile-menu-item" type="button" onClick={(event) => { event.currentTarget.closest("details")?.removeAttribute("open"); showInsights("reports"); }}>
                   <span className="profile-menu-icon" aria-hidden="true">▥</span><span><strong>My Reports</strong><small>Review your learning activity</small></span>
@@ -717,7 +760,11 @@ export default function InstitutionAdminPage() {
              </>}
 
               {adminAccessMode ? (
-                <AdminAccessView apiBase={API_BASE} mode={adminAccessMode} />
+                <AdminAccessView
+                  apiBase={API_BASE}
+                  mode={adminAccessMode}
+                  onAccountRequestCountChange={setPendingAccountRequestCount}
+                />
               ) : instructorMode ? (
                 <InstructorManager apiBase={API_BASE} />
               ) : insightMode ? (

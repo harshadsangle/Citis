@@ -15,9 +15,22 @@ export class UsersController {
 
   @Get()
   @RequirePermission("lms.instructor_assignment.view")
-  async list(@Req() request: ContextRequest, @Query("tenantId") tenantId?: string) {
+  async list(
+    @Req() request: ContextRequest,
+    @Query("tenantId") tenantId?: string,
+    @Query("status") status?: string,
+    @Query("roleCode") roleCode?: string,
+  ) {
     const pagination = paginationFrom(request);
-    const result = await this.users.list(request.context.user!, pagination.page, pagination.pageSize, pagination.offset, tenantId);
+    const result = await this.users.list(
+      request.context.user!,
+      pagination.page,
+      pagination.pageSize,
+      pagination.offset,
+      tenantId,
+      status,
+      roleCode,
+    );
     return paginatedResponse(result.data, result.meta, request);
   }
 
