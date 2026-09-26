@@ -1020,6 +1020,7 @@ export class LmsService {
     const publish = async (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => {
       if (!instructorOnly && input.institutionIds !== undefined) {
         const ids = [...new Set(input.institutionIds)];
+        if (ids.length === 0) throw new BadRequestException("Select at least one active institution to publish this course.");
         const valid = await client.query(
           `SELECT id FROM institutions WHERE tenant_id = $1 AND status = 'ACTIVE' AND id = ANY($2::uuid[])`,
           [user.tenantId, ids],
