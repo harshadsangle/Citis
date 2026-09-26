@@ -1693,8 +1693,9 @@ export class LmsService {
 
   private async assertCourseAllocated(courseId: string, institutionId: string, user: AuthenticatedUser) {
     const result = await this.db.query(
-      `SELECT 1 FROM lms_course_institution_allocations
-       WHERE tenant_id = $1 AND course_id = $2 AND institution_id = $3 AND status = 'ACTIVE'`,
+      `SELECT 1 FROM lms_course_institution_allocations ca
+       JOIN institutions i ON i.tenant_id = ca.tenant_id AND i.id = ca.institution_id AND i.status = 'ACTIVE'
+       WHERE ca.tenant_id = $1 AND ca.course_id = $2 AND ca.institution_id = $3 AND ca.status = 'ACTIVE'`,
       [user.tenantId, courseId, institutionId],
     );
     if (!result.rows[0]) throw new BadRequestException("This course is not allocated to its institution.");
@@ -1899,14 +1900,6 @@ export class LmsService {
     roleCode: "STUDENT" | "TEACHER",
   ) {
     const course = await this.relationshipCourse(courseId, user, false, roleCode === "STUDENT");
-    if (roleCode === "STUDENT") {
-      const allocation = await this.db.query(
-        `SELECT 1 FROM lms_course_institution_allocations
-         WHERE tenant_id = $1 AND course_id = $2 AND institution_id = $3 AND status = 'ACTIVE'`,
-        [user.tenantId, course.id, course.institution_id],
-      );
-      if (!allocation.rows[0]) return { data: [], meta: { page, pageSize, total: 0, totalPages: 0 } };
-    }
     const relationshipTable = roleCode === "STUDENT" ? "lms_enrollments" : "lms_instructor_assignments";
     const relationshipColumn = roleCode === "STUDENT" ? "learner_id" : "instructor_id";
     const search = query.search?.trim() || "";
@@ -1918,9 +1911,26 @@ export class LmsService {
       : "";
     const studentScope = roleCode === "STUDENT"
       ? isLmsAdministrator(user)
-        ? " AND (sp.student_type = 'DIRECT_STUDENT' OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $2))"
-        : " AND sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $2"
+        ? ` AND (sp.student_type = 'DIRECT_STUDENT' OR (sp.student_type = 'COLLEGE_STUDENT' AND EXISTS (
+              SELECT 1 FROM lms_course_institution_allocations ca
+              JOIN institutions allocated_i
+                ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+               AND allocated_i.status = 'ACTIVE'
+              WHERE ca.tenant_id = $1 AND ca.course_id = $3
+                AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+            )))`
+        : ` AND sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $2 AND EXISTS (
+              SELECT 1 FROM lms_course_institution_allocations ca
+              JOIN institutions allocated_i
+                ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+               AND allocated_i.status = 'ACTIVE'
+              WHERE ca.tenant_id = $1 AND ca.course_id = $3
+                AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+            )`
       : "";
+    const campusScope = roleCode === "STUDENT"
+      ? "AND (sp.student_type = 'DIRECT_STUDENT' OR sp.institution_id <> $2 OR ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)"
+      : "AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)";
     const institutionScope = roleCode === "STUDENT"
       ? "ur.institution_id IS NOT DISTINCT FROM sp.institution_id"
       : "ur.institution_id = $2";
@@ -1937,7 +1947,7 @@ export class LmsService {
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
           ${profileJoin}
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-             AND ${institutionScope} AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
+              AND ${institutionScope} ${campusScope}
              AND r.code IN (${roleClause}) AND r.status = 'ACTIVE'
              ${studentScope}
            AND NOT EXISTS (
@@ -1957,7 +1967,7 @@ export class LmsService {
          JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
           ${profileJoin}
          WHERE u.tenant_id = $1 AND u.status = 'ACTIVE'
-             AND ${institutionScope} AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
+              AND ${institutionScope} ${campusScope}
              AND r.code IN (${roleClause}) AND r.status = 'ACTIVE'
              ${studentScope}
            AND NOT EXISTS (
@@ -2159,9 +2169,9 @@ export class LmsService {
   async enrollLearner(courseId: string, input: EnrollLearnerDto, request: ContextRequest) {
     const user = request.context.user!;
     const course = await this.relationshipCourse(courseId, user);
-    const learner = await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.learnerId, "STUDENT");
+    const learner = await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.learnerId, "STUDENT", String(course.id));
     if (learner.student_type === "COLLEGE_STUDENT") {
-      await this.assertCourseAllocated(String(course.id), String(course.institution_id), user);
+      await this.assertCourseAllocated(String(course.id), String(learner.institution_id), user);
     }
     return this.runRelationship(async () => {
       const result = await this.db.query<Record<string, unknown>>(
@@ -2182,7 +2192,7 @@ export class LmsService {
   async assignInstructor(courseId: string, input: AssignInstructorDto, request: ContextRequest) {
     const user = request.context.user!;
     const course = await this.relationshipCourse(courseId, user, false, false);
-    await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.instructorId, "TEACHER");
+    await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.instructorId, "TEACHER", String(course.id));
     return this.runRelationship(async () => {
       const result = await this.db.query<Record<string, unknown>>(
         `INSERT INTO lms_instructor_assignments (tenant_id, institution_id, campus_id, course_id, instructor_id, assigned_by)
