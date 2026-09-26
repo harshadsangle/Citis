@@ -1640,7 +1640,15 @@ export default function StudentPortalPage() {
           <div className="portal-brand"><span className="portal-brand-mark" aria-hidden="true">C</span><span><span className="portal-brand-citis">CITIS</span><span className="portal-brand-infot">InfoTech</span></span><span className="portal-brand-divider" /><span className="portal-brand-label">Learning portal</span></div>
           <div className="portal-actions">
             <span className="portal-session">Student space</span>
-            <details className="profile-menu">
+            <details
+              className="profile-menu"
+              onPointerEnter={(event) => {
+                if (event.pointerType === "mouse") event.currentTarget.open = true;
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType === "mouse") event.currentTarget.open = false;
+              }}
+            >
               <summary className="profile-trigger" aria-label="Open profile menu">
                 <span className="profile-avatar">L</span>
                 <span className="profile-trigger-copy"><strong>Profile</strong><small>Learner account</small></span>

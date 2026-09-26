@@ -1463,7 +1463,16 @@ export default function TeacherPortalPage() {
             <div className="topbar-right">
               <span className="live-label"><i />Secure workspace</span>
               <button className="help-link" type="button" onClick={() => setNotice("Need help? Contact your institution administrator.")}>Help</button>
-              <details ref={profileMenuRef} className="profile-menu">
+              <details
+                ref={profileMenuRef}
+                className="profile-menu"
+                onPointerEnter={(event) => {
+                  if (event.pointerType === "mouse") event.currentTarget.open = true;
+                }}
+                onPointerLeave={(event) => {
+                  if (event.pointerType === "mouse") event.currentTarget.open = false;
+                }}
+              >
                 <summary className="profile-trigger" aria-label="Open profile menu">
                   <span className="profile-avatar">{name.slice(0, 1).toUpperCase()}</span>
                   <span className="profile-trigger-copy"><strong>Profile</strong><small>{name}</small></span>
@@ -1816,6 +1825,7 @@ export default function TeacherPortalPage() {
          .profile-trigger-copy small { color: #7890a2; font-size: 9px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
          .profile-chevron { color: #6f8998; font-size: 14px; line-height: 1; margin-left: 2px; }
          .profile-dropdown { background: #fbfdfe; border: 1px solid #cbdde4; border-radius: 15px; box-shadow: 0 18px 42px #082f5026; min-width: 250px; padding: 7px; position: absolute; right: 0; top: calc(100% + 10px); z-index: 30; }
+         .profile-dropdown::before { content: ""; height: 10px; left: 0; position: absolute; right: 0; top: -10px; }
          .profile-menu-item { align-items: center; background: transparent; border: 0; border-radius: 10px; color: #526f8c; display: flex; gap: 10px; padding: 10px 9px; text-align: left; width: 100%; }
          .profile-menu-item:hover:not(:disabled) { background: #eff8f7; }
          .profile-menu-icon { align-items: center; background: #eaf5f3; border-radius: 8px; color: #267d76; display: flex; flex: 0 0 30px; font-size: 15px; height: 30px; justify-content: center; }

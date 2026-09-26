@@ -41,9 +41,27 @@ function HeaderSocialLinks({ className }: { className?: string }) {
   );
 }
 
-function LoginMenu({ open, onToggle, alignRight = false }: { open: boolean; onToggle: () => void; alignRight?: boolean }) {
+function LoginMenu({
+  open,
+  onToggle,
+  onOpenChange,
+  alignRight = false,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  onOpenChange: (open: boolean) => void;
+  alignRight?: boolean;
+}) {
   return (
-    <div className="relative shrink-0">
+    <div
+      className="relative shrink-0"
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") onOpenChange(true);
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType === "mouse") onOpenChange(false);
+      }}
+    >
       <button
         type="button"
         aria-expanded={open}
@@ -64,45 +82,49 @@ function LoginMenu({ open, onToggle, alignRight = false }: { open: boolean; onTo
       <AnimatePresence>
         {open && (
           <motion.div
-            id="public-login-menu"
-            role="menu"
-            initial={{ opacity: 0, y: 7, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 5, scale: 0.98 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 0.16 }}
             className={cn(
-              "absolute top-[calc(100%+0.6rem)] z-[60] w-56 overflow-hidden rounded-2xl border border-primary/10 bg-background/95 p-1.5 shadow-[0_18px_50px_rgba(18,75,115,0.18)] backdrop-blur-xl",
+              "absolute top-full z-[60] w-56 pt-2.5",
               alignRight ? "right-0" : "left-0",
             )}
           >
-            <p className="px-3 pb-1.5 pt-2 text-[10px] font-bold tracking-[0.16em] text-muted-foreground uppercase">Choose your workspace</p>
-            <Link
-              href="/auth/login?portal=admin"
-              role="menuitem"
-              className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            <div
+              id="public-login-menu"
+              role="menu"
+              className="overflow-hidden rounded-2xl border border-primary/10 bg-background/95 p-1.5 shadow-[0_18px_50px_rgba(18,75,115,0.18)] backdrop-blur-xl"
             >
-              <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary"><ShieldCheck className="size-4" /></span>
-              <span className="flex-1"><span className="block">Admin Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Manage learning spaces</span></span>
-              <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
-            <Link
-              href="/auth/login?portal=instructor"
-              role="menuitem"
-              className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="grid size-8 place-items-center rounded-lg bg-accent/15 text-accent-foreground"><BookOpenCheck className="size-4" /></span>
-              <span className="flex-1"><span className="block">Instructor Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Teach and review work</span></span>
-              <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
-            <Link
-              href="/auth/login?portal=learner"
-              role="menuitem"
-              className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="grid size-8 place-items-center rounded-lg bg-success/10 text-success"><GraduationCap className="size-4" /></span>
-              <span className="flex-1"><span className="block">Learner Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Access courses and progress</span></span>
-              <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
+              <p className="px-3 pb-1.5 pt-2 text-[10px] font-bold tracking-[0.16em] text-muted-foreground uppercase">Choose your workspace</p>
+              <Link
+                href="/auth/login?portal=admin"
+                role="menuitem"
+                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary"><ShieldCheck className="size-4" /></span>
+                <span className="flex-1"><span className="block">Admin Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Manage learning spaces</span></span>
+                <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              </Link>
+              <Link
+                href="/auth/login?portal=instructor"
+                role="menuitem"
+                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="grid size-8 place-items-center rounded-lg bg-accent/15 text-accent-foreground"><BookOpenCheck className="size-4" /></span>
+                <span className="flex-1"><span className="block">Instructor Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Teach and review work</span></span>
+                <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              </Link>
+              <Link
+                href="/auth/login?portal=learner"
+                role="menuitem"
+                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-primary/5 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="grid size-8 place-items-center rounded-lg bg-success/10 text-success"><GraduationCap className="size-4" /></span>
+                <span className="flex-1"><span className="block">Learner Login</span><span className="mt-0.5 block text-[11px] font-normal text-muted-foreground">Access courses and progress</span></span>
+                <ArrowRight className="size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              </Link>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -265,7 +287,12 @@ export function Navbar() {
           <HeaderSocialLinks className="hidden sm:flex lg:hidden" />
           <HeaderSocialLinks className="hidden lg:flex" />
           {isLms ? (
-            <LoginMenu open={loginOpen} onToggle={() => setLoginOpen((value) => !value)} alignRight />
+            <LoginMenu
+              open={loginOpen}
+              onToggle={() => setLoginOpen((value) => !value)}
+              onOpenChange={setLoginOpen}
+              alignRight
+            />
           ) : (
             <Button asChild className="hidden rounded-xl xl:inline-flex" variant="accent">
               <Link href="/lms">Skills Excellence Centre <ArrowRight /></Link>

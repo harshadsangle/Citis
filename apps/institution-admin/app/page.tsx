@@ -701,7 +701,16 @@ export default function InstitutionAdminPage() {
               ♢{Boolean(pendingAccountRequestCount) && <span className="notification-dot" />}
             </button>
             <a className="help-link" href="/auth/login">Need help?</a>
-            <details ref={profileMenuRef} className="profile-menu">
+            <details
+              ref={profileMenuRef}
+              className="profile-menu"
+              onPointerEnter={(event) => {
+                if (event.pointerType === "mouse") event.currentTarget.open = true;
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType === "mouse") event.currentTarget.open = false;
+              }}
+            >
               <summary className="profile-trigger" aria-label="Open profile menu">
                 <span className="profile-avatar">IA</span>
                 <span className="profile-trigger-copy"><strong>Profile</strong><small>Institution admin</small></span>
