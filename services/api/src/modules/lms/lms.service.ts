@@ -32,6 +32,7 @@ import type {
   UpdateLearningResourceProgressDto,
   UpdateLessonDto,
   UpdateProgrammeDto,
+  PublishCourseDto,
 } from "./lms.dto";
 import { LmsContentRateLimiter } from "./lms.rate-limit";
 
@@ -579,7 +580,7 @@ export class LmsService {
         )
       )`);
     }
-    if (learnerOnly) {
+     if (learnerOnly) {
       values.push(user.id);
       clauses.push(
         "c.status = 'PUBLISHED'",
@@ -594,6 +595,18 @@ export class LmsService {
             AND e.learner_id = $${values.length}
             AND e.status = 'ACTIVE'
         )`,
+        `(EXISTS (
+          SELECT 1 FROM lms_student_profiles sp
+          JOIN lms_course_institution_allocations ca
+            ON ca.tenant_id = c.tenant_id AND ca.course_id = c.id
+           AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+          WHERE sp.tenant_id = c.tenant_id AND sp.user_id = $${values.length}
+            AND sp.status = 'ACTIVE' AND sp.student_type = 'COLLEGE_STUDENT'
+        ) OR EXISTS (
+          SELECT 1 FROM lms_student_profiles sp
+          WHERE sp.tenant_id = c.tenant_id AND sp.user_id = $${values.length}
+            AND sp.status = 'ACTIVE' AND sp.student_type = 'DIRECT_STUDENT'
+        ))`,
       );
     }
     if (programmeId) {
@@ -704,6 +717,11 @@ export class LmsService {
         ],
       );
       const row = result.rows[0];
+      await this.db.query(
+        `INSERT INTO lms_course_institution_allocations (tenant_id, course_id, institution_id, allocated_by)
+         VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+        [user.tenantId, row.id, parent.rows[0].institution_id, user.id],
+      );
       await this.auditMutation(request, "course", "CREATE", row);
       return row;
     });
@@ -768,6 +786,11 @@ export class LmsService {
           ],
         );
         const course = courseResult.rows[0];
+        await client.query(
+          `INSERT INTO lms_course_institution_allocations (tenant_id, course_id, institution_id, allocated_by)
+           VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+          [user.tenantId, course.id, currentParent.rows[0].institution_id, user.id],
+        );
         await this.auditMutation(request, "course", "CREATE", course);
 
         for (const [moduleIndex, module] of payload.modules.entries()) {
@@ -980,7 +1003,7 @@ export class LmsService {
     });
   }
 
-  async publishReviewedCourse(id: string, request: ContextRequest) {
+  async publishReviewedCourse(id: string, request: ContextRequest, input: PublishCourseDto = {}) {
     const user = request.context.user!;
     const instructorOnly = this.isInstructorOnly(user);
     if (!instructorOnly && !isLmsAdministrator(user)) {
@@ -991,15 +1014,43 @@ export class LmsService {
     if (instructorOnly && !await this.hasExplicitInstructorAssignment(user, id, before.campus_id as string | null | undefined)) {
       throw new ForbiddenException("Only the assigned instructor can publish this course.");
     }
-    const result = await this.db.query(
+    const publish = async (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => {
+      if (!instructorOnly && input.institutionIds !== undefined) {
+        const ids = [...new Set(input.institutionIds)];
+        const valid = await client.query(
+          `SELECT id FROM institutions WHERE tenant_id = $1 AND status = 'ACTIVE' AND id = ANY($2::uuid[])`,
+          [user.tenantId, ids],
+        );
+        if (valid.rows.length !== ids.length) throw new BadRequestException("All allocated institutions must be active in the current tenant.");
+        await client.query(
+          `UPDATE lms_course_institution_allocations
+           SET status = 'REMOVED', removed_at = now(), updated_at = now()
+           WHERE tenant_id = $1 AND course_id = $2 AND status = 'ACTIVE'`,
+          [user.tenantId, id],
+        );
+        if (ids.length) {
+          await client.query(
+            `INSERT INTO lms_course_institution_allocations
+             (tenant_id, course_id, institution_id, allocated_by)
+             SELECT $1, $2, unnest($3::uuid[]), $4
+             ON CONFLICT (tenant_id, course_id, institution_id)
+             DO UPDATE SET status = 'ACTIVE', removed_at = NULL, allocated_by = EXCLUDED.allocated_by, updated_at = now()`,
+            [user.tenantId, id, ids, user.id],
+          );
+        }
+      }
+      return client.query(
       `UPDATE courses
        SET status = 'PUBLISHED', published_by = $2, published_at = now(),
            rejection_reason = NULL, rejected_by = NULL, rejected_at = NULL,
            updated_by = $2, updated_at = now()
        WHERE id = $1 AND tenant_id = $3 AND status = 'INSTRUCTOR_PENDING'
        RETURNING *`,
-      [id, user.id, user.tenantId],
-    );
+       [id, user.id, user.tenantId]);
+    };
+    const result = typeof this.db.transaction === "function"
+      ? await this.db.transaction(publish)
+      : await publish(this.db);
     if (!result.rows[0]) throw new ConflictException("The course review state changed before publication.");
     await this.auditMutation(request, "course", "PUBLISH", result.rows[0], before);
     return result.rows[0];
@@ -1091,7 +1142,7 @@ export class LmsService {
     }
     if (this.isLearnerOnly(user)) {
       values.push(user.id);
-      clauses.push(`EXISTS (
+       clauses.push(`EXISTS (
         SELECT 1
         FROM lms_enrollments e
         WHERE e.tenant_id = x.tenant_id
@@ -1100,12 +1151,24 @@ export class LmsService {
           AND (e.institution_id IS NULL OR e.campus_id IS NOT DISTINCT FROM c.campus_id)
           AND e.learner_id = $${values.length}
           AND e.status = 'ACTIVE'
-      )`);
+       )`);
       clauses.push(
         "x.status = 'PUBLISHED'",
         "c.status = 'PUBLISHED'",
         "p.status = 'PUBLISHED'",
         "i.status = 'ACTIVE'",
+        `(EXISTS (
+          SELECT 1 FROM lms_student_profiles sp
+          JOIN lms_course_institution_allocations ca
+            ON ca.tenant_id = x.tenant_id AND ca.course_id = c.id
+           AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+          WHERE sp.tenant_id = x.tenant_id AND sp.user_id = $${values.length}
+            AND sp.status = 'ACTIVE' AND sp.student_type = 'COLLEGE_STUDENT'
+        ) OR EXISTS (
+          SELECT 1 FROM lms_student_profiles sp
+          WHERE sp.tenant_id = x.tenant_id AND sp.user_id = $${values.length}
+            AND sp.status = 'ACTIVE' AND sp.student_type = 'DIRECT_STUDENT'
+        ))`,
       );
     }
     const pageParam = values.length + 1;
@@ -1594,17 +1657,36 @@ export class LmsService {
     if (!this.isLearnerOnly(user)) return;
     const result = await this.db.query(
       `SELECT 1
-       FROM lms_enrollments
-       WHERE tenant_id = $1 AND course_id = $3 AND learner_id = $4
-         AND status = 'ACTIVE'
+       FROM lms_enrollments e
+       LEFT JOIN lms_student_profiles sp ON sp.tenant_id = e.tenant_id AND sp.user_id = e.learner_id
+       WHERE e.tenant_id = $1 AND e.course_id = $3 AND e.learner_id = $4
+         AND e.status = 'ACTIVE'
          AND (
-           (institution_id = $2 AND campus_id IS NOT DISTINCT FROM $5)
-           OR (institution_id IS NULL AND campus_id IS NULL)
+           (e.institution_id = $2 AND e.campus_id IS NOT DISTINCT FROM $5)
+           OR (e.institution_id IS NULL AND e.campus_id IS NULL)
+         )
+         AND (
+           (e.institution_id IS NULL AND (sp.student_type IS NULL OR sp.student_type = 'DIRECT_STUDENT'))
+           OR (sp.student_type = 'COLLEGE_STUDENT' AND e.institution_id = $2
+               AND EXISTS (
+                 SELECT 1 FROM lms_course_institution_allocations ca
+                 WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
+                   AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+               ))
          )
        LIMIT 1`,
       [user.tenantId, institutionId, courseId, user.id, campusId ?? null],
     );
     if (!result.rows[0]) throw new NotFoundException("The requested resource was not found.");
+  }
+
+  private async assertCourseAllocated(courseId: string, institutionId: string, user: AuthenticatedUser) {
+    const result = await this.db.query(
+      `SELECT 1 FROM lms_course_institution_allocations
+       WHERE tenant_id = $1 AND course_id = $2 AND institution_id = $3 AND status = 'ACTIVE'`,
+      [user.tenantId, courseId, institutionId],
+    );
+    if (!result.rows[0]) throw new BadRequestException("This course is not allocated to its institution.");
   }
 
   private async assertAssignedTeacherRead(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
@@ -1741,6 +1823,7 @@ export class LmsService {
     if (course.programme_status === "ARCHIVED" || course.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution or programme is not active.");
     }
+    await this.assertLearnerCourseAccess(user, String(course.id), String(course.institution_id), course.campus_id as string | null);
     return course;
   }
 
@@ -1791,6 +1874,14 @@ export class LmsService {
     roleCode: "STUDENT" | "TEACHER",
   ) {
     const course = await this.relationshipCourse(courseId, user, false, roleCode === "STUDENT");
+    if (roleCode === "STUDENT") {
+      const allocation = await this.db.query(
+        `SELECT 1 FROM lms_course_institution_allocations
+         WHERE tenant_id = $1 AND course_id = $2 AND institution_id = $3 AND status = 'ACTIVE'`,
+        [user.tenantId, course.id, course.institution_id],
+      );
+      if (!allocation.rows[0]) return { data: [], meta: { page, pageSize, total: 0, totalPages: 0 } };
+    }
     const relationshipTable = roleCode === "STUDENT" ? "lms_enrollments" : "lms_instructor_assignments";
     const relationshipColumn = roleCode === "STUDENT" ? "learner_id" : "instructor_id";
     const search = query.search?.trim() || "";
@@ -2043,7 +2134,10 @@ export class LmsService {
   async enrollLearner(courseId: string, input: EnrollLearnerDto, request: ContextRequest) {
     const user = request.context.user!;
     const course = await this.relationshipCourse(courseId, user);
-    await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.learnerId, "STUDENT");
+    const learner = await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.learnerId, "STUDENT");
+    if (learner.student_type === "COLLEGE_STUDENT") {
+      await this.assertCourseAllocated(String(course.id), String(course.institution_id), user);
+    }
     return this.runRelationship(async () => {
       const result = await this.db.query<Record<string, unknown>>(
         `INSERT INTO lms_enrollments
@@ -2179,7 +2273,10 @@ export class LmsService {
          AND sp.status = 'ACTIVE'
          AND (
            (sp.student_type = 'DIRECT_STUDENT' AND sp.institution_id IS NULL)
-           OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = c.institution_id)
+           OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = c.institution_id
+             AND EXISTS (SELECT 1 FROM lms_course_institution_allocations ca
+                         WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
+                           AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'))
          )
        LIMIT 1`,
       [
@@ -2197,11 +2294,19 @@ export class LmsService {
   private async assertProgressViewer(course: Record<string, unknown>, user: AuthenticatedUser, learnerId: string) {
     const selfEnrollment = await this.db.query(
       `SELECT 1
-       FROM lms_enrollments
-       WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+       FROM lms_enrollments e
+       JOIN lms_student_profiles sp ON sp.tenant_id = e.tenant_id AND sp.user_id = e.learner_id AND sp.status = 'ACTIVE'
+       WHERE e.tenant_id = $1 AND e.course_id = $2 AND e.learner_id = $3 AND e.status = 'ACTIVE'
          AND (
-           (institution_id = $4 AND campus_id IS NOT DISTINCT FROM $5)
-           OR (institution_id IS NULL AND campus_id IS NULL)
+           (e.institution_id = $4 AND e.campus_id IS NOT DISTINCT FROM $5)
+           OR (e.institution_id IS NULL AND e.campus_id IS NULL)
+         )
+         AND (
+           (sp.student_type = 'DIRECT_STUDENT' AND e.institution_id IS NULL)
+           OR (sp.student_type = 'COLLEGE_STUDENT' AND e.institution_id = $4
+             AND EXISTS (SELECT 1 FROM lms_course_institution_allocations ca
+                         WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
+                           AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'))
          )
        LIMIT 1`,
       [user.tenantId, course.id, learnerId, course.institution_id, course.campus_id ?? null],
@@ -2523,6 +2628,7 @@ export class LmsService {
     if (lesson.programme_status === "ARCHIVED" || lesson.institution_status !== "ACTIVE") {
       throw new BadRequestException("The course institution or programme is not active.");
     }
+    await this.assertLearnerCourseAccess(user, String(lesson.course_id), String(lesson.institution_id), lesson.campus_id as string | null);
     await this.activeEnrollment(String(lesson.course_id), user.id, user);
     const incompleteVideo = await this.db.query(
       `SELECT 1

@@ -247,11 +247,19 @@ export class AssessmentService {
       const staff = await this.hasStaffAccess(user, String(course.institution_id), String(course.id), course.campus_id as string | null);
       if (!staff) {
         const enrollment = await this.db.query<{ course_id: string }>(
-          `SELECT course_id FROM lms_enrollments
-           WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+          `SELECT e.course_id FROM lms_enrollments e
+           JOIN lms_student_profiles sp ON sp.tenant_id = e.tenant_id AND sp.user_id = e.learner_id AND sp.status = 'ACTIVE'
+           WHERE e.tenant_id = $1 AND e.course_id = $2 AND e.learner_id = $3 AND e.status = 'ACTIVE'
              AND (
                (institution_id = $4 AND campus_id IS NOT DISTINCT FROM $5)
                OR (institution_id IS NULL AND campus_id IS NULL)
+             )
+             AND (
+               (sp.student_type = 'DIRECT_STUDENT' AND e.institution_id IS NULL)
+               OR (sp.student_type = 'COLLEGE_STUDENT' AND e.institution_id = $4
+                   AND EXISTS (SELECT 1 FROM lms_course_institution_allocations ca
+                              WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
+                                AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'))
              )`,
           [user.tenantId, course.id, user.id, course.institution_id, course.campus_id ?? null],
         );
@@ -260,7 +268,16 @@ export class AssessmentService {
       courseIds = [String(course.id)];
     } else if (user.roles.some((role) => role.code === "STUDENT") && !isPlatformUser(user)) {
       const enrollment = await this.db.query<{ course_id: string }>(
-        "SELECT course_id FROM lms_enrollments WHERE tenant_id = $1 AND learner_id = $2 AND status = 'ACTIVE'",
+        `SELECT e.course_id FROM lms_enrollments e
+         JOIN lms_student_profiles sp ON sp.tenant_id = e.tenant_id AND sp.user_id = e.learner_id AND sp.status = 'ACTIVE'
+         WHERE e.tenant_id = $1 AND e.learner_id = $2 AND e.status = 'ACTIVE'
+           AND (
+             (sp.student_type = 'DIRECT_STUDENT' AND e.institution_id IS NULL)
+             OR (sp.student_type = 'COLLEGE_STUDENT' AND EXISTS (
+               SELECT 1 FROM lms_course_institution_allocations ca
+               WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
+                 AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'))
+           )`,
         [user.tenantId, user.id],
       );
       courseIds = enrollment.rows.map((row) => row.course_id);

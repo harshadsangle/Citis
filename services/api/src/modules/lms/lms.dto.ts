@@ -172,6 +172,13 @@ export class RejectCourseDto {
   reason!: string;
 }
 
+export class PublishCourseDto {
+  @IsOptional()
+  @IsArray()
+  @IsUUID("4", { each: true })
+  institutionIds?: string[];
+}
+
 export class CreateCourseModuleDto {
   @IsUUID()
   courseId!: string;

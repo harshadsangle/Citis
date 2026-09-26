@@ -42,6 +42,7 @@ import {
   UpdateLearningResourceProgressDto,
   UpdateLessonDto,
   UpdateProgrammeDto,
+  PublishCourseDto,
 } from "./lms.dto";
 import { LmsService } from "./lms.service";
 import { AssessmentService } from "./assessment.service";
@@ -159,8 +160,8 @@ export class LmsController {
 
   @Post("courses/:id/publish")
   @RequirePermission("lms.course.publish")
-  async publishCourse(@Param("id") id: string, @Req() request: ContextRequest) {
-    return successResponse(await this.lms.publishReviewedCourse(id, request), request);
+  async publishCourse(@Param("id") id: string, @Body() input: PublishCourseDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.publishReviewedCourse(id, request, input), request);
   }
 
   @Post("courses/:id/reject")

@@ -23,6 +23,7 @@ const resourceProgressPermissionMigration = readFileSync(resolve(process.cwd(), 
 const uploadedVideoResourceMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/028_lms_uploaded_video_resources.sql"), "utf8");
 const studentResourceViewMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/029_lms_student_resource_view.sql"), "utf8");
 const courseApprovalMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/030_lms_course_approval_workflow.sql"), "utf8");
+const courseAllocationMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/031_lms_course_institution_allocations.sql"), "utf8");
 const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/020_lms_foundation_roles_profiles.sql"), "utf8");
 const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/021_college_student_csv_onboarding.sql"), "utf8");
 const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
@@ -85,6 +86,14 @@ test("course approval migration adds instructor review states and permissions", 
   assert.match(courseApprovalMigration, /lms\.course\.reject/);
   assert.match(courseApprovalMigration, /r\.code IN \('TEACHER', 'INSTRUCTOR'\)/);
   assert.match(courseApprovalMigration, /030_lms_course_approval_workflow/);
+});
+
+test("course allocation migration preserves canonical courses and backfills allocations", () => {
+  assert.match(courseAllocationMigration, /CREATE TABLE IF NOT EXISTS lms_course_institution_allocations\b/);
+  assert.match(courseAllocationMigration, /FOREIGN KEY \(tenant_id, course_id\)/);
+  assert.match(courseAllocationMigration, /FOREIGN KEY \(tenant_id, institution_id\)/);
+  assert.match(courseAllocationMigration, /SELECT tenant_id, id, institution_id FROM courses/);
+  assert.match(courseAllocationMigration, /031_lms_course_institution_allocations/);
 });
 
 for (const table of ["programmes", "courses", "course_modules", "lessons", "learning_resources"]) {
