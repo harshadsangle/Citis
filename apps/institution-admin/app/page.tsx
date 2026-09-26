@@ -6,10 +6,10 @@ import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import AdminInsights from "./AdminInsights";
+import AdminAccessView, { type AdminAccessMode } from "./AdminAccessView";
 import CourseBuilder from "./CourseBuilder";
 import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
-import { lmsPortalUrl } from "./lms-portal-url";
 
 type Kind = "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
@@ -139,6 +139,28 @@ const instructorCopy = {
   title: "Instructors",
   description: "Create teaching accounts, assign institutional scope, and keep access current.",
 };
+const adminAccessCopy: Record<AdminAccessMode, { kicker: string; title: string; description: string }> = {
+  learners: {
+    kicker: "People & access",
+    title: "Learners",
+    description: "View learner accounts available within your institution scope.",
+  },
+  "institution-profile": {
+    kicker: "Institution access",
+    title: "Institution profile",
+    description: "Review the institution details available to your current scope.",
+  },
+  campuses: {
+    kicker: "Institution access",
+    title: "Campuses",
+    description: "View campuses associated with institutions in your current scope.",
+  },
+  roles: {
+    kicker: "Institution access",
+    title: "Roles & permissions",
+    description: "Review the teaching roles available to this institution portal.",
+  },
+};
 
 function titleFor(record: ContentRecord) {
   return record.name || record.title || "Untitled";
@@ -199,6 +221,7 @@ export default function InstitutionAdminPage() {
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
   const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
   const [instructorMode, setInstructorMode] = useState(false);
+  const [adminAccessMode, setAdminAccessMode] = useState<AdminAccessMode | null>(null);
   const [courseView, setCourseView] = useState<"ALL" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED">("ALL");
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [trail, setTrail] = useState<TrailNode[]>([]);
@@ -220,7 +243,7 @@ export default function InstitutionAdminPage() {
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("provider"),
   ));
 
-  const currentSection = instructorMode ? instructorCopy : insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
+  const currentSection = adminAccessMode ? adminAccessCopy[adminAccessMode] : instructorMode ? instructorCopy : insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
   const activeParentId = activeKind === "courses"
     ? ""
@@ -241,7 +264,7 @@ export default function InstitutionAdminPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (relationshipMode || insightMode || instructorMode) {
+      if (relationshipMode || insightMode || instructorMode || adminAccessMode) {
         setRecords([]);
         setLoading(false);
         return;
@@ -281,7 +304,7 @@ export default function InstitutionAdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeKind, canLoad, courseView, ids, provider, refreshToken, relationshipMode, insightMode, instructorMode]);
+  }, [activeKind, canLoad, courseView, ids, provider, refreshToken, relationshipMode, insightMode, instructorMode, adminAccessMode]);
 
   useEffect(() => {
     if (!toast) return;
@@ -296,6 +319,7 @@ export default function InstitutionAdminPage() {
   }, [relationshipMode, trail]);
 
   function showSection(kind: Kind) {
+    setAdminAccessMode(null);
     setInstructorMode(false);
     setInsightMode(null);
     setRelationshipMode(null);
@@ -308,6 +332,7 @@ export default function InstitutionAdminPage() {
   }
 
   function showInsights(mode: InsightMode) {
+    setAdminAccessMode(null);
     setInstructorMode(false);
     setInsightMode(mode);
     setRelationshipMode(null);
@@ -315,7 +340,16 @@ export default function InstitutionAdminPage() {
   }
 
   function showInstructors() {
+    setAdminAccessMode(null);
     setInstructorMode(true);
+    setInsightMode(null);
+    setRelationshipMode(null);
+    setError("");
+  }
+
+  function showAdminAccess(mode: AdminAccessMode) {
+    setAdminAccessMode(mode);
+    setInstructorMode(false);
     setInsightMode(null);
     setRelationshipMode(null);
     setError("");
@@ -362,6 +396,7 @@ export default function InstitutionAdminPage() {
   }
 
   function openRelationship(mode: RelationshipMode, courseId: string, courseLabel: string) {
+    setAdminAccessMode(null);
     const courseNode = { kind: "courses" as Kind, id: courseId, label: courseLabel };
     setIds((current) => ({ ...current, courseId, moduleId: "", lessonId: "" }));
     setTrail((current) => [...current.slice(0, 1), courseNode]);
@@ -550,10 +585,10 @@ export default function InstitutionAdminPage() {
         <div className="sidebar-label">Institution portal</div>
         <nav className="primary-nav" aria-label="Primary navigation">
           <button className="nav-link active" type="button"><span className="nav-icon">▦</span> Overview</button>
-          <button className="nav-link" type="button"><span className="nav-icon">⌂</span> Institution profile</button>
-          <button className="nav-link" type="button"><span className="nav-icon">⌘</span> Campuses</button>
+          <button className={`nav-link ${adminAccessMode === "institution-profile" ? "active" : ""}`} type="button" onClick={() => showAdminAccess("institution-profile")}><span className="nav-icon">⌂</span> Institution profile</button>
+          <button className={`nav-link ${adminAccessMode === "campuses" ? "active" : ""}`} type="button" onClick={() => showAdminAccess("campuses")}><span className="nav-icon">⌘</span> Campuses</button>
            <button className={`nav-link ${instructorMode ? "active" : ""}`} type="button" onClick={showInstructors}><span className="nav-icon">♙</span> Users</button>
-          <button className="nav-link" type="button"><span className="nav-icon">◈</span> Roles & permissions</button>
+          <button className={`nav-link ${adminAccessMode === "roles" ? "active" : ""}`} type="button" onClick={() => showAdminAccess("roles")}><span className="nav-icon">◈</span> Roles & permissions</button>
         </nav>
         <div className="sidebar-divider" />
         <div className="sidebar-label">Learning management</div>
@@ -577,9 +612,9 @@ export default function InstitutionAdminPage() {
             </button>
             {/* CourseRelationships remains the course-level assignment workflow. */}
             <button
-              className="nav-link"
+              className={`nav-link ${adminAccessMode === "learners" ? "active" : ""}`}
              type="button"
-              onClick={() => window.location.assign(lmsPortalUrl("learner"))}
+              onClick={() => showAdminAccess("learners")}
            >
              <span className="nav-icon">E</span>Learners
            </button>
@@ -656,18 +691,18 @@ export default function InstitutionAdminPage() {
         </header>
 
         <div className="workspace-content">
-             {!insightMode && <><div className="page-heading">
+          {!insightMode && <><div className="page-heading">
             <div>
               <div className="eyebrow">{currentSection.kicker}</div>
               <h1>{currentSection.title}</h1>
               <p>{currentSection.description}</p>
            </div>
-               <button className="primary-button" type="button" onClick={instructorMode ? undefined : openCreate} disabled={Boolean(instructorMode || relationshipMode || insightMode) || (activeKind !== "courses" && !activeParentId)}>
+                {!adminAccessMode && <button className="primary-button" type="button" onClick={instructorMode ? undefined : openCreate} disabled={Boolean(instructorMode || relationshipMode || insightMode) || (activeKind !== "courses" && !activeParentId)}>
                 <span>+</span> {instructorMode ? "Add instructor" : activeKind === "courses" ? "Create Course" : `New ${labelFor(activeKind).slice(0, -1)}`}
-            </button>
+             </button>}
           </div>
 
-           <div className="breadcrumb-bar">
+            {!adminAccessMode && <div className="breadcrumb-bar">
              <button type="button" className={trail.length === 0 ? "crumb current" : "crumb"} onClick={() => showSection("courses")}>All courses</button>
             {trail.map((node) => (
               <span className="crumb-group" key={node.id}>
@@ -677,11 +712,13 @@ export default function InstitutionAdminPage() {
             ))}
              {!relationshipMode && activeKind !== "courses" && <><span className="crumb-separator">/</span><span className="crumb current">{labelFor(activeKind)}</span></>}
              {relationshipMode && <><span className="crumb-separator">/</span><span className="crumb current">{relationshipCopy[relationshipMode].title}</span></>}
-          </div>
+           </div>}
 
              </>}
 
-              {instructorMode ? (
+              {adminAccessMode ? (
+                <AdminAccessView apiBase={API_BASE} mode={adminAccessMode} />
+              ) : instructorMode ? (
                 <InstructorManager apiBase={API_BASE} />
               ) : insightMode ? (
                <AdminInsights apiBase={API_BASE} mode={insightMode} onModeChange={showInsights} />
@@ -741,7 +778,7 @@ export default function InstitutionAdminPage() {
               </div>
             )}
            </section>}
-            <p className="scope-note"><span>✓</span> {relationshipMode ? "All relationships are institution-scoped and recorded in the audit trail." : "All content is isolated to your authenticated tenant and recorded in the audit trail."}</p>
+            <p className="scope-note"><span>✓</span> {adminAccessMode ? "Records are limited to institutions and campuses in your authenticated scope." : relationshipMode ? "All relationships are institution-scoped and recorded in the audit trail." : "All content is isolated to your authenticated tenant and recorded in the audit trail."}</p>
         </div>
       </section>
 
