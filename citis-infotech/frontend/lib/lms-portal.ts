@@ -54,6 +54,15 @@ async function requestOrigin(portal: LmsPortal) {
     process.env.REPLIT_DEV_DOMAIN,
     ...(process.env.REPLIT_DOMAINS || "").split(","),
   ].filter(Boolean));
+  const isLoopbackHost = hostname === "localhost" || hostname.startsWith("127.");
+  const replitDevDomain = process.env.REPLIT_DEV_DOMAIN?.trim();
+  if (portal === "admin" && isLoopbackHost && replitDevDomain) {
+    // Replit forwards app requests internally, but the browser cannot follow a
+    // redirect to the workspace's loopback address.
+    const origin = new URL(`https://${replitDevDomain}`);
+    origin.port = String(portalConfig[portal].externalPort);
+    return origin.origin;
+  }
   const host = allowedHosts.has(hostname) ? requestedHost : "127.0.0.1:5000";
   const forwardedProto = requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim();
   const protocol = forwardedProto || (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
