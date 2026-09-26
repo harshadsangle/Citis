@@ -1845,27 +1845,41 @@ export class LmsService {
     return status || "ACTIVE";
   }
 
-  private async eligiblePerson(user: AuthenticatedUser, institutionId: string, campusId: string | null, personId: string, roleCode: "STUDENT" | "TEACHER") {
+  private async eligiblePerson(user: AuthenticatedUser, institutionId: string, campusId: string | null, personId: string, roleCode: "STUDENT" | "TEACHER", courseId: string) {
+    const allocatedInstitution = `EXISTS (
+      SELECT 1 FROM lms_course_institution_allocations ca
+      JOIN institutions allocated_i
+        ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+       AND allocated_i.status = 'ACTIVE'
+      WHERE ca.tenant_id = u.tenant_id AND ca.course_id = $5
+        AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+    )`;
     const studentScope = roleCode === "STUDENT"
       ? isLmsAdministrator(user)
-        ? "AND (sp.student_type = 'DIRECT_STUDENT' OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $3))"
-        : "AND sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $3"
+        ? `AND (sp.student_type = 'DIRECT_STUDENT' OR (sp.student_type = 'COLLEGE_STUDENT' AND ${allocatedInstitution}))`
+        : `AND sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = $3 AND ${allocatedInstitution}`
       : "";
+    const campusScope = roleCode === "STUDENT"
+      ? "AND (sp.student_type = 'DIRECT_STUDENT' OR sp.institution_id <> $3 OR ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)"
+      : "AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)";
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT u.id, u.tenant_id, u.first_name, u.last_name, u.email, u.mobile
+              ${roleCode === "STUDENT" ? ", sp.student_type, sp.institution_id" : ""}
        FROM users u
        JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
        JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
        ${roleCode === "STUDENT" ? "JOIN lms_student_profiles sp ON sp.user_id = u.id AND sp.tenant_id = u.tenant_id AND sp.status = 'ACTIVE'" : ""}
        WHERE u.id = $1 AND u.tenant_id = $2 AND u.status = 'ACTIVE'
            AND (${roleCode === "STUDENT"
-             ? "(ur.institution_id = $3 OR (sp.student_type = 'DIRECT_STUDENT' AND ur.institution_id IS NULL)) AND ur.institution_id IS NOT DISTINCT FROM sp.institution_id"
+             ? "ur.institution_id IS NOT DISTINCT FROM sp.institution_id"
              : "ur.institution_id = $3"})
-          AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)
+          ${campusScope}
            AND r.code IN (${roleCode === "STUDENT" ? "'STUDENT'" : "'TEACHER', 'INSTRUCTOR'"}) AND r.status = 'ACTIVE'
            ${studentScope}
        LIMIT 1`,
-      [personId, user.tenantId, institutionId, campusId],
+      roleCode === "STUDENT"
+        ? [personId, user.tenantId, institutionId, campusId, courseId]
+        : [personId, user.tenantId, institutionId, campusId],
     );
     if (!result.rows[0]) {
       throw new NotFoundException(roleCode === "STUDENT"
