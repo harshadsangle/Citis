@@ -18,13 +18,56 @@ export class UsersService {
     return isPlatformUser(user);
   }
 
-  async list(user: AuthenticatedUser, page: number, pageSize: number, offset: number, tenantId?: string) {
+  async list(
+    user: AuthenticatedUser,
+    page: number,
+    pageSize: number,
+    offset: number,
+    tenantId?: string,
+    statusFilter?: string,
+    roleCodeFilter?: string,
+  ) {
     const scope = this.platform(user) ? tenantId : user.tenantId;
     const scopedToActor = !isPlatformUser(user);
     const values: unknown[] = [];
-    const where = scope ? `WHERE u.tenant_id = $1${scopedToActor ? this.userScopePredicate(user, "u", 2) : ""}` : "";
-    if (scope) values.push(scope);
-    if (scopedToActor) values.push(user.id);
+    const conditions: string[] = [];
+    if (scope) {
+      values.push(scope);
+      conditions.push(`u.tenant_id = $${values.length}`);
+    }
+    if (scopedToActor) {
+      values.push(user.id);
+      conditions.push(this.userScopePredicate("u", values.length));
+    }
+    if (statusFilter !== undefined) {
+      const status = statusFilter.trim().toUpperCase();
+      if (!["ACTIVE", "PENDING", "DISABLED", "ARCHIVED"].includes(status)) {
+        throw new BadRequestException("The requested user status filter is invalid.");
+      }
+      values.push(status);
+      conditions.push(`u.status = $${values.length}`);
+    }
+    if (roleCodeFilter !== undefined) {
+      const roleCodes = roleCodeFilter.split(",").map((code) => code.trim().toUpperCase());
+      if (
+        roleCodes.length === 0
+        || roleCodes.length > 12
+        || roleCodes.some((code) => !/^[A-Z][A-Z0-9_]*$/.test(code))
+      ) {
+        throw new BadRequestException("The requested role filter is invalid.");
+      }
+      values.push([...new Set(roleCodes)]);
+      conditions.push(`EXISTS (
+        SELECT 1
+        FROM user_roles filter_ur
+        JOIN roles filter_role ON filter_role.id = filter_ur.role_id AND filter_role.tenant_id = filter_ur.tenant_id
+        WHERE filter_ur.user_id = u.id
+          AND filter_ur.tenant_id = u.tenant_id
+          AND filter_role.status = 'ACTIVE'
+          AND filter_role.code = ANY($${values.length}::text[])
+      )`);
+    }
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const [rows, total] = await Promise.all([
       this.db.query(`SELECT u.id, u.tenant_id, u.email, u.mobile, u.first_name, u.last_name, u.profile_image, u.status, u.last_login_at, u.created_at, u.updated_at,
           COALESCE((
@@ -164,8 +207,7 @@ export class UsersService {
   }
 
   private userScopePredicate(user: AuthenticatedUser, alias: string, actorParameter: number) {
-    if (isPlatformUser(user)) return "";
-    return ` AND EXISTS (
+    return `EXISTS (
       SELECT 1
       FROM user_roles target_scope
       JOIN user_roles actor_scope

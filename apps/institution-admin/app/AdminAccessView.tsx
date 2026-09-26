@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-export type AdminAccessMode = "learners" | "institution-profile" | "campuses" | "roles";
+export type AdminAccessMode = "learners" | "institution-profile" | "campuses" | "roles" | "account-requests";
 
 type Learner = {
   id: string;
@@ -41,6 +41,31 @@ type Role = {
   description?: string | null;
   status?: string;
 };
+
+export type AccountRequest = {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string | null;
+  status?: string;
+  created_at?: string | null;
+  roles?: Array<{ code?: string; name?: string }>;
+};
+
+const registrationRoleCodes = new Set(["TEACHER", "INSTRUCTOR", "INSTITUTION_ADMINISTRATOR"]);
+
+export function isPendingAccountRequest(user: AccountRequest) {
+  return user.status === "PENDING"
+    && Boolean(user.roles?.some((role) => registrationRoleCodes.has(role.code?.toUpperCase() || "")));
+}
+
+function requestedRole(user: AccountRequest) {
+  const role = user.roles?.find((candidate) => registrationRoleCodes.has(candidate.code?.toUpperCase() || ""));
+  if (role?.name) return role.name;
+  if (role?.code?.toUpperCase() === "TEACHER" || role?.code?.toUpperCase() === "INSTRUCTOR") return "Instructor";
+  if (role?.code?.toUpperCase() === "INSTITUTION_ADMINISTRATOR") return "Institution administrator";
+  return "Staff access";
+}
 
 async function request<T>(apiBase: string, path: string): Promise<T> {
   const response = await fetch(`${apiBase}${path}`, {
@@ -81,8 +106,18 @@ function locationLabel(campus: Campus) {
   return [campus.address, campus.city, campus.state, campus.country].filter(Boolean).join(", ") || "Location not provided";
 }
 
-export default function AdminAccessView({ apiBase, mode }: { apiBase: string; mode: AdminAccessMode }) {
+export default function AdminAccessView({
+  apiBase,
+  mode,
+  onAccountRequestCountChange,
+}: {
+  apiBase: string;
+  mode: AdminAccessMode;
+  onAccountRequestCountChange?: (count: number) => void;
+}) {
   const [learners, setLearners] = useState<Learner[]>([]);
+  const [accountRequests, setAccountRequests] = useState<AccountRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<AccountRequest | null>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -102,6 +137,16 @@ export default function AdminAccessView({ apiBase, mode }: { apiBase: string; mo
             user.roles?.some((role) => role.code?.toUpperCase() === "STUDENT")
           ));
           if (!cancelled) setLearners(scopedLearners);
+        } else if (mode === "account-requests") {
+          const payload = await request<unknown>(
+            apiBase,
+            "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTITUTION_ADMINISTRATOR",
+          );
+          const requests = listData<AccountRequest>(payload).filter(isPendingAccountRequest);
+          if (!cancelled) {
+            setAccountRequests(requests);
+            onAccountRequestCountChange?.(requests.length);
+          }
         } else if (mode === "institution-profile") {
           const payload = await request<unknown>(apiBase, "/institutions/scoped-options");
           if (!cancelled) setInstitutions(listData<Institution>(payload));
@@ -129,7 +174,7 @@ export default function AdminAccessView({ apiBase, mode }: { apiBase: string; mo
     return () => {
       cancelled = true;
     };
-  }, [apiBase, mode]);
+  }, [apiBase, mode, onAccountRequestCountChange]);
 
   const title = mode === "learners"
     ? "Learners"
@@ -137,18 +182,24 @@ export default function AdminAccessView({ apiBase, mode }: { apiBase: string; mo
       ? "Institution profile"
       : mode === "campuses"
         ? "Campuses"
-        : "Teaching roles";
+            : mode === "account-requests"
+              ? "Pending account requests"
+              : "Teaching roles";
   const count = mode === "learners"
     ? learners.length
     : mode === "institution-profile"
       ? institutions.length
       : mode === "campuses"
         ? campuses.length
-        : roles.length;
+        : mode === "account-requests"
+          ? accountRequests.length
+          : roles.length;
   const summary = loading
-    ? "Loading records in your current institution scope…"
+    ? mode === "account-requests" ? "Loading staff registrations awaiting review…" : "Loading records in your current institution scope…"
     : mode === "roles"
       ? `${count} active teaching ${count === 1 ? "role" : "roles"} available to this portal.`
+      : mode === "account-requests"
+        ? `${count} staff ${count === 1 ? "request" : "requests"} awaiting administrator review. Opening a request does not change its status.`
       : `${count} ${mode === "learners" ? "learners" : mode === "institution-profile" ? "institutions" : "campuses"} in your current scope.`;
 
   return (
@@ -178,6 +229,26 @@ export default function AdminAccessView({ apiBase, mode }: { apiBase: string; mo
               <span className="record-detail">{learner.mobile || learner.email || "No contact detail"}</span>
               <span className="record-detail">{dateLabel(learner.last_login_at)}</span>
               <span className={`status-badge ${learner.status === "ACTIVE" ? "is-active" : "is-inactive"}`}>{learner.status || "Unknown"}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!error && !loading && mode === "account-requests" && accountRequests.length > 0 && (
+        <div className="record-list">
+          <div className="list-head account-request-list-head"><span>Applicant</span><span>Email</span><span>Requested access</span><span>Review</span></div>
+          {accountRequests.map((accountRequest) => (
+            <div className="record-row account-request-row" key={accountRequest.id}>
+              <div className="record-primary">
+                <div className="record-avatar">{personName(accountRequest).charAt(0).toUpperCase()}</div>
+                <div>
+                  <strong className="record-title">{personName(accountRequest)}</strong>
+                  <span className="record-meta">Submitted {dateLabel(accountRequest.created_at)}</span>
+                </div>
+              </div>
+              <span className="record-detail">{accountRequest.email || "No email provided"}</span>
+              <span className="record-detail">{requestedRole(accountRequest)}</span>
+              <button className="row-action-link" type="button" onClick={() => setSelectedRequest(accountRequest)}>Review request</button>
             </div>
           ))}
         </div>
@@ -222,6 +293,31 @@ export default function AdminAccessView({ apiBase, mode }: { apiBase: string; mo
               <span className={`status-badge ${role.status === "ACTIVE" ? "is-active" : "is-inactive"}`}>{role.status || "ACTIVE"}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {selectedRequest && mode === "account-requests" && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal account-request-modal" role="dialog" aria-modal="true" aria-labelledby="account-request-title">
+            <div className="modal-heading">
+              <div>
+                <div className="eyebrow">Staff registration</div>
+                <h2 id="account-request-title">Review account request</h2>
+              </div>
+              <button className="close-button" type="button" onClick={() => setSelectedRequest(null)} aria-label="Close request details">×</button>
+            </div>
+            <p className="modal-intro">Submitted details are shown below. This review does not approve or change the account.</p>
+            <dl className="account-request-details">
+              <div><dt>Applicant</dt><dd>{personName(selectedRequest)}</dd></div>
+              <div><dt>Email</dt><dd>{selectedRequest.email || "Not provided"}</dd></div>
+              <div><dt>Requested access</dt><dd>{requestedRole(selectedRequest)}</dd></div>
+              <div><dt>Submitted</dt><dd>{dateLabel(selectedRequest.created_at)}</dd></div>
+              <div><dt>Current status</dt><dd><span className="status-badge is-inactive">Pending review</span></dd></div>
+            </dl>
+            <div className="modal-actions">
+              <button className="secondary-button" type="button" onClick={() => setSelectedRequest(null)}>Close</button>
+            </div>
+          </section>
         </div>
       )}
     </section>
