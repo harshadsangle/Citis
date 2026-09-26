@@ -108,7 +108,7 @@ export class UsersService {
               AND ur.tenant_id = u.tenant_id
               AND r.status = 'ACTIVE'
           ), '[]'::jsonb) AS roles
-       FROM users u WHERE u.id = $1 AND ($2::uuid IS NULL OR u.tenant_id = $2)${scopedToActor ? this.userScopePredicate(user, "u", 3) : ""}`,
+       FROM users u WHERE u.id = $1 AND ($2::uuid IS NULL OR u.tenant_id = $2)${scopedToActor ? ` AND ${this.userScopePredicate("u", 3)}` : ""}`,
       scopedToActor ? [id, user.tenantId, user.id] : [id, this.platform(user) ? null : user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("User not found.");
