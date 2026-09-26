@@ -223,6 +223,7 @@ h1 { margin-top: 8px; color: #102d53; font-size: clamp(28px, 3vw, 38px); letter-
   .record-row { grid-template-columns: 1fr auto; gap: 9px 12px; min-height: 108px; padding: 15px; }
   .record-primary { grid-column: 1; grid-row: 1; }
   .record-primary > div:last-child { min-width: 0; flex: 1; }
+  .record-primary .record-title { width: 100%; max-width: 100%; min-width: 0; }
   .record-detail { grid-column: 1 / -1; grid-row: 2; padding-left: 43px; }
   .row-actions { grid-column: 1 / -1; grid-row: 3; justify-content: flex-start; padding-left: 43px; }
   .scope-note { line-height: 1.5; }
@@ -1176,6 +1177,8 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
   .builder-steps button { flex: 0 0 auto; }
   .builder-form-grid, .builder-picker-grid, .builder-two-col { grid-template-columns: 1fr; }
   .builder-span-two { grid-column: auto; }
+  .builder-panel, .builder-form-grid > *, .builder-inline-form > *, .builder-picker-grid > *, .builder-two-col > *, .builder-activity-card > * { min-width: 0; }
+  .builder-generated-code, .builder-generated-code > * { min-width: 0; overflow-wrap: anywhere; }
   .builder-review-head { flex-direction: column; }
   .builder-counts { justify-content: flex-start; max-width: none; }
   .builder-node-row, .builder-lesson-row, .builder-asset-row { align-items: flex-start; flex-wrap: wrap; }
