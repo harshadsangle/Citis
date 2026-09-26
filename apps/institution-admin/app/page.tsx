@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
@@ -222,6 +222,7 @@ function uploadResource(id: string, file: File, resourceType: ResourceType) {
 }
 
 export default function InstitutionAdminPage() {
+  const profileMenuRef = useRef<HTMLDetailsElement>(null);
   const [activeKind, setActiveKind] = useState<Kind>("courses");
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
   const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
@@ -248,6 +249,18 @@ export default function InstitutionAdminPage() {
   const [provider] = useState<LmsCourseProvider | null>(() => normalizeLmsCourseProvider(
     typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("provider"),
   ));
+
+  useEffect(() => {
+    const closeProfileMenuOnOutsidePointer = (event: PointerEvent) => {
+      const menu = profileMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.removeAttribute("open");
+      }
+    };
+
+    document.addEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
+  }, []);
 
   const currentSection = adminAccessMode ? adminAccessCopy[adminAccessMode] : instructorMode ? instructorCopy : insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
@@ -688,7 +701,7 @@ export default function InstitutionAdminPage() {
               ♢{Boolean(pendingAccountRequestCount) && <span className="notification-dot" />}
             </button>
             <a className="help-link" href="/auth/login">Need help?</a>
-            <details className="profile-menu">
+            <details ref={profileMenuRef} className="profile-menu">
               <summary className="profile-trigger" aria-label="Open profile menu">
                 <span className="profile-avatar">IA</span>
                 <span className="profile-trigger-copy"><strong>Profile</strong><small>Institution admin</small></span>
