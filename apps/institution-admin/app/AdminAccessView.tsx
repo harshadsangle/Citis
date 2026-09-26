@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import InstitutionOnboarding from "./InstitutionOnboarding";
 
 export type AdminAccessMode = "learners" | "institution-profile" | "campuses" | "roles" | "account-requests";
 
@@ -17,6 +18,7 @@ type Learner = {
 
 type Institution = {
   id: string;
+  tenant_id?: string;
   name?: string;
   slug?: string;
   institution_type?: string | null;
@@ -67,10 +69,13 @@ function requestedRole(user: AccountRequest) {
   return "Staff access";
 }
 
-async function request<T>(apiBase: string, path: string): Promise<T> {
+async function request<T>(apiBase: string, path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set("Accept", "application/json");
   const response = await fetch(`${apiBase}${path}`, {
+    ...init,
     credentials: "include",
-    headers: { Accept: "application/json" },
+    headers,
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
@@ -90,6 +95,16 @@ function listData<T>(payload: unknown): T[] {
     return (payload as { data: T[] }).data;
   }
   throw new Error("The response did not contain a list.");
+}
+
+function hasCitisAdminRole(user: unknown) {
+  if (typeof user !== "object" || user === null) return false;
+  const roles = (user as { roles?: unknown }).roles;
+  return Array.isArray(roles) && roles.some((role: unknown) => {
+    if (typeof role !== "object" || role === null) return false;
+    const code = (role as { code?: unknown }).code;
+    return typeof code === "string" && code.trim().toUpperCase() === "CITIS_ADMIN";
+  });
 }
 
 function personName(person: Learner) {
@@ -122,6 +137,9 @@ export default function AdminAccessView({
   const [accountRequestTotalPages, setAccountRequestTotalPages] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<AccountRequest | null>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
+  const [canCreateInstitution, setCanCreateInstitution] = useState(false);
+  const [tenantId, setTenantId] = useState("");
+  const [institutionFlowOpen, setInstitutionFlowOpen] = useState(false);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -189,6 +207,41 @@ export default function AdminAccessView({
     };
   }, [accountRequestPage, apiBase, mode, onAccountRequestCountChange]);
 
+  useEffect(() => {
+    if (mode !== "institution-profile") {
+      setInstitutionFlowOpen(false);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadCurrentAdmin() {
+      try {
+        const payload = await request<unknown>(apiBase, "/auth/me", { cache: "no-store" });
+        if (typeof payload !== "object" || payload === null || !("data" in payload)) {
+          throw new Error("The current account could not be read.");
+        }
+        const user = (payload as { data?: unknown }).data;
+        if (typeof user !== "object" || user === null) throw new Error("The current account could not be read.");
+        const currentAdmin = user as { tenantId?: unknown; tenant_id?: unknown };
+        if (!cancelled) {
+          const tenantId = currentAdmin.tenantId ?? currentAdmin.tenant_id;
+          setCanCreateInstitution(hasCitisAdminRole(user));
+          setTenantId(typeof tenantId === "string" ? tenantId : "");
+        }
+      } catch {
+        if (!cancelled) {
+          setCanCreateInstitution(false);
+          setTenantId("");
+        }
+      }
+    }
+
+    void loadCurrentAdmin();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase, mode]);
+
   const title = mode === "learners"
     ? "Learners"
     : mode === "institution-profile"
@@ -222,6 +275,16 @@ export default function AdminAccessView({
           <h2>{title}</h2>
           <span className="panel-subtitle">{summary}</span>
         </div>
+        {mode === "institution-profile" && canCreateInstitution && (
+          <button
+            className="primary-button institution-create-button"
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => setInstitutionFlowOpen(true)}
+          >
+            <span>+</span> Create Institution
+          </button>
+        )}
       </div>
 
       {error && <div className="relationship-alert error-box"><strong>We couldn’t load this view</strong><p>{error}</p></div>}
@@ -339,6 +402,22 @@ export default function AdminAccessView({
             </div>
           </section>
         </div>
+      )}
+
+      {canCreateInstitution && tenantId && (
+        <InstitutionOnboarding
+          apiBase={apiBase}
+          tenantId={tenantId}
+          existingInstitutions={institutions}
+          open={institutionFlowOpen}
+          onClose={() => setInstitutionFlowOpen(false)}
+          onInstitutionCreated={(institution) => {
+            setInstitutions((current) => {
+              if (current.some((existing) => existing.id === institution.id)) return current;
+              return [...current, institution].sort((left, right) => (left.name || "").localeCompare(right.name || ""));
+            });
+          }}
+        />
       )}
     </section>
   );
