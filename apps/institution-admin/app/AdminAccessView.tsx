@@ -140,7 +140,7 @@ export default function AdminAccessView({
         } else if (mode === "account-requests") {
           const payload = await request<unknown>(
             apiBase,
-            "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTITUTION_ADMINISTRATOR",
+            "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR",
           );
           const requests = listData<AccountRequest>(payload).filter(isPendingAccountRequest);
           if (!cancelled) {
