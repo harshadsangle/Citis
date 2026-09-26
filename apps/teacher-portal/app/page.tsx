@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
 
 type Principal = {
@@ -463,6 +463,7 @@ function StatusPill({ status }: { status: string }) {
 }
 
 export default function TeacherPortalPage() {
+  const profileMenuRef = useRef<HTMLDetailsElement>(null);
   const [name, setName] = useState("Instructor");
   const [courseData, setCourseData] = useState<CourseData[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
@@ -493,6 +494,18 @@ export default function TeacherPortalPage() {
   const [notice, setNotice] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+
+  useEffect(() => {
+    const closeProfileMenuOnOutsidePointer = (event: PointerEvent) => {
+      const menu = profileMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.removeAttribute("open");
+      }
+    };
+
+    document.addEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
+  }, []);
 
   async function loadDashboard(showRefresh = false) {
     if (showRefresh) setRefreshing(true);
@@ -1450,7 +1463,7 @@ export default function TeacherPortalPage() {
             <div className="topbar-right">
               <span className="live-label"><i />Secure workspace</span>
               <button className="help-link" type="button" onClick={() => setNotice("Need help? Contact your institution administrator.")}>Help</button>
-              <details className="profile-menu">
+              <details ref={profileMenuRef} className="profile-menu">
                 <summary className="profile-trigger" aria-label="Open profile menu">
                   <span className="profile-avatar">{name.slice(0, 1).toUpperCase()}</span>
                   <span className="profile-trigger-copy"><strong>Profile</strong><small>{name}</small></span>
