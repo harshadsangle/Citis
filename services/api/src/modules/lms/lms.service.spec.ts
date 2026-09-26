@@ -1658,6 +1658,11 @@ test("learner assignment listings include only published content from enrolled c
   assert.ok(queries.some((query) => query.includes("c.status = 'PUBLISHED'")));
   assert.ok(queries.some((query) => query.includes("cm.status = 'PUBLISHED'")));
   assert.ok(queries.some((query) => query.includes("JOIN institutions i")));
+  const enrollmentQuery = queries.find((query) => query.startsWith("SELECT course_id"));
+  assert.ok(enrollmentQuery);
+  assert.match(enrollmentQuery, /ca\.institution_id = sp\.institution_id/);
+  assert.match(enrollmentQuery, /ca\.status = 'ACTIVE'/);
+  assert.match(enrollmentQuery, /allocated_i\.status = 'ACTIVE'/);
 });
 
 test("LMS administrators bypass assignment staff-scope checks", async () => {
@@ -1778,7 +1783,7 @@ test("assignment grades cannot exceed the configured maximum", async () => {
   );
 });
 
-test("assignment access rejects a student enrollment from another college or campus", async () => {
+test("assignment access rejects a learner without active enrollment in the course scope", async () => {
   const learner: AuthenticatedUser = {
     ...user,
     id: "student-1",
@@ -1806,6 +1811,46 @@ test("assignment access rejects a student enrollment from another college or cam
   });
 
   await assert.rejects(service.getAssignment("assignment-1", learner), ForbiddenException);
+});
+
+test("allocated college learners can read assignments using their institution allocation", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "student-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    studentType: "COLLEGE_STUDENT",
+  };
+  const assignment = {
+    id: "assignment-1",
+    tenant_id: learner.tenantId,
+    institution_id: "institution-1",
+    campus_id: null,
+    course_id: "course-1",
+    module_id: "module-1",
+    assessment_type: "ASSIGNMENT",
+    status: "PUBLISHED",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+    programme_status: "PUBLISHED",
+    institution_status: "ACTIVE",
+  };
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
+    if (text.startsWith("SELECT e.id")) return { rows: [{ id: "enrollment-1" }] };
+    return { rows: [] };
+  });
+
+  const result = await service.getAssignment("assignment-1", learner);
+
+  assert.equal(result.id, "assignment-1");
+  const enrollmentQuery = queries.find((text) => text.startsWith("SELECT e.id"));
+  assert.ok(enrollmentQuery);
+  assert.match(enrollmentQuery, /e\.institution_id = c\.institution_id/);
+  assert.match(enrollmentQuery, /ca\.institution_id = sp\.institution_id/);
+  assert.match(enrollmentQuery, /allocated_i\.status = 'ACTIVE'/);
+  assert.doesNotMatch(enrollmentQuery, /sp\.institution_id = c\.institution_id/);
 });
 
 test("assignment access is bound to the authenticated learner and preserves staff access", async () => {
