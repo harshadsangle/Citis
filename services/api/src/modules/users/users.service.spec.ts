@@ -40,12 +40,14 @@ test("user listings include active scoped role assignments", async () => {
   assert.equal(result.data[0]?.roles?.[0]?.campus_id, "campus-1");
 });
 
-test("user listings filter pending registration requests without bypassing institution scope", async () => {
+test("pending staff registrations without institution scope inherit only a tenant's sole institution", async () => {
   const calls: Array<{ sql: string; values?: unknown[] }> = [];
   const db = {
     query: async (sql: string, values?: unknown[]) => {
       calls.push({ sql, values });
-      return sql.includes("count(*)") ? { rows: [{ count: "0" }] } : { rows: [] };
+      return sql.startsWith("SELECT count(*)::text AS count FROM users u")
+        ? { rows: [{ count: "0" }] }
+        : { rows: [] };
     },
   };
   const service = new UsersService(db as never, {} as never);
@@ -66,6 +68,14 @@ test("user listings filter pending registration requests without bypassing insti
   assert.ok(rowsQuery);
   assert.match(rowsQuery.sql, /u\.tenant_id = \$1/);
   assert.match(rowsQuery.sql, /actor_scope\.user_id = \$2/);
+  assert.match(rowsQuery.sql, /pending_request_scope\.institution_id IS NULL/);
+  assert.match(rowsQuery.sql, /pending_request_scope\.campus_id IS NULL/);
+  assert.match(rowsQuery.sql, /pending_request_role\.code IN \('TEACHER', 'INSTRUCTOR', 'INSTITUTION_ADMINISTRATOR'\)/);
+  assert.match(rowsQuery.sql, /u\.status = 'PENDING'/);
+  assert.match(rowsQuery.sql, /count\(\*\)[\s\S]*?tenant_institution\.tenant_id = u\.tenant_id[\s\S]*?\) = 1/);
+  assert.match(rowsQuery.sql, /actor_registration_scope\.user_id = \$2/);
+  assert.match(rowsQuery.sql, /actor_registration_scope\.tenant_id = u\.tenant_id/);
+  assert.match(rowsQuery.sql, /other_tenant_institution\.id <> actor_registration_scope\.institution_id/);
   assert.match(rowsQuery.sql, /u\.status = \$3/);
   assert.match(rowsQuery.sql, /filter_role\.code = ANY\(\$4::text\[\]\)/);
   assert.deepEqual(rowsQuery.values, [
@@ -76,4 +86,32 @@ test("user listings filter pending registration requests without bypassing insti
     100,
     0,
   ]);
+});
+
+test("unscoped pending registration visibility is not added to ordinary user or learner lists", async () => {
+  const queries: string[] = [];
+  const db = {
+    query: async (sql: string) => {
+      queries.push(sql);
+      return sql.startsWith("SELECT count(*)::text AS count FROM users u") ? { rows: [{ count: "0" }] } : { rows: [] };
+    },
+  };
+  const service = new UsersService(db as never, {} as never);
+  const actor = {
+    id: "admin-1",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Admin",
+    lastName: "User",
+    roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
+    permissions: [],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
+  };
+
+  await service.list(actor, 1, 100, 0);
+  await service.list(actor, 1, 100, 0, undefined, "PENDING", "STUDENT");
+
+  const rowsQueries = queries.filter((sql) => sql.includes("SELECT u.id"));
+  assert.equal(rowsQueries.length, 2);
+  assert.equal(rowsQueries.some((sql) => sql.includes("pending_request_scope")), false);
 });
