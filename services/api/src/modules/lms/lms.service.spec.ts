@@ -573,6 +573,67 @@ test("course creation rejects a parent outside the authenticated tenant", async 
   );
 });
 
+test("CITIS Admin can create a course through the course endpoint", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) {
+      return { rows: [{ id: "programme-1", institution_id: "institution-1", campus_id: null }] };
+    }
+    if (text.startsWith("INSERT INTO courses")) {
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", programme_id: "programme-1", title: "Digital Skills", status: "DRAFT" }] };
+    }
+    return { rows: [] };
+  });
+
+  const course = await service.createCourse({
+    programmeId: "programme-1",
+    title: "Digital Skills",
+    code: "DS-101",
+  }, adminRequest);
+
+  assert.equal(course.id, "course-1");
+  assert.equal(course.status, "DRAFT");
+});
+
+test("instructors cannot create or manage course-level records, even with matching permissions", async () => {
+  const teacher: AuthenticatedUser = {
+    id: "teacher-1",
+    tenantId: user.tenantId,
+    email: "teacher@example.com",
+    firstName: "Teacher",
+    lastName: "One",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: [
+      "lms.course.create",
+      "lms.course.update",
+      "lms.course.publish",
+      "lms.course.reject",
+      "lms.course.archive",
+    ],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
+  };
+  const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  let databaseQueries = 0;
+  const { service } = serviceWith(async () => {
+    databaseQueries += 1;
+    return { rows: [] };
+  });
+  const courseInput = { programmeId: "programme-1", title: "Digital Skills", code: "DS-101" };
+
+  await assert.rejects(service.createCourse(courseInput, teacherRequest), ForbiddenException);
+  await assert.rejects(service.createCourseBuilder({}, [], teacherRequest), ForbiddenException);
+  await assert.rejects(service.updateCourse("course-1", { title: "Renamed" }, teacherRequest), ForbiddenException);
+  await assert.rejects(service.publishReviewedCourse("course-1", teacherRequest), ForbiddenException);
+  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: "Needs changes." }, teacherRequest), ForbiddenException);
+  await assert.rejects(service.changeStatus("course-1", "course", "ARCHIVED", teacherRequest), ForbiddenException);
+  assert.equal(databaseQueries, 0);
+});
+
 test("learning resources enforce URL and file requirements before insertion", async () => {
   let insertAttempted = false;
   const { service } = serviceWith(async (text) => {
@@ -804,6 +865,28 @@ test("only an LMS administrator can publish a pending course", async () => {
   assert.equal(adminPublished.status, "PUBLISHED");
   assert.equal(adminPublished.published_by, user.id);
   assert.equal(audits.at(-1)?.action, "PUBLISH");
+});
+
+test("CITIS Admin can update course-level settings", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const { service } = serviceWith(async (text, values) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", campus_id: null, title: "Old title", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("UPDATE courses")) {
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", title: values[2], status: "PUBLISHED" }] };
+    }
+    return { rows: [] };
+  });
+
+  const updated = await service.updateCourse("course-1", { title: "New title" }, adminRequest);
+
+  assert.equal(updated.title, "New title");
 });
 
 test("platform administrators publish a course to the selected active institutions", async () => {
