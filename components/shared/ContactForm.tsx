@@ -9,9 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 import { contactSchema, type ContactInput } from "@/lib/validations";
 import { cn } from "@/lib/utils";
+import { contactService } from "@/services/api";
 
 export function ContactForm({ className }: { className?: string }) {
   const [serverError, setServerError] = useState("");
@@ -24,24 +24,14 @@ export function ContactForm({ className }: { className?: string }) {
   const onSubmit = async (values: ContactInput) => {
     setServerError("");
     try {
-      openMailto({
-        to: SUPPORT_EMAIL,
-        subject: values.subject?.trim() || "Contact Us — CITIS InfoTech website",
-        body: [
-          `Name: ${values.name}`,
-          `Email: ${values.email}`,
-          `Phone: ${values.phone || "—"}`,
-          `Organization: ${values.company || "—"}`,
-          "",
-          values.message,
-          "",
-          `— Sent from the CITIS InfoTech contact form`,
-        ].join("\n"),
-      });
+      const response = await contactService.submit(values);
+      if (!response.success) {
+        throw new Error(response.message || "We could not send your message. Please try again.");
+      }
       setSubmitted(true);
       reset();
     } catch (error) {
-      setServerError(error instanceof Error ? error.message : "We could not open your email app. Please write to support@citis.in.");
+      setServerError(error instanceof Error ? error.message : "We could not send your message. Please try again.");
     }
   };
 
@@ -51,8 +41,7 @@ export function ContactForm({ className }: { className?: string }) {
         <CheckCircle2 className="mx-auto size-12 text-success" />
         <h3 className="mt-5 font-heading text-2xl font-semibold">Thank you for reaching out</h3>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Your email app should open a message to <span className="font-medium text-foreground">{SUPPORT_EMAIL}</span>.
-          Send it to complete your enquiry. If nothing opened, email us directly at that address.
+          Your message has been received by our team. We&apos;ll follow up using the contact details you provided.
         </p>
         <Button variant="outline" className="mt-6" onClick={() => setSubmitted(false)}>Send another message</Button>
       </div>
