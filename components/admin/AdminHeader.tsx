@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, ChevronDown, ExternalLink, LogOut, Mail, Menu, Search, Settings, User } from "lucide-react";
+import { Bell, ChevronDown, ExternalLink, LogOut, Menu, Search, Settings, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
@@ -67,9 +67,6 @@ export function AdminHeader({
               <span className="font-normal">Administrator</span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/admin/messages"><Mail className="size-4" /> Inbox</Link>
-            </DropdownMenuItem>
             <DropdownMenuItem><User className="size-4" /> Profile</DropdownMenuItem>
             <DropdownMenuItem><Settings className="size-4" /> Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
