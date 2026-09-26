@@ -808,6 +808,125 @@ test("an LMS administrator or the explicitly assigned instructor can publish a p
   assert.equal(audits.at(-1)?.action, "PUBLISH");
 });
 
+test("platform administrators can read published course institution allocations", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM lms_course_institution_allocations ca")) {
+      return { rows: [{ institution_id: "institution-2", institution_name: "Second College", institution_status: "ACTIVE" }] };
+    }
+    return { rows: [] };
+  });
+
+  const allocations = await service.listCourseInstitutionAllocations("course-1", platformAdmin);
+
+  assert.equal(allocations.length, 1);
+  assert.equal(allocations[0].institution_id, "institution-2");
+  assert.ok(queries.some((text) => text.includes("ca.status = 'ACTIVE'")));
+});
+
+test("published course allocations can be replaced atomically and audited", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const allocationIds = ["institution-1"];
+  const activeInstitutionIds = new Set(["institution-1", "institution-2", "institution-3"]);
+  let removedExistingAllocations = false;
+  let insertedAllocations = false;
+  const { service, audits } = serviceWith(async (text, values = []) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("SELECT status FROM courses")) return { rows: [{ status: "PUBLISHED" }] };
+    if (text.includes("FROM lms_course_institution_allocations ca")) {
+      return {
+        rows: allocationIds.map((institution_id) => ({
+          institution_id,
+          institution_name: institution_id,
+          institution_status: "ACTIVE",
+        })),
+      };
+    }
+    if (text.includes("FROM institutions") && text.includes("id = ANY")) {
+      return { rows: (values[1] as string[]).filter((id) => activeInstitutionIds.has(id)).map((id) => ({ id })) };
+    }
+    if (text.startsWith("UPDATE lms_course_institution_allocations")) {
+      allocationIds.splice(0);
+      removedExistingAllocations = true;
+      return { rows: [] };
+    }
+    if (text.startsWith("INSERT INTO lms_course_institution_allocations")) {
+      allocationIds.push(...(values[2] as string[]));
+      insertedAllocations = true;
+      return { rows: [] };
+    }
+    return { rows: [] };
+  });
+
+  const result = await service.replaceCourseInstitutionAllocations(
+    "course-1",
+    { institutionIds: ["institution-2", "institution-3"] },
+    adminRequest,
+  );
+
+  assert.deepEqual(result.map((allocation) => allocation.institution_id), ["institution-2", "institution-3"]);
+  assert.equal(removedExistingAllocations, true);
+  assert.equal(insertedAllocations, true);
+  assert.equal(audits.at(-1)?.resource, "course");
+  assert.equal(audits.at(-1)?.action, "UPDATE");
+});
+
+test("course allocation updates reject inactive or cross-tenant institutions before changing allocations", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  let allocationsChanged = false;
+  const { service } = serviceWith(async (text) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("SELECT status FROM courses")) return { rows: [{ status: "PUBLISHED" }] };
+    if (text.includes("FROM institutions") && text.includes("id = ANY")) return { rows: [] };
+    if (text.startsWith("UPDATE lms_course_institution_allocations")) allocationsChanged = true;
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.replaceCourseInstitutionAllocations(
+      "course-1",
+      { institutionIds: ["institution-inactive"] },
+      adminRequest,
+    ),
+    BadRequestException,
+  );
+  assert.equal(allocationsChanged, false);
+});
+
+test("institution administrators cannot replace platform-wide course allocations", async () => {
+  const { service } = serviceWith(async () => {
+    throw new Error("The database should not be queried for a scoped administrator.");
+  });
+
+  await assert.rejects(
+    service.replaceCourseInstitutionAllocations("course-1", { institutionIds: [] }, request),
+    ForbiddenException,
+  );
+});
+
 test("institution administrators remain limited to courses in their assigned institution scope", async () => {
   const outOfScopeAdmin: AuthenticatedUser = {
     ...user,
@@ -1071,6 +1190,30 @@ test("allocated college learners from another institution can be manually enroll
   assert.equal(enrollment.learner_id, "student-2");
   assert.equal(enrollment.institution_id, "institution-1");
   assert.equal(inserted, true);
+});
+
+test("college learner course listings require an active allocation for the learner institution", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "learner-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    scopes: [],
+  };
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    return { rows: [] };
+  });
+
+  await service.listCourses(learner, 1, 25, 0, {});
+
+  const learnerCatalogueQuery = queries.find((text) => (
+    text.includes("FROM courses c") && text.includes("JOIN lms_course_institution_allocations ca")
+  ));
+  assert.ok(learnerCatalogueQuery);
+  assert.match(learnerCatalogueQuery, /ca\.institution_id = sp\.institution_id/);
+  assert.match(learnerCatalogueQuery, /ca\.status = 'ACTIVE'/);
+  assert.match(learnerCatalogueQuery, /allocated_i\.status = 'ACTIVE'/);
 });
 
 test("duplicate instructor assignment is returned as a conflict", async () => {
