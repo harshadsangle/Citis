@@ -2415,7 +2415,7 @@ export class LmsService {
          AND sp.status = 'ACTIVE'
          AND (
            (sp.student_type = 'DIRECT_STUDENT' AND sp.institution_id IS NULL)
-           OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = c.institution_id
+            OR (sp.student_type = 'COLLEGE_STUDENT'
              AND EXISTS (SELECT 1 FROM lms_course_institution_allocations ca
                           JOIN institutions allocated_i
                             ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
@@ -2970,7 +2970,14 @@ export class LmsService {
              AND sp.status = 'ACTIVE'
              AND (
                (sp.student_type = 'DIRECT_STUDENT' AND sp.institution_id IS NULL)
-               OR (sp.student_type = 'COLLEGE_STUDENT' AND sp.institution_id = c.institution_id)
+                OR (sp.student_type = 'COLLEGE_STUDENT' AND EXISTS (
+                  SELECT 1 FROM lms_course_institution_allocations ca
+                  JOIN institutions allocated_i
+                    ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+                   AND allocated_i.status = 'ACTIVE'
+                  WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
+                    AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+                ))
              )`,
           [user.tenantId, user.id],
         );
