@@ -808,6 +808,43 @@ test("an LMS administrator or the explicitly assigned instructor can publish a p
   assert.equal(audits.at(-1)?.action, "PUBLISH");
 });
 
+test("platform administrators publish a course to the selected active institutions", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const persistedAllocations: string[] = [];
+  let published = false;
+  const { service } = serviceWith(async (text, values = []) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM institutions") && text.includes("id = ANY")) {
+      return { rows: (values[1] as string[]).map((id) => ({ id })) };
+    }
+    if (text.startsWith("UPDATE lms_course_institution_allocations")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_course_institution_allocations")) {
+      persistedAllocations.push(...(values[2] as string[]));
+      return { rows: [] };
+    }
+    if (text.startsWith("UPDATE courses")) {
+      published = true;
+      return { rows: [{ id: "course-1", status: "PUBLISHED", published_by: platformAdmin.id }] };
+    }
+    return { rows: [] };
+  });
+
+  const result = await service.publishReviewedCourse("course-1", adminRequest, {
+    institutionIds: ["institution-1", "institution-2"],
+  });
+
+  assert.equal(result.status, "PUBLISHED");
+  assert.deepEqual(persistedAllocations, ["institution-1", "institution-2"]);
+  assert.equal(published, true);
+});
+
 test("platform administrators can read published course institution allocations", async () => {
   const platformAdmin: AuthenticatedUser = {
     ...user,
