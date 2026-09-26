@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from "@nestjs/common";
 import { AnyFilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
@@ -29,6 +29,7 @@ import {
   GradeAssignmentSubmissionDto,
   ProgressViewerQueryDto,
   RejectCourseDto,
+  ReplaceCourseInstitutionAllocationsDto,
   RelationshipListQueryDto,
   SubmitAssignmentDto,
   SubmitAssessmentAttemptDto,
@@ -150,6 +151,22 @@ export class LmsController {
   @RequirePermission("lms.course.view")
   async course(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.getCourse(id, request.context.user!), request);
+  }
+
+  @Get("courses/:id/institution-allocations")
+  @RequirePermission("lms.course.view")
+  async courseInstitutionAllocations(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.listCourseInstitutionAllocations(id, request.context.user!), request);
+  }
+
+  @Put("courses/:id/institution-allocations")
+  @RequirePermission("lms.course.update")
+  async updateCourseInstitutionAllocations(
+    @Param("id") id: string,
+    @Body() input: ReplaceCourseInstitutionAllocationsDto,
+    @Req() request: ContextRequest,
+  ) {
+    return successResponse(await this.lms.replaceCourseInstitutionAllocations(id, input, request), request);
   }
 
   @Patch("courses/:id")

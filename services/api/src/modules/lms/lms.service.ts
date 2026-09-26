@@ -33,6 +33,7 @@ import type {
   UpdateLessonDto,
   UpdateProgrammeDto,
   PublishCourseDto,
+  ReplaceCourseInstitutionAllocationsDto,
 } from "./lms.dto";
 import { LmsContentRateLimiter } from "./lms.rate-limit";
 
@@ -1058,6 +1059,111 @@ export class LmsService {
     if (!result.rows[0]) throw new ConflictException("The course review state changed before publication.");
     await this.auditMutation(request, "course", "PUBLISH", result.rows[0], before);
     return result.rows[0];
+  }
+
+  async listCourseInstitutionAllocations(id: string, user: AuthenticatedUser) {
+    if (!isPlatformUser(user)) {
+      throw new ForbiddenException("Only CITIS platform administrators can manage course institution allocations.");
+    }
+    await this.getCourse(id, user);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT ca.institution_id, i.name AS institution_name, i.status AS institution_status
+       FROM lms_course_institution_allocations ca
+       JOIN institutions i ON i.tenant_id = ca.tenant_id AND i.id = ca.institution_id
+       WHERE ca.tenant_id = $1 AND ca.course_id = $2 AND ca.status = 'ACTIVE'
+       ORDER BY i.name, i.id`,
+      [user.tenantId, id],
+    );
+    return result.rows;
+  }
+
+  async replaceCourseInstitutionAllocations(
+    id: string,
+    input: ReplaceCourseInstitutionAllocationsDto,
+    request: ContextRequest,
+  ) {
+    const user = request.context.user!;
+    if (!isPlatformUser(user)) {
+      throw new ForbiddenException("Only CITIS platform administrators can manage course institution allocations.");
+    }
+    const before = await this.getCourse(id, user);
+    if (before.status !== "PUBLISHED") {
+      throw new ConflictException("Institution allocations can be changed only after a course is published.");
+    }
+    const institutionIds = [...new Set(input.institutionIds)];
+
+    const replace = async (
+      client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> },
+    ) => {
+      const lockedCourse = await client.query(
+        `SELECT status FROM courses WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
+        [user.tenantId, id],
+      );
+      if (!lockedCourse.rows[0]) throw new NotFoundException("Course not found.");
+      if (lockedCourse.rows[0].status !== "PUBLISHED") {
+        throw new ConflictException("Institution allocations can be changed only after a course is published.");
+      }
+
+      const allocationsBefore = await client.query(
+        `SELECT ca.institution_id, i.name AS institution_name, i.status AS institution_status
+         FROM lms_course_institution_allocations ca
+         JOIN institutions i ON i.tenant_id = ca.tenant_id AND i.id = ca.institution_id
+         WHERE ca.tenant_id = $1 AND ca.course_id = $2 AND ca.status = 'ACTIVE'
+         ORDER BY i.name, i.id`,
+        [user.tenantId, id],
+      );
+
+      if (institutionIds.length > 0) {
+        const activeInstitutions = await client.query(
+          `SELECT id FROM institutions
+           WHERE tenant_id = $1 AND status = 'ACTIVE' AND id = ANY($2::uuid[])`,
+          [user.tenantId, institutionIds],
+        );
+        if (activeInstitutions.rows.length !== institutionIds.length) {
+          throw new BadRequestException("All allocated institutions must be active in the current tenant.");
+        }
+      }
+
+      await client.query(
+        `UPDATE lms_course_institution_allocations
+         SET status = 'REMOVED', removed_at = now(), updated_at = now()
+         WHERE tenant_id = $1 AND course_id = $2 AND status = 'ACTIVE'`,
+        [user.tenantId, id],
+      );
+
+      if (institutionIds.length > 0) {
+        await client.query(
+          `INSERT INTO lms_course_institution_allocations
+           (tenant_id, course_id, institution_id, allocated_by)
+           SELECT $1, $2, unnest($3::uuid[]), $4
+           ON CONFLICT (tenant_id, course_id, institution_id)
+           DO UPDATE SET status = 'ACTIVE', removed_at = NULL, allocated_by = EXCLUDED.allocated_by, updated_at = now()`,
+          [user.tenantId, id, institutionIds, user.id],
+        );
+      }
+
+      const allocationsAfter = await client.query(
+        `SELECT ca.institution_id, i.name AS institution_name, i.status AS institution_status
+         FROM lms_course_institution_allocations ca
+         JOIN institutions i ON i.tenant_id = ca.tenant_id AND i.id = ca.institution_id
+         WHERE ca.tenant_id = $1 AND ca.course_id = $2 AND ca.status = 'ACTIVE'
+         ORDER BY i.name, i.id`,
+        [user.tenantId, id],
+      );
+      return { before: allocationsBefore.rows, after: allocationsAfter.rows };
+    };
+
+    const outcome = typeof this.db.transaction === "function"
+      ? await this.db.transaction(replace)
+      : await replace(this.db);
+    await this.auditMutation(
+      request,
+      "course",
+      "UPDATE",
+      { ...before, institution_allocations: outcome.after.map((row) => row.institution_id) },
+      { ...before, institution_allocations: outcome.before.map((row) => row.institution_id) },
+    );
+    return outcome.after;
   }
 
   async rejectReviewedCourse(id: string, input: RejectCourseDto, request: ContextRequest) {

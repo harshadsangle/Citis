@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, MaxLength, Min, ValidateNested } from "class-validator";
+import { ArrayMinSize, ArrayUnique, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, MaxLength, Min, ValidateNested } from "class-validator";
 
 export const LMS_STATUSES = ["DRAFT", "INSTRUCTOR_PENDING", "REJECTED", "PUBLISHED", "ARCHIVED"] as const;
 export const LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"] as const;
@@ -178,6 +178,14 @@ export class PublishCourseDto {
   @ArrayMinSize(1)
   @IsUUID("4", { each: true })
   institutionIds?: string[];
+}
+
+export class ReplaceCourseInstitutionAllocationsDto {
+  @IsDefined()
+  @IsArray()
+  @ArrayUnique()
+  @IsUUID("4", { each: true })
+  institutionIds!: string[];
 }
 
 export class CreateCourseModuleDto {
