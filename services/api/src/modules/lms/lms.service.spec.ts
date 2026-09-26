@@ -996,7 +996,7 @@ test("enrollment accepts an active institution Student and audits the mutation",
       queries.push(text);
       if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
       if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
-      if (text.startsWith("SELECT u.id")) return { rows: [{ id: "student-1", first_name: "Learner", last_name: "One" }] };
+      if (text.startsWith("SELECT u.id")) return { rows: [{ id: "student-1", first_name: "Learner", last_name: "One", student_type: "COLLEGE_STUDENT", institution_id: "institution-1" }] };
       if (text.startsWith("INSERT INTO lms_enrollments")) return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", learner_id: "student-1", status: "ACTIVE" }] };
       return { rows: [] };
     },
@@ -1009,7 +1009,8 @@ test("enrollment accepts an active institution Student and audits the mutation",
   assert.equal(result.learner_id, "student-1");
   assert.equal(audits[0].resource, "enrollment");
   assert.equal(audits[0].action, "CREATE");
-  assert.ok(queries.some((query) => query.includes("ur.institution_id = $3")));
+  assert.ok(queries.some((query) => query.includes("ur.institution_id IS NOT DISTINCT FROM sp.institution_id")));
+  assert.ok(queries.some((query) => query.includes("lms_course_institution_allocations")));
 });
 
 test("enrollment rejects a user who is not an active Student in the course institution", async () => {
@@ -1026,6 +1027,50 @@ test("enrollment rejects a user who is not an active Student in the course insti
     NotFoundException,
   );
   assert.equal(inserted, false);
+});
+
+test("allocated college learners from another institution can be manually enrolled", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const queries: string[] = [];
+  let inserted = false;
+  const db = {
+    query: async (text: string) => {
+      queries.push(text);
+      if (text.startsWith("SELECT c.id")) {
+        return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null, status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+      }
+      if (text.startsWith("SELECT u.id, u.first_name")) {
+        return { rows: [{ id: "student-2", first_name: "Learner", last_name: "Two", email: "learner@example.edu" }] };
+      }
+      if (text.startsWith("SELECT u.id, u.tenant_id")) {
+        return { rows: [{ id: "student-2", first_name: "Learner", last_name: "Two", student_type: "COLLEGE_STUDENT", institution_id: "institution-2" }] };
+      }
+      if (text.startsWith("SELECT count(DISTINCT u.id)")) return { rows: [{ count: "1" }] };
+      if (text.startsWith("SELECT 1 FROM lms_course_institution_allocations")) return { rows: [{ allowed: 1 }] };
+      if (text.startsWith("INSERT INTO lms_enrollments")) {
+        inserted = true;
+        return { rows: [{ id: "enrollment-2", learner_id: "student-2", institution_id: "institution-1", status: "ACTIVE" }] };
+      }
+      return { rows: [] };
+    },
+  };
+  const audit = { record: async () => undefined };
+  const service = new LmsService(db as never, audit as never, new ResourceStorageService());
+
+  const candidates = await service.listEnrollmentCandidates("course-1", platformAdmin, 1, 25, 0, {});
+  assert.equal(candidates.data[0]?.id, "student-2");
+  assert.ok(queries.some((query) => query.includes("ca.institution_id = sp.institution_id")));
+  assert.ok(queries.some((query) => query.includes("allocated_i.status = 'ACTIVE'")));
+
+  const enrollment = await service.enrollLearner("course-1", { learnerId: "student-2" }, adminRequest);
+  assert.equal(enrollment.learner_id, "student-2");
+  assert.equal(enrollment.institution_id, "institution-1");
+  assert.equal(inserted, true);
 });
 
 test("duplicate instructor assignment is returned as a conflict", async () => {
@@ -1188,6 +1233,9 @@ test("direct learners can complete institutionless enrollments without an instit
           institution_status: "ACTIVE",
         }],
       };
+    }
+    if (text.startsWith("SELECT 1") && text.includes("FROM lms_enrollments e")) {
+      return { rows: [{ allowed: 1 }] };
     }
     if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "direct-enrollment-1" }] };
     if (text.startsWith("SELECT * FROM lms_lesson_progress")) return { rows: [] };
