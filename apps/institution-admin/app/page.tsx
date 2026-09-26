@@ -6,7 +6,7 @@ import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import AdminInsights from "./AdminInsights";
-import AdminAccessView, { isPendingAccountRequest, type AccountRequest, type AdminAccessMode } from "./AdminAccessView";
+import AdminAccessView, { type AccountRequest, type AdminAccessMode } from "./AdminAccessView";
 import CourseBuilder from "./CourseBuilder";
 import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
