@@ -8,6 +8,9 @@ type Institution = {
   name: string;
   slug?: string;
   institution_type?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
   status?: string;
 };
 
@@ -87,6 +90,10 @@ export default function InstitutionOnboarding({
   onInstitutionCreated: (institution: Institution) => void;
 }) {
   const [name, setName] = useState("");
+  const [institutionType, setInstitutionType] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [website, setWebsite] = useState("");
   const [institution, setInstitution] = useState<Institution | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<ImportResult | null>(null);
@@ -117,7 +124,14 @@ export default function InstitutionOnboarding({
     try {
       const response = await request<ApiEnvelope<Institution>>(apiBase, "/institutions", {
         method: "POST",
-        body: JSON.stringify({ name: cleanName, tenantId }),
+        body: JSON.stringify({
+          name: cleanName,
+          institutionType: institutionType.trim() || undefined,
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
+          website: website.trim() || undefined,
+          tenantId,
+        }),
       });
       if (!response.data?.id || !response.data.name) {
         throw new Error("The institution was created, but the response did not include its details.");
@@ -199,6 +213,10 @@ export default function InstitutionOnboarding({
     if (!confirmed) return;
     setInstitution(null);
     setName("");
+    setInstitutionType("");
+    setEmail("");
+    setPhone("");
+    setWebsite("");
     setFile(null);
     setResult(null);
     setError("");
@@ -239,7 +257,7 @@ export default function InstitutionOnboarding({
             </p>
             {error && <div className="relationship-alert error-box" role="alert"><strong>Could not create institution</strong><p>{error}</p></div>}
             <form className="institution-onboarding-form" onSubmit={(event) => void createInstitution(event)}>
-              <label htmlFor="institution-name">Institution name</label>
+               <label htmlFor="institution-name">Institution name</label>
               <input
                 id="institution-name"
                 type="text"
@@ -250,6 +268,48 @@ export default function InstitutionOnboarding({
                 autoFocus
                 required
                 placeholder="Enter the institution name"
+              />
+              <label htmlFor="institution-type">Institution type</label>
+              <input
+                id="institution-type"
+                type="text"
+                value={institutionType}
+                onChange={(event) => setInstitutionType(event.target.value)}
+                minLength={2}
+                maxLength={60}
+                placeholder="College, university, or institute"
+              />
+              <div className="form-grid-two">
+                <div>
+                  <label htmlFor="institution-email">Contact email</label>
+                  <input
+                    id="institution-email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="contact@example.edu"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="institution-phone">Phone</label>
+                  <input
+                    id="institution-phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(event) => setPhone(event.target.value)}
+                    minLength={7}
+                    maxLength={30}
+                    placeholder="+91 00000 00000"
+                  />
+                </div>
+              </div>
+              <label htmlFor="institution-website">Website</label>
+              <input
+                id="institution-website"
+                type="url"
+                value={website}
+                onChange={(event) => setWebsite(event.target.value)}
+                placeholder="https://example.edu"
               />
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={onClose} disabled={creating}>Cancel</button>

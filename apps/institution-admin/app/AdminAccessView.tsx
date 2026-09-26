@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import InstitutionOnboarding from "./InstitutionOnboarding";
 
 export type AdminAccessMode = "learners" | "institution-profile" | "campuses" | "roles" | "account-requests";
@@ -22,6 +22,9 @@ type Institution = {
   name?: string;
   slug?: string;
   institution_type?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
   status?: string;
 };
 
@@ -72,6 +75,7 @@ function requestedRole(user: AccountRequest) {
 async function request<T>(apiBase: string, path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set("Accept", "application/json");
+  if (init?.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
   const response = await fetch(`${apiBase}${path}`, {
     ...init,
     credentials: "include",
@@ -140,6 +144,13 @@ export default function AdminAccessView({
   const [canCreateInstitution, setCanCreateInstitution] = useState(false);
   const [tenantId, setTenantId] = useState("");
   const [institutionFlowOpen, setInstitutionFlowOpen] = useState(false);
+  const [editingInstitution, setEditingInstitution] = useState<Institution | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editStatus, setEditStatus] = useState("ACTIVE");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editWebsite, setEditWebsite] = useState("");
+  const [savingInstitution, setSavingInstitution] = useState(false);
   const [campuses, setCampuses] = useState<Campus[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,7 +190,9 @@ export default function AdminAccessView({
             onAccountRequestCountChange?.(total);
           }
         } else if (mode === "institution-profile") {
-          const payload = await request<unknown>(apiBase, "/institutions/scoped-options");
+          const payload = canCreateInstitution
+            ? await request<unknown>(apiBase, "/institutions?page=1&pageSize=100")
+            : await request<unknown>(apiBase, "/institutions/scoped-options");
           if (!cancelled) setInstitutions(listData<Institution>(payload));
         } else if (mode === "campuses") {
           const [institutionPayload, campusPayload] = await Promise.all([
@@ -205,7 +218,7 @@ export default function AdminAccessView({
     return () => {
       cancelled = true;
     };
-  }, [accountRequestPage, apiBase, mode, onAccountRequestCountChange]);
+  }, [accountRequestPage, apiBase, canCreateInstitution, mode, onAccountRequestCountChange]);
 
   useEffect(() => {
     if (mode !== "institution-profile") {
@@ -241,6 +254,50 @@ export default function AdminAccessView({
       cancelled = true;
     };
   }, [apiBase, mode]);
+
+  function beginInstitutionEdit(institution: Institution) {
+    setEditingInstitution(institution);
+    setEditName(institution.name || "");
+    setEditStatus(institution.status || "ACTIVE");
+    setEditEmail(institution.email || "");
+    setEditPhone(institution.phone || "");
+    setEditWebsite(institution.website || "");
+    setError("");
+  }
+
+  async function saveInstitution(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingInstitution) return;
+    const name = editName.trim();
+    if (name.length < 2 || name.length > 180) {
+      setError("Enter an institution name between 2 and 180 characters.");
+      return;
+    }
+    setSavingInstitution(true);
+    setError("");
+    try {
+      const payload = await request<{ data: Institution }>(apiBase, `/institutions/${editingInstitution.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          name,
+          status: editStatus,
+          email: editEmail.trim() || undefined,
+          phone: editPhone.trim() || undefined,
+          website: editWebsite.trim() || undefined,
+        }),
+      });
+      const updated = payload.data;
+      if (!updated?.id) throw new Error("The institution was updated, but its details could not be read.");
+      setInstitutions((current) => current.map((institution) => (
+        institution.id === updated.id ? { ...institution, ...updated } : institution
+      )));
+      setEditingInstitution(null);
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "The institution could not be updated.");
+    } finally {
+      setSavingInstitution(false);
+    }
+  }
 
   const title = mode === "learners"
     ? "Learners"
@@ -339,13 +396,16 @@ export default function AdminAccessView({
 
       {!error && !loading && mode === "institution-profile" && institutions.length > 0 && (
         <div className="record-list">
-          <div className="list-head"><span>Institution</span><span>Type</span><span>Slug</span><span>Status</span></div>
+          <div className="list-head"><span>Institution</span><span>Type</span><span>Contact</span><span>Status</span><span>Manage</span></div>
           {institutions.map((institution) => (
             <div className="record-row" key={institution.id}>
               <div className="record-primary"><div className="record-avatar">{(institution.name || "I").charAt(0).toUpperCase()}</div><strong className="record-title">{institution.name || "Unnamed institution"}</strong></div>
               <span className="record-detail">{institution.institution_type || "Not specified"}</span>
-              <span className="record-detail">{institution.slug || "—"}</span>
+              <span className="record-detail">{institution.email || institution.phone || "No contact details"}</span>
               <span className={`status-badge ${institution.status === "ACTIVE" ? "is-active" : "is-inactive"}`}>{institution.status || "Unknown"}</span>
+              {canCreateInstitution ? (
+                <button className="row-action-link" type="button" onClick={() => beginInstitutionEdit(institution)}>Manage</button>
+              ) : <span className="record-detail">—</span>}
             </div>
           ))}
         </div>
@@ -400,6 +460,47 @@ export default function AdminAccessView({
             <div className="modal-actions">
               <button className="secondary-button" type="button" onClick={() => setSelectedRequest(null)}>Close</button>
             </div>
+          </section>
+        </div>
+      )}
+
+      {editingInstitution && mode === "institution-profile" && canCreateInstitution && (
+        <div className="modal-backdrop" role="presentation">
+          <section className="modal institution-onboarding-modal" role="dialog" aria-modal="true" aria-labelledby="institution-edit-title">
+            <div className="modal-heading">
+              <div>
+                <div className="eyebrow">Institution management</div>
+                <h2 id="institution-edit-title">Manage institution</h2>
+              </div>
+              <button className="close-button" type="button" onClick={() => setEditingInstitution(null)} disabled={savingInstitution} aria-label="Close institution management">×</button>
+            </div>
+            {error && <div className="relationship-alert error-box" role="alert"><strong>Could not update institution</strong><p>{error}</p></div>}
+            <form className="institution-onboarding-form" onSubmit={(event) => void saveInstitution(event)}>
+              <label htmlFor="edit-institution-name">Institution name</label>
+              <input id="edit-institution-name" type="text" value={editName} onChange={(event) => setEditName(event.target.value)} minLength={2} maxLength={180} required autoFocus />
+              <label htmlFor="edit-institution-status">Status</label>
+              <select id="edit-institution-status" value={editStatus} onChange={(event) => setEditStatus(event.target.value)}>
+                <option value="ACTIVE">Active</option>
+                <option value="SUSPENDED">Suspended</option>
+                <option value="ARCHIVED">Archived</option>
+              </select>
+              <div className="form-grid-two">
+                <div>
+                  <label htmlFor="edit-institution-email">Contact email</label>
+                  <input id="edit-institution-email" type="email" value={editEmail} onChange={(event) => setEditEmail(event.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="edit-institution-phone">Phone</label>
+                  <input id="edit-institution-phone" type="tel" value={editPhone} onChange={(event) => setEditPhone(event.target.value)} minLength={7} maxLength={30} />
+                </div>
+              </div>
+              <label htmlFor="edit-institution-website">Website</label>
+              <input id="edit-institution-website" type="url" value={editWebsite} onChange={(event) => setEditWebsite(event.target.value)} />
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setEditingInstitution(null)} disabled={savingInstitution}>Cancel</button>
+                <button className="primary-button" type="submit" disabled={savingInstitution}>{savingInstitution ? "Saving…" : "Save changes"}</button>
+              </div>
+            </form>
           </section>
         </div>
       )}
