@@ -7,6 +7,8 @@ import { DatabaseService } from "../../database/database.service";
 import type { AssignRoleDto, CreateUserDto, UpdateUserDto } from "./user.dto";
 import { hashPassword } from "../auth/password-security";
 
+const unscopedRegistrationRoleCodes = new Set(["TEACHER", "INSTRUCTOR", "INSTITUTION_ADMINISTRATOR"]);
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -31,32 +33,47 @@ export class UsersService {
     const scopedToActor = !isPlatformUser(user);
     const values: unknown[] = [];
     const conditions: string[] = [];
+    let status: string | undefined;
+    let roleCodes: string[] | undefined;
+
+    if (statusFilter !== undefined) {
+      status = statusFilter.trim().toUpperCase();
+      if (!["ACTIVE", "PENDING", "DISABLED", "ARCHIVED"].includes(status)) {
+        throw new BadRequestException("The requested user status filter is invalid.");
+      }
+    }
+    if (roleCodeFilter !== undefined) {
+      const requestedRoleCodes = roleCodeFilter.split(",").map((code) => code.trim().toUpperCase());
+      if (
+        requestedRoleCodes.length === 0
+        || requestedRoleCodes.length > 12
+        || requestedRoleCodes.some((code) => !/^[A-Z][A-Z0-9_]*$/.test(code))
+      ) {
+        throw new BadRequestException("The requested role filter is invalid.");
+      }
+      roleCodes = [...new Set(requestedRoleCodes)];
+    }
+
     if (scope) {
       values.push(scope);
       conditions.push(`u.tenant_id = $${values.length}`);
     }
     if (scopedToActor) {
       values.push(user.id);
-      conditions.push(this.userScopePredicate("u", values.length));
+      const actorParameter = values.length;
+      const scopePredicate = this.userScopePredicate("u", actorParameter);
+      const isPendingStaffRequestList = status === "PENDING"
+        && roleCodes?.some((code) => unscopedRegistrationRoleCodes.has(code));
+      conditions.push(isPendingStaffRequestList
+        ? `(${scopePredicate} OR ${this.unscopedPendingRegistrationPredicate("u", actorParameter)})`
+        : scopePredicate);
     }
-    if (statusFilter !== undefined) {
-      const status = statusFilter.trim().toUpperCase();
-      if (!["ACTIVE", "PENDING", "DISABLED", "ARCHIVED"].includes(status)) {
-        throw new BadRequestException("The requested user status filter is invalid.");
-      }
+    if (status !== undefined) {
       values.push(status);
       conditions.push(`u.status = $${values.length}`);
     }
-    if (roleCodeFilter !== undefined) {
-      const roleCodes = roleCodeFilter.split(",").map((code) => code.trim().toUpperCase());
-      if (
-        roleCodes.length === 0
-        || roleCodes.length > 12
-        || roleCodes.some((code) => !/^[A-Z][A-Z0-9_]*$/.test(code))
-      ) {
-        throw new BadRequestException("The requested role filter is invalid.");
-      }
-      values.push([...new Set(roleCodes)]);
+    if (roleCodes !== undefined) {
+      values.push(roleCodes);
       conditions.push(`EXISTS (
         SELECT 1
         FROM user_roles filter_ur
@@ -219,6 +236,47 @@ export class UsersService {
       WHERE target_scope.user_id = ${alias}.id
         AND target_scope.tenant_id = ${alias}.tenant_id
         AND target_role.status = 'ACTIVE'
+    )`;
+  }
+
+  private unscopedPendingRegistrationPredicate(alias: string, actorParameter: number) {
+    return `EXISTS (
+      SELECT 1
+      FROM user_roles pending_request_scope
+      JOIN roles pending_request_role
+        ON pending_request_role.id = pending_request_scope.role_id
+       AND pending_request_role.tenant_id = pending_request_scope.tenant_id
+      WHERE pending_request_scope.user_id = ${alias}.id
+        AND pending_request_scope.tenant_id = ${alias}.tenant_id
+        AND pending_request_scope.institution_id IS NULL
+        AND pending_request_scope.campus_id IS NULL
+        AND pending_request_role.status = 'ACTIVE'
+        AND pending_request_role.code IN ('TEACHER', 'INSTRUCTOR', 'INSTITUTION_ADMINISTRATOR')
+        AND ${alias}.status = 'PENDING'
+        AND (
+          SELECT count(*)
+          FROM institutions tenant_institution
+          WHERE tenant_institution.tenant_id = ${alias}.tenant_id
+            AND tenant_institution.status <> 'ARCHIVED'
+        ) = 1
+        AND EXISTS (
+          SELECT 1
+          FROM user_roles actor_registration_scope
+          JOIN institutions actor_registration_institution
+            ON actor_registration_institution.id = actor_registration_scope.institution_id
+           AND actor_registration_institution.tenant_id = actor_registration_scope.tenant_id
+           AND actor_registration_institution.status <> 'ARCHIVED'
+          WHERE actor_registration_scope.user_id = $${actorParameter}
+            AND actor_registration_scope.tenant_id = ${alias}.tenant_id
+            AND actor_registration_scope.institution_id IS NOT NULL
+            AND NOT EXISTS (
+              SELECT 1
+              FROM institutions other_tenant_institution
+              WHERE other_tenant_institution.tenant_id = ${alias}.tenant_id
+                AND other_tenant_institution.status <> 'ARCHIVED'
+                AND other_tenant_institution.id <> actor_registration_scope.institution_id
+            )
+        )
     )`;
   }
 }
