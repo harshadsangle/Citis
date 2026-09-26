@@ -20,3 +20,9 @@ The demo learner password is an environment secret consumed by the seed and regr
 **Why:** A browser can correctly reach the API and still fail when the documented credential differs from a stale seed literal, while password literals also create avoidable credential exposure.
 
 **How to apply:** Configure `DEMO_LEARNER_PASSWORD` through workspace secrets before seeding or running the learner auth regression; keep authentication itself server-authoritative.
+
+In the local Replit browser, the public login can fail with “Failed to fetch” before any `/auth/login` request reaches the API because the development API origin is outside the page's CSP `connect-src`. A temporary CDP CSP bypass allowed the ordinary login/session flow to proceed for portal checks, but that does not make unmodified sign-in pass.
+
+**Why:** This failure happens before credential validation, so changing passwords or reseeding accounts would be the wrong first response.
+
+**How to apply:** Check browser console and network activity before changing auth data; if a temporary `Page.setBypassCSP` is used for local testing, report baseline sign-in as blocked and keep the bypass isolated.
