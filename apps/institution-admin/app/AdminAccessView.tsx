@@ -117,6 +117,9 @@ export default function AdminAccessView({
 }) {
   const [learners, setLearners] = useState<Learner[]>([]);
   const [accountRequests, setAccountRequests] = useState<AccountRequest[]>([]);
+  const [accountRequestTotal, setAccountRequestTotal] = useState(0);
+  const [accountRequestPage, setAccountRequestPage] = useState(1);
+  const [accountRequestTotalPages, setAccountRequestTotalPages] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<AccountRequest | null>(null);
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [campuses, setCampuses] = useState<Campus[]>([]);
@@ -140,12 +143,22 @@ export default function AdminAccessView({
         } else if (mode === "account-requests") {
           const payload = await request<unknown>(
             apiBase,
-            "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR",
+            `/users?page=${accountRequestPage}&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR`,
           );
-          const requests = listData<AccountRequest>(payload).filter(isPendingAccountRequest);
+          if (typeof payload !== "object" || payload === null || !Array.isArray((payload as { data?: unknown }).data)) {
+            throw new Error("The response did not contain account requests.");
+          }
+          const paginated = payload as {
+            data: AccountRequest[];
+            meta?: { pagination?: { total?: number; totalPages?: number } };
+          };
+          const requests = paginated.data.filter(isPendingAccountRequest);
           if (!cancelled) {
             setAccountRequests(requests);
-            onAccountRequestCountChange?.(requests.length);
+            const total = paginated.meta?.pagination?.total ?? requests.length;
+            setAccountRequestTotal(total);
+            setAccountRequestTotalPages(Math.max(1, paginated.meta?.pagination?.totalPages ?? 1));
+            onAccountRequestCountChange?.(total);
           }
         } else if (mode === "institution-profile") {
           const payload = await request<unknown>(apiBase, "/institutions/scoped-options");
@@ -174,7 +187,7 @@ export default function AdminAccessView({
     return () => {
       cancelled = true;
     };
-  }, [apiBase, mode, onAccountRequestCountChange]);
+  }, [accountRequestPage, apiBase, mode, onAccountRequestCountChange]);
 
   const title = mode === "learners"
     ? "Learners"
@@ -192,7 +205,7 @@ export default function AdminAccessView({
       : mode === "campuses"
         ? campuses.length
         : mode === "account-requests"
-          ? accountRequests.length
+          ? accountRequestTotal
           : roles.length;
   const summary = loading
     ? mode === "account-requests" ? "Loading staff registrations awaiting review…" : "Loading records in your current institution scope…"
@@ -251,6 +264,13 @@ export default function AdminAccessView({
               <button className="row-action-link" type="button" onClick={() => setSelectedRequest(accountRequest)}>Review request</button>
             </div>
           ))}
+          {accountRequestTotalPages > 1 && (
+            <div className="account-request-pagination" aria-label="Account request pages">
+              <span>Page {accountRequestPage} of {accountRequestTotalPages}</span>
+              <button type="button" onClick={() => setAccountRequestPage((page) => Math.max(1, page - 1))} disabled={accountRequestPage <= 1}>Previous</button>
+              <button type="button" onClick={() => setAccountRequestPage((page) => Math.min(accountRequestTotalPages, page + 1))} disabled={accountRequestPage >= accountRequestTotalPages}>Next</button>
+            </div>
+          )}
         </div>
       )}
 

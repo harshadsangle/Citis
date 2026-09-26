@@ -325,7 +325,7 @@ export default function InstitutionAdminPage() {
         const payload = await request<ApiList<AccountRequest>>(
           "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR",
         );
-        if (!cancelled) setPendingAccountRequestCount(payload.data.filter(isPendingAccountRequest).length);
+        if (!cancelled) setPendingAccountRequestCount(payload.meta.pagination.total);
       } catch {
         if (!cancelled) setPendingAccountRequestCount(null);
       }
