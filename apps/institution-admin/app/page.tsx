@@ -717,9 +717,11 @@ export default function InstitutionAdminPage() {
                 </button>
                 <button className="profile-menu-item" type="button" onClick={(event) => {
                   event.currentTarget.closest("details")?.removeAttribute("open");
-                  const destination = new URL(lmsHomepageUrl());
-                  destination.pathname = "/auth/forgot-password";
-                  destination.search = "?portal=admin";
+                  const website = process.env.NODE_ENV === "production"
+                    ? "https://www.citisinfotech.in"
+                    : lmsHomepageUrl();
+                  const destination = new URL("/auth/forgot-password", website);
+                  destination.searchParams.set("portal", "admin");
                   window.location.assign(destination.toString());
                 }}>
                   <span className="profile-menu-icon" aria-hidden="true">✦</span><span><strong>Recovery Assistant</strong><small>Reset or recover account access</small></span>
