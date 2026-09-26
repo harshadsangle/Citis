@@ -11,6 +11,7 @@
 - [Public frontend project root](public-frontend-project-root.md) — start the public Next app from its own directory because a duplicate root App Router tree exists in the workspace.
 - [CompTIA objective imports](comptia-objective-imports.md) — ignore repeated TOC markers and nested examples when mapping official PDF objectives to LMS lessons.
 - [LMS authentication diagnosis](lms-auth-diagnosis.md) — verify login, session lookup, portal entry, and dashboard requests separately before changing auth logic.
+- [Unscoped staff registration visibility](unscoped-registration-scope.md) — infer institution access only for a tenant’s sole non-archived institution; otherwise require explicit assignment.
 - [LMS provider branding](lms-provider-branding.md) — certification catalogue headers need contained provider-specific marks verified in the live preview.
 - [LMS content preservation](lms-content-preservation.md) — preserve official LMS materials while limiting provider cleanup to UI references, links, branding, and integrations.
 - [CSP-safe typography](csp-safe-typography.md) — this project’s CSP blocks remote stylesheet imports, so portal typography must use bundled or system font stacks.
