@@ -323,7 +323,7 @@ export default function InstitutionAdminPage() {
     async function loadPendingAccountRequests() {
       try {
         const payload = await request<ApiList<AccountRequest>>(
-          "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTITUTION_ADMINISTRATOR",
+          "/users?page=1&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR",
         );
         if (!cancelled) setPendingAccountRequestCount(payload.data.filter(isPendingAccountRequest).length);
       } catch {
