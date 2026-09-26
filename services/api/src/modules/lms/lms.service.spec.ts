@@ -775,7 +775,7 @@ test("publishing content writes an auditable status mutation", async () => {
   assert.equal(audits[0].tenantId, user.tenantId);
 });
 
-test("an LMS administrator or the explicitly assigned instructor can publish a pending course", async () => {
+test("only an LMS administrator can publish a pending course", async () => {
   const teacher: AuthenticatedUser = {
     id: "teacher-1",
     tenantId: user.tenantId,
@@ -787,20 +787,18 @@ test("an LMS administrator or the explicitly assigned instructor can publish a p
     scopes: [{ institutionId: "institution-1", campusId: null }],
   };
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  let databaseQueries = 0;
   const { service, audits } = serviceWith(async (text, values) => {
+    databaseQueries += 1;
     if (text.includes("FROM courses c") && text.includes("programme_status")) {
       return { rows: [{ id: "course-1", tenant_id: teacher.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
     }
-    if (text.includes("FROM lms_instructor_assignments")) return { rows: [{ allowed: 1 }] };
     if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "PUBLISHED", published_by: values[1] }] };
     return { rows: [] };
   });
 
-  const published = await service.publishReviewedCourse("course-1", teacherRequest);
-
-  assert.equal(published.status, "PUBLISHED");
-  assert.equal(published.published_by, teacher.id);
-  assert.equal(audits.at(-1)?.action, "PUBLISH");
+  await assert.rejects(service.publishReviewedCourse("course-1", teacherRequest), ForbiddenException);
+  assert.equal(databaseQueries, 0);
 
   const adminPublished = await service.publishReviewedCourse("course-1", request);
   assert.equal(adminPublished.status, "PUBLISHED");
@@ -986,7 +984,7 @@ test("institution administrators remain limited to courses in their assigned ins
   assert.equal(courseUpdated, false);
 });
 
-test("instructor rejection requires a reason and returns the course to Admin", async () => {
+test("CITIS Admin can reject a pending course with a reason; instructors cannot", async () => {
   const teacher: AuthenticatedUser = {
     id: "teacher-1",
     tenantId: user.tenantId,
@@ -998,17 +996,26 @@ test("instructor rejection requires a reason and returns the course to Admin", a
     scopes: [{ institutionId: "institution-1", campusId: null }],
   };
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  let databaseQueries = 0;
   const { service, audits } = serviceWith(async (text, values) => {
+    databaseQueries += 1;
     if (text.includes("FROM courses c") && text.includes("programme_status")) {
-      return { rows: [{ id: "course-1", tenant_id: teacher.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
     }
-    if (text.includes("FROM lms_instructor_assignments")) return { rows: [{ allowed: 1 }] };
     if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "REJECTED", rejection_reason: values[1] }] };
     return { rows: [] };
   });
 
-  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: " " }, teacherRequest), BadRequestException);
-  const rejected = await service.rejectReviewedCourse("course-1", { reason: "Add a transcript to the video." }, teacherRequest);
+  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: "Add a transcript." }, teacherRequest), ForbiddenException);
+  assert.equal(databaseQueries, 0);
+  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: " " }, adminRequest), BadRequestException);
+  const rejected = await service.rejectReviewedCourse("course-1", { reason: "Add a transcript to the video." }, adminRequest);
 
   assert.equal(rejected.status, "REJECTED");
   assert.equal(rejected.rejection_reason, "Add a transcript to the video.");

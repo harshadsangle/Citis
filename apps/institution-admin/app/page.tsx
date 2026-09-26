@@ -251,8 +251,12 @@ export default function InstitutionAdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishingCourseId, setPublishingCourseId] = useState("");
+  const [rejectingCourseId, setRejectingCourseId] = useState("");
   const [administratorPublishAccess, setAdministratorPublishAccess] = useState<"checking" | "admin" | "other">("checking");
   const [publishCourseTarget, setPublishCourseTarget] = useState<ContentRecord | null>(null);
+  const [rejectCourseTarget, setRejectCourseTarget] = useState<ContentRecord | null>(null);
+  const [courseRejectionReason, setCourseRejectionReason] = useState("");
+  const [courseRejectionError, setCourseRejectionError] = useState("");
   const [publishInstitutionOptions, setPublishInstitutionOptions] = useState<InstitutionOption[]>([]);
   const [selectedPublishInstitutionIds, setSelectedPublishInstitutionIds] = useState<string[]>([]);
   const [loadingPublishInstitutions, setLoadingPublishInstitutions] = useState(false);
@@ -522,6 +526,44 @@ export default function InstitutionAdminPage() {
       setPublishInstitutionError(reason instanceof Error ? reason.message : "The course could not be published.");
     } finally {
       setPublishingCourseId("");
+    }
+  }
+
+  function openCourseReject(record: ContentRecord) {
+    if (record.status !== "INSTRUCTOR_PENDING") return;
+    setRejectCourseTarget(record);
+    setCourseRejectionReason("");
+    setCourseRejectionError("");
+  }
+
+  async function submitAdminCourseReject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!rejectCourseTarget || rejectingCourseId) return;
+    const reason = courseRejectionReason.trim();
+    if (reason.length < 2) {
+      setCourseRejectionError("Add a rejection reason of at least two characters.");
+      return;
+    }
+    const target = rejectCourseTarget;
+    setRejectingCourseId(target.id);
+    setCourseRejectionError("");
+    try {
+      const response = await request<{ success: true; data: ContentRecord }>(
+        `/courses/${encodeURIComponent(target.id)}/reject`,
+        { method: "POST", body: JSON.stringify({ reason }) },
+      );
+      if (response.data.status !== "REJECTED") throw new Error("The course was not marked as rejected.");
+      setRecords((current) => current.map((course) => (
+        course.id === target.id ? { ...course, ...response.data } : course
+      )));
+      if (courseView === "INSTRUCTOR_PENDING") setCourseView("REJECTED");
+      setToast(`${titleFor(target)} was rejected with the reason recorded.`);
+      setRejectCourseTarget(null);
+      setCourseRejectionReason("");
+    } catch (reasonError) {
+      setCourseRejectionError(reasonError instanceof Error ? reasonError.message : "The course could not be rejected.");
+    } finally {
+      setRejectingCourseId("");
     }
   }
 
@@ -988,9 +1030,9 @@ export default function InstitutionAdminPage() {
                       ) : <div className="record-avatar">{(titleFor(record)[0] || "?").toUpperCase()}</div>}
                       <div><button className="record-title" type="button" onClick={() => selectRecord(record)}>{titleFor(record)}</button><span className="record-meta">{record.code || record.resource_type || (record.description ? record.description.slice(0, 44) : "No description")}{activeKind === "courses" ? ` · ${record.status.replaceAll("_", " ")}` : ""}</span></div>
                     </div>
-                    <div className="record-detail">{record.rejection_reason ? <><strong>Instructor changes requested:</strong> {record.rejection_reason}</> : record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
+                     <div className="record-detail">{record.rejection_reason ? <><strong>Rejection reason:</strong> {record.rejection_reason}</> : record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
                     <div className="updated-detail">Recently edited</div>
-                        <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button>{record.status === "INSTRUCTOR_PENDING" && <button type="button" onClick={() => void publishPendingCourse(record)} disabled={publishingCourseId !== "" || loadingPublishInstitutions || administratorPublishAccess === "checking"}>{loadingPublishInstitutions && publishCourseTarget?.id === record.id ? "Loading institutions…" : publishingCourseId === record.id ? "Publishing…" : "Publish"}</button>}{record.status === "PUBLISHED" && administratorPublishAccess === "admin" && <button type="button" onClick={() => void openCourseAllocationEditor(record)} disabled={loadingCourseAllocations || savingCourseAllocations}>{loadingCourseAllocations && allocationCourseTarget?.id === record.id ? "Loading…" : "Allocations"}</button>}</>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
+                         <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button>{record.status === "INSTRUCTOR_PENDING" && <><button type="button" onClick={() => void publishPendingCourse(record)} disabled={publishingCourseId !== "" || loadingPublishInstitutions || administratorPublishAccess === "checking"}>{loadingPublishInstitutions && publishCourseTarget?.id === record.id ? "Loading institutions…" : publishingCourseId === record.id ? "Publishing…" : "Publish"}</button><button type="button" onClick={() => openCourseReject(record)} disabled={rejectingCourseId !== "" || publishingCourseId !== ""}>{rejectingCourseId === record.id ? "Rejecting…" : "Reject"}</button></>}{record.status === "PUBLISHED" && administratorPublishAccess === "admin" && <button type="button" onClick={() => void openCourseAllocationEditor(record)} disabled={loadingCourseAllocations || savingCourseAllocations}>{loadingCourseAllocations && allocationCourseTarget?.id === record.id ? "Loading…" : "Allocations"}</button>}</>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
                   </article>
                 ))}
               </div>
@@ -1064,6 +1106,25 @@ export default function InstitutionAdminPage() {
                 <button className="primary-button" type="submit" disabled={loadingPublishInstitutions || publishInstitutionOptions.length === 0 || selectedPublishInstitutionIds.length === 0 || publishingCourseId !== ""}>
                   {publishingCourseId === publishCourseTarget.id ? "Publishing…" : "Publish course"}
                 </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+      {rejectCourseTarget && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !rejectingCourseId) setRejectCourseTarget(null); }}>
+          <section className="modal" role="dialog" aria-modal="true" aria-labelledby="course-rejection-title">
+            <div className="modal-heading">
+              <div><div className="eyebrow">Course review</div><h2 id="course-rejection-title">Reject {titleFor(rejectCourseTarget)}?</h2></div>
+              <button className="close-button" type="button" onClick={() => setRejectCourseTarget(null)} disabled={rejectingCourseId !== ""} aria-label="Close rejection form">×</button>
+            </div>
+            <p className="modal-intro">Give a clear reason for the rejection. Admin will retain this note with the course record.</p>
+            {courseRejectionError && <div className="relationship-alert error-box" role="alert"><strong>Course was not rejected</strong><p>{courseRejectionError}</p></div>}
+            <form onSubmit={(event) => void submitAdminCourseReject(event)}>
+              <label>Rejection reason *<textarea required minLength={2} maxLength={2000} rows={4} value={courseRejectionReason} onChange={(event) => setCourseRejectionReason(event.target.value)} placeholder="Explain what needs to change before publication." /></label>
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setRejectCourseTarget(null)} disabled={rejectingCourseId !== ""}>Cancel</button>
+                <button className="primary-button" type="submit" disabled={rejectingCourseId !== "" || courseRejectionReason.trim().length < 2}>{rejectingCourseId === rejectCourseTarget.id ? "Rejecting…" : "Reject course"}</button>
               </div>
             </form>
           </section>
