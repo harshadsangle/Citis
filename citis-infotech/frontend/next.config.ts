@@ -4,6 +4,8 @@ import { resolve } from "node:path";
 const apiHost = process.env.NEXT_PUBLIC_API_HOST ?? "localhost";
 const strapiHost = process.env.NEXT_PUBLIC_STRAPI_HOST ?? "localhost";
 const lmsApiOrigin = process.env.LMS_API_ORIGIN ?? "http://127.0.0.1:4000/api/v1";
+const developmentApiConnectSource =
+  process.env.NODE_ENV === "development" ? " http://localhost:4000" : "";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -48,7 +50,7 @@ const nextConfig: NextConfig = {
       {
         key: "Content-Security-Policy",
         value:
-          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://localhost:1337 https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://localhost:1337 https:; frame-src 'self' https://www.openstreetmap.org https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'",
+          `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: http://localhost:5000 http://localhost:1337 https:; font-src 'self' data:; connect-src 'self' http://localhost:5000 http://localhost:1337${developmentApiConnectSource} https:; frame-src 'self' https://www.openstreetmap.org https://www.google.com https://maps.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'`,
       },
     ];
 
