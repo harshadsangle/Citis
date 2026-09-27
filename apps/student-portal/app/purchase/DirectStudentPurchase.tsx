@@ -508,6 +508,14 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
 
   const displayTitle = courseTitle || courseSlug.replace(/-/g, " ");
   const showOtpForm = otpPurpose !== null;
+  const currentStep = accountState === "checking"
+    ? 1
+    : accountState === "guest" || accountState === "other"
+      ? 2
+      : unlocked ? 4 : 3;
+  const stepClass = (step: number) => currentStep === step
+    ? "is-current"
+    : currentStep > step ? "is-complete" : "";
 
   return (
     <main className="purchase-page">
@@ -521,10 +529,10 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
         </header>
 
         <nav className="purchase-steps" aria-label="Purchase progress">
-          <span className="is-current"><i>1</i>Course</span>
-          <span className={accountState === "direct" ? "is-current" : ""}><i>2</i>Account</span>
-          <span className={checkoutBusy || unlocked ? "is-current" : ""}><i>3</i>Payment</span>
-          <span className={unlocked ? "is-current" : ""}><i>4</i>Access</span>
+          <span className={stepClass(1)}><i>1</i>Course</span>
+          <span className={stepClass(2)}><i>2</i>Account</span>
+          <span className={stepClass(3)}><i>3</i>Payment</span>
+          <span className={stepClass(4)}><i>4</i>Access</span>
         </nav>
 
         <div className="purchase-layout">

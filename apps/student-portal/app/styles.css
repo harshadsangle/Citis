@@ -1404,6 +1404,16 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
   background: #176276;
 }
 
+.purchase-steps .is-complete {
+  color: #176276;
+}
+
+.purchase-steps .is-complete i {
+  border-color: #acd0d2;
+  color: #176276;
+  background: #e6f3f2;
+}
+
 .purchase-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(340px, .9fr);
