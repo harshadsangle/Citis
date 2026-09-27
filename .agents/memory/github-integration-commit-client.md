@@ -14,3 +14,9 @@ When matching a connection from the Integrations view, compare its `connection:<
 **Why:** `listConnections()` returned the same GitHub connection ID without its type prefix, so direct string comparison incorrectly treated the authorized connection as unavailable.
 
 **How to apply:** Keep the connection identifier inside the impure API call; log only non-credential metadata when debugging connection selection.
+
+When transferring local Git blob content through `shellExec`, split base64 output into chunks smaller than about 60 KB, even when requesting a larger output limit. Larger outputs may be silently truncated.
+
+**Why:** A local blob's encoded output was truncated below its expected length despite a higher requested limit, which would corrupt a GitHub upload.
+
+**How to apply:** Slice the base64 stream with `tail -c +N | head -c K`, reassemble it, and check its expected encoded length before uploading and verifying the returned blob SHA.
