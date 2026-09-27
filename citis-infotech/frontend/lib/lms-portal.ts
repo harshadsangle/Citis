@@ -54,6 +54,15 @@ async function requestOrigin(portal: LmsPortal) {
     process.env.REPLIT_DEV_DOMAIN,
     ...(process.env.REPLIT_DOMAINS || "").split(","),
   ].filter(Boolean));
+  const isLoopbackHost = hostname === "localhost" || hostname.startsWith("127.");
+  const replitDevDomain = process.env.REPLIT_DEV_DOMAIN?.trim();
+  if (portal === "admin" && isLoopbackHost && replitDevDomain) {
+    // Replit forwards app requests internally, but the browser cannot follow a
+    // redirect to the workspace's loopback address.
+    const origin = new URL(`https://${replitDevDomain}`);
+    origin.port = String(portalConfig[portal].externalPort);
+    return origin.origin;
+  }
   const host = allowedHosts.has(hostname) ? requestedHost : "127.0.0.1:5000";
   const forwardedProto = requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim();
   const protocol = forwardedProto || (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
@@ -63,9 +72,15 @@ async function requestOrigin(portal: LmsPortal) {
   return origin.origin;
 }
 
-export async function redirectToLmsPortal(portal: LmsPortal, provider?: LmsCourseProvider) {
+export async function redirectToLmsPortal(portal: LmsPortal, provider?: LmsCourseProvider, returnPath = "/") {
   const origin = configuredOrigin(portal) || (await requestOrigin(portal));
-  const destination = new URL(`${origin}/`);
+  if (!returnPath.startsWith("/") || returnPath.startsWith("//") || returnPath.includes("\\")) {
+    throw new Error("LMS portal return paths must be same-origin absolute paths.");
+  }
+  const destination = new URL(returnPath, origin);
+  if (destination.origin !== origin) {
+    throw new Error("LMS portal return paths must stay on the configured portal origin.");
+  }
   if (provider) destination.searchParams.set("provider", provider);
   redirect(destination.toString());
 }

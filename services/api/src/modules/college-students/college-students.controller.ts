@@ -7,7 +7,7 @@ import { RequirePermission } from "../../guards/permission.decorator";
 import { PermissionGuard } from "../../guards/permission.guard";
 import { AuthGuard } from "../auth/auth.guard";
 import type { LmsUpload } from "../lms/resource-storage.service";
-import { CollegeStudentListQueryDto, CollegeStudentStatusDto } from "./college-students.dto";
+import { CollegeStudentImportDto, CollegeStudentListQueryDto, CollegeStudentStatusDto } from "./college-students.dto";
 import { CollegeStudentsService } from "./college-students.service";
 
 @Controller("college-students")
@@ -18,8 +18,12 @@ export class CollegeStudentsController {
   @Post("imports")
   @RequirePermission("lms.student_import.create")
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 5 * 1024 * 1024 } }))
-  async import(@UploadedFile() file: LmsUpload, @Req() request: ContextRequest) {
-    return successResponse(await this.students.importCsv(file, request), request);
+  async import(
+    @UploadedFile() file: LmsUpload,
+    @Req() request: ContextRequest,
+    @Body() input: CollegeStudentImportDto = {},
+  ) {
+    return successResponse(await this.students.importCsv(file, request, input.institutionId), request);
   }
 
   @Get("imports")

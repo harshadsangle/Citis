@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, Put, Query, Req, Res, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from "@nestjs/common";
 import { AnyFilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import type { ContextRequest } from "../../common/request-context";
@@ -29,6 +29,7 @@ import {
   GradeAssignmentSubmissionDto,
   ProgressViewerQueryDto,
   RejectCourseDto,
+  ReplaceCourseInstitutionAllocationsDto,
   RelationshipListQueryDto,
   SubmitAssignmentDto,
   SubmitAssessmentAttemptDto,
@@ -42,6 +43,7 @@ import {
   UpdateLearningResourceProgressDto,
   UpdateLessonDto,
   UpdateProgrammeDto,
+  PublishCourseDto,
 } from "./lms.dto";
 import { LmsService } from "./lms.service";
 import { AssessmentService } from "./assessment.service";
@@ -151,6 +153,22 @@ export class LmsController {
     return successResponse(await this.lms.getCourse(id, request.context.user!), request);
   }
 
+  @Get("courses/:id/institution-allocations")
+  @RequirePermission("lms.course.view")
+  async courseInstitutionAllocations(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.listCourseInstitutionAllocations(id, request.context.user!), request);
+  }
+
+  @Put("courses/:id/institution-allocations")
+  @RequirePermission("lms.course.update")
+  async updateCourseInstitutionAllocations(
+    @Param("id") id: string,
+    @Body() input: ReplaceCourseInstitutionAllocationsDto,
+    @Req() request: ContextRequest,
+  ) {
+    return successResponse(await this.lms.replaceCourseInstitutionAllocations(id, input, request), request);
+  }
+
   @Patch("courses/:id")
   @RequirePermission("lms.course.update")
   async updateCourse(@Param("id") id: string, @Body() input: UpdateCourseDto, @Req() request: ContextRequest) {
@@ -159,8 +177,8 @@ export class LmsController {
 
   @Post("courses/:id/publish")
   @RequirePermission("lms.course.publish")
-  async publishCourse(@Param("id") id: string, @Req() request: ContextRequest) {
-    return successResponse(await this.lms.publishReviewedCourse(id, request), request);
+  async publishCourse(@Param("id") id: string, @Body() input: PublishCourseDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.publishReviewedCourse(id, request, input), request);
   }
 
   @Post("courses/:id/reject")

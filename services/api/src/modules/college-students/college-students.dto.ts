@@ -1,4 +1,10 @@
-import { IsIn, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsIn, IsOptional, IsString, IsUUID, MaxLength, MinLength } from "class-validator";
+
+export class CollegeStudentImportDto {
+  @IsOptional()
+  @IsUUID()
+  institutionId?: string;
+}
 
 export class CollegeStudentStatusDto {
   @IsIn(["ACTIVE", "INACTIVE"])

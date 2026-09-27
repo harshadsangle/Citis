@@ -40,6 +40,16 @@ interface ParsedStudent {
   status: "ACTIVE" | "INACTIVE";
 }
 
+type StudentColumnIndexes = {
+  collegeName?: number;
+  collegeUserId: number;
+  studentName: number;
+  password: number;
+  status: number;
+  email?: number;
+  mobile?: number;
+};
+
 function safeFilename(name: string) {
   return name.trim().slice(0, 255) || "college-students.csv";
 }
@@ -70,32 +80,38 @@ export class CollegeStudentsService {
     }
   }
 
-  private headerIndexes(headers: string[]) {
+  private headerIndexes(headers: string[], institutionSelected = false): StudentColumnIndexes {
     const indexes = new Map(headers.map((header, index) => [normalizedHeader(header), index]));
     const find = (...names: string[]) => names.map(normalizedHeader).map((name) => indexes.get(name)).find((index) => index !== undefined);
-    const required = {
-      collegeName: find("College/University", "College University", "Institution"),
-      collegeUserId: find("College User ID", "College UserID", "User ID", "Student ID"),
-      studentName: find("Student Name", "Name"),
-      password: find("Password supplied by college", "Password", "Temporary Password"),
-      status: find("Active/Inactive status", "Status"),
-    };
-    const missing = Object.entries(required)
-      .filter(([, value]) => value === undefined)
-      .map(([key]) => key);
-    if (missing.length) {
-      throw new BadRequestException(`CSV is missing required columns: ${missing.join(", ")}.`);
-    }
+    const collegeName = find("College/University", "College University", "Institution");
+    const required = [
+      ...(!institutionSelected ? [{ label: "College/University", index: collegeName }] : []),
+      { label: "College User ID", index: find("College User ID", "College UserID", "User ID", "Student ID") },
+      { label: "Student Name", index: find("Student Name", "Name") },
+      { label: "Password", index: find("Password supplied by college", "Password", "Temporary Password") },
+      { label: "Active/Inactive status", index: find("Active/Inactive status", "Status") },
+    ];
+    const missing = required.filter(({ index }) => index === undefined).map(({ label }) => label);
+    if (missing.length) throw new BadRequestException(`CSV is missing required columns: ${missing.join(", ")}.`);
     return {
-      ...required as { [K in keyof typeof required]: number },
+      collegeName,
+      collegeUserId: find("College User ID", "College UserID", "User ID", "Student ID")!,
+      studentName: find("Student Name", "Name")!,
+      password: find("Password supplied by college", "Password", "Temporary Password")!,
+      status: find("Active/Inactive status", "Status")!,
       email: find("Email", "Email optional"),
       mobile: find("Phone", "Mobile", "Phone optional"),
     };
   }
 
-  private parseStudent(record: CsvRecord, indexes: ReturnType<CollegeStudentsService["headerIndexes"]>) {
+  private parseStudent(
+    record: CsvRecord,
+    indexes: StudentColumnIndexes,
+    selectedInstitutionName?: string,
+  ) {
     const cell = (index: number | undefined) => (index === undefined ? "" : (record.row[index] ?? "").trim());
-    const collegeName = cell(indexes.collegeName);
+    const csvCollegeName = cell(indexes.collegeName);
+    const collegeName = selectedInstitutionName || csvCollegeName;
     const collegeUserId = cell(indexes.collegeUserId);
     const studentName = cell(indexes.studentName);
     const emailValue = cell(indexes.email);
@@ -105,6 +121,9 @@ export class CollegeStudentsService {
     const errors: string[] = [];
 
     if (!collegeName) errors.push("College/University is required.");
+    if (selectedInstitutionName && csvCollegeName && csvCollegeName.toLowerCase() !== selectedInstitutionName.toLowerCase()) {
+      errors.push("College/University must match the selected institution.");
+    }
     if (!collegeUserId || !/^[A-Za-z0-9._/@-]{1,100}$/.test(collegeUserId)) errors.push("College User ID is required and must be a valid identifier.");
     if (!studentName || studentName.length > 160) errors.push("Student Name is required.");
     if (!password || password.length > 128 || !STRONG_PASSWORD_PATTERN.test(password)) {
@@ -135,17 +154,21 @@ export class CollegeStudentsService {
     importId: string,
     rowNumber: number,
     data: ParsedStudent,
+    selectedInstitutionId?: string,
   ): Promise<{ status: "IMPORTED" | "UPDATED"; userId: string; institutionId: string }> {
-    const institution = await client.query<{ id: string }>(
-      `SELECT id FROM institutions
-       WHERE tenant_id = $1 AND status <> 'ARCHIVED' AND lower(name) = lower($2)
-       LIMIT 2`,
-      [tenantId, data.collegeName],
-    );
-    if (institution.rows.length !== 1) {
-      throw new Error(institution.rows.length ? "College/University name is ambiguous." : "College/University was not found.");
+    let institutionId = selectedInstitutionId;
+    if (!institutionId) {
+      const institution = await client.query<{ id: string }>(
+        `SELECT id FROM institutions
+         WHERE tenant_id = $1 AND status <> 'ARCHIVED' AND lower(name) = lower($2)
+         LIMIT 2`,
+        [tenantId, data.collegeName],
+      );
+      if (institution.rows.length !== 1) {
+        throw new Error(institution.rows.length ? "College/University name is ambiguous." : "College/University was not found.");
+      }
+      institutionId = institution.rows[0].id;
     }
-    const institutionId = institution.rows[0].id;
     const existingProfile = await client.query<{ user_id: string; student_type: string }>(
       `SELECT user_id, student_type
        FROM lms_student_profiles
@@ -228,7 +251,7 @@ export class CollegeStudentsService {
     return { status, userId, institutionId };
   }
 
-  async importCsv(file: LmsUpload | undefined, request: ContextRequest) {
+  async importCsv(file: LmsUpload | undefined, request: ContextRequest, institutionId?: string) {
     const user = request.context.user!;
     this.assertCitisAdmin(user);
     if (!file?.buffer?.length) throw new BadRequestException("A CSV file is required.");
@@ -238,11 +261,23 @@ export class CollegeStudentsService {
     }
 
     const parsed = parseCsv(file.buffer.toString("utf8"));
-    const indexes = this.headerIndexes(parsed.headers);
+    const indexes = this.headerIndexes(parsed.headers, Boolean(institutionId));
     if (parsed.records.length > MAX_IMPORT_ROWS) throw new BadRequestException(`CSV cannot contain more than ${MAX_IMPORT_ROWS} rows.`);
     const counts: ImportCounts = { totalRows: parsed.records.length, imported: 0, updated: 0, duplicates: 0, invalid: 0, failed: 0 };
 
     const result = await this.db.transaction(async (client) => {
+      const selectedInstitution = institutionId
+        ? await client.query<{ id: string; name: string }>(
+          `SELECT id, name FROM institutions
+           WHERE tenant_id = $1 AND id = $2 AND status <> 'ARCHIVED'
+           LIMIT 1`,
+          [user.tenantId, institutionId],
+        )
+        : null;
+      if (institutionId && !selectedInstitution?.rows[0]) {
+        throw new BadRequestException("The selected institution is not available in this tenant.");
+      }
+      const targetInstitution = selectedInstitution?.rows[0];
       const run = await client.query<{ id: string }>(
         `INSERT INTO lms_student_imports (tenant_id, uploaded_by, original_filename, total_rows)
          VALUES ($1, $2, $3, $4) RETURNING id`,
@@ -251,19 +286,26 @@ export class CollegeStudentsService {
       const importId = run.rows[0].id;
       const seen = new Set<string>();
       for (const record of parsed.records) {
-        const parsedRow = this.parseStudent(record, indexes);
+        const parsedRow = this.parseStudent(record, indexes, targetInstitution?.name);
         if (parsedRow.errors.length) {
           counts.invalid += 1;
           await client.query(
             `INSERT INTO lms_student_import_rows
               (tenant_id, import_id, row_number, college_name, college_user_id, status, reason)
              VALUES ($1, $2, $3, $4, $5, 'INVALID', $6)`,
-            [user.tenantId, importId, record.rowNumber, record.row[Number(indexes.collegeName)]?.trim() || "", record.row[Number(indexes.collegeUserId)]?.trim() || null, parsedRow.errors.join(" ")],
+            [
+              user.tenantId,
+              importId,
+              record.rowNumber,
+              targetInstitution?.name || (indexes.collegeName === undefined ? "" : record.row[indexes.collegeName]?.trim() || ""),
+              record.row[indexes.collegeUserId]?.trim() || null,
+              parsedRow.errors.join(" "),
+            ],
           );
           continue;
         }
         const data = parsedRow.student!;
-        const duplicateKey = `${data.collegeName.toLowerCase()}:${data.collegeUserId.toLowerCase()}`;
+        const duplicateKey = `${targetInstitution?.id || data.collegeName.toLowerCase()}:${data.collegeUserId.toLowerCase()}`;
         if (seen.has(duplicateKey)) {
           counts.duplicates += 1;
           await client.query(
@@ -278,7 +320,7 @@ export class CollegeStudentsService {
 
         await client.query(`SAVEPOINT college_student_row`);
         try {
-          const imported = await this.insertRow(client, user.tenantId, importId, record.rowNumber, data);
+          const imported = await this.insertRow(client, user.tenantId, importId, record.rowNumber, data, targetInstitution?.id);
           counts[imported.status === "IMPORTED" ? "imported" : "updated"] += 1;
           await client.query(
             `INSERT INTO lms_student_import_rows

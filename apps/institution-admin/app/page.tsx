@@ -6,7 +6,7 @@ import CourseRelationships from "./CourseRelationships";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import AdminInsights from "./AdminInsights";
-import AdminAccessView, { type AccountRequest, type AdminAccessMode } from "./AdminAccessView";
+import AdminAccessView, { isPendingAccountRequest, type AccountRequest, type AdminAccessMode } from "./AdminAccessView";
 import CourseBuilder from "./CourseBuilder";
 import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
@@ -22,6 +22,7 @@ type ContentRecord = {
   name?: string;
   title?: string;
   code?: string;
+  institution_id?: string | null;
   programme_id?: string | null;
   programme_name?: string | null;
   description?: string | null;
@@ -38,6 +39,13 @@ type ContentRecord = {
   managed_file_mime_type?: string | null;
   rejection_reason?: string | null;
   rejected_at?: string | null;
+};
+
+type InstitutionOption = { id: string; name: string; status?: string };
+type CourseInstitutionAllocation = {
+  institution_id: string;
+  institution_name?: string;
+  institution_status?: string;
 };
 
 type TrailNode = { kind: Kind; id: string; label: string };
@@ -243,6 +251,23 @@ export default function InstitutionAdminPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [publishingCourseId, setPublishingCourseId] = useState("");
+  const [rejectingCourseId, setRejectingCourseId] = useState("");
+  const [administratorPublishAccess, setAdministratorPublishAccess] = useState<"checking" | "admin" | "other">("checking");
+  const [publishCourseTarget, setPublishCourseTarget] = useState<ContentRecord | null>(null);
+  const [rejectCourseTarget, setRejectCourseTarget] = useState<ContentRecord | null>(null);
+  const [courseRejectionReason, setCourseRejectionReason] = useState("");
+  const [courseRejectionError, setCourseRejectionError] = useState("");
+  const [publishInstitutionOptions, setPublishInstitutionOptions] = useState<InstitutionOption[]>([]);
+  const [selectedPublishInstitutionIds, setSelectedPublishInstitutionIds] = useState<string[]>([]);
+  const [loadingPublishInstitutions, setLoadingPublishInstitutions] = useState(false);
+  const [publishInstitutionError, setPublishInstitutionError] = useState("");
+  const [allocationCourseTarget, setAllocationCourseTarget] = useState<ContentRecord | null>(null);
+  const [allocationInstitutionOptions, setAllocationInstitutionOptions] = useState<InstitutionOption[]>([]);
+  const [selectedAllocationInstitutionIds, setSelectedAllocationInstitutionIds] = useState<string[]>([]);
+  const [currentCourseAllocations, setCurrentCourseAllocations] = useState<CourseInstitutionAllocation[]>([]);
+  const [loadingCourseAllocations, setLoadingCourseAllocations] = useState(false);
+  const [savingCourseAllocations, setSavingCourseAllocations] = useState(false);
+  const [courseAllocationError, setCourseAllocationError] = useState("");
   const [toast, setToast] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
   const [pendingAccountRequestCount, setPendingAccountRequestCount] = useState<number | null>(null);
@@ -260,6 +285,25 @@ export default function InstitutionAdminPage() {
 
     document.addEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
     return () => document.removeEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadCurrentUserRole() {
+      try {
+        const payload = await request<{ data?: { roles?: Array<{ code?: string }> } }>("/auth/me", { cache: "no-store" });
+        const administrator = payload.data?.roles?.some((role) => (
+          ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT"].includes((role.code || "").toUpperCase())
+        )) ?? false;
+        if (!cancelled) setAdministratorPublishAccess(administrator ? "admin" : "other");
+      } catch {
+        if (!cancelled) setAdministratorPublishAccess("other");
+      }
+    }
+    void loadCurrentUserRole();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const currentSection = adminAccessMode ? adminAccessCopy[adminAccessMode] : instructorMode ? instructorCopy : insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
@@ -413,8 +457,32 @@ export default function InstitutionAdminPage() {
   }
 
   async function publishPendingCourse(record: ContentRecord) {
-    if (record.status !== "INSTRUCTOR_PENDING" || publishingCourseId) return;
+    if (record.status !== "INSTRUCTOR_PENDING" || publishingCourseId || loadingPublishInstitutions || administratorPublishAccess === "checking") return;
     const title = titleFor(record);
+    if (administratorPublishAccess === "admin") {
+      setPublishCourseTarget(record);
+      setPublishInstitutionOptions([]);
+      setPublishInstitutionError("");
+      setSelectedPublishInstitutionIds([]);
+      setLoadingPublishInstitutions(true);
+      try {
+        const payload = await request<{ success: true; data: InstitutionOption[] }>("/institutions/scoped-options");
+        const activeInstitutions = (Array.isArray(payload.data) ? payload.data : [])
+          .filter((institution) => institution.status === "ACTIVE");
+        setPublishInstitutionOptions(activeInstitutions);
+        if (record.institution_id && activeInstitutions.some((institution) => institution.id === record.institution_id)) {
+          setSelectedPublishInstitutionIds([record.institution_id]);
+        }
+        if (activeInstitutions.length === 0) {
+          setPublishInstitutionError("There are no active institutions available for course allocation.");
+        }
+      } catch (reason) {
+        setPublishInstitutionError(reason instanceof Error ? reason.message : "Institutions could not be loaded.");
+      } finally {
+        setLoadingPublishInstitutions(false);
+      }
+      return;
+    }
     if (!window.confirm(`Publish “${title}” and make it available to learners?`)) return;
     setPublishingCourseId(record.id);
     setError("");
@@ -433,6 +501,127 @@ export default function InstitutionAdminPage() {
       setError(reason instanceof Error ? reason.message : "The course could not be published.");
     } finally {
       setPublishingCourseId("");
+    }
+  }
+
+  async function submitAdminCoursePublish(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!publishCourseTarget || selectedPublishInstitutionIds.length === 0 || publishingCourseId) return;
+    const title = titleFor(publishCourseTarget);
+    setPublishingCourseId(publishCourseTarget.id);
+    setPublishInstitutionError("");
+    try {
+      const response = await request<{ success: true; data: ContentRecord }>(
+        `/courses/${encodeURIComponent(publishCourseTarget.id)}/publish`,
+        { method: "POST", body: JSON.stringify({ institutionIds: selectedPublishInstitutionIds }) },
+      );
+      if (response.data.status !== "PUBLISHED") throw new Error("The course was not marked as published.");
+      setRecords((current) => current.map((course) => (
+        course.id === publishCourseTarget.id ? { ...course, ...response.data } : course
+      )));
+      if (courseView === "INSTRUCTOR_PENDING") setCourseView("PUBLISHED");
+      setToast(`${title} is published for ${selectedPublishInstitutionIds.length} institution${selectedPublishInstitutionIds.length === 1 ? "" : "s"}.`);
+      setPublishCourseTarget(null);
+    } catch (reason) {
+      setPublishInstitutionError(reason instanceof Error ? reason.message : "The course could not be published.");
+    } finally {
+      setPublishingCourseId("");
+    }
+  }
+
+  function openCourseReject(record: ContentRecord) {
+    if (record.status !== "INSTRUCTOR_PENDING") return;
+    setRejectCourseTarget(record);
+    setCourseRejectionReason("");
+    setCourseRejectionError("");
+  }
+
+  async function submitAdminCourseReject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!rejectCourseTarget || rejectingCourseId) return;
+    const reason = courseRejectionReason.trim();
+    if (reason.length < 2) {
+      setCourseRejectionError("Add a rejection reason of at least two characters.");
+      return;
+    }
+    const target = rejectCourseTarget;
+    setRejectingCourseId(target.id);
+    setCourseRejectionError("");
+    try {
+      const response = await request<{ success: true; data: ContentRecord }>(
+        `/courses/${encodeURIComponent(target.id)}/reject`,
+        { method: "POST", body: JSON.stringify({ reason }) },
+      );
+      if (response.data.status !== "REJECTED") throw new Error("The course was not marked as rejected.");
+      setRecords((current) => current.map((course) => (
+        course.id === target.id ? { ...course, ...response.data } : course
+      )));
+      if (courseView === "INSTRUCTOR_PENDING") setCourseView("REJECTED");
+      setToast(`${titleFor(target)} was rejected with the reason recorded.`);
+      setRejectCourseTarget(null);
+      setCourseRejectionReason("");
+    } catch (reasonError) {
+      setCourseRejectionError(reasonError instanceof Error ? reasonError.message : "The course could not be rejected.");
+    } finally {
+      setRejectingCourseId("");
+    }
+  }
+
+  async function openCourseAllocationEditor(record: ContentRecord) {
+    if (record.status !== "PUBLISHED" || administratorPublishAccess !== "admin") return;
+    setAllocationCourseTarget(record);
+    setAllocationInstitutionOptions([]);
+    setSelectedAllocationInstitutionIds([]);
+    setCurrentCourseAllocations([]);
+    setCourseAllocationError("");
+    setLoadingCourseAllocations(true);
+    try {
+      const [institutionPayload, allocationPayload] = await Promise.all([
+        request<{ success: true; data: InstitutionOption[] }>("/institutions/scoped-options"),
+        request<{ success: true; data: CourseInstitutionAllocation[] }>(
+          `/courses/${encodeURIComponent(record.id)}/institution-allocations`,
+        ),
+      ]);
+      const activeInstitutions = (Array.isArray(institutionPayload.data) ? institutionPayload.data : [])
+        .filter((institution) => institution.status === "ACTIVE");
+      const allocations = Array.isArray(allocationPayload.data) ? allocationPayload.data : [];
+      setAllocationInstitutionOptions(activeInstitutions);
+      setCurrentCourseAllocations(allocations);
+      setSelectedAllocationInstitutionIds(
+        allocations
+          .filter((allocation) => allocation.institution_status === "ACTIVE")
+          .map((allocation) => allocation.institution_id)
+          .filter((id) => activeInstitutions.some((institution) => institution.id === id)),
+      );
+    } catch (reason) {
+      setCourseAllocationError(reason instanceof Error ? reason.message : "Course allocations could not be loaded.");
+    } finally {
+      setLoadingCourseAllocations(false);
+    }
+  }
+
+  async function saveCourseAllocations(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!allocationCourseTarget || savingCourseAllocations) return;
+    setSavingCourseAllocations(true);
+    setCourseAllocationError("");
+    try {
+      const payload = await request<{ success: true; data: CourseInstitutionAllocation[] }>(
+        `/courses/${encodeURIComponent(allocationCourseTarget.id)}/institution-allocations`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ institutionIds: selectedAllocationInstitutionIds }),
+        },
+      );
+      const allocations = Array.isArray(payload.data) ? payload.data : [];
+      setCurrentCourseAllocations(allocations);
+      setSelectedAllocationInstitutionIds(allocations.map((allocation) => allocation.institution_id));
+      setToast(`Institution allocations updated for ${titleFor(allocationCourseTarget)}.`);
+      setAllocationCourseTarget(null);
+    } catch (reason) {
+      setCourseAllocationError(reason instanceof Error ? reason.message : "Course allocations could not be saved.");
+    } finally {
+      setSavingCourseAllocations(false);
     }
   }
 
@@ -701,7 +890,16 @@ export default function InstitutionAdminPage() {
               ♢{Boolean(pendingAccountRequestCount) && <span className="notification-dot" />}
             </button>
             <a className="help-link" href="/auth/login">Need help?</a>
-            <details ref={profileMenuRef} className="profile-menu">
+            <details
+              ref={profileMenuRef}
+              className="profile-menu"
+              onPointerEnter={(event) => {
+                if (event.pointerType === "mouse") event.currentTarget.open = true;
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType === "mouse") event.currentTarget.open = false;
+              }}
+            >
               <summary className="profile-trigger" aria-label="Open profile menu">
                 <span className="profile-avatar">IA</span>
                 <span className="profile-trigger-copy"><strong>Profile</strong><small>Institution admin</small></span>
@@ -832,9 +1030,9 @@ export default function InstitutionAdminPage() {
                       ) : <div className="record-avatar">{(titleFor(record)[0] || "?").toUpperCase()}</div>}
                       <div><button className="record-title" type="button" onClick={() => selectRecord(record)}>{titleFor(record)}</button><span className="record-meta">{record.code || record.resource_type || (record.description ? record.description.slice(0, 44) : "No description")}{activeKind === "courses" ? ` · ${record.status.replaceAll("_", " ")}` : ""}</span></div>
                     </div>
-                    <div className="record-detail">{record.rejection_reason ? <><strong>Instructor changes requested:</strong> {record.rejection_reason}</> : record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
+                     <div className="record-detail">{record.rejection_reason ? <><strong>Rejection reason:</strong> {record.rejection_reason}</> : record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
                     <div className="updated-detail">Recently edited</div>
-                       <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button>{record.status === "INSTRUCTOR_PENDING" && <button type="button" onClick={() => void publishPendingCourse(record)} disabled={publishingCourseId !== ""}>{publishingCourseId === record.id ? "Publishing…" : "Publish"}</button>}</>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
+                         <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button>{record.status === "INSTRUCTOR_PENDING" && <><button type="button" onClick={() => void publishPendingCourse(record)} disabled={publishingCourseId !== "" || loadingPublishInstitutions || administratorPublishAccess === "checking"}>{loadingPublishInstitutions && publishCourseTarget?.id === record.id ? "Loading institutions…" : publishingCourseId === record.id ? "Publishing…" : "Publish"}</button><button type="button" onClick={() => openCourseReject(record)} disabled={rejectingCourseId !== "" || publishingCourseId !== ""}>{rejectingCourseId === record.id ? "Rejecting…" : "Reject"}</button></>}{record.status === "PUBLISHED" && administratorPublishAccess === "admin" && <button type="button" onClick={() => void openCourseAllocationEditor(record)} disabled={loadingCourseAllocations || savingCourseAllocations}>{loadingCourseAllocations && allocationCourseTarget?.id === record.id ? "Loading…" : "Allocations"}</button>}</>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
                   </article>
                 ))}
               </div>
@@ -857,6 +1055,135 @@ export default function InstitutionAdminPage() {
               {activeKind === "lessons" && <label>Estimated duration (minutes)<input type="number" min={0} value={formValue("estimatedDuration")} onChange={(event) => updateForm("estimatedDuration", event.target.value)} placeholder="Optional" /></label>}
               {activeKind === "learning-resources" && <><label>URL<input type="url" value={formValue("url")} onChange={(event) => updateForm("url", event.target.value)} placeholder="https://…" /></label>{["PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(formValue("resourceType")) && <label>{formValue("resourceType") === "SCORM" ? "SCORM package (.zip)" : "Managed file"}<input type="file" accept={formValue("resourceType") === "SCORM" ? ".zip,application/zip" : ".pdf,.doc,.docx,.odt,.ppt,.pptx,.odp"} onChange={(event) => setSelectedFile(event.target.files?.[0] || null)} />{selectedFile && <span className="selected-file">{selectedFile.name} · {(selectedFile.size / 1024 / 1024).toFixed(1)} MB</span>}</label>}<label>Duration (minutes)<input type="number" min={0} value={formValue("duration")} onChange={(event) => updateForm("duration", event.target.value)} placeholder="Optional" /></label><p className="field-hint">Files are stored inside your tenant, scanned for safe paths, and served only after permission checks. SCORM packages must contain imsmanifest.xml.</p></>}
               <div className="modal-actions"><button className="secondary-button" type="button" onClick={() => setModalOpen(false)}>Cancel</button><button className="primary-button" type="submit" disabled={saving}>{saving ? "Saving…" : editing ? "Save changes" : activeKind === "courses" ? "Create Course" : "Create"}</button></div>
+            </form>
+          </section>
+        </div>
+      )}
+      {publishCourseTarget && administratorPublishAccess === "admin" && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !publishingCourseId) setPublishCourseTarget(null); }}>
+          <section className="modal course-allocation-modal" role="dialog" aria-modal="true" aria-labelledby="course-allocation-title">
+            <div className="modal-heading">
+              <div>
+                <div className="eyebrow">Course publication</div>
+                <h2 id="course-allocation-title">Choose institutions</h2>
+              </div>
+              <button className="close-button" type="button" onClick={() => setPublishCourseTarget(null)} disabled={publishingCourseId !== ""} aria-label="Close institution selection">×</button>
+            </div>
+            <p className="modal-intro">Select one or more active institutions for <strong>{titleFor(publishCourseTarget)}</strong>. Its original programme and institution ownership will not change.</p>
+            {publishInstitutionError && <div className="relationship-alert error-box" role="alert"><strong>Course publication needs attention</strong><p>{publishInstitutionError}</p></div>}
+            {loadingPublishInstitutions ? (
+              <div className="state-box"><div className="spinner" /><div><strong>Loading institutions…</strong><p>Checking active institutions in your scope.</p></div></div>
+            ) : publishInstitutionOptions.length > 0 ? (
+              <div className="course-allocation-options" aria-label="Institutions available for this course">
+                {publishInstitutionOptions.map((institution) => {
+                  const checked = selectedPublishInstitutionIds.includes(institution.id);
+                  return (
+                    <label className="course-allocation-option" key={institution.id}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) => setSelectedPublishInstitutionIds((current) => (
+                          event.target.checked
+                            ? [...new Set([...current, institution.id])]
+                            : current.filter((id) => id !== institution.id)
+                        ))}
+                      />
+                      <span>
+                        <strong>{institution.name || "Unnamed institution"}</strong>
+                        {institution.id === publishCourseTarget.institution_id && <small>Course’s original institution</small>}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : !publishInstitutionError ? (
+              <div className="state-box empty-box"><div><strong>No active institutions available</strong><p>Create or activate an institution before publishing this course.</p></div></div>
+            ) : null}
+            <p className="field-hint">Allocation limits which college institutions can access the course. It does not automatically enroll learners; existing enrollment rules still apply.</p>
+            <form onSubmit={(event) => void submitAdminCoursePublish(event)}>
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setPublishCourseTarget(null)} disabled={publishingCourseId !== ""}>Cancel</button>
+                <button className="primary-button" type="submit" disabled={loadingPublishInstitutions || publishInstitutionOptions.length === 0 || selectedPublishInstitutionIds.length === 0 || publishingCourseId !== ""}>
+                  {publishingCourseId === publishCourseTarget.id ? "Publishing…" : "Publish course"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+      {rejectCourseTarget && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !rejectingCourseId) setRejectCourseTarget(null); }}>
+          <section className="modal" role="dialog" aria-modal="true" aria-labelledby="course-rejection-title">
+            <div className="modal-heading">
+              <div><div className="eyebrow">Course review</div><h2 id="course-rejection-title">Reject {titleFor(rejectCourseTarget)}?</h2></div>
+              <button className="close-button" type="button" onClick={() => setRejectCourseTarget(null)} disabled={rejectingCourseId !== ""} aria-label="Close rejection form">×</button>
+            </div>
+            <p className="modal-intro">Give a clear reason for the rejection. Admin will retain this note with the course record.</p>
+            {courseRejectionError && <div className="relationship-alert error-box" role="alert"><strong>Course was not rejected</strong><p>{courseRejectionError}</p></div>}
+            <form onSubmit={(event) => void submitAdminCourseReject(event)}>
+              <label>Rejection reason *<textarea required minLength={2} maxLength={2000} rows={4} value={courseRejectionReason} onChange={(event) => setCourseRejectionReason(event.target.value)} placeholder="Explain what needs to change before publication." /></label>
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setRejectCourseTarget(null)} disabled={rejectingCourseId !== ""}>Cancel</button>
+                <button className="primary-button" type="submit" disabled={rejectingCourseId !== "" || courseRejectionReason.trim().length < 2}>{rejectingCourseId === rejectCourseTarget.id ? "Rejecting…" : "Reject course"}</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+      {allocationCourseTarget && administratorPublishAccess === "admin" && (
+        <div className="modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !savingCourseAllocations) setAllocationCourseTarget(null); }}>
+          <section className="modal course-allocation-modal" role="dialog" aria-modal="true" aria-labelledby="course-allocation-edit-title">
+            <div className="modal-heading">
+              <div>
+                <div className="eyebrow">Published course</div>
+                <h2 id="course-allocation-edit-title">Manage institutions</h2>
+              </div>
+              <button className="close-button" type="button" onClick={() => setAllocationCourseTarget(null)} disabled={savingCourseAllocations} aria-label="Close course allocation editor">×</button>
+            </div>
+            <p className="modal-intro">Add or remove active institutions for <strong>{titleFor(allocationCourseTarget)}</strong>. This changes course access eligibility only; it does not change course ownership or enrollments.</p>
+            {courseAllocationError && <div className="relationship-alert error-box" role="alert"><strong>Allocations could not be updated</strong><p>{courseAllocationError}</p></div>}
+            {loadingCourseAllocations ? (
+              <div className="state-box"><div className="spinner" /><div><strong>Loading current allocations…</strong><p>Checking active institutions for this course.</p></div></div>
+            ) : allocationInstitutionOptions.length > 0 ? (
+              <div className="course-allocation-options" aria-label="Active institutions available for this course">
+                {allocationInstitutionOptions.map((institution) => {
+                  const checked = selectedAllocationInstitutionIds.includes(institution.id);
+                  return (
+                    <label className="course-allocation-option" key={institution.id}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={(event) => setSelectedAllocationInstitutionIds((current) => (
+                          event.target.checked
+                            ? [...new Set([...current, institution.id])]
+                            : current.filter((id) => id !== institution.id)
+                        ))}
+                      />
+                      <span>
+                        <strong>{institution.name || "Unnamed institution"}</strong>
+                        {institution.id === allocationCourseTarget.institution_id && <small>Course’s original institution</small>}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="state-box empty-box"><div><strong>No active institutions available</strong><p>Activate an institution before allocating this course.</p></div></div>
+            )}
+            {currentCourseAllocations.some((allocation) => allocation.institution_status !== "ACTIVE") && (
+              <div className="relationship-alert">
+                <strong>Inactive institutions are not selectable</strong>
+                <p>Saving will remove {currentCourseAllocations.filter((allocation) => allocation.institution_status !== "ACTIVE").length} inactive institution allocation(s).</p>
+              </div>
+            )}
+            <p className="field-hint">Removing an institution blocks its learners from course access on subsequent requests. Existing enrollments are not changed. Saving with no institutions selected leaves the published course unavailable to college learners.</p>
+            <form onSubmit={(event) => void saveCourseAllocations(event)}>
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setAllocationCourseTarget(null)} disabled={savingCourseAllocations}>Cancel</button>
+                <button className="primary-button" type="submit" disabled={loadingCourseAllocations || savingCourseAllocations}>
+                  {savingCourseAllocations ? "Saving…" : "Save allocations"}
+                </button>
+              </div>
             </form>
           </section>
         </div>

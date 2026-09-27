@@ -573,6 +573,67 @@ test("course creation rejects a parent outside the authenticated tenant", async 
   );
 });
 
+test("CITIS Admin can create a course through the course endpoint", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT id, institution_id, campus_id FROM programmes")) {
+      return { rows: [{ id: "programme-1", institution_id: "institution-1", campus_id: null }] };
+    }
+    if (text.startsWith("INSERT INTO courses")) {
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", programme_id: "programme-1", title: "Digital Skills", status: "DRAFT" }] };
+    }
+    return { rows: [] };
+  });
+
+  const course = await service.createCourse({
+    programmeId: "programme-1",
+    title: "Digital Skills",
+    code: "DS-101",
+  }, adminRequest);
+
+  assert.equal(course.id, "course-1");
+  assert.equal(course.status, "DRAFT");
+});
+
+test("instructors cannot create or manage course-level records, even with matching permissions", async () => {
+  const teacher: AuthenticatedUser = {
+    id: "teacher-1",
+    tenantId: user.tenantId,
+    email: "teacher@example.com",
+    firstName: "Teacher",
+    lastName: "One",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: [
+      "lms.course.create",
+      "lms.course.update",
+      "lms.course.publish",
+      "lms.course.reject",
+      "lms.course.archive",
+    ],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
+  };
+  const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  let databaseQueries = 0;
+  const { service } = serviceWith(async () => {
+    databaseQueries += 1;
+    return { rows: [] };
+  });
+  const courseInput = { programmeId: "programme-1", title: "Digital Skills", code: "DS-101" };
+
+  await assert.rejects(service.createCourse(courseInput, teacherRequest), ForbiddenException);
+  await assert.rejects(service.createCourseBuilder({}, [], teacherRequest), ForbiddenException);
+  await assert.rejects(service.updateCourse("course-1", { title: "Renamed" }, teacherRequest), ForbiddenException);
+  await assert.rejects(service.publishReviewedCourse("course-1", teacherRequest), ForbiddenException);
+  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: "Needs changes." }, teacherRequest), ForbiddenException);
+  await assert.rejects(service.changeStatus("course-1", "course", "ARCHIVED", teacherRequest), ForbiddenException);
+  assert.equal(databaseQueries, 0);
+});
+
 test("learning resources enforce URL and file requirements before insertion", async () => {
   let insertAttempted = false;
   const { service } = serviceWith(async (text) => {
@@ -775,7 +836,7 @@ test("publishing content writes an auditable status mutation", async () => {
   assert.equal(audits[0].tenantId, user.tenantId);
 });
 
-test("an LMS administrator or the explicitly assigned instructor can publish a pending course", async () => {
+test("only an LMS administrator can publish a pending course", async () => {
   const teacher: AuthenticatedUser = {
     id: "teacher-1",
     tenantId: user.tenantId,
@@ -787,25 +848,201 @@ test("an LMS administrator or the explicitly assigned instructor can publish a p
     scopes: [{ institutionId: "institution-1", campusId: null }],
   };
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  let databaseQueries = 0;
   const { service, audits } = serviceWith(async (text, values) => {
+    databaseQueries += 1;
     if (text.includes("FROM courses c") && text.includes("programme_status")) {
       return { rows: [{ id: "course-1", tenant_id: teacher.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
     }
-    if (text.includes("FROM lms_instructor_assignments")) return { rows: [{ allowed: 1 }] };
     if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "PUBLISHED", published_by: values[1] }] };
     return { rows: [] };
   });
 
-  const published = await service.publishReviewedCourse("course-1", teacherRequest);
-
-  assert.equal(published.status, "PUBLISHED");
-  assert.equal(published.published_by, teacher.id);
-  assert.equal(audits.at(-1)?.action, "PUBLISH");
+  await assert.rejects(service.publishReviewedCourse("course-1", teacherRequest), ForbiddenException);
+  assert.equal(databaseQueries, 0);
 
   const adminPublished = await service.publishReviewedCourse("course-1", request);
   assert.equal(adminPublished.status, "PUBLISHED");
   assert.equal(adminPublished.published_by, user.id);
   assert.equal(audits.at(-1)?.action, "PUBLISH");
+});
+
+test("CITIS Admin can update course-level settings", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const { service } = serviceWith(async (text, values) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", campus_id: null, title: "Old title", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("UPDATE courses")) {
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", title: values[2], status: "PUBLISHED" }] };
+    }
+    return { rows: [] };
+  });
+
+  const updated = await service.updateCourse("course-1", { title: "New title" }, adminRequest);
+
+  assert.equal(updated.title, "New title");
+});
+
+test("platform administrators publish a course to the selected active institutions", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const persistedAllocations: string[] = [];
+  let published = false;
+  const { service } = serviceWith(async (text, values = []) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM institutions") && text.includes("id = ANY")) {
+      return { rows: (values[1] as string[]).map((id) => ({ id })) };
+    }
+    if (text.startsWith("UPDATE lms_course_institution_allocations")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_course_institution_allocations")) {
+      persistedAllocations.push(...(values[2] as string[]));
+      return { rows: [] };
+    }
+    if (text.startsWith("UPDATE courses")) {
+      published = true;
+      return { rows: [{ id: "course-1", status: "PUBLISHED", published_by: platformAdmin.id }] };
+    }
+    return { rows: [] };
+  });
+
+  const result = await service.publishReviewedCourse("course-1", adminRequest, {
+    institutionIds: ["institution-1", "institution-2"],
+  });
+
+  assert.equal(result.status, "PUBLISHED");
+  assert.deepEqual(persistedAllocations, ["institution-1", "institution-2"]);
+  assert.equal(published, true);
+});
+
+test("platform administrators can read published course institution allocations", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM lms_course_institution_allocations ca")) {
+      return { rows: [{ institution_id: "institution-2", institution_name: "Second College", institution_status: "ACTIVE" }] };
+    }
+    return { rows: [] };
+  });
+
+  const allocations = await service.listCourseInstitutionAllocations("course-1", platformAdmin);
+
+  assert.equal(allocations.length, 1);
+  assert.equal(allocations[0].institution_id, "institution-2");
+  assert.ok(queries.some((text) => text.includes("ca.status = 'ACTIVE'")));
+});
+
+test("published course allocations can be replaced atomically and audited", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const allocationIds = ["institution-1"];
+  const activeInstitutionIds = new Set(["institution-1", "institution-2", "institution-3"]);
+  let removedExistingAllocations = false;
+  let insertedAllocations = false;
+  const { service, audits } = serviceWith(async (text, values = []) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("SELECT status FROM courses")) return { rows: [{ status: "PUBLISHED" }] };
+    if (text.includes("FROM lms_course_institution_allocations ca")) {
+      return {
+        rows: allocationIds.map((institution_id) => ({
+          institution_id,
+          institution_name: institution_id,
+          institution_status: "ACTIVE",
+        })),
+      };
+    }
+    if (text.includes("FROM institutions") && text.includes("id = ANY")) {
+      return { rows: (values[1] as string[]).filter((id) => activeInstitutionIds.has(id)).map((id) => ({ id })) };
+    }
+    if (text.startsWith("UPDATE lms_course_institution_allocations")) {
+      allocationIds.splice(0);
+      removedExistingAllocations = true;
+      return { rows: [] };
+    }
+    if (text.startsWith("INSERT INTO lms_course_institution_allocations")) {
+      allocationIds.push(...(values[2] as string[]));
+      insertedAllocations = true;
+      return { rows: [] };
+    }
+    return { rows: [] };
+  });
+
+  const result = await service.replaceCourseInstitutionAllocations(
+    "course-1",
+    { institutionIds: ["institution-2", "institution-3"] },
+    adminRequest,
+  );
+
+  assert.deepEqual(result.map((allocation) => allocation.institution_id), ["institution-2", "institution-3"]);
+  assert.equal(removedExistingAllocations, true);
+  assert.equal(insertedAllocations, true);
+  assert.equal(audits.at(-1)?.resource, "course");
+  assert.equal(audits.at(-1)?.action, "UPDATE");
+});
+
+test("course allocation updates reject inactive or cross-tenant institutions before changing allocations", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  let allocationsChanged = false;
+  const { service } = serviceWith(async (text) => {
+    if (text.includes("FROM courses c") && text.includes("programme_status")) {
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.startsWith("SELECT status FROM courses")) return { rows: [{ status: "PUBLISHED" }] };
+    if (text.includes("FROM institutions") && text.includes("id = ANY")) return { rows: [] };
+    if (text.startsWith("UPDATE lms_course_institution_allocations")) allocationsChanged = true;
+    return { rows: [] };
+  });
+
+  await assert.rejects(
+    service.replaceCourseInstitutionAllocations(
+      "course-1",
+      { institutionIds: ["institution-inactive"] },
+      adminRequest,
+    ),
+    BadRequestException,
+  );
+  assert.equal(allocationsChanged, false);
+});
+
+test("institution administrators cannot replace platform-wide course allocations", async () => {
+  const { service } = serviceWith(async () => {
+    throw new Error("The database should not be queried for a scoped administrator.");
+  });
+
+  await assert.rejects(
+    service.replaceCourseInstitutionAllocations("course-1", { institutionIds: [] }, request),
+    ForbiddenException,
+  );
 });
 
 test("institution administrators remain limited to courses in their assigned institution scope", async () => {
@@ -830,7 +1067,7 @@ test("institution administrators remain limited to courses in their assigned ins
   assert.equal(courseUpdated, false);
 });
 
-test("instructor rejection requires a reason and returns the course to Admin", async () => {
+test("CITIS Admin can reject a pending course with a reason; instructors cannot", async () => {
   const teacher: AuthenticatedUser = {
     id: "teacher-1",
     tenantId: user.tenantId,
@@ -842,17 +1079,26 @@ test("instructor rejection requires a reason and returns the course to Admin", a
     scopes: [{ institutionId: "institution-1", campusId: null }],
   };
   const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  let databaseQueries = 0;
   const { service, audits } = serviceWith(async (text, values) => {
+    databaseQueries += 1;
     if (text.includes("FROM courses c") && text.includes("programme_status")) {
-      return { rows: [{ id: "course-1", tenant_id: teacher.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+      return { rows: [{ id: "course-1", tenant_id: platformAdmin.tenantId, institution_id: "institution-1", campus_id: null, status: "INSTRUCTOR_PENDING", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
     }
-    if (text.includes("FROM lms_instructor_assignments")) return { rows: [{ allowed: 1 }] };
     if (text.startsWith("UPDATE courses")) return { rows: [{ id: "course-1", status: "REJECTED", rejection_reason: values[1] }] };
     return { rows: [] };
   });
 
-  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: " " }, teacherRequest), BadRequestException);
-  const rejected = await service.rejectReviewedCourse("course-1", { reason: "Add a transcript to the video." }, teacherRequest);
+  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: "Add a transcript." }, teacherRequest), ForbiddenException);
+  assert.equal(databaseQueries, 0);
+  await assert.rejects(service.rejectReviewedCourse("course-1", { reason: " " }, adminRequest), BadRequestException);
+  const rejected = await service.rejectReviewedCourse("course-1", { reason: "Add a transcript to the video." }, adminRequest);
 
   assert.equal(rejected.status, "REJECTED");
   assert.equal(rejected.rejection_reason, "Add a transcript to the video.");
@@ -996,7 +1242,7 @@ test("enrollment accepts an active institution Student and audits the mutation",
       queries.push(text);
       if (text.startsWith("SELECT c.id")) return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
       if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
-      if (text.startsWith("SELECT u.id")) return { rows: [{ id: "student-1", first_name: "Learner", last_name: "One" }] };
+      if (text.startsWith("SELECT u.id")) return { rows: [{ id: "student-1", first_name: "Learner", last_name: "One", student_type: "COLLEGE_STUDENT", institution_id: "institution-1" }] };
       if (text.startsWith("INSERT INTO lms_enrollments")) return { rows: [{ id: "enrollment-1", tenant_id: user.tenantId, institution_id: "institution-1", course_id: "course-1", learner_id: "student-1", status: "ACTIVE" }] };
       return { rows: [] };
     },
@@ -1009,7 +1255,8 @@ test("enrollment accepts an active institution Student and audits the mutation",
   assert.equal(result.learner_id, "student-1");
   assert.equal(audits[0].resource, "enrollment");
   assert.equal(audits[0].action, "CREATE");
-  assert.ok(queries.some((query) => query.includes("ur.institution_id = $3")));
+  assert.ok(queries.some((query) => query.includes("ur.institution_id IS NOT DISTINCT FROM sp.institution_id")));
+  assert.ok(queries.some((query) => query.includes("lms_course_institution_allocations")));
 });
 
 test("enrollment rejects a user who is not an active Student in the course institution", async () => {
@@ -1026,6 +1273,74 @@ test("enrollment rejects a user who is not an active Student in the course insti
     NotFoundException,
   );
   assert.equal(inserted, false);
+});
+
+test("allocated college learners from another institution can be manually enrolled", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const queries: string[] = [];
+  let inserted = false;
+  const db = {
+    query: async (text: string) => {
+      queries.push(text);
+      if (text.startsWith("SELECT c.id")) {
+        return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null, status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+      }
+      if (text.startsWith("SELECT u.id, u.first_name")) {
+        return { rows: [{ id: "student-2", first_name: "Learner", last_name: "Two", email: "learner@example.edu" }] };
+      }
+      if (text.startsWith("SELECT u.id, u.tenant_id")) {
+        return { rows: [{ id: "student-2", first_name: "Learner", last_name: "Two", student_type: "COLLEGE_STUDENT", institution_id: "institution-2" }] };
+      }
+      if (text.startsWith("SELECT count(DISTINCT u.id)")) return { rows: [{ count: "1" }] };
+      if (text.startsWith("SELECT 1 FROM lms_course_institution_allocations")) return { rows: [{ allowed: 1 }] };
+      if (text.startsWith("INSERT INTO lms_enrollments")) {
+        inserted = true;
+        return { rows: [{ id: "enrollment-2", learner_id: "student-2", institution_id: "institution-1", status: "ACTIVE" }] };
+      }
+      return { rows: [] };
+    },
+  };
+  const audit = { record: async () => undefined };
+  const service = new LmsService(db as never, audit as never, new ResourceStorageService());
+
+  const candidates = await service.listEnrollmentCandidates("course-1", platformAdmin, 1, 25, 0, {});
+  assert.equal(candidates.data[0]?.id, "student-2");
+  assert.ok(queries.some((query) => query.includes("ca.institution_id = sp.institution_id")));
+  assert.ok(queries.some((query) => query.includes("allocated_i.status = 'ACTIVE'")));
+
+  const enrollment = await service.enrollLearner("course-1", { learnerId: "student-2" }, adminRequest);
+  assert.equal(enrollment.learner_id, "student-2");
+  assert.equal(enrollment.institution_id, "institution-1");
+  assert.equal(inserted, true);
+});
+
+test("college learner course listings require an active allocation for the learner institution", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "learner-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    scopes: [],
+  };
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    return { rows: [] };
+  });
+
+  await service.listCourses(learner, 1, 25, 0, {});
+
+  const learnerCatalogueQuery = queries.find((text) => (
+    text.includes("FROM courses c") && text.includes("JOIN lms_course_institution_allocations ca")
+  ));
+  assert.ok(learnerCatalogueQuery);
+  assert.match(learnerCatalogueQuery, /ca\.institution_id = sp\.institution_id/);
+  assert.match(learnerCatalogueQuery, /ca\.status = 'ACTIVE'/);
+  assert.match(learnerCatalogueQuery, /allocated_i\.status = 'ACTIVE'/);
 });
 
 test("duplicate instructor assignment is returned as a conflict", async () => {
@@ -1188,6 +1503,9 @@ test("direct learners can complete institutionless enrollments without an instit
           institution_status: "ACTIVE",
         }],
       };
+    }
+    if (text.startsWith("SELECT 1") && text.includes("FROM lms_enrollments e")) {
+      return { rows: [{ allowed: 1 }] };
     }
     if (text.startsWith("SELECT id, tenant_id")) return { rows: [{ id: "direct-enrollment-1" }] };
     if (text.startsWith("SELECT * FROM lms_lesson_progress")) return { rows: [] };
@@ -1430,6 +1748,11 @@ test("learner assignment listings include only published content from enrolled c
   assert.ok(queries.some((query) => query.includes("c.status = 'PUBLISHED'")));
   assert.ok(queries.some((query) => query.includes("cm.status = 'PUBLISHED'")));
   assert.ok(queries.some((query) => query.includes("JOIN institutions i")));
+  const enrollmentQuery = queries.find((query) => query.startsWith("SELECT course_id"));
+  assert.ok(enrollmentQuery);
+  assert.match(enrollmentQuery, /ca\.institution_id = sp\.institution_id/);
+  assert.match(enrollmentQuery, /ca\.status = 'ACTIVE'/);
+  assert.match(enrollmentQuery, /allocated_i\.status = 'ACTIVE'/);
 });
 
 test("LMS administrators bypass assignment staff-scope checks", async () => {
@@ -1550,7 +1873,7 @@ test("assignment grades cannot exceed the configured maximum", async () => {
   );
 });
 
-test("assignment access rejects a student enrollment from another college or campus", async () => {
+test("assignment access rejects a learner without active enrollment in the course scope", async () => {
   const learner: AuthenticatedUser = {
     ...user,
     id: "student-1",
@@ -1578,6 +1901,46 @@ test("assignment access rejects a student enrollment from another college or cam
   });
 
   await assert.rejects(service.getAssignment("assignment-1", learner), ForbiddenException);
+});
+
+test("allocated college learners can read assignments using their institution allocation", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    id: "student-1",
+    roles: [{ code: "STUDENT", name: "Student" }],
+    studentType: "COLLEGE_STUDENT",
+  };
+  const assignment = {
+    id: "assignment-1",
+    tenant_id: learner.tenantId,
+    institution_id: "institution-1",
+    campus_id: null,
+    course_id: "course-1",
+    module_id: "module-1",
+    assessment_type: "ASSIGNMENT",
+    status: "PUBLISHED",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+    programme_status: "PUBLISHED",
+    institution_status: "ACTIVE",
+  };
+  const queries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    queries.push(text);
+    if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
+    if (text.startsWith("SELECT e.id")) return { rows: [{ id: "enrollment-1" }] };
+    return { rows: [] };
+  });
+
+  const result = await service.getAssignment("assignment-1", learner);
+
+  assert.equal(result.id, "assignment-1");
+  const enrollmentQuery = queries.find((text) => text.startsWith("SELECT e.id"));
+  assert.ok(enrollmentQuery);
+  assert.match(enrollmentQuery, /e\.institution_id = c\.institution_id/);
+  assert.match(enrollmentQuery, /ca\.institution_id = sp\.institution_id/);
+  assert.match(enrollmentQuery, /allocated_i\.status = 'ACTIVE'/);
+  assert.doesNotMatch(enrollmentQuery, /sp\.institution_id = c\.institution_id/);
 });
 
 test("assignment access is bound to the authenticated learner and preserves staff access", async () => {

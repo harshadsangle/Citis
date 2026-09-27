@@ -1,11 +1,21 @@
 /**
  * Use the direct production API origin so a stale host-only `www` session
  * cookie cannot shadow the shared `.citisinfotech.in` session cookie.
- * Development keeps the same-origin Next rewrite.
+ * Browser development requests to the workspace's loopback API use the
+ * same-origin Next rewrite; server-side requests can still use the local API
+ * origin directly.
  */
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.trim() ||
   (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1");
+const normalizedApiUrl = API_URL.replace(/\/+$/, "").toLowerCase();
+const useLocalDevelopmentRewrite =
+  process.env.NODE_ENV === "development" &&
+  /^https?:\/\/(?:localhost|127\.0\.0\.1):4000\/api\/v1$/.test(normalizedApiUrl);
+
+function requestApiUrl() {
+  return typeof window !== "undefined" && useLocalDevelopmentRewrite ? "/api/v1" : API_URL;
+}
 
 export class ApiError extends Error {
   constructor(
@@ -90,12 +100,12 @@ export function isApiConfigured(): boolean {
 }
 
 export function apiFetch<T>(path: string, options?: FetchOptions) {
-  return request<T>(API_URL, path, options);
+  return request<T>(requestApiUrl(), path, options);
 }
 
 /** @deprecated Strapi removed from required stack — use Express APIs. */
 export function strapiFetch<T>(path: string, options?: FetchOptions) {
-  return request<T>(API_URL, path, options);
+  return request<T>(requestApiUrl(), path, options);
 }
 
 export { API_URL };

@@ -493,7 +493,18 @@ export default function TeacherPortalPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
+
+  useEffect(() => {
+    const closeProfileMenuOnOutsidePointer = (event: PointerEvent) => {
+      const menu = profileMenuRef.current;
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) {
+        menu.removeAttribute("open");
+      }
+    };
+
+    document.addEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
+    return () => document.removeEventListener("pointerdown", closeProfileMenuOnOutsidePointer);
+  }, []);
 
   useEffect(() => {
     const closeProfileMenuOnOutsidePointer = (event: PointerEvent) => {
@@ -647,49 +658,6 @@ export default function TeacherPortalPage() {
   function selectCourse(courseId: string, scrollToSubmissions = false) {
     setSelectedCourseId(courseId);
     if (scrollToSubmissions) window.setTimeout(() => document.getElementById("submissions")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
-  }
-
-  async function publishCourseReview() {
-    if (!selected || selected.course.status !== "INSTRUCTOR_PENDING") return;
-    if (!window.confirm(`Publish “${selected.course.title}” for final learner delivery?`)) return;
-    setBusyAction(`publish-course:${selected.course.id}`);
-    setError("");
-    setNotice("");
-    try {
-      await request(`/courses/${encodeURIComponent(selected.course.id)}/publish`, { method: "POST" });
-      setNotice(`${selected.course.title} is now published.`);
-      setRejectReason("");
-      await loadDashboard(true);
-    } catch (reason) {
-      setError(errorMessage(reason, "The course could not be published."));
-    } finally {
-      setBusyAction("");
-    }
-  }
-
-  async function rejectCourseReview() {
-    if (!selected || selected.course.status !== "INSTRUCTOR_PENDING") return;
-    const reason = rejectReason.trim();
-    if (reason.length < 2) {
-      setError("Add a rejection reason before returning the course to Admin.");
-      return;
-    }
-    setBusyAction(`reject-course:${selected.course.id}`);
-    setError("");
-    setNotice("");
-    try {
-      await request(`/courses/${encodeURIComponent(selected.course.id)}/reject`, {
-        method: "POST",
-        body: JSON.stringify({ reason }),
-      });
-      setNotice(`${selected.course.title} was returned to Admin with your review notes.`);
-      setRejectReason("");
-      await loadDashboard(true);
-    } catch (reasonError) {
-      setError(errorMessage(reasonError, "The course could not be returned to Admin."));
-    } finally {
-      setBusyAction("");
-    }
   }
 
   function openModuleEditor(module?: CourseModule) {
@@ -1463,7 +1431,16 @@ export default function TeacherPortalPage() {
             <div className="topbar-right">
               <span className="live-label"><i />Secure workspace</span>
               <button className="help-link" type="button" onClick={() => setNotice("Need help? Contact your institution administrator.")}>Help</button>
-              <details ref={profileMenuRef} className="profile-menu">
+              <details
+                ref={profileMenuRef}
+                className="profile-menu"
+                onPointerEnter={(event) => {
+                  if (event.pointerType === "mouse") event.currentTarget.open = true;
+                }}
+                onPointerLeave={(event) => {
+                  if (event.pointerType === "mouse") event.currentTarget.open = false;
+                }}
+              >
                 <summary className="profile-trigger" aria-label="Open profile menu">
                   <span className="profile-avatar">{name.slice(0, 1).toUpperCase()}</span>
                   <span className="profile-trigger-copy"><strong>Profile</strong><small>{name}</small></span>
@@ -1570,16 +1547,10 @@ export default function TeacherPortalPage() {
              {selected?.course.status === "INSTRUCTOR_PENDING" && (
                <section className="panel detail-panel" aria-labelledby="course-review-title">
                  <div className="panel-heading detail-heading">
-                   <div><p className="eyebrow">Final approval</p><h2 id="course-review-title">Review {selected.course.title}</h2><p className="panel-copy">Review and edit the course structure below. Publish makes it available to Admin and eligible learners. Reject returns it to Admin with a required reason.</p></div>
+                   <div><p className="eyebrow">Instructor review</p><h2 id="course-review-title">Review {selected.course.title}</h2><p className="panel-copy">Review and update content for this assigned course. Admin manages course settings and makes the final publish or reject decision.</p></div>
                    <StatusPill status={selected.course.status} />
                  </div>
-                 <div className="content-editor">
-                   <label className="full-field">Rejection reason <span className="optional-label">(required only when rejecting)</span><textarea value={rejectReason} onChange={(event) => setRejectReason(event.target.value)} maxLength={2000} rows={3} placeholder="Explain exactly what Admin needs to change." /></label>
-                   <div className="editor-actions">
-                     <button className="secondary-button" type="button" onClick={() => void rejectCourseReview()} disabled={busyAction === `reject-course:${selected.course.id}`}>{busyAction === `reject-course:${selected.course.id}` ? "Returning…" : "Reject and return to Admin"}</button>
-                     <button className="primary-button" type="button" onClick={() => void publishCourseReview()} disabled={busyAction === `publish-course:${selected.course.id}`}>{busyAction === `publish-course:${selected.course.id}` ? "Publishing…" : "Publish course"}</button>
-                   </div>
-                 </div>
+                 <div className="scope-note"><span>✓</span> You can review and update the assigned course content below. Course-level settings and publication are managed by Admin.</div>
                </section>
              )}
 
@@ -1816,6 +1787,7 @@ export default function TeacherPortalPage() {
          .profile-trigger-copy small { color: #7890a2; font-size: 9px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
          .profile-chevron { color: #6f8998; font-size: 14px; line-height: 1; margin-left: 2px; }
          .profile-dropdown { background: #fbfdfe; border: 1px solid #cbdde4; border-radius: 15px; box-shadow: 0 18px 42px #082f5026; min-width: 250px; padding: 7px; position: absolute; right: 0; top: calc(100% + 10px); z-index: 30; }
+         .profile-dropdown::before { content: ""; height: 10px; left: 0; position: absolute; right: 0; top: -10px; }
          .profile-menu-item { align-items: center; background: transparent; border: 0; border-radius: 10px; color: #526f8c; display: flex; gap: 10px; padding: 10px 9px; text-align: left; width: 100%; }
          .profile-menu-item:hover:not(:disabled) { background: #eff8f7; }
          .profile-menu-icon { align-items: center; background: #eaf5f3; border-radius: 8px; color: #267d76; display: flex; flex: 0 0 30px; font-size: 15px; height: 30px; justify-content: center; }

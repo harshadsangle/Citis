@@ -24,6 +24,55 @@ function serviceWith(
   return new PaymentsService({ query, transaction } as never, razorpay as never, { record: async () => undefined } as never);
 }
 
+test("direct students can list only published paid courses in their tenant", async () => {
+  let queryText = "";
+  let queryValues: unknown[] = [];
+  const service = serviceWith(async (text, values) => {
+    queryText = text;
+    queryValues = values;
+    return {
+      rows: [{
+        id: "course-1",
+        title: "Secure course",
+        code: "SEC-101",
+        description: "Course description",
+        thumbnail: null,
+        price_minor: "125000",
+        currency: "INR",
+        is_enrolled: false,
+      }],
+    };
+  }, async (work) => work({ query: async () => ({ rows: [] }) }), {});
+
+  const courses = await service.listPurchasableCourses(directStudent);
+  assert.deepEqual(courses, [{
+    id: "course-1",
+    title: "Secure course",
+    code: "SEC-101",
+    description: "Course description",
+    thumbnail: null,
+    priceMinor: 125000,
+    currency: "INR",
+    isEnrolled: false,
+  }]);
+  assert.deepEqual(queryValues, ["tenant-1", "student-1"]);
+  assert.match(queryText, /c\.purchasable = true/);
+  assert.match(queryText, /c\.status = 'PUBLISHED'/);
+  assert.match(queryText, /e\.learner_id = \$2/);
+});
+
+test("college students cannot list the direct-student purchase catalogue", async () => {
+  let queryCalled = false;
+  const collegeStudent = { ...directStudent, studentType: "COLLEGE_STUDENT" as const };
+  const service = serviceWith(async () => {
+    queryCalled = true;
+    return { rows: [] };
+  }, async (work) => work({ query: async () => ({ rows: [] }) }), {});
+
+  await assert.rejects(service.listPurchasableCourses(collegeStudent), ForbiddenException);
+  assert.equal(queryCalled, false);
+});
+
 test("direct purchase creates a provider order from the existing course price", async () => {
   const calls: Array<{ text: string; values: unknown[] }> = [];
   const razorpay = {
