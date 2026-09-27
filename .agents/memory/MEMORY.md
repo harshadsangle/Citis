@@ -39,3 +39,4 @@
 - [Scoped admin capability routes](scoped-admin-capability-routes.md) — institution admins need scoped LMS-capability routes for directory option data because platform-prefixed permissions are intentionally blocked.
 - [External production database access](external-production-database.md) — production auth uses external Neon; Replit’s frozen managed database cannot identify or replace that endpoint.
 - [Course institution allocations](course-institution-allocations.md) — allocations control institution eligibility without changing canonical course scope or enrollment identity.
+- [Merge checkpoint state](merge-checkpoint-state.md) — recheck HEAD, MERGE_HEAD, and refs after workspace handoffs; an in-progress conflict state may be cleared.
