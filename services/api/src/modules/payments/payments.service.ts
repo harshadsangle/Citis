@@ -75,6 +75,45 @@ export class PaymentsService {
     };
   }
 
+  async listPurchasableCourses(user: AuthenticatedUser) {
+    this.assertDirectStudent(user);
+    const result = await this.db.query<{
+      id: string;
+      title: string;
+      code: string;
+      description: string | null;
+      thumbnail: string | null;
+      price_minor: string | number;
+      currency: string;
+      is_enrolled: boolean;
+    }>(
+      `SELECT c.id, c.title, c.code, c.description, c.thumbnail, c.price_minor, c.currency,
+              EXISTS (
+                SELECT 1 FROM lms_enrollments e
+                WHERE e.tenant_id = c.tenant_id AND e.course_id = c.id
+                  AND e.learner_id = $2 AND e.status = 'ACTIVE'
+              ) AS is_enrolled
+       FROM courses c
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
+       WHERE c.tenant_id = $1
+         AND c.status = 'PUBLISHED' AND p.status = 'PUBLISHED' AND i.status = 'ACTIVE'
+         AND c.purchasable = true AND c.price_minor > 0
+       ORDER BY c.title ASC, c.id ASC`,
+      [user.tenantId, user.id],
+    );
+    return result.rows.map((course) => ({
+      id: course.id,
+      title: course.title,
+      code: course.code,
+      description: course.description,
+      thumbnail: course.thumbnail,
+      priceMinor: Number(course.price_minor),
+      currency: course.currency,
+      isEnrolled: course.is_enrolled,
+    }));
+  }
+
   async createOrder(courseId: string, input: CreatePaymentOrderDto, user: AuthenticatedUser, requestId = "payment-order") {
     this.assertDirectStudent(user);
     const course = await this.purchaseCourse(courseId, user);

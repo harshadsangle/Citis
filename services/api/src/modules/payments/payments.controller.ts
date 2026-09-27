@@ -12,6 +12,12 @@ import { PaymentsService } from "./payments.service";
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
+  @Get("purchasable-courses")
+  @RequirePermission("payments.payment.create")
+  async purchasableCourses(@Req() request: ContextRequest) {
+    return successResponse(await this.payments.listPurchasableCourses(request.context.user!), request);
+  }
+
   @Post("courses/:courseId/order")
   @RequirePermission("payments.payment.create")
   async createOrder(@Param("courseId", ParseUUIDPipe) courseId: string, @Body() input: CreatePaymentOrderDto, @Req() request: ContextRequest) {

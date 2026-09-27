@@ -72,9 +72,15 @@ async function requestOrigin(portal: LmsPortal) {
   return origin.origin;
 }
 
-export async function redirectToLmsPortal(portal: LmsPortal, provider?: LmsCourseProvider) {
+export async function redirectToLmsPortal(portal: LmsPortal, provider?: LmsCourseProvider, returnPath = "/") {
   const origin = configuredOrigin(portal) || (await requestOrigin(portal));
-  const destination = new URL(`${origin}/`);
+  if (!returnPath.startsWith("/") || returnPath.startsWith("//") || returnPath.includes("\\")) {
+    throw new Error("LMS portal return paths must be same-origin absolute paths.");
+  }
+  const destination = new URL(returnPath, origin);
+  if (destination.origin !== origin) {
+    throw new Error("LMS portal return paths must stay on the configured portal origin.");
+  }
   if (provider) destination.searchParams.set("provider", provider);
   redirect(destination.toString());
 }
