@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type ApiEnvelope<T> = {
@@ -556,14 +557,14 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
                     <span className="purchase-success-icon" aria-hidden="true">✓</span>
                     <h2>Course unlocked</h2>
                     <p>Payment was verified and your course is available in your learning library.</p>
-                    <a className="purchase-primary" href="/">Open my learning library</a>
+                    <Link className="purchase-primary" href="/">Open my learning library</Link>
                   </div>
                 ) : requestedCourse?.isEnrolled ? (
                   <div className="purchase-success" role="status">
                     <span className="purchase-success-icon" aria-hidden="true">✓</span>
                     <h2>You already have access</h2>
                     <p>This course is already active in your learning library.</p>
-                    <a className="purchase-primary" href="/">Open my learning library</a>
+                    <Link className="purchase-primary" href="/">Open my learning library</Link>
                   </div>
                 ) : requestedCourse ? (
                   <>
