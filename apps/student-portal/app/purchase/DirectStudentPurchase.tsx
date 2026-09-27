@@ -513,10 +513,10 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
     <main className="purchase-page">
       <div className="purchase-shell">
         <header className="purchase-header">
-          <a href="/" className="purchase-brand" aria-label="CITIS student portal home">
+          <Link href="/" className="purchase-brand" aria-label="CITIS student portal home">
             <span className="purchase-brand-mark">C</span>
             <span><strong>CITIS</strong><small>Skills Excellence Centre</small></span>
-          </a>
+          </Link>
           <span className="purchase-secure-label">Secure course enrolment</span>
         </header>
 
