@@ -374,7 +374,7 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
       } else {
         await apiRequest("/auth/otp/verify", {
           method: "POST",
-          body: JSON.stringify({ mobile: pendingContact, code: otpCode.trim(), tenantSlug: TENANT_SLUG }),
+          body: JSON.stringify({ mobile: pendingContact, code: otpCode.trim().toLowerCase(), tenantSlug: TENANT_SLUG }),
         });
       }
       await finishAuthentication();
@@ -614,7 +614,15 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
                   <form className="purchase-form" onSubmit={verifyCode}>
                     <label className="purchase-field">
                       <span>6-digit verification code</span>
-                      <input value={otpCode} onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" maxLength={6} required />
+                      <input
+                        value={otpCode}
+                        onChange={(event) => setOtpCode(event.target.value.replace(otpPurpose === "mobile-login" ? /[^a-fA-F0-9]/g : /\D/g, "").slice(0, 6))}
+                        inputMode={otpPurpose === "mobile-login" ? "text" : "numeric"}
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        pattern={otpPurpose === "mobile-login" ? "[a-fA-F0-9]{6}" : "[0-9]{6}"}
+                        required
+                      />
                     </label>
                     <button className="purchase-primary" type="submit" disabled={authBusy || otpCode.length !== 6}>
                       {authBusy ? "Verifying…" : "Verify and continue"}
