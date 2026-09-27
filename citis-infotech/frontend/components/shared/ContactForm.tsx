@@ -49,10 +49,7 @@ export function ContactForm({ className }: { className?: string }) {
   const onSubmit = async (values: ContactInput) => {
     setServerError("");
     try {
-      const response = await contactService.submit(values);
-      if (!response.success) {
-        throw new Error(response.message || "We could not send your message. Please try again.");
-      }
+      await contactService.submit(values);
       setSubmitted(true);
     } catch (error) {
       setServerError(error instanceof Error ? error.message : "We could not send your message. Please try again.");
