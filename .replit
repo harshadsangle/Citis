@@ -72,7 +72,7 @@ timeoutMs = 180000
 WEB_ORIGIN = "https://citis-institution-admin-pbhs.vercel.app,https://citis-institution-admin.vercel.app,https://www.citisinfotech.in,https://lms.citisinfotech.in"
 
 [userenv.development]
-NEXT_PUBLIC_API_URL = "http://localhost:4000/api/v1"
+NEXT_PUBLIC_API_URL = "https://citis.replit.app/api/v1"
 
 [deployment]
 deploymentTarget = "autoscale"
