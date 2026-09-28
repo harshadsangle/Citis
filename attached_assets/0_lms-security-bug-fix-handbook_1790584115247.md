@@ -280,7 +280,7 @@ Malicious or compromised SCORM package → stolen session cookies, phishing UI.
   `Cross-Origin-Resource-Policy: same-site`  
   `X-Content-Type-Options: nosniff`
 
-### Recommended follow-up (interns / Ayush)
+### Intentionally deferred
 
 1. **Dedicated content subdomain** (e.g. `content.citisinfotech.in`) with no auth cookies — serve SCORM only there.
 2. Or **signed short-lived URLs** on object storage (S3/Supabase Storage).
@@ -288,7 +288,7 @@ Malicious or compromised SCORM package → stolen session cookies, phishing UI.
 
 ### Your tasks
 
-- Pen-test: upload benign SCORM with script that tries `document.cookie` — confirm empty or sandbox blocks.
+- Design and verify isolation without breaking authenticated multi-file package loads.
 - Do **not** remove sandbox headers without architecture sign-off.
 
 ---
