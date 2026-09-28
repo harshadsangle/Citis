@@ -368,7 +368,7 @@ export function RegisterForm({ portal = "learner" }: { portal?: LmsPortal }) {
   if (done) {
     const staff = portal !== "learner";
     return (
-      <div role="status" className="surface rounded-xl p-7 text-center">
+      <div role="status" aria-live="polite" className="surface rounded-xl p-7 text-center">
         <CheckCircle2 className="mx-auto size-12 text-success" />
         <h3 className="mt-4 font-heading text-2xl font-semibold">Account request received</h3>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
@@ -381,14 +381,14 @@ export function RegisterForm({ portal = "learner" }: { portal?: LmsPortal }) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
       <div className="grid gap-5 sm:grid-cols-2">
-        <div><Label htmlFor="register-first-name">First name</Label><Input id="register-first-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="given-name" {...register("firstName")} />{message(errors.firstName?.message)}</div>
-        <div><Label htmlFor="register-last-name">Last name</Label><Input id="register-last-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="family-name" {...register("lastName")} />{message(errors.lastName?.message)}</div>
+       <div><Label htmlFor="register-first-name">First name</Label><Input id="register-first-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="given-name" aria-invalid={Boolean(errors.firstName)} aria-describedby={errors.firstName ? "register-first-name-error" : undefined} {...register("firstName")} />{message(errors.firstName?.message, "register-first-name-error")}</div>
+       <div><Label htmlFor="register-last-name">Last name</Label><Input id="register-last-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="family-name" aria-invalid={Boolean(errors.lastName)} aria-describedby={errors.lastName ? "register-last-name-error" : undefined} {...register("lastName")} />{message(errors.lastName?.message, "register-last-name-error")}</div>
       </div>
-      <div><Label htmlFor="register-email">Email</Label><Input id="register-email" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} />{message(errors.email?.message)}</div>
-      <div><Label htmlFor="register-password">Password</Label><Input id="register-password" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="password" autoComplete="new-password" {...register("password")} />{message(errors.password?.message)}<p className="mt-1 text-xs text-muted-foreground">Use 8–128 characters with upper, lower, and a number.</p></div>
-      <div><Label htmlFor="register-confirm-password">Confirm password</Label><Input id="register-confirm-password" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="password" autoComplete="new-password" {...register("confirmPassword")} />{message(errors.confirmPassword?.message)}</div>
+      <div><Label htmlFor="register-email">Email</Label><Input id="register-email" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="email" autoComplete="email" placeholder="you@institution.edu" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "register-email-error" : undefined} {...register("email")} />{message(errors.email?.message, "register-email-error")}</div>
+      <div><Label htmlFor="register-password">Password</Label><Input id="register-password" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="password" autoComplete="new-password" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "register-password-error register-password-help" : "register-password-help"} {...register("password")} />{message(errors.password?.message, "register-password-error")}<p id="register-password-help" className="mt-1 text-xs text-muted-foreground">Use 8–128 characters with upper, lower, and a number.</p></div>
+      <div><Label htmlFor="register-confirm-password">Confirm password</Label><Input id="register-confirm-password" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" type="password" autoComplete="new-password" aria-invalid={Boolean(errors.confirmPassword)} aria-describedby={errors.confirmPassword ? "register-confirm-password-error" : undefined} {...register("confirmPassword")} />{message(errors.confirmPassword?.message, "register-confirm-password-error")}</div>
       {portal !== "learner" && <p className="rounded-xl border border-primary/15 bg-primary/5 p-3 text-sm text-muted-foreground">Staff accounts require email verification and institution approval before portal access is enabled.</p>}
-      {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+      {serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button className="h-12 w-full rounded-xl text-sm shadow-[0_12px_25px_rgba(239,125,60,.2)]" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Create new account"}</Button>
     </form>
   );
