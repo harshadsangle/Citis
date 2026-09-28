@@ -226,7 +226,8 @@ export class ReportService {
       const raw = value === null || value === undefined
         ? ""
         : typeof value === "object" ? JSON.stringify(value) : String(value);
-      return `"${raw.replace(/"/g, "\"\"")}"`;
+      const safe = /^[=+\-@]/.test(raw) ? `'${raw}` : raw;
+      return `"${safe.replace(/"/g, "\"\"")}"`;
     };
     const lines = [headers.map(escape).join(",")];
     for (const row of rows) lines.push(headers.map((header) => escape(row[header])).join(","));

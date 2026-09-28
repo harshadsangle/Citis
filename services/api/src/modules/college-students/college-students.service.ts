@@ -260,7 +260,14 @@ export class CollegeStudentsService {
       throw new BadRequestException("Only CSV files are supported.");
     }
 
-    const parsed = parseCsv(file.buffer.toString("utf8"));
+    let parsed: ReturnType<typeof parseCsv>;
+    try {
+      parsed = parseCsv(file.buffer.toString("utf8"));
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : "CSV could not be parsed.",
+      );
+    }
     const indexes = this.headerIndexes(parsed.headers, Boolean(institutionId));
     if (parsed.records.length > MAX_IMPORT_ROWS) throw new BadRequestException(`CSV cannot contain more than ${MAX_IMPORT_ROWS} rows.`);
     const counts: ImportCounts = { totalRows: parsed.records.length, imported: 0, updated: 0, duplicates: 0, invalid: 0, failed: 0 };

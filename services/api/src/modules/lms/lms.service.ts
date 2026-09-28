@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, Optional } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, Injectable, NotFoundException, Optional } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
 import { AuditService } from "../../common/audit.service";
 import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows, isLmsAdministrator, isPlatformUser } from "../../common/access-scope";
@@ -1604,15 +1604,37 @@ export class LmsService {
     let start = 0;
     let end = Math.max(0, fileSize - 1);
     let partial = false;
-    const match = /^bytes=(\d*)-(\d*)$/.exec(range || "");
-    if (match && fileSize > 0) {
-      const requestedStart = match[1] ? Number(match[1]) : Math.max(0, fileSize - Number(match[2] || 0));
-      const requestedEnd = match[2] ? Number(match[2]) : end;
-      if (Number.isSafeInteger(requestedStart) && Number.isSafeInteger(requestedEnd) && requestedStart >= 0 && requestedStart <= requestedEnd && requestedStart < fileSize) {
-        start = requestedStart;
-        end = Math.min(requestedEnd, fileSize - 1);
-        partial = true;
+    if (range !== undefined) {
+      const match = /^bytes=(\d*)-(\d*)$/.exec(range);
+      if (!match || (!match[1] && !match[2])) {
+        throw new BadRequestException("Invalid byte Range header.");
       }
+
+      const suffixRange = !match[1];
+      const firstValue = Number(suffixRange ? match[2] : match[1]);
+      const secondValue = match[2] && !suffixRange ? Number(match[2]) : undefined;
+      if (
+        !Number.isSafeInteger(firstValue)
+        || (secondValue !== undefined && !Number.isSafeInteger(secondValue))
+      ) {
+        throw new BadRequestException("Invalid byte Range header.");
+      }
+
+      const requestedStart = suffixRange ? Math.max(0, fileSize - firstValue) : firstValue;
+      const requestedEnd = suffixRange || secondValue === undefined
+        ? fileSize - 1
+        : secondValue;
+      if (
+        fileSize === 0
+        || requestedStart >= fileSize
+        || requestedStart > requestedEnd
+      ) {
+        throw new HttpException("Requested byte range is not satisfiable.", 416);
+      }
+
+      start = requestedStart;
+      end = Math.min(requestedEnd, fileSize - 1);
+      partial = true;
     }
 
     await this.auditAccess(request, "learning_resource_file", "VIEW", resource, {

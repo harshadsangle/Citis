@@ -7,6 +7,7 @@ import type { NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./common/errors.filter";
 import { requestContextMiddleware } from "./common/request-context";
+import { isOriginAllowed, normalizeOrigin } from "./common/cors-origin";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -31,7 +32,7 @@ async function bootstrap() {
   });
   const allowedOrigins = (process.env.WEB_ORIGIN || "")
     .split(",")
-    .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean);
   if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
     throw new Error("WEB_ORIGIN must be configured in production.");
@@ -39,7 +40,7 @@ async function bootstrap() {
   const allowedOriginSet = new Set(allowedOrigins);
   app.enableCors({
     origin: allowedOrigins.length
-      ? (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => callback(null, !origin || allowedOriginSet.has(origin))
+      ? (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => callback(null, isOriginAllowed(origin, allowedOriginSet))
       : true,
     credentials: true,
   });

@@ -32,6 +32,8 @@ export function parseCsv(input: string): { headers: string[]; records: CsvRecord
     }
   }
 
+  if (quoted) throw new Error("CSV contains an unclosed quoted field.");
+
   if (value !== "" || current.length > 0) {
     current.push(value);
     if (current.some((cell) => cell.trim() !== "")) rows.push(current);
