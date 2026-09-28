@@ -1867,6 +1867,47 @@ test("LMS administrators bypass assignment staff-scope checks", async () => {
   assert.equal(queryCount, 0);
 });
 
+test("INSTRUCTOR role users need an active matching course assignment for staff access", async () => {
+  const instructor: AuthenticatedUser = {
+    ...user,
+    id: "instructor-1",
+    roles: [{ code: "INSTRUCTOR", name: "Instructor" }],
+  };
+  const callAccessCheck = (assignmentExists: boolean) => {
+    let queryText = "";
+    let queryValues: unknown[] = [];
+    const { service } = serviceWith(async (text, values) => {
+      queryText = text;
+      queryValues = values;
+      return { rows: assignmentExists ? [{ "?column?": 1 }] : [] };
+    });
+
+    return {
+      check: (service as unknown as {
+        hasAssignmentStaffAccess: (
+          user: AuthenticatedUser,
+          institutionId: string,
+          courseId: string,
+          campusId?: string | null,
+        ) => Promise<boolean>;
+      }).hasAssignmentStaffAccess(instructor, "institution-1", "course-1", "campus-1"),
+      getQuery: () => ({ text: queryText, values: queryValues }),
+    };
+  };
+
+  const assignedCheck = callAccessCheck(true);
+  assert.equal(await assignedCheck.check, true);
+  const { text, values } = assignedCheck.getQuery();
+  assert.match(text, /r\.code IN \('TEACHER', 'INSTRUCTOR'\)/);
+  assert.match(text, /ia\.instructor_id = ur\.user_id AND ia\.status = 'ACTIVE'/);
+  assert.match(text, /ia\.tenant_id = \$2 AND ia\.institution_id = \$3 AND ia\.course_id = \$4/);
+  assert.match(text, /ia\.campus_id IS NOT DISTINCT FROM \$5/);
+  assert.deepEqual(values, [instructor.id, instructor.tenantId, "institution-1", "course-1", "campus-1"]);
+
+  const unassignedCheck = callAccessCheck(false);
+  assert.equal(await unassignedCheck.check, false);
+});
+
 test("LMS administrators can load learner assignment listings without a course filter", async () => {
   const queries: string[] = [];
   const { service } = serviceWith(async (text) => {

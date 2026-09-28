@@ -2860,7 +2860,7 @@ export class LmsService {
          AND (
            r.code IN ('INSTITUTION_ADMINISTRATOR', 'PRINCIPAL_DIRECTOR', 'ACADEMIC_ADMINISTRATOR')
            OR (
-             r.code = 'TEACHER'
+              r.code IN ('TEACHER', 'INSTRUCTOR')
              AND EXISTS (
                SELECT 1
                FROM lms_instructor_assignments ia
