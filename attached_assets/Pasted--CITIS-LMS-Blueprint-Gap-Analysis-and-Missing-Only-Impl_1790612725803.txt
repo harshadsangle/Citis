@@ -1,0 +1,768 @@
+# CITIS LMS — Blueprint Gap Analysis and Missing-Only Implementation
+
+We have an existing CITIS LMS implementation in this repository.
+
+The following is the **approved target LMS workflow**. Use it as the reference specification for this task.
+
+IMPORTANT:
+
+* First inspect the existing repository thoroughly.
+* Compare the current implementation against the workflow below.
+* Do NOT reimplement functionality that already exists.
+* Do NOT modify working functionality unnecessarily.
+* Do NOT rewrite existing authentication, payment, certificate, RBAC, security, or deployment systems unless a genuine blueprint gap requires it.
+* Preserve all existing data, APIs, routes, roles, permissions, tenant isolation, and working workflows.
+* Do NOT create duplicate tables, APIs, pages, or components for functionality that already exists.
+* Do NOT change database schema unless a genuinely missing blueprint feature requires it.
+* Do NOT deploy or push anything automatically.
+* Work only on genuine gaps after completing the audit.
+
+---
+
+# TARGET CITIS LMS WORKFLOW
+
+## 1. Institution → Academic Structure
+
+Target structure:
+
+Institution
+↓
+Faculty / Department
+↓
+Programme
+↓
+Semester
+↓
+Course
+↓
+Students
+
+Check whether each level exists and is actually usable.
+
+---
+
+## 2. Programme & Course Creation
+
+Admin should be able to manage:
+
+### Programme
+
+* Programme details
+* Courses mapped to programme
+
+### Course
+
+* Course title
+* Course description
+* Course code
+* Thumbnail/details
+* Course status
+
+Course lifecycle:
+
+Draft → Published
+
+Check existing implementation before making changes.
+
+---
+
+## 3. Course Content Builder
+
+Required hierarchy:
+
+Programme
+↓
+Course
+↓
+Module
+↓
+Unit
+↓
+Chapter
+↓
+Lesson
+↓
+Learning Resource
+
+Check the current repository for every hierarchy level.
+
+If Module/Lesson already exists, do NOT recreate them.
+
+Identify only missing levels.
+
+---
+
+## 4. Learning Resources
+
+A lesson should support:
+
+* Video
+* PDF
+* Presentation
+* Interactive content
+* Quiz
+* Assignment
+* SCORM package
+* External link
+
+For every resource type determine:
+
+IMPLEMENTED
+PARTIAL
+MISSING
+DIFFERENT
+
+Do not replace an existing implementation merely because it is implemented differently.
+
+---
+
+## 5. Instructor Allocation
+
+Required:
+
+Course
+↓
+Instructor Assignment
+↓
+Instructor
+↓
+Assigned Students / Institution
+
+Verify:
+
+* Course → instructor allocation
+* Institution scope
+* Student visibility
+* Backend authorization
+
+Do not rely only on UI restrictions.
+
+---
+
+## 6. Student Enrollment
+
+Required:
+
+Course
+↓
+Course Enrollment
+↓
+Student
+
+Verify both:
+
+* College/institution learners
+* Direct learners
+
+Preserve existing enrollment/payment behavior.
+
+---
+
+## 7. Learner Dashboard
+
+Required:
+
+Student Login
+↓
+Learner Dashboard
+↓
+My Courses
+↓
+Course Progress
+↓
+Continue Learning
+
+Verify actual learner UI, not only APIs.
+
+---
+
+## 8. Actual Learning Flow
+
+Required:
+
+Open Course
+↓
+Module
+↓
+Unit
+↓
+Chapter
+↓
+Lesson
+↓
+Learning Resource
+↓
+Watch / Read / Interact
+↓
+Complete Resource
+↓
+Complete Lesson
+
+Verify the actual learner experience.
+
+---
+
+## 9. Progress Lifecycle
+
+Target:
+
+NOT STARTED
+↓
+IN PROGRESS
+↓
+COMPLETED
+↓
+ASSESSMENT
+↓
+CERTIFIED
+
+Check:
+
+* Resource progress
+* Lesson progress
+* Course progress
+* Assessment completion
+* Assignment completion
+* Completion eligibility
+* Certificate eligibility
+
+Do not blindly rename existing states if the current architecture intentionally models them differently. Report the difference first.
+
+---
+
+## 10. Assessment Engine
+
+Required assessment types:
+
+* Practice Quiz
+* Formative
+* Summative
+* Assignment
+* Project
+* Viva
+* Practical
+
+Check existing implementation.
+
+---
+
+## 11. Question Bank
+
+Required:
+
+Subject
+↓
+Topic
+↓
+Difficulty
+↓
+Question Type
+↓
+Question
+
+Required question types:
+
+* MCQ
+* Multiple Select
+* True/False
+* Fill in the Blanks
+* Matching
+* Short Answer
+* Long Answer
+
+Assessment capabilities:
+
+* Randomization
+* Question Pools
+* Negative Marking
+* Time Limits
+* Attempt Limits
+* Auto Evaluation
+* Manual Evaluation
+* Result Publication
+
+Clearly distinguish:
+
+* Fully implemented
+* Partially implemented
+* Missing
+
+Do not create a question bank if equivalent reusable functionality already exists.
+
+---
+
+## 12. Assignment / Project / Practical
+
+Required:
+
+Assignment
+↓
+Student Submission
+↓
+Evaluation
+↓
+Marks
+↓
+Feedback
+↓
+Completion
+
+Check whether:
+
+* Student submission exists
+* File attachments exist
+* Evaluation exists
+* Marks exist
+* Feedback exists
+* Resubmission exists
+* Completion impact exists
+
+Also determine whether Project/Practical are merely assessment types or have a genuine dedicated workflow.
+
+---
+
+## 13. Online Classes
+
+Target workflow:
+
+Course
+↓
+Live Class
+↓
+Student Joins
+↓
+Attendance
+↓
+Recording
+↓
+Recording Repository
+
+Potential integrations:
+
+* Zoom
+* Google Meet
+* Microsoft Teams
+* Cisco/Webex
+
+Features:
+
+* Schedule class
+* Invite students
+* Calendar entry
+* Attendance
+* Recording links
+* Class chat
+* Recording repository
+
+Audit first.
+
+If genuinely missing, report it.
+
+Do not automatically implement third-party integrations without confirming the existing architecture and credentials/configuration requirements.
+
+---
+
+## 14. Certificate Flow
+
+Required:
+
+Learning Complete
+↓
+Assessment
+↓
+Requirements Satisfied
+↓
+Certificate Eligibility
+↓
+Admin Review
+↓
+Approval
+↓
+Certificate Issued
+↓
+Certified
+
+The existing CITIS certificate approval workflow must be preserved.
+
+Do NOT introduce automatic certificate issuance.
+
+---
+
+## 15. Reporting & Analytics
+
+Required areas:
+
+* Learning Progress
+* Assessment Management
+* Certificates
+* Learning Analytics
+
+Flow:
+
+Student Activity
+↓
+Progress
+↓
+Assessment
+↓
+Assignment
+↓
+Completion
+↓
+Certificate
+↓
+Analytics / Reports
+
+Check existing reports and exports before adding anything.
+
+---
+
+# ROLE WORKFLOWS
+
+## CITIS ADMIN
+
+Target:
+
+Institution
+↓
+Programme
+↓
+Course
+↓
+Course Builder
+↓
+Module
+↓
+Unit
+↓
+Chapter
+↓
+Lesson
+↓
+Resources
+↓
+Publish
+↓
+Allocate Institution
+↓
+Allocate Instructor
+↓
+Monitor Learners
+↓
+Assessments
+↓
+Certificates
+↓
+Reports
+
+Verify each step against the existing Admin Portal and API.
+
+---
+
+## INSTRUCTOR
+
+Target:
+
+Login
+↓
+Assigned Institution/Course
+↓
+Assigned Students
+↓
+Course Content
+↓
+Lessons/Resources
+↓
+Assessments
+↓
+Grading
+↓
+Feedback
+↓
+Student Progress
+
+Verify backend authorization and tenant/course scoping.
+
+---
+
+## LEARNER
+
+Target:
+
+Login / Enrollment
+↓
+Dashboard
+↓
+My Course
+↓
+Module
+↓
+Unit
+↓
+Chapter
+↓
+Lesson
+↓
+Resources
+↓
+Progress
+↓
+Assessment
+↓
+Assignment/Project/Practical
+↓
+Completion
+↓
+Admin Review
+↓
+Certificate
+
+Verify actual UI + API workflow.
+
+---
+
+# UNDERLYING PLATFORM
+
+Target:
+
+Tenant
+↓
+Institution
+↓
+Users
+↓
+Roles
+↓
+Permissions
+↓
+LMS
+
+Preserve existing multi-tenant and RBAC architecture.
+
+---
+
+# REQUIRED AUDIT BEFORE IMPLEMENTATION
+
+Before changing anything, produce a gap table:
+
+| Blueprint Area        | Existing Implementation | Status                      | Evidence  | Action |
+| --------------------- | ----------------------- | --------------------------- | --------- | ------ |
+| Institution           | ...                     | IMPLEMENTED/PARTIAL/MISSING | file/path | ...    |
+| Faculty/Department    | ...                     | ...                         | ...       | ...    |
+| Programme             | ...                     | ...                         | ...       | ...    |
+| Semester              | ...                     | ...                         | ...       | ...    |
+| Course                | ...                     | ...                         | ...       | ...    |
+| Module                | ...                     | ...                         | ...       | ...    |
+| Unit                  | ...                     | ...                         | ...       | ...    |
+| Chapter               | ...                     | ...                         | ...       | ...    |
+| Lesson                | ...                     | ...                         | ...       | ...    |
+| Resources             | ...                     | ...                         | ...       | ...    |
+| Instructor allocation | ...                     | ...                         | ...       | ...    |
+| Enrollment            | ...                     | ...                         | ...       | ...    |
+| Assessment            | ...                     | ...                         | ...       | ...    |
+| Question bank         | ...                     | ...                         | ...       | ...    |
+| Assignments           | ...                     | ...                         | ...       | ...    |
+| Online classes        | ...                     | ...                         | ...       | ...    |
+| Certificates          | ...                     | ...                         | ...       | ...    |
+| Reporting             | ...                     | ...                         | ...       | ...    |
+
+Use these statuses:
+
+* VERIFIED IMPLEMENTED
+* PARTIAL
+* DIFFERENT
+* MISSING
+* UNVERIFIED
+* FUTURE / OUT OF SCOPE
+
+---
+
+# CRITICAL IMPLEMENTATION RULE
+
+After completing the audit:
+
+### ONLY implement genuine MISSING or required PARTIAL functionality.
+
+Do NOT implement:
+
+* already-working features
+* duplicate workflows
+* duplicate database tables
+* duplicate APIs
+* duplicate UI
+* unnecessary refactors
+* unrelated security improvements
+* unrelated redesigns
+
+For every proposed change explain:
+
+1. Blueprint requirement
+2. Existing implementation
+3. Exact gap
+4. Why the existing implementation does not satisfy the requirement
+5. Files/database/API/UI that need modification
+6. Whether migration is actually required
+
+---
+
+# PRESERVE EXISTING WORK
+
+The repository already contains substantial functionality including:
+
+* Authentication
+* Email/SMS OTP
+* Tenant isolation
+* RBAC
+* Instructor assignment enforcement
+* Course management
+* Course approval
+* Institution allocation
+* Learner enrollment
+* Progress tracking
+* Assessment engine
+* Assignment workflow
+* Certificate eligibility/review/approval/issuance
+* Razorpay payments
+* Refund handling
+* Webhooks
+* Reports
+* CSV exports
+* SCORM handling
+* Resource management
+* Request IDs
+* API health endpoints
+* CORS handling
+* Accessibility fixes
+* Security fixes
+* Institution status
+* Course allocation
+* Instructor time-based greeting
+
+These MUST be inspected and reused.
+
+Do not treat them as missing simply because their implementation differs from the blueprint wording.
+
+---
+
+# IMPLEMENTATION ORDER
+
+If gaps are found, implement in this order:
+
+### Phase 1 — Academic Structure
+
+* Faculty/Department if genuinely required
+* Programme improvements if required
+* Semester if genuinely required
+* Unit
+* Chapter
+
+### Phase 2 — Course Builder
+
+Integrate missing hierarchy into the existing Course Builder without breaking:
+
+* Module
+* Lesson
+* Resources
+* Existing courses
+
+### Phase 3 — Learning Resources
+
+Only add genuinely missing resource capabilities.
+
+### Phase 4 — Assessment
+
+Only add genuinely missing:
+
+* Question bank
+* Question metadata
+* Missing question types
+* Question pools/randomization
+* Negative marking
+* Result publication controls
+
+### Phase 5 — Assignment / Project / Practical
+
+Only add genuinely missing workflow capabilities.
+
+### Phase 6 — Online Classes
+
+Only if confirmed to be part of the current implementation scope:
+
+* Live classes
+* Scheduling
+* Attendance
+* Recording links
+* Provider integrations
+
+### Phase 7 — Reporting
+
+Only add genuinely missing reporting/analytics capabilities.
+
+### Phase 8 — UI/UX Integration
+
+Ensure newly implemented functionality is actually accessible through:
+
+* Admin Portal
+* Instructor Portal
+* Learner Portal
+
+Do not build backend-only features that cannot be used through the intended portal workflow.
+
+---
+
+# VERIFICATION REQUIREMENTS
+
+After each implementation phase:
+
+* Run relevant tests.
+* Run API build/type check.
+* Run affected portal build/type check.
+* Run `git diff --check`.
+* Verify existing authentication and RBAC behavior remains intact.
+* Verify tenant isolation.
+* Verify existing course/resource/enrollment workflows.
+* Verify existing certificate approval workflow.
+* Verify existing payment/refund workflow where affected.
+* Do not deploy automatically.
+
+At the end provide:
+
+## FINAL GAP REPORT
+
+### Implemented
+
+Everything newly implemented.
+
+### Already Existing
+
+Everything reused without reimplementation.
+
+### Remaining Missing
+
+Only genuine remaining blueprint gaps.
+
+### Differences
+
+Existing functionality that intentionally differs from the blueprint.
+
+### Unverified
+
+Anything that requires production/live verification.
+
+### Tests
+
+Exact test/build results.
+
+### Database Changes
+
+Only migrations actually required and created.
+
+### Deployment
+
+Explicitly state that no deployment/push was performed unless requested.
+
+Most importantly:
+
+**Do not start by coding.**
+First inspect and produce the gap analysis.
+Then implement ONLY the confirmed missing functionality.
