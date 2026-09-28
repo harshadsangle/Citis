@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AuthService } from "./auth.service";
@@ -11,6 +12,10 @@ function noOpLimiter() {
     record: () => undefined,
     clear: () => undefined,
   };
+}
+
+function hash(value: string) {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 test("mobile OTP sends an SMS to the registered mobile number", async () => {
@@ -76,4 +81,97 @@ test("failed mobile OTP delivery consumes the challenge and a retry creates a ne
   assert.deepEqual(invalidated, ["challenge-failed"]);
   assert.equal(insertCount, 2);
   assert.equal(deliveryCount, 2);
+});
+
+test("mobile OTP verification consumes a challenge once within its tenant", async () => {
+  const code = "a1b2c3";
+  let consumed = false;
+  let sessionCount = 0;
+  let verificationSql = "";
+  const db = {
+    query: async (text: string) => {
+      if (text.includes("INSERT INTO auth_sessions")) sessionCount += 1;
+      return { rows: [] };
+    },
+    transaction: async (operation: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: unknown[] }> }) => unknown) =>
+      operation({
+        query: async (text: string) => {
+          if (text.includes("SELECT c.id, u.id AS user_id, c.code_hash, c.attempts")) {
+            verificationSql = text;
+            return {
+              rows: consumed ? [] : [{ id: "challenge-1", user_id: "user-1", code_hash: hash(code), attempts: 0 }],
+            };
+          }
+          if (text.includes("SET consumed_at = now()")) consumed = true;
+          return { rows: [] };
+        },
+      }),
+  };
+  const service = new AuthService(db as never, noOpLimiter() as never, {} as never);
+
+  const session = await service.verifyOtp({ mobile, tenantSlug: "demo", code }, metadata);
+  assert.equal(typeof session.token, "string");
+  assert.equal(consumed, true);
+  assert.match(verificationSql, /c\.channel = 'SMS'/);
+  assert.match(verificationSql, /t\.slug = \$2/);
+  assert.match(verificationSql, /c\.expires_at > now\(\)/);
+  assert.match(verificationSql, /FOR UPDATE OF c/);
+
+  await assert.rejects(
+    service.verifyOtp({ mobile, tenantSlug: "demo", code }, metadata),
+    /Invalid or expired verification code/,
+  );
+  assert.equal(sessionCount, 1);
+});
+
+test("expired mobile OTPs cannot create sessions", async () => {
+  let sessionCount = 0;
+  let verificationSql = "";
+  const db = {
+    query: async (text: string) => {
+      if (text.includes("INSERT INTO auth_sessions")) sessionCount += 1;
+      return { rows: [] };
+    },
+    transaction: async (operation: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: unknown[] }> }) => unknown) =>
+      operation({
+        query: async (text: string) => {
+          verificationSql = text;
+          return { rows: [] };
+        },
+      }),
+  };
+  const service = new AuthService(db as never, noOpLimiter() as never, {} as never);
+
+  await assert.rejects(
+    service.verifyOtp({ mobile, tenantSlug: "demo", code: "a1b2c3" }, metadata),
+    /Invalid or expired verification code/,
+  );
+  assert.match(verificationSql, /c\.expires_at > now\(\)/);
+  assert.equal(sessionCount, 0);
+});
+
+test("mobile OTP verification increments attempts only on the selected challenge", async () => {
+  const statements: Array<{ text: string; values?: unknown[] }> = [];
+  const db = {
+    query: async () => ({ rows: [] }),
+    transaction: async (operation: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: unknown[] }> }) => unknown) =>
+      operation({
+        query: async (text: string, values?: unknown[]) => {
+          statements.push({ text, values });
+          if (text.includes("SELECT c.id, u.id AS user_id, c.code_hash, c.attempts")) {
+            return { rows: [{ id: "challenge-tenant-scoped", user_id: "user-1", code_hash: hash("correct"), attempts: 4 }] };
+          }
+          return { rows: [] };
+        },
+      }),
+  };
+  const service = new AuthService(db as never, noOpLimiter() as never, {} as never);
+
+  await assert.rejects(
+    service.verifyOtp({ mobile, tenantSlug: "demo", code: "wrong1" }, metadata),
+    /Invalid or expired verification code/,
+  );
+  const attemptUpdate = statements.find(({ text }) => text.includes("SET attempts = attempts + 1"));
+  assert.equal(attemptUpdate?.values?.[0], "challenge-tenant-scoped");
+  assert.match(attemptUpdate?.text ?? "", /attempts \+ 1 >= 5/);
 });

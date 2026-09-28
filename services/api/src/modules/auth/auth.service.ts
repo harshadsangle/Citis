@@ -956,13 +956,15 @@ export class AuthService {
 
   async requestOtp(input: OtpRequestDto, metadata: { ipAddress?: string }) {
     const ipKey = metadata.ipAddress || "unknown";
-    const mobileKey = `${ipKey}:${input.mobile.trim()}`;
+    const tenantSlug = input.tenantSlug.trim();
+    const mobile = input.mobile.trim();
+    const mobileKey = `${ipKey}:${tenantSlug}:${mobile}`;
     this.rateLimiter.assertAllowed("otp-request-ip", ipKey, 10, OTP_WINDOW_MS);
     this.rateLimiter.assertAllowed("otp-request-mobile", mobileKey, 5, OTP_WINDOW_MS);
     this.rateLimiter.record("otp-request-ip", ipKey, OTP_WINDOW_MS);
     this.rateLimiter.record("otp-request-mobile", mobileKey, OTP_WINDOW_MS);
     const tenant = await this.db.query<{ id: string }>("SELECT id FROM tenants WHERE slug = $1 AND status = 'ACTIVE'", [
-      input.tenantSlug.trim(),
+      tenantSlug,
     ]);
     if (!tenant.rows[0]) throw new UnauthorizedException("The requested institution is not available.");
     const code = randomBytes(3).toString("hex").slice(0, 6);
@@ -970,13 +972,13 @@ export class AuthService {
       `UPDATE auth_challenges
        SET consumed_at = now()
        WHERE tenant_id = $1 AND mobile = $2 AND purpose = 'LOGIN' AND consumed_at IS NULL`,
-      [tenant.rows[0].id, input.mobile.trim()],
+      [tenant.rows[0].id, mobile],
     );
     const challenge = await this.db.query<{ id: string }>(
       `INSERT INTO auth_challenges (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at)
         VALUES ($1, $2, $2, 'SMS', 'LOGIN', $3, now() + interval '10 minutes')
         RETURNING id`,
-      [tenant.rows[0].id, input.mobile.trim(), hashToken(code)],
+      [tenant.rows[0].id, mobile, hashToken(code)],
     );
     const challengeId = challenge.rows[0]?.id;
     if (!challengeId) throw new UnauthorizedException("Unable to create a verification challenge.");
@@ -984,7 +986,7 @@ export class AuthService {
     try {
       await this.otpDelivery.deliver({
         channel: "SMS",
-        destination: input.mobile.trim(),
+        destination: mobile,
         code,
         purpose: "LOGIN",
       });
@@ -1001,35 +1003,61 @@ export class AuthService {
 
   async verifyOtp(input: OtpVerifyDto, metadata: { ipAddress?: string; userAgent?: string }) {
     const ipKey = metadata.ipAddress || "unknown";
-    const mobileKey = `${ipKey}:${input.mobile.trim()}`;
+    const tenantSlug = input.tenantSlug.trim();
+    const mobile = input.mobile.trim();
+    const mobileKey = `${ipKey}:${tenantSlug}:${mobile}`;
     this.rateLimiter.assertAllowed("otp-verify-ip", ipKey, 20, OTP_WINDOW_MS);
     this.rateLimiter.assertAllowed("otp-verify-mobile", mobileKey, 5, OTP_WINDOW_MS);
-    const result = await this.db.query<{ id: string; user_id: string }>(
-      `SELECT c.id, u.id AS user_id
-       FROM auth_challenges c
-       JOIN users u ON u.tenant_id = c.tenant_id AND u.mobile = c.mobile
-       JOIN tenants t ON t.id = c.tenant_id
-       WHERE c.mobile = $1 AND c.code_hash = $2 AND c.purpose = 'LOGIN'
-         AND t.slug = $3
-         AND c.consumed_at IS NULL AND c.expires_at > now() AND c.attempts < 5 AND u.status = 'ACTIVE'
-       ORDER BY c.created_at DESC LIMIT 1`,
-      [input.mobile.trim(), hashToken(input.code), input.tenantSlug.trim()],
-    );
-    if (!result.rows[0]) {
-      await this.db.query(
-        `UPDATE auth_challenges
-         SET attempts = attempts + 1
-         WHERE mobile = $1 AND purpose = 'LOGIN' AND consumed_at IS NULL AND expires_at > now()`,
-        [input.mobile.trim()],
+    const result = await this.db.transaction(async (client) => {
+      const challenge = await client.query<{
+        id: string;
+        user_id: string;
+        code_hash: string;
+        attempts: number;
+      }>(
+        `SELECT c.id, u.id AS user_id, c.code_hash, c.attempts
+         FROM auth_challenges c
+         JOIN users u ON u.tenant_id = c.tenant_id AND u.mobile = c.mobile
+         JOIN tenants t ON t.id = c.tenant_id
+         WHERE c.mobile = $1 AND c.channel = 'SMS' AND c.purpose = 'LOGIN'
+           AND t.slug = $2 AND t.status = 'ACTIVE' AND u.status = 'ACTIVE'
+           AND c.consumed_at IS NULL AND c.expires_at > now()
+         ORDER BY c.created_at DESC
+         LIMIT 1
+         FOR UPDATE OF c`,
+        [mobile, tenantSlug],
       );
+      const row = challenge.rows[0];
+      if (!row) return { valid: false as const };
+      if (row.attempts >= 5) {
+        await client.query("UPDATE auth_challenges SET consumed_at = now() WHERE id = $1 AND consumed_at IS NULL", [row.id]);
+        return { valid: false as const };
+      }
+      if (row.code_hash !== hashToken(input.code)) {
+        await client.query(
+          `UPDATE auth_challenges
+           SET attempts = attempts + 1,
+               consumed_at = CASE WHEN attempts + 1 >= 5 THEN now() ELSE consumed_at END
+           WHERE id = $1`,
+          [row.id],
+        );
+        return { valid: false as const };
+      }
+      await client.query(
+        "UPDATE auth_challenges SET consumed_at = now() WHERE id = $1 AND consumed_at IS NULL",
+        [row.id],
+      );
+      return { valid: true as const, userId: row.user_id };
+    });
+
+    if (!result.valid) {
       this.rateLimiter.record("otp-verify-ip", ipKey, OTP_WINDOW_MS);
       this.rateLimiter.record("otp-verify-mobile", mobileKey, OTP_WINDOW_MS);
       throw new UnauthorizedException("Invalid or expired verification code.");
     }
     this.rateLimiter.clear("otp-verify-ip", ipKey);
     this.rateLimiter.clear("otp-verify-mobile", mobileKey);
-    await this.db.query("UPDATE auth_challenges SET consumed_at = now() WHERE id = $1", [result.rows[0].id]);
-    return this.startSession(result.rows[0].user_id, metadata);
+    return this.startSession(result.userId, metadata);
   }
 
   providerStatus(provider: "google" | "microsoft" | "sso") {
