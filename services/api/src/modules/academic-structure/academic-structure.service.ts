@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
-import { assertScope, assertScopeForRead, filterScopedRows } from "../../common/access-scope";
+import { assertScope, assertScopeForRead, canAccessScope, filterScopedRows } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { ContextRequest, AuthenticatedUser } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
@@ -52,6 +52,35 @@ export class AcademicStructureService {
     );
     const rows = filterScopedRows(user, result.rows as Array<Record<string, unknown>>, "institution_id", "campus_id");
     return { data: rows, meta: paginationMeta(page, size, rows.length) };
+  }
+
+  async courseOptions(user: AuthenticatedUser, institutionId: string) {
+    assertScopeForRead(user, institutionId);
+    const result = await this.db.query(
+      `SELECT c.id, c.institution_id, c.campus_id, c.title, c.code
+       FROM courses c
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+       JOIN institutions owner ON owner.id = c.institution_id AND owner.tenant_id = c.tenant_id
+       JOIN institutions target ON target.id = $2 AND target.tenant_id = c.tenant_id
+       WHERE c.tenant_id = $1 AND c.status = 'PUBLISHED' AND p.status = 'PUBLISHED'
+         AND owner.status = 'ACTIVE' AND target.status = 'ACTIVE'
+         AND (
+           c.institution_id = $2
+           OR EXISTS (
+             SELECT 1 FROM lms_course_institution_allocations allocation
+             WHERE allocation.tenant_id = c.tenant_id AND allocation.course_id = c.id
+               AND allocation.institution_id = $2 AND allocation.status = 'ACTIVE'
+           )
+         )
+       ORDER BY c.title, c.code
+       LIMIT 500`,
+      [user.tenantId, institutionId],
+    );
+    const eligible = (result.rows as Array<Record<string, unknown>>).filter((course) => (
+      course.institution_id !== institutionId
+      || canAccessScope(user, institutionId, course.campus_id as string | null | undefined)
+    ));
+    return eligible.map(({ id, title, code }) => ({ id, title, code }));
   }
 
   async create(
@@ -119,11 +148,18 @@ export class AcademicStructureService {
            WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND status <> 'ARCHIVED'`,
           [offering.semesterId, user.tenantId, offering.institutionId],
         ),
-        this.db.query<{ campus_id: string | null }>(
+        this.db.query<{ campus_id: string | null; institution_id: string }>(
           `SELECT c.campus_id FROM courses c
            JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
-           WHERE c.id = $1 AND c.tenant_id = $2 AND c.institution_id = $3
-             AND c.status <> 'ARCHIVED' AND p.status <> 'ARCHIVED'`,
+           WHERE c.id = $1 AND c.tenant_id = $2 AND c.status <> 'ARCHIVED' AND p.status <> 'ARCHIVED'
+             AND (
+               c.institution_id = $3
+               OR EXISTS (
+                 SELECT 1 FROM lms_course_institution_allocations allocation
+                 WHERE allocation.tenant_id = c.tenant_id AND allocation.course_id = c.id
+                   AND allocation.institution_id = $3 AND allocation.status = 'ACTIVE'
+               )
+             )`,
           [offering.courseId, user.tenantId, offering.institutionId],
         ),
       ]);
@@ -131,7 +167,8 @@ export class AcademicStructureService {
       if (!course.rows[0]) throw new NotFoundException("Course not found in the selected institution.");
       const campusId = offering.campusId ?? null;
       if ((semester.rows[0].campus_id && semester.rows[0].campus_id !== campusId)
-        || (course.rows[0].campus_id && course.rows[0].campus_id !== campusId)) {
+        || (course.rows[0].institution_id === offering.institutionId
+          && course.rows[0].campus_id && course.rows[0].campus_id !== campusId)) {
         throw new BadRequestException("Offering campus must match the selected course and semester campuses.");
       }
       fields = ["tenant_id", "institution_id", "course_id", "semester_id", "campus_id", "section", "created_by", "updated_by"];

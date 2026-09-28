@@ -6,7 +6,7 @@ import { RequirePermission } from "../../guards/permission.decorator";
 import { PermissionGuard } from "../../guards/permission.guard";
 import { AuthGuard } from "../auth/auth.guard";
 import { AcademicStructureService } from "./academic-structure.service";
-import { CreateDepartmentDto, CreateFacultyDto, CreateOfferingDto, CreateSemesterDto, UpdateAcademicDto } from "./academic-structure.dto";
+import { AcademicCourseOptionsQueryDto, CreateDepartmentDto, CreateFacultyDto, CreateOfferingDto, CreateSemesterDto, UpdateAcademicDto } from "./academic-structure.dto";
 @Controller("academic")
 @UseGuards(AuthGuard, PermissionGuard)
 export class AcademicStructureController {
@@ -16,6 +16,7 @@ export class AcademicStructureController {
  @Get("departments") @RequirePermission("lms.department.view") departments(@Req() r:ContextRequest,@Query() q:Record<string,string>){return this.list("departments",r,q);}
  @Get("semesters") @RequirePermission("lms.semester.view") semesters(@Req() r:ContextRequest,@Query() q:Record<string,string>){return this.list("semesters",r,q);}
  @Get("course-offerings") @RequirePermission("lms.course_offering.view") offerings(@Req() r:ContextRequest,@Query() q:Record<string,string>){return this.list("course-offerings",r,q);}
+ @Get("course-options") @RequirePermission("lms.course_offering.create") async courseOptions(@Req() r:ContextRequest,@Query() q:AcademicCourseOptionsQueryDto){return successResponse(await this.service.courseOptions(r.context.user!,q.institutionId),r);}
  @Post("faculties") @RequirePermission("lms.faculty.create") async createFaculty(@Body() d:CreateFacultyDto,@Req()r:ContextRequest){return successResponse(await this.service.create("faculties",d,r),r);}
  @Post("departments") @RequirePermission("lms.department.create") async createDepartment(@Body() d:CreateDepartmentDto,@Req()r:ContextRequest){return successResponse(await this.service.create("departments",d,r),r);}
  @Post("semesters") @RequirePermission("lms.semester.create") async createSemester(@Body() d:CreateSemesterDto,@Req()r:ContextRequest){return successResponse(await this.service.create("semesters",d,r),r);}

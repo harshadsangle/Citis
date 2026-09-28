@@ -547,7 +547,7 @@ export class LmsService {
       );
       if (!department.rows[0]) throw new NotFoundException("Active department not found in the current institution.");
     }
-    const changeDepartment = Object.prototype.hasOwnProperty.call(input, "departmentId");
+    const changeDepartment = input.departmentId !== undefined;
     return this.run(async () => {
       const result = await this.db.query(
         `UPDATE programmes

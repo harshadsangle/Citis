@@ -1,4 +1,5 @@
 import { IsDateString, IsIn, IsOptional, IsString, IsUUID, Length, MaxLength } from "class-validator";
+export class AcademicCourseOptionsQueryDto { @IsUUID() institutionId!: string; }
 export class AcademicBaseDto {
  @IsUUID() institutionId!: string; @IsOptional() @IsUUID() campusId?: string;
  @IsString() @Length(1,160) name!: string; @IsString() @Length(1,48) code!: string;

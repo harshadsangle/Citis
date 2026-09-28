@@ -125,13 +125,13 @@ export default function AcademicStructurePage() {
       if (kind === "course-offerings") {
         const [semesterResult, courseResult] = await Promise.allSettled([
           request<ListResponse>(`/academic/semesters${query}`),
-          request<ListResponse>("/courses?status=PUBLISHED&page=1&pageSize=100"),
+          request<ListResponse>(`/academic/course-options?institutionId=${encodeURIComponent(institutionId)}`),
         ]);
         if (semesterResult.status === "fulfilled") {
           setSemesters((semesterResult.value.data || []).filter((item) => item.status !== "ARCHIVED"));
         } else setError(semesterResult.reason instanceof Error ? semesterResult.reason.message : "Unable to load semesters.");
         if (courseResult.status === "fulfilled") {
-          setCourses((courseResult.value.data || []).filter((item) => item.institution_id === institutionId));
+          setCourses(courseResult.value.data || []);
         } else setError(courseResult.reason instanceof Error ? courseResult.reason.message : "Unable to load courses.");
       }
     };
