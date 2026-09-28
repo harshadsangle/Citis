@@ -1378,23 +1378,27 @@ export default function TeacherPortalPage() {
       isCorrect: Boolean(option.isCorrect ?? option.is_correct),
     }));
     if (prompt.length < 2) {
-      setError("Add a question prompt.");
+      reportFieldError("teacher-question-prompt", "Add a question prompt.");
       return;
     }
     if (!Number.isFinite(marks) || marks < 0.01 || marks > 100000) {
-      setError("Enter question marks between 0.01 and 100,000.");
+      reportFieldError("teacher-question-marks", "Enter question marks between 0.01 and 100,000.");
       return;
     }
     if (!Number.isInteger(sequence) || sequence < 1) {
-      setError("Question sequence must be a positive whole number.");
+      reportFieldError("teacher-question-sequence", "Question sequence must be a positive whole number.");
       return;
     }
     if (options.some((option) => !option.value || !option.label)) {
-      setError("Every answer option needs a value and label.");
+      const invalidOption = options.findIndex((option) => !option.value || !option.label);
+      reportFieldError(
+        `teacher-question-option-${invalidOption}-${options[invalidOption]?.value ? "label" : "value"}`,
+        "Every answer option needs a value and label.",
+      );
       return;
     }
     if (new Set(options.map((option) => option.value)).size !== options.length) {
-      setError("Answer option values must be unique.");
+      reportFieldError("teacher-question-option-0-value", "Answer option values must be unique.");
       return;
     }
     setBusyAction(`save-question:${questionEditor.id || "new"}`);
