@@ -130,6 +130,8 @@ test("approving an instructor request assigns institution scope and activates th
           role_code: "TEACHER",
           user_role_id: "user-role-1",
         }];
+      } else if (sql.includes("FROM institutions\n")) {
+        rows = [{ id: "institution-1" }];
       } else if (sql.includes("FROM institutions i")) {
         rows = [{ id: "institution-1", campus_id: "campus-1" }];
       } else if (sql.includes("SELECT id FROM user_roles")) {
@@ -158,9 +160,9 @@ test("approving an instructor request assigns institution scope and activates th
     email: "admin@example.test",
     firstName: "Admin",
     lastName: "User",
-    roles: [{ code: "CITIS_SUPER_ADMIN", name: "CITIS Super Admin" }],
+    roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
     permissions: [],
-    scopes: [],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
   };
 
   const result = await service.approveInstructorRequest(
@@ -240,4 +242,44 @@ test("rejecting an instructor request disables the account and records the reaso
   assert.equal(result.status, "DISABLED");
   assert.equal(calls.some((sql) => sql.includes("status = 'DISABLED'")), true);
   assert.equal(auditEvents[0]?.newValue?.reason, "Incomplete application.");
+});
+
+test("institution administrators cannot act on unscoped requests when the tenant has multiple institutions", async () => {
+  const calls: string[] = [];
+  const client = {
+    query: async <T>(sql: string) => {
+      calls.push(sql);
+      if (sql.includes("FROM users u")) {
+        return {
+          rows: [{ id: "instructor-1", tenant_id: "tenant-1", role_code: "TEACHER" }] as T[],
+        };
+      }
+      if (sql.includes("FROM institutions\n")) {
+        return { rows: [{ id: "institution-1" }, { id: "institution-2" }] as T[] };
+      }
+      return { rows: [] as T[] };
+    },
+  };
+  const db = { transaction: async (work: (connection: never) => Promise<unknown>) => work(client as never) };
+  const service = new UsersService(db as never, { record: async () => undefined } as never);
+  const actor = {
+    id: "admin-1",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Admin",
+    lastName: "User",
+    roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
+    permissions: [],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
+  };
+
+  await assert.rejects(
+    service.rejectInstructorRequest(
+      "instructor-1",
+      { reason: "Incomplete application." },
+      { context: { user: actor, requestId: "request-3" } } as never,
+    ),
+    /Pending instructor request not found/,
+  );
+  assert.equal(calls.some((sql) => sql.startsWith("UPDATE users")), false);
 });

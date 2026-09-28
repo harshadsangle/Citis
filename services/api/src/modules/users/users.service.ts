@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
 import { assertScope, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
