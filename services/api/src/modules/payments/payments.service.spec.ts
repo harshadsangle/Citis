@@ -175,6 +175,7 @@ test("concurrent same-key payment requests recover 23505 and reuse one Razorpay 
   let insertAttempts = 0;
   let uniqueConflicts = 0;
   let conflictReselects = 0;
+  let conflictReselectSnapshot: Record<string, unknown> | null = null;
   let providerOrderCalls = 0;
   let resolveInitialLookups!: () => void;
   const bothInitialLookups = new Promise<void>((resolve) => {
@@ -199,6 +200,7 @@ test("concurrent same-key payment requests recover 23505 and reuse one Razorpay 
       if (text.startsWith("SELECT * FROM lms_payments")) {
         if (values[3] === idempotencyKey) {
           conflictReselects += 1;
+          conflictReselectSnapshot = payment ? { ...payment } : null;
           resolveConflictReselect();
         }
         return { rows: payment ? [{ ...payment }] : [] };
@@ -276,7 +278,7 @@ test("concurrent same-key payment requests recover 23505 and reuse one Razorpay 
     }),
   ]);
   if (reselectTimeout) clearTimeout(reselectTimeout);
-  const racedPaymentSnapshot = payment ? { ...payment } : null;
+  const racedPaymentSnapshot = conflictReselectSnapshot;
   releaseProviderOrder({ id: "order-shared", amount: 125000, currency: "INR", status: "created" });
   const results = await resultsPromise;
   const successes = results.filter((result) => result.status === "fulfilled");
