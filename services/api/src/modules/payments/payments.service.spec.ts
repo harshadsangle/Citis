@@ -600,6 +600,7 @@ test("concurrent refunds reserve the refundable amount under the payment lock", 
   const second = service.initiateRefund("payment-1", { amountMinor: 1000, reason: "Duplicate payment" }, admin);
   const [firstResult, secondResult] = await Promise.allSettled([first, second]);
 
+  if (firstResult.status === "rejected") throw firstResult.reason;
   assert.equal(firstResult.status, "fulfilled");
   assert.equal(secondResult.status, "rejected");
   if (secondResult.status === "rejected") assert.ok(secondResult.reason instanceof BadRequestException);
