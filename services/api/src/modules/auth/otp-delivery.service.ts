@@ -10,9 +10,14 @@ type OtpDeliveryInput = {
   purpose: OtpPurpose;
 };
 
+type OtpDeliveryRuntime = {
+  environment?: NodeJS.ProcessEnv;
+  fetchImpl?: typeof fetch;
+};
+
 @Injectable()
 export class OtpDeliveryService {
-  async deliver(input: OtpDeliveryInput) {
+  async deliver(input: OtpDeliveryInput, runtime: OtpDeliveryRuntime = {}) {
     if (input.channel === "EMAIL") {
       const apiKey = process.env.RESEND_API_KEY;
       const from = process.env.EMAIL_OTP_FROM;
@@ -39,11 +44,12 @@ export class OtpDeliveryService {
       return;
     }
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_FROM_NUMBER;
+    const environment = runtime.environment ?? process.env;
+    const accountSid = environment.TWILIO_ACCOUNT_SID;
+    const authToken = environment.TWILIO_AUTH_TOKEN;
+    const from = environment.TWILIO_FROM_NUMBER;
     if (!accountSid || !authToken || !from) {
-      return this.handleMissingConfiguration("SMS OTP");
+      throw new ServiceUnavailableException("SMS verification delivery is not configured.");
     }
 
     const body = new URLSearchParams({
@@ -51,14 +57,23 @@ export class OtpDeliveryService {
       From: from,
       Body: `Your CITIS verification code is ${input.code}. It expires in 10 minutes.`,
     });
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body,
-    });
+    let response: Response;
+    try {
+      response = await (runtime.fetchImpl ?? fetch)(
+        `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${accountSid}:${authToken}`).toString("base64")}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body,
+          signal: AbortSignal.timeout(10_000),
+        },
+      );
+    } catch {
+      throw new ServiceUnavailableException("SMS verification delivery is temporarily unavailable.");
+    }
     if (!response.ok) {
       throw new ServiceUnavailableException("SMS verification delivery is temporarily unavailable.");
     }
