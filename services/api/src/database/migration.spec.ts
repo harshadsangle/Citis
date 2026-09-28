@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { resolve } from "node:path";
+import { MIGRATION_VERSIONS } from "./migrate";
 
 const migration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/001_foundation.sql"), "utf8");
 const lmsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/002_lms_course_management.sql"), "utf8");
@@ -28,6 +29,7 @@ const foundationRolesMigration = readFileSync(resolve(process.cwd(), "../../pack
 const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/021_college_student_csv_onboarding.sql"), "utf8");
 const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
 const paymentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/023_razorpay_course_payments.sql"), "utf8");
+const refundPartialIndexMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/032_lms_refund_partial_index.sql"), "utf8");
 const progressIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/024_lms_progress_assessment_assignment_integrity.sql"), "utf8");
 const certificateLifecycleMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/025_lms_certificate_lifecycle.sql"), "utf8");
 const tenantParentIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/026_lms_tenant_parent_integrity.sql"), "utf8");
@@ -271,6 +273,14 @@ test("Step 5 migration keeps the LMS catalogue authoritative for direct purchase
   assert.match(paymentMigration, /payments\.payment\.create/);
   assert.match(paymentMigration, /payments\.refund\.create/);
   assert.match(paymentMigration, /023_razorpay_course_payments/);
+});
+
+test("refund index migration allows multiple processed refunds but keeps one pending refund per payment", () => {
+  assert.match(refundPartialIndexMigration, /DROP INDEX IF EXISTS lms_refunds_payment_pending_key/);
+  assert.match(refundPartialIndexMigration, /CREATE UNIQUE INDEX IF NOT EXISTS lms_refunds_payment_pending_key\s+ON lms_refunds \(payment_id\) WHERE status = 'PENDING'/);
+  assert.match(refundPartialIndexMigration, /032_lms_refund_partial_index/);
+  assert.match(paymentMigration, /CREATE UNIQUE INDEX IF NOT EXISTS lms_refunds_razorpay_key/);
+  assert.equal(MIGRATION_VERSIONS.at(-1), "032_lms_refund_partial_index");
 });
 
 test("Step 6 migration persists access state, submission history, and central-admin assignment review", () => {

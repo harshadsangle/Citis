@@ -208,3 +208,97 @@ test("concurrent refunds reserve the refundable amount under the payment lock", 
   if (secondResult.status === "rejected") assert.ok(secondResult.reason instanceof BadRequestException);
   assert.equal(refunds.filter((refund) => refund.status === "PROCESSED").length, 1);
 });
+
+test("two successive partial refunds can be followed by a final refund", async () => {
+  const admin: AuthenticatedUser = {
+    ...directStudent,
+    id: "admin-1",
+    studentType: undefined,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  };
+  const payment: Record<string, any> = {
+    id: "payment-1",
+    tenant_id: admin.tenantId,
+    student_id: "student-1",
+    course_id: "course-1",
+    amount_minor: "1000",
+    status: "CAPTURED",
+    razorpay_payment_id: "pay-1",
+  };
+  const refunds: Array<Record<string, any>> = [];
+  const providerAmounts: number[] = [];
+  let nextRefundId = 1;
+  const transaction = async (work: (client: any) => Promise<unknown>) => work({
+    query: async (text: string, values: unknown[] = []) => {
+      if (text.includes("SELECT * FROM lms_payments")) return { rows: [payment] };
+      if (text.includes("SELECT COALESCE(sum(amount_minor), 0)::text AS total") && text.includes("'PENDING'")) {
+        return {
+          rows: [{
+            total: String(refunds
+              .filter((refund) => ["PENDING", "PROCESSED"].includes(refund.status))
+              .reduce((sum, refund) => sum + refund.amount_minor, 0)),
+          }],
+        };
+      }
+      if (text.startsWith("INSERT INTO lms_refunds")) {
+        const refund = {
+          id: `refund-${nextRefundId++}`,
+          tenant_id: admin.tenantId,
+          payment_id: payment.id,
+          initiated_by: admin.id,
+          amount_minor: Number(values[3]),
+          status: "PENDING",
+        };
+        refunds.push(refund);
+        return { rows: [refund] };
+      }
+      if (text.startsWith("SELECT r.*")) {
+        return { rows: [refunds.find((refund) => refund.id === values[0])] };
+      }
+      if (text.startsWith("UPDATE lms_refunds SET razorpay_refund_id")) {
+        const refund = refunds.find((item) => item.id === values[0]);
+        if (!refund || refund.status === "PROCESSED") return { rows: [] };
+        refund.status = "PROCESSED";
+        refund.razorpay_refund_id = values[1];
+        return { rows: [refund] };
+      }
+      if (text.includes("SELECT COALESCE(sum(amount_minor), 0)::text AS total") && text.includes("status = 'PROCESSED'")) {
+        return {
+          rows: [{
+            total: String(refunds
+              .filter((refund) => refund.status === "PROCESSED")
+              .reduce((sum, refund) => sum + refund.amount_minor, 0)),
+          }],
+        };
+      }
+      if (text.startsWith("UPDATE lms_payments")) {
+        payment.status = values[1];
+        return { rows: [] };
+      }
+      if (text.startsWith("UPDATE lms_enrollments")) return { rows: [] };
+      throw new Error(`Unexpected transaction query: ${text}`);
+    },
+  });
+  let nextProviderRefundId = 1;
+  const service = serviceWith(async (text) => {
+    if (text.startsWith("UPDATE lms_refunds SET status = 'FAILED'")) return { rows: [] };
+    throw new Error(`Unexpected database query: ${text}`);
+  }, transaction, {
+    refundPayment: async (_paymentId: string, input: { amount: number }) => {
+      providerAmounts.push(input.amount);
+      return { id: `provider-refund-${nextProviderRefundId++}`, amount: input.amount };
+    },
+  });
+
+  const first = await service.initiateRefund("payment-1", { amountMinor: 300, reason: "First partial refund" }, admin);
+  const second = await service.initiateRefund("payment-1", { amountMinor: 300, reason: "Second partial refund" }, admin);
+  const final = await service.initiateRefund("payment-1", { reason: "Final refund" }, admin);
+
+  assert.deepEqual(providerAmounts, [300, 300, 400]);
+  assert.deepEqual(refunds.map((refund) => refund.amount_minor), [300, 300, 400]);
+  assert.deepEqual(refunds.map((refund) => refund.status), ["PROCESSED", "PROCESSED", "PROCESSED"]);
+  assert.equal(first.status, "PROCESSED");
+  assert.equal(second.status, "PROCESSED");
+  assert.equal(final.status, "PROCESSED");
+  assert.equal(payment.status, "REFUNDED");
+});
