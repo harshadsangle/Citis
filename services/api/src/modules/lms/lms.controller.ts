@@ -671,6 +671,7 @@ export class LmsController {
     response.setHeader("Content-Type", String(file.mimeType));
     response.setHeader("Content-Disposition", "inline");
     response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("Cross-Origin-Resource-Policy", "same-site");
     return response.send(file.content);
   }
 }
