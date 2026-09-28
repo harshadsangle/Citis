@@ -275,7 +275,7 @@ export default function AdminAccessView({
     return () => {
       cancelled = true;
     };
-  }, [apiBase, mode, selectedRequest?.id, selectedRequest?.tenant_id]);
+  }, [apiBase, mode, selectedRequest]);
 
   function openAccountRequest(accountRequest: AccountRequest) {
     setSelectedRequest(accountRequest);
