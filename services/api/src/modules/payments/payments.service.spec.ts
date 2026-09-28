@@ -253,7 +253,8 @@ test("two successive partial refunds can be followed by a final refund", async (
         return { rows: [refund] };
       }
       if (text.startsWith("SELECT r.*")) {
-        return { rows: [refunds.find((refund) => refund.id === values[0])] };
+        const refund = refunds.find((item) => item.id === values[0]);
+        return { rows: [{ ...refund, payment_amount: payment.amount_minor }] };
       }
       if (text.startsWith("UPDATE lms_refunds SET razorpay_refund_id")) {
         const refund = refunds.find((item) => item.id === values[0]);
@@ -291,7 +292,9 @@ test("two successive partial refunds can be followed by a final refund", async (
   });
 
   const first = await service.initiateRefund("payment-1", { amountMinor: 300, reason: "First partial refund" }, admin);
+  assert.equal(payment.status, "PARTIALLY_REFUNDED");
   const second = await service.initiateRefund("payment-1", { amountMinor: 300, reason: "Second partial refund" }, admin);
+  assert.equal(payment.status, "PARTIALLY_REFUNDED");
   const final = await service.initiateRefund("payment-1", { reason: "Final refund" }, admin);
 
   assert.deepEqual(providerAmounts, [300, 300, 400]);
