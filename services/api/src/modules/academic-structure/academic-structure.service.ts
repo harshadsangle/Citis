@@ -29,6 +29,11 @@ export class AcademicStructureService {
   await this.audit.record({tenantId:user.tenantId,institutionId:input.institutionId,actorUserId:user.id,requestId:request.context.requestId,module:"lms",resource:kind,resourceId:row.id,action:"CREATE",newValue:row});return row;
  }
  async update(kind:string,id:string,input:UpdateAcademicDto,request:ContextRequest){const user=request.context.user!,table=this.table(kind);const before=await this.db.query(`SELECT * FROM ${table} WHERE id=$1 AND tenant_id=$2`,[id,user.tenantId]);if(!before.rows[0])throw new NotFoundException("Academic record not found.");assertScope(user,before.rows[0].institution_id,before.rows[0].campus_id);
-  const r=await this.db.query(`UPDATE ${table} SET name=COALESCE($3,name),description=COALESCE($4,description),status=COALESCE($5,status),updated_by=$2,updated_at=now() WHERE id=$1 AND tenant_id=$6 RETURNING *`,[id,user.id,input.name?.trim()??null,input.description?.trim()??null,input.status??null,user.tenantId]);const row=r.rows[0];await this.audit.record({tenantId:user.tenantId,institutionId:row.institution_id,actorUserId:user.id,requestId:request.context.requestId,module:"lms",resource:kind,resourceId:id,action:"UPDATE",previousValue:before.rows[0],newValue:row});return row;
+  const status=input.status;
+  if (kind==="semesters" && status && !["DRAFT","ACTIVE","CLOSED","ARCHIVED"].includes(status)) throw new BadRequestException("Invalid semester status.");
+  if ((kind==="faculties"||kind==="departments") && status && !["ACTIVE","ARCHIVED"].includes(status)) throw new BadRequestException("Invalid academic unit status.");
+  const set=kind==="semesters"||kind==="course-offerings" ? "status=COALESCE($3,status)" : "name=COALESCE($3,name),description=COALESCE($4,description),status=COALESCE($5,status)";
+  const params=kind==="semesters"||kind==="course-offerings" ? [id,user.id,status??null,user.tenantId] : [id,user.id,input.name?.trim()??null,input.description?.trim()??null,status??null,user.tenantId];
+  const r=await this.db.query(`UPDATE ${table} SET ${set},updated_by=$2,updated_at=now() WHERE id=$1 AND tenant_id=$${params.length} RETURNING *`,params);const row=r.rows[0];await this.audit.record({tenantId:user.tenantId,institutionId:row.institution_id,actorUserId:user.id,requestId:request.context.requestId,module:"lms",resource:kind,resourceId:id,action:"UPDATE",previousValue:before.rows[0],newValue:row});return row;
  }
 }

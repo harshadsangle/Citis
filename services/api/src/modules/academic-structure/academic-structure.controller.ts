@@ -7,7 +7,7 @@ import { PermissionGuard } from "../../guards/permission.guard";
 import { AuthGuard } from "../auth/auth.guard";
 import { AcademicStructureService } from "./academic-structure.service";
 import { CreateDepartmentDto, CreateFacultyDto, CreateOfferingDto, CreateSemesterDto, UpdateAcademicDto } from "./academic-structure.dto";
-@Controller()
+@Controller("academic")
 @UseGuards(AuthGuard, PermissionGuard)
 export class AcademicStructureController {
  constructor(private readonly service: AcademicStructureService) {}
@@ -16,10 +16,12 @@ export class AcademicStructureController {
  @Get("departments") @RequirePermission("lms.department.view") departments(@Req() r:ContextRequest,@Query() q:Record<string,string>){return this.list("departments",r,q);}
  @Get("semesters") @RequirePermission("lms.semester.view") semesters(@Req() r:ContextRequest,@Query() q:Record<string,string>){return this.list("semesters",r,q);}
  @Get("course-offerings") @RequirePermission("lms.course_offering.view") offerings(@Req() r:ContextRequest,@Query() q:Record<string,string>){return this.list("course-offerings",r,q);}
- @Post("faculties") @RequirePermission("lms.faculty.create") createFaculty(@Body() d:CreateFacultyDto,@Req()r:ContextRequest){return successResponse(this.service.create("faculties",d,r),r);}
- @Post("departments") @RequirePermission("lms.department.create") createDepartment(@Body() d:CreateDepartmentDto,@Req()r:ContextRequest){return successResponse(this.service.create("departments",d,r),r);}
- @Post("semesters") @RequirePermission("lms.semester.create") createSemester(@Body() d:CreateSemesterDto,@Req()r:ContextRequest){return successResponse(this.service.create("semesters",d,r),r);}
- @Post("course-offerings") @RequirePermission("lms.course_offering.create") createOffering(@Body() d:CreateOfferingDto,@Req()r:ContextRequest){return successResponse(this.service.create("course-offerings",d,r),r);}
- @Patch(":kind/:id") update(@Param("kind")k:string,@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(this.service.update(k,id,d,r),r);}
- @Post(":kind/:id/archive") archive(@Param("kind")k:string,@Param("id")id:string,@Req()r:ContextRequest){return successResponse(this.service.update(k,id,{status:"ARCHIVED"},r),r);}
+ @Post("faculties") @RequirePermission("lms.faculty.create") async createFaculty(@Body() d:CreateFacultyDto,@Req()r:ContextRequest){return successResponse(await this.service.create("faculties",d,r),r);}
+ @Post("departments") @RequirePermission("lms.department.create") async createDepartment(@Body() d:CreateDepartmentDto,@Req()r:ContextRequest){return successResponse(await this.service.create("departments",d,r),r);}
+ @Post("semesters") @RequirePermission("lms.semester.create") async createSemester(@Body() d:CreateSemesterDto,@Req()r:ContextRequest){return successResponse(await this.service.create("semesters",d,r),r);}
+ @Post("course-offerings") @RequirePermission("lms.course_offering.create") async createOffering(@Body() d:CreateOfferingDto,@Req()r:ContextRequest){return successResponse(await this.service.create("course-offerings",d,r),r);}
+ @Patch("faculties/:id") @RequirePermission("lms.faculty.update") async updateFaculty(@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(await this.service.update("faculties",id,d,r),r);}
+ @Patch("departments/:id") @RequirePermission("lms.department.update") async updateDepartment(@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(await this.service.update("departments",id,d,r),r);}
+ @Patch("semesters/:id") @RequirePermission("lms.semester.update") async updateSemester(@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(await this.service.update("semesters",id,d,r),r);}
+ @Patch("course-offerings/:id") @RequirePermission("lms.course_offering.update") async updateOffering(@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(await this.service.update("course-offerings",id,d,r),r);}
 }

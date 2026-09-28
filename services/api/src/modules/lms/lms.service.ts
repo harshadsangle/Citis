@@ -511,6 +511,13 @@ export class LmsService {
     const user = request.context.user!;
     await this.institutionFor(user, input.institutionId);
     const campusId = await this.campusFor(user, input.institutionId, input.campusId);
+    if (input.departmentId) {
+      const department = await this.db.query(
+        "SELECT id FROM academic_departments WHERE id=$1 AND tenant_id=$2 AND institution_id=$3 AND status='ACTIVE'",
+        [input.departmentId, user.tenantId, input.institutionId],
+      );
+      if (!department.rows[0]) throw new NotFoundException("Department not found in the current institution.");
+    }
     return this.run(async () => {
       const result = await this.db.query(
          `INSERT INTO programmes (tenant_id, institution_id, campus_id, department_id, name, code, description, created_by, updated_by)
