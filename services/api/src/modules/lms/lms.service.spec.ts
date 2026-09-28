@@ -698,6 +698,56 @@ test("assigned teachers can read nested course content while unassigned teachers
   await assert.rejects(blockedService.getChild("module-2", "course_modules", teacher), NotFoundException);
 });
 
+test("assigned INSTRUCTOR users can save lesson edits while unassigned users cannot", async () => {
+  const instructor: AuthenticatedUser = {
+    ...user,
+    id: "instructor-1",
+    email: "instructor@example.com",
+    roles: [{ code: "INSTRUCTOR", name: "Instructor" }],
+    permissions: ["lms.lesson.update"],
+  };
+  const instructorRequest = { context: { ...request.context, user: instructor } } as unknown as ContextRequest;
+  const makeService = (assignmentExists: boolean) => {
+    let updateAttempted = false;
+    const { service, audits } = serviceWith(async (text, values) => {
+      if (text.startsWith("SELECT p.institution_id")) {
+        return { rows: [{ institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+      }
+      if (text.startsWith("SELECT 1")) return { rows: assignmentExists ? [{ allowed: 1 }] : [] };
+      if (text.startsWith("SELECT * FROM lessons")) {
+        return { rows: [{ id: "lesson-1", tenant_id: instructor.tenantId, module_id: "module-1", title: "Old lesson" }] };
+      }
+      if (text.startsWith("UPDATE lessons")) {
+        updateAttempted = true;
+        return {
+          rows: [{
+            id: "lesson-1",
+            tenant_id: instructor.tenantId,
+            module_id: "module-1",
+            title: values[2],
+            status: "DRAFT",
+          }],
+        };
+      }
+      return { rows: [] };
+    });
+    return { service, audits, didUpdate: () => updateAttempted };
+  };
+
+  const assigned = makeService(true);
+  const saved = await assigned.service.updateLesson("lesson-1", { title: "Updated lesson" }, instructorRequest);
+  assert.equal(saved.title, "Updated lesson");
+  assert.equal(assigned.didUpdate(), true);
+  assert.equal(assigned.audits.some((audit) => audit.resource === "lesson" && audit.action === "UPDATE"), true);
+
+  const unassigned = makeService(false);
+  await assert.rejects(
+    unassigned.service.updateLesson("lesson-1", { title: "Unauthorized edit" }, instructorRequest),
+    NotFoundException,
+  );
+  assert.equal(unassigned.didUpdate(), false);
+});
+
 test("enrolled learners can list and read content only through their active course enrollment", async () => {
   const learner: AuthenticatedUser = {
     ...user,
