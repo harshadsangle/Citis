@@ -1202,7 +1202,7 @@ export default function InstitutionAdminPage() {
             setCourseView("INSTRUCTOR_PENDING");
             setRecords(pending.data);
             setBuilderOpen(false);
-            setToast(`${createdCourse.title} is ready for instructor assignment.`);
+            setToast("Course created successfully.");
           }}
         />
       )}
