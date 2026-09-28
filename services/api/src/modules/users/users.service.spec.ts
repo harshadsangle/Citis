@@ -181,6 +181,97 @@ test("a role-scope insert race reselects and returns the winning assignment with
   assert.equal(auditEvents.length, 0);
 });
 
+test("concurrent assignments with nullable scopes create and audit only one row", async () => {
+  const assignments: Array<Record<string, unknown>> = [];
+  const auditEvents: unknown[] = [];
+  let nextAssignmentId = 1;
+  let userLock: Promise<void> = Promise.resolve();
+  const query = async (sql: string, values: unknown[] = []) => {
+    if (sql.startsWith("SELECT id, tenant_id FROM users")) {
+      return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
+    }
+    if (sql.startsWith("SELECT institution_id, campus_id FROM user_roles")) {
+      return { rows: [] };
+    }
+    if (sql.startsWith("SELECT id, code FROM roles")) {
+      return { rows: [{ id: "student-role", code: "STUDENT" }] };
+    }
+    if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id")) {
+      return {
+        rows: assignments.filter((assignment) => (
+          assignment.tenant_id === values[0]
+          && assignment.user_id === values[1]
+          && assignment.role_id === values[2]
+          && assignment.institution_id === values[3]
+          && assignment.campus_id === values[4]
+        )).slice(0, 1),
+      };
+    }
+    if (sql.startsWith("INSERT INTO user_roles")) {
+      const assignment = {
+        id: `assignment-${nextAssignmentId++}`,
+        tenant_id: values[0],
+        user_id: values[1],
+        role_id: values[2],
+        institution_id: values[3],
+        campus_id: values[4],
+      };
+      assignments.push(assignment);
+      return { rows: [assignment] };
+    }
+    throw new Error(`Unexpected query: ${sql}`);
+  };
+  const db = {
+    query,
+    transaction: async (work: (client: { query: typeof query }) => Promise<unknown>) => {
+      let releaseUserLock: (() => void) | undefined;
+      const client = {
+        query: async (sql: string, values?: unknown[]) => {
+          if (sql === "SELECT id FROM users WHERE id = $1 AND tenant_id = $2 FOR UPDATE") {
+            const previousLock = userLock;
+            userLock = new Promise<void>((resolve) => { releaseUserLock = resolve; });
+            await previousLock;
+            return { rows: [{ id: "user-1" }] };
+          }
+          return query(sql, values);
+        },
+      };
+      try {
+        return await work(client);
+      } finally {
+        releaseUserLock?.();
+      }
+    },
+  };
+  const service = new UsersService(
+    db as never,
+    { record: async (event: unknown) => auditEvents.push(event) } as never,
+  );
+  const actor = {
+    id: "platform-admin",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Platform",
+    lastName: "Admin",
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    permissions: [],
+    scopes: [],
+  };
+
+  const results = await Promise.all([
+    service.assignRole("user-1", { roleId: "student-role" }, {
+      context: { user: actor, requestId: "request-race-1" },
+    } as never),
+    service.assignRole("user-1", { roleId: "student-role" }, {
+      context: { user: actor, requestId: "request-race-2" },
+    } as never),
+  ]);
+
+  assert.equal(assignments.length, 1);
+  assert.deepEqual(results, [assignments[0], assignments[0]]);
+  assert.equal(auditEvents.length, 1);
+});
+
 test("a new role scope is inserted and audited once", async () => {
   const assignment = {
     id: "assignment-new",
