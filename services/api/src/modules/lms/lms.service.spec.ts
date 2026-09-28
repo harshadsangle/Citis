@@ -1244,6 +1244,118 @@ test("managed file delivery is tenant-scoped and auditable", async () => {
   assert.equal(audits.at(-1)?.tenantId, user.tenantId);
 });
 
+test("instructors can access file, SCORM, and video resources only for explicitly assigned courses", async () => {
+  const instructor: AuthenticatedUser = {
+    ...user,
+    id: "instructor-resource-access",
+    email: "instructor@example.com",
+    roles: [{ code: "INSTRUCTOR", name: "Instructor" }],
+    permissions: ["lms.learning_resource.view"],
+  };
+  const instructorRequest = { context: { ...request.context, user: instructor } } as unknown as ContextRequest;
+  const resourceRow = (id: string) => ({
+    id,
+    tenant_id: instructor.tenantId,
+    institution_id: "institution-1",
+    campus_id: null,
+    course_id: "course-1",
+    module_id: "module-1",
+    lesson_id: "lesson-1",
+    resource_type: id === "scorm-resource" ? "SCORM" : "VIDEO",
+    duration: 120,
+    resource_status: "PUBLISHED",
+    lesson_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+    course_status: "PUBLISHED",
+    programme_status: "PUBLISHED",
+    institution_status: "ACTIVE",
+  });
+  const makeService = (hasAssignment: boolean) => {
+    const queries: Array<{ text: string; values: unknown[] }> = [];
+    let storageReads = 0;
+    let storageStats = 0;
+    const db = {
+      query: async (text: string, values: unknown[] = []) => {
+        queries.push({ text, values });
+        if (text.startsWith("SELECT lr.*")) return { rows: [resourceRow(String(values[0]))] };
+        if (text.includes("FROM user_roles ur")) return { rows: hasAssignment ? [{ allowed: 1 }] : [] };
+        if (text.includes("FROM managed_files") && text.includes("kind = 'SCORM'")) {
+          return {
+            rows: [{
+              id: "managed-scorm-1",
+              kind: "SCORM",
+              storage_key: "tenant-1/scorm-resource/package.zip",
+              entrypoint: "index.html",
+            }],
+          };
+        }
+        if (text.includes("FROM managed_files") && text.includes("kind = 'FILE'")) {
+          return {
+            rows: [{
+              id: "managed-video-1",
+              kind: "FILE",
+              storage_key: "tenant-1/video-resource/intro.mp4",
+              original_filename: "intro.mp4",
+              mime_type: "video/mp4",
+            }],
+          };
+        }
+        if (text.startsWith("SELECT count")) return { rows: [{ count: "0" }] };
+        if (text.includes("FROM lms_resource_progress")) return { rows: [] };
+        return { rows: [] };
+      },
+    };
+    const storage = {
+      read: async (storageKey: string) => {
+        storageReads += 1;
+        return Buffer.from(storageKey);
+      },
+      fileStat: async () => {
+        storageStats += 1;
+        return { size: 10 };
+      },
+      createReadStreamForKey: () => "video-stream",
+      readScormAsset: async () => Buffer.from("SCORM asset"),
+    };
+    const audit = { record: async () => undefined };
+    return {
+      service: new LmsService(db as never, audit as never, storage as never),
+      queries,
+      storageReads: () => storageReads,
+      storageStats: () => storageStats,
+    };
+  };
+
+  const assigned = makeService(true);
+  const file = await assigned.service.getManagedFile("video-resource", instructorRequest);
+  assert.deepEqual(file.content, Buffer.from("tenant-1/video-resource/intro.mp4"));
+
+  const video = await assigned.service.openManagedFile("video-resource", instructorRequest);
+  assert.equal(video.stream, "video-stream");
+  assert.equal(assigned.storageStats(), 1);
+
+  const launch = await assigned.service.getScormLaunch("scorm-resource", instructorRequest);
+  assert.equal(launch.launchUrl, "/api/v1/learning-resources/scorm-resource/scorm/index.html");
+  const asset = await assigned.service.getScormAsset("scorm-resource", "index.html", instructorRequest);
+  assert.deepEqual(asset.content, Buffer.from("SCORM asset"));
+  const progress = await assigned.service.getResourceProgress("video-resource", instructorRequest);
+  assert.equal(progress.resource_id, "video-resource");
+
+  await assigned.service.listResources(instructor, 1, 20, 0, {}, "lesson-1");
+  const resourceListQuery = assigned.queries.find(({ text }) => text.includes("FROM learning_resources x"))?.text;
+  assert.ok(resourceListQuery?.includes("FROM lms_instructor_assignments"));
+  assert.ok(!resourceListQuery?.includes("lms_instructor_colleges"));
+
+  const unassigned = makeService(false);
+  await assert.rejects(unassigned.service.getManagedFile("video-resource", instructorRequest), NotFoundException);
+  await assert.rejects(unassigned.service.openManagedFile("video-resource", instructorRequest), NotFoundException);
+  await assert.rejects(unassigned.service.getScormLaunch("scorm-resource", instructorRequest), NotFoundException);
+  await assert.rejects(unassigned.service.getScormAsset("scorm-resource", "index.html", instructorRequest), NotFoundException);
+  await assert.rejects(unassigned.service.getResourceProgress("video-resource", instructorRequest), NotFoundException);
+  assert.equal(unassigned.storageReads(), 0);
+  assert.equal(unassigned.storageStats(), 0);
+});
+
 test("resource progress is clamped, persisted, and rate limited", async () => {
   const learner: AuthenticatedUser = {
     ...user,

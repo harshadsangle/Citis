@@ -1223,26 +1223,14 @@ export class LmsService {
     }
     if (instructorOnly) {
       values.push(user.id);
-      clauses.push(`(
-        EXISTS (
-          SELECT 1 FROM lms_instructor_assignments ia
-          WHERE ia.tenant_id = x.tenant_id
-            AND ia.institution_id = p.institution_id
-            AND ia.course_id = c.id
-            AND ia.campus_id IS NOT DISTINCT FROM c.campus_id
-            AND ia.instructor_id = $${values.length}
-            AND ia.status = 'ACTIVE'
-        )
-        OR (
-          c.status = 'PUBLISHED'
-          AND EXISTS (
-            SELECT 1 FROM lms_instructor_colleges ic
-            WHERE ic.tenant_id = x.tenant_id
-              AND ic.institution_id = p.institution_id
-              AND ic.instructor_id = $${values.length}
-              AND ic.status = 'ACTIVE'
-          )
-        )
+      clauses.push(`EXISTS (
+        SELECT 1 FROM lms_instructor_assignments ia
+        WHERE ia.tenant_id = x.tenant_id
+          AND ia.institution_id = p.institution_id
+          AND ia.course_id = c.id
+          AND ia.campus_id IS NOT DISTINCT FROM c.campus_id
+          AND ia.instructor_id = $${values.length}
+          AND ia.status = 'ACTIVE'
       )`);
     }
     if (this.isLearnerOnly(user)) {
@@ -1453,6 +1441,12 @@ export class LmsService {
       user,
       String(result.rows[0].course_id),
       String(result.rows[0].institution_id),
+      result.rows[0].campus_id as string | null | undefined,
+    );
+    await this.assertAssignedTeacherRead(
+      user,
+      String(result.rows[0].institution_id),
+      String(result.rows[0].course_id),
       result.rows[0].campus_id as string | null | undefined,
     );
     if (
