@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS lms_course_units (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (tenant_id, course_id, sequence),
-  UNIQUE (tenant_id, id)
+  UNIQUE (tenant_id, id),
+  UNIQUE (tenant_id, course_id, id)
 );
 CREATE TABLE IF NOT EXISTS lms_course_chapters (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
