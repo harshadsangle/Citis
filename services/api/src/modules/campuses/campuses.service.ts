@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
-import { assertScope, assertScopeForRead, filterScopedRows } from "../../common/access-scope";
+import { assertScope, assertScopeForRead, filterScopedRows, isPlatformUser } from "../../common/access-scope";
 import type { AuthenticatedUser } from "../../common/request-context";
 import { paginationMeta } from "../../common/pagination";
 import type { ContextRequest } from "../../common/request-context";
