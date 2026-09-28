@@ -1816,7 +1816,7 @@ export default function StudentPortalPage() {
                 <p className="portal-eyebrow">Knowledge checks</p>
                 <h2>Assessments</h2>
               </div>
-              {assessmentNotice && <span className="assessment-notice" role="status" aria-live="polite">{assessmentNotice}</span>}
+              {assessmentNotice && <span className="assessment-notice">{assessmentNotice}</span>}
             </div>
             {activeAttempt ? (() => {
               const questions = activeAttempt.questions;
