@@ -115,3 +115,129 @@ test("unscoped pending registration visibility is not added to ordinary user or 
   assert.equal(rowsQueries.length, 2);
   assert.equal(rowsQueries.some((sql) => sql.includes("pending_request_scope")), false);
 });
+
+test("approving an instructor request assigns institution scope and activates the account atomically", async () => {
+  const calls: Array<{ sql: string; values?: unknown[] }> = [];
+  const client = {
+    query: async <T>(sql: string, values?: unknown[]) => {
+      calls.push({ sql, values });
+      let rows: unknown[] = [];
+      if (sql.includes("FROM users u")) {
+        rows = [{
+          id: "instructor-1",
+          tenant_id: "tenant-1",
+          role_id: "teacher-role",
+          role_code: "TEACHER",
+          user_role_id: "user-role-1",
+        }];
+      } else if (sql.includes("FROM institutions i")) {
+        rows = [{ id: "institution-1", campus_id: "campus-1" }];
+      } else if (sql.includes("SELECT id FROM user_roles")) {
+        rows = [];
+      } else if (sql.startsWith("UPDATE user_roles")) {
+        rows = [{ id: "user-role-1" }];
+      } else if (sql.startsWith("UPDATE users")) {
+        rows = [{
+          id: "instructor-1",
+          tenant_id: "tenant-1",
+          email: "instructor@example.test",
+          first_name: "New",
+          last_name: "Teacher",
+          status: "ACTIVE",
+        }];
+      }
+      return { rows: rows as T[] };
+    },
+  };
+  const db = { transaction: async (work: (connection: never) => Promise<unknown>) => work(client as never) };
+  const auditEvents: unknown[] = [];
+  const service = new UsersService(db as never, { record: async (event: unknown) => auditEvents.push(event) } as never);
+  const actor = {
+    id: "admin-1",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Admin",
+    lastName: "User",
+    roles: [{ code: "CITIS_SUPER_ADMIN", name: "CITIS Super Admin" }],
+    permissions: [],
+    scopes: [],
+  };
+
+  const result = await service.approveInstructorRequest(
+    "instructor-1",
+    { institutionId: "institution-1", campusId: "campus-1" },
+    { context: { user: actor, requestId: "request-1", ipAddress: "127.0.0.1", userAgent: "test" } } as never,
+  );
+
+  assert.equal(result.status, "ACTIVE");
+  assert.equal(calls.some(({ sql }) => sql.startsWith("UPDATE user_roles")), true);
+  assert.equal(calls.some(({ sql }) => sql.startsWith("UPDATE users") && sql.includes("status = 'ACTIVE'")), true);
+  assert.deepEqual(auditEvents[0], {
+    tenantId: "tenant-1",
+    institutionId: "institution-1",
+    campusId: "campus-1",
+    actorUserId: "admin-1",
+    requestId: "request-1",
+    module: "identity",
+    resource: "instructor_request",
+    resourceId: "instructor-1",
+    action: "APPROVE",
+    previousValue: { status: "PENDING" },
+    newValue: {
+      status: "ACTIVE",
+      roleCode: "TEACHER",
+      institutionId: "institution-1",
+      campusId: "campus-1",
+    },
+    ipAddress: "127.0.0.1",
+    deviceContext: { userAgent: "test" },
+  });
+});
+
+test("rejecting an instructor request disables the account and records the reason", async () => {
+  const calls: string[] = [];
+  const client = {
+    query: async <T>(sql: string) => {
+      calls.push(sql);
+      if (sql.includes("FROM users u")) {
+        return { rows: [{ id: "instructor-1", tenant_id: "tenant-1", role_code: "INSTRUCTOR" }] as T[] };
+      }
+      if (sql.startsWith("UPDATE users")) {
+        return {
+          rows: [{
+            id: "instructor-1",
+            tenant_id: "tenant-1",
+            email: "instructor@example.test",
+            first_name: "New",
+            last_name: "Teacher",
+            status: "DISABLED",
+          }] as T[],
+        };
+      }
+      return { rows: [] as T[] };
+    },
+  };
+  const db = { transaction: async (work: (connection: never) => Promise<unknown>) => work(client as never) };
+  const auditEvents: Array<{ newValue?: { reason?: string } }> = [];
+  const service = new UsersService(db as never, { record: async (event: { newValue?: { reason?: string } }) => auditEvents.push(event) } as never);
+  const actor = {
+    id: "admin-1",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Admin",
+    lastName: "User",
+    roles: [{ code: "CITIS_SUPER_ADMIN", name: "CITIS Super Admin" }],
+    permissions: [],
+    scopes: [],
+  };
+
+  const result = await service.rejectInstructorRequest(
+    "instructor-1",
+    { reason: "  Incomplete application.  " },
+    { context: { user: actor, requestId: "request-2" } } as never,
+  );
+
+  assert.equal(result.status, "DISABLED");
+  assert.equal(calls.some((sql) => sql.includes("status = 'DISABLED'")), true);
+  assert.equal(auditEvents[0]?.newValue?.reason, "Incomplete application.");
+});

@@ -260,6 +260,19 @@ export class UsersService {
       }
 
       const target = pending.rows[0];
+      if (!this.platform(actor)) {
+        const visibleInstitution = await client.query<{ id: string }>(
+          `SELECT id
+           FROM institutions
+           WHERE tenant_id = $1 AND status <> 'ARCHIVED'
+           ORDER BY id
+           LIMIT 2`,
+          [target.tenant_id],
+        );
+        if (visibleInstitution.rows.length !== 1 || visibleInstitution.rows[0].id !== input.institutionId) {
+          throw new NotFoundException("Pending instructor request not found.");
+        }
+      }
       const institution = await client.query<{ id: string; campus_id: string | null }>(
         `SELECT i.id, c.id AS campus_id
          FROM institutions i
@@ -368,6 +381,20 @@ export class UsersService {
       }
 
       const target = pending.rows[0];
+      if (!this.platform(actor)) {
+        const visibleInstitution = await client.query<{ id: string }>(
+          `SELECT id
+           FROM institutions
+           WHERE tenant_id = $1 AND status <> 'ARCHIVED'
+           ORDER BY id
+           LIMIT 2`,
+          [target.tenant_id],
+        );
+        if (visibleInstitution.rows.length !== 1) {
+          throw new NotFoundException("Pending instructor request not found.");
+        }
+        assertScope(actor, visibleInstitution.rows[0].id);
+      }
       const user = await client.query(
         `UPDATE users
          SET status = 'DISABLED', updated_by = $2, updated_at = now()
