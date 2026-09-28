@@ -484,7 +484,7 @@ export class LmsService {
     }
     const pageParam = values.length + 1;
     const rows = await this.db.query(
-        `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
+        `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, p.department_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
                 p.created_at, p.updated_at
          FROM programmes p JOIN institutions i ON i.id = p.institution_id
          WHERE ${clauses.join(" AND ")}
@@ -499,7 +499,7 @@ export class LmsService {
 
   async getProgramme(id: string, user: AuthenticatedUser) {
     const result = await this.db.query(
-      `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
+      `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, p.department_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
               p.created_at, p.updated_at
        FROM programmes p JOIN institutions i ON i.id = p.institution_id
        WHERE p.id = $1 AND p.tenant_id = $2`,
@@ -517,11 +517,14 @@ export class LmsService {
     await this.institutionFor(user, input.institutionId);
     const campusId = await this.campusFor(user, input.institutionId, input.campusId);
     if (input.departmentId) {
-      const department = await this.db.query(
-        "SELECT id FROM academic_departments WHERE id=$1 AND tenant_id=$2 AND institution_id=$3 AND status='ACTIVE'",
+      const department = await this.db.query<{ campus_id: string | null }>(
+        "SELECT campus_id FROM academic_departments WHERE id=$1 AND tenant_id=$2 AND institution_id=$3 AND status='ACTIVE'",
         [input.departmentId, user.tenantId, input.institutionId],
       );
       if (!department.rows[0]) throw new NotFoundException("Department not found in the current institution.");
+      if (department.rows[0].campus_id && department.rows[0].campus_id !== campusId) {
+        throw new BadRequestException("Programme campus must match its department campus.");
+      }
     }
     return this.run(async () => {
       const result = await this.db.query(
@@ -540,12 +543,15 @@ export class LmsService {
     const before = await this.getProgramme(id, request.context.user!);
     const user = request.context.user!;
     if (input.departmentId) {
-      const department = await this.db.query(
-        `SELECT id FROM academic_departments
+      const department = await this.db.query<{ campus_id: string | null }>(
+        `SELECT campus_id FROM academic_departments
          WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND status = 'ACTIVE'`,
         [input.departmentId, user.tenantId, before.institution_id],
       );
       if (!department.rows[0]) throw new NotFoundException("Active department not found in the current institution.");
+      if (department.rows[0].campus_id && department.rows[0].campus_id !== before.campus_id) {
+        throw new BadRequestException("Programme campus must match its department campus.");
+      }
     }
     const changeDepartment = input.departmentId !== undefined;
     return this.run(async () => {

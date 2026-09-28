@@ -145,11 +145,11 @@ export class AcademicStructureService {
       const [semester, course] = await Promise.all([
         this.db.query<{ campus_id: string | null }>(
           `SELECT campus_id FROM academic_semesters
-           WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND status <> 'ARCHIVED'`,
+           WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND status IN ('DRAFT', 'ACTIVE')`,
           [offering.semesterId, user.tenantId, offering.institutionId],
         ),
         this.db.query<{ campus_id: string | null; institution_id: string }>(
-          `SELECT c.campus_id FROM courses c
+          `SELECT c.campus_id, c.institution_id FROM courses c
            JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
            WHERE c.id = $1 AND c.tenant_id = $2 AND c.status <> 'ARCHIVED' AND p.status <> 'ARCHIVED'
              AND (

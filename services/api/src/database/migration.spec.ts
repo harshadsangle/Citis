@@ -30,6 +30,7 @@ const collegeStudentMigration = readFileSync(resolve(process.cwd(), "../../packa
 const directStudentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/022_direct_student_registration_otp.sql"), "utf8");
 const paymentMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/023_razorpay_course_payments.sql"), "utf8");
 const refundPartialIndexMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/032_lms_refund_partial_index.sql"), "utf8");
+const academicStructureMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/033_academic_structure.sql"), "utf8");
 const progressIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/024_lms_progress_assessment_assignment_integrity.sql"), "utf8");
 const certificateLifecycleMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/025_lms_certificate_lifecycle.sql"), "utf8");
 const tenantParentIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/026_lms_tenant_parent_integrity.sql"), "utf8");
@@ -280,7 +281,18 @@ test("refund index migration allows multiple processed refunds but keeps one pen
   assert.match(refundPartialIndexMigration, /CREATE UNIQUE INDEX IF NOT EXISTS lms_refunds_payment_pending_key\s+ON lms_refunds \(payment_id\) WHERE status = 'PENDING'/);
   assert.match(refundPartialIndexMigration, /032_lms_refund_partial_index/);
   assert.match(paymentMigration, /CREATE UNIQUE INDEX IF NOT EXISTS lms_refunds_razorpay_key/);
-  assert.equal(MIGRATION_VERSIONS.at(-1), "032_lms_refund_partial_index");
+});
+
+test("academic structure migration is registered and keeps parent relationships tenant-scoped", () => {
+  assert.equal(MIGRATION_VERSIONS.at(-1), "033_academic_structure");
+  assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_faculties/);
+  assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_departments/);
+  assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_semesters/);
+  assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_course_offerings/);
+  assert.match(academicStructureMigration, /academic_departments_tenant_faculty_fk/);
+  assert.match(academicStructureMigration, /academic_offerings_semester_fk/);
+  assert.match(academicStructureMigration, /programmes_tenant_department_fk/);
+  assert.match(academicStructureMigration, /033_academic_structure/);
 });
 
 test("Step 6 migration persists access state, submission history, and central-admin assignment review", () => {
