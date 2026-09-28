@@ -471,25 +471,36 @@ export class LmsService {
 
   async listProgrammes(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto) {
     const filter = this.statusFilter(query.status);
-    const values = [user.tenantId, ...filter.values, pageSize, offset];
-    const statusParam = filter.values.length ? " AND p.status = $2" : "";
-    const limitParam = filter.values.length ? "$3" : "$2";
-    const offsetParam = filter.values.length ? "$4" : "$3";
+    const values: unknown[] = [user.tenantId];
+    const clauses = ["p.tenant_id = $1"];
+    if (filter.values.length) {
+      values.push(filter.values[0]);
+      clauses.push(`p.status = $${values.length}`);
+    }
+    if (query.institutionId) {
+      assertScopeForRead(user, query.institutionId);
+      values.push(query.institutionId);
+      clauses.push(`p.institution_id = $${values.length}`);
+    }
+    const pageParam = values.length + 1;
     const [rows, total] = await Promise.all([
       this.db.query(
         `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
                 p.created_at, p.updated_at
          FROM programmes p JOIN institutions i ON i.id = p.institution_id
-         WHERE p.tenant_id = $1${statusParam}
-         ORDER BY p.created_at DESC LIMIT ${limitParam} OFFSET ${offsetParam}`,
+         WHERE ${clauses.join(" AND ")}
+         ORDER BY p.created_at DESC LIMIT $${pageParam} OFFSET $${pageParam + 1}`,
+        [...values, pageSize, offset],
+      ),
+      this.db.query<{ count: string }>(
+        `SELECT count(*)::text AS count FROM programmes p WHERE ${clauses.join(" AND ")}`,
         values,
       ),
-      this.db.query<{ count: string }>(`SELECT count(*)::text AS count FROM programmes p WHERE p.tenant_id = $1${statusParam}`, values.slice(0, filter.values.length ? 2 : 1)),
     ]);
     const visible = this.isDirectStudentLearner(user)
       ? rows.rows as Array<Record<string, unknown>>
       : filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
-    return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
+    return { data: visible, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? visible.length)) };
   }
 
   async getProgramme(id: string, user: AuthenticatedUser) {
@@ -533,13 +544,33 @@ export class LmsService {
 
   async updateProgramme(id: string, input: UpdateProgrammeDto, request: ContextRequest) {
     const before = await this.getProgramme(id, request.context.user!);
+    const user = request.context.user!;
+    if (input.departmentId) {
+      const department = await this.db.query(
+        `SELECT id FROM academic_departments
+         WHERE id = $1 AND tenant_id = $2 AND institution_id = $3 AND status = 'ACTIVE'`,
+        [input.departmentId, user.tenantId, before.institution_id],
+      );
+      if (!department.rows[0]) throw new NotFoundException("Active department not found in the current institution.");
+    }
+    const changeDepartment = Object.prototype.hasOwnProperty.call(input, "departmentId");
     return this.run(async () => {
       const result = await this.db.query(
         `UPDATE programmes
-         SET name = COALESCE($3, name), description = COALESCE($4, description), updated_by = $2, updated_at = now()
-         WHERE id = $1 AND tenant_id = $5
-          RETURNING id, tenant_id, institution_id, campus_id, name, code, description, status, created_at, updated_at`,
-        [id, request.context.user!.id, input.name?.trim() || null, input.description?.trim() || null, request.context.user!.tenantId],
+         SET name = COALESCE($3, name), description = COALESCE($4, description),
+             department_id = CASE WHEN $5 THEN $6::uuid ELSE department_id END,
+             updated_by = $2, updated_at = now()
+         WHERE id = $1 AND tenant_id = $7
+          RETURNING id, tenant_id, institution_id, campus_id, department_id, name, code, description, status, created_at, updated_at`,
+        [
+          id,
+          user.id,
+          input.name?.trim() || null,
+          input.description?.trim() || null,
+          changeDepartment,
+          input.departmentId ?? null,
+          user.tenantId,
+        ],
       );
       if (!result.rows[0]) throw new NotFoundException("Programme not found.");
       await this.auditMutation(request, "programme", "UPDATE", result.rows[0], before);
