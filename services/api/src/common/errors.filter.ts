@@ -12,9 +12,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
       const exceptionName = exception instanceof Error ? exception.name : typeof exception;
       const exceptionMessage = exception instanceof Error ? exception.message : String(exception);
       const stack = exception instanceof Error ? exception.stack : undefined;
-      console.error(
-        `[TEMP_AUTH_DIAGNOSTIC] requestId=${request.context?.requestId || "unknown"} exceptionName=${exceptionName} exceptionMessage=${exceptionMessage} stack=${stack || "unavailable"}`,
-      );
+      const logRecord = {
+        event: "api_exception",
+        requestId: request.context?.requestId || "unknown",
+        statusCode: status,
+        exceptionName,
+        ...(process.env.NODE_ENV === "production" ? {} : { exceptionMessage, stack: stack || "unavailable" }),
+      };
+      console.error(JSON.stringify(logRecord));
     }
     const exceptionResponse = exception instanceof HttpException ? exception.getResponse() : undefined;
     const payload = typeof exceptionResponse === "string" ? { message: exceptionResponse } : exceptionResponse;

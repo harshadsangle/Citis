@@ -20,10 +20,10 @@ import { CAREERS_EMAIL, SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 import { canAccessLmsPortal, firstAvailableLmsPortal, LMS_PORTALS, type LmsPortal } from "@/lib/lms-roles";
 import type { LmsCourseProvider } from "@/lib/lms-catalog";
 
-const message = (text?: string) => text && <p className="mt-1.5 text-xs text-destructive">{text}</p>;
+const message = (text?: string, id?: string) => text && <p id={id} className="mt-1.5 text-xs text-destructive">{text}</p>;
 
 function FormSuccess({ title, copy }: { title: string; copy: string }) {
-  return <div role="status" className="surface rounded-xl p-9 text-center"><CheckCircle2 className="mx-auto size-12 text-success" /><h3 className="mt-4 font-heading text-2xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p></div>;
+  return <div role="status" aria-live="polite" className="surface rounded-xl p-9 text-center"><CheckCircle2 className="mx-auto size-12 text-success" /><h3 className="mt-4 font-heading text-2xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p></div>;
 }
 
 const applyFieldOrder = ["name", "email", "phone", "linkedIn", "portfolio", "coverLetter", "skills", "resume"] as const;
@@ -285,12 +285,14 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
             autoComplete="one-time-code"
             maxLength={6}
             value={mfaCode}
-            onChange={(event) => setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+            aria-invalid={Boolean(serverError)}
+            aria-describedby={serverError ? "login-mfa-error" : undefined}
+            onChange={(event) => { setMfaCode(event.target.value.replace(/\D/g, "").slice(0, 6)); setServerError(""); }}
             autoFocus
           />
           </div>
         </div>
-        {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+        {serverError && <p id="login-mfa-error" role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
         <Button className="auth-submit-button h-12 w-full rounded-xl text-sm" variant="accent" size="lg" disabled={mfaSubmitting || mfaCode.length !== 6}>
           {mfaSubmitting ? <LoaderCircle className="animate-spin" /> : <>Verify and continue <ArrowRight className="size-4" /></>}
         </Button>
@@ -302,10 +304,10 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
   }
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
-      <div><Label htmlFor="login-email" className="auth-field-label">Email address</Label><div className="auth-field-wrap mt-2"><Mail className="auth-field-icon" aria-hidden="true" /><Input id="login-email" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pl-11" type="email" autoComplete="email" placeholder="you@institution.edu" {...register("email")} /></div>{message(errors.email?.message)}</div>
-      <div><div className="flex items-center justify-between"><Label htmlFor="login-password" className="auth-field-label">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="auth-forgot-link text-xs font-semibold">Forgot password?</Link></div><div className="auth-field-wrap mt-2"><EyeOff className="auth-field-icon" aria-hidden="true" /><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pr-12 pl-11" {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="auth-password-toggle absolute top-1/2 right-2.5 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message)}</div>
+      <div><Label htmlFor="login-email" className="auth-field-label">Email address</Label><div className="auth-field-wrap mt-2"><Mail className="auth-field-icon" aria-hidden="true" /><Input id="login-email" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pl-11" type="email" autoComplete="email" placeholder="you@institution.edu" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "login-email-error" : undefined} {...register("email")} /></div>{message(errors.email?.message, "login-email-error")}</div>
+      <div><div className="flex items-center justify-between"><Label htmlFor="login-password" className="auth-field-label">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="auth-forgot-link text-xs font-semibold">Forgot password?</Link></div><div className="auth-field-wrap mt-2"><EyeOff className="auth-field-icon" aria-hidden="true" /><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pr-12 pl-11" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "login-password-error" : undefined} {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="auth-password-toggle absolute top-1/2 right-2.5 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message, "login-password-error")}</div>
       <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="auth-remember-label font-normal">Keep me signed in</Label></div>} />
-      {serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+      {serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button className="auth-submit-button h-12 w-full rounded-xl text-sm" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : <>Sign in <ArrowRight className="size-4" /></>}</Button>
       <p className="auth-register-copy text-center text-sm">New to CITIS? <Link href={`/auth/register?portal=${portal}`} className="font-semibold">Create new account</Link></p>
     </form>
@@ -406,7 +408,7 @@ export function ForgotPasswordForm() {
     }
   };
   if (done) return <FormSuccess title="Check your inbox" copy="If an account exists for that email, we sent a secure password reset link." />;
-  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" {...register("email")} />{message(errors.email?.message)}</div>{serverError && <p role="alert" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}<Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
+  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "forgot-email-error" : undefined} {...register("email")} />{message(errors.email?.message, "forgot-email-error")}</div>{serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}<Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
 }
 
 export function ResetPasswordForm() {
@@ -441,16 +443,16 @@ export function ResetPasswordForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div>
         <Label htmlFor="new-password">New password</Label>
-        <Input id="new-password" className="mt-2" type="password" autoComplete="new-password" {...register("password")} />
-        {message(errors.password?.message)}
-        <p className="mt-1 text-xs text-muted-foreground">Use at least 8 characters with upper, lower, and a number.</p>
+        <Input id="new-password" className="mt-2" type="password" autoComplete="new-password" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "new-password-error" : "new-password-help"} {...register("password")} />
+        {message(errors.password?.message, "new-password-error")}
+        <p id="new-password-help" className="mt-1 text-xs text-muted-foreground">Use at least 8 characters with upper, lower, and a number.</p>
       </div>
       <div>
         <Label htmlFor="confirm-password">Confirm password</Label>
-        <Input id="confirm-password" className="mt-2" type="password" autoComplete="new-password" {...register("confirmPassword")} />
-        {message(errors.confirmPassword?.message)}
+        <Input id="confirm-password" className="mt-2" type="password" autoComplete="new-password" aria-invalid={Boolean(errors.confirmPassword)} aria-describedby={errors.confirmPassword ? "confirm-password-error" : undefined} {...register("confirmPassword")} />
+        {message(errors.confirmPassword?.message, "confirm-password-error")}
       </div>
-      {serverError ? <p className="text-sm text-red-600">{serverError}</p> : null}
+      {serverError ? <p role="alert" aria-live="assertive" className="text-sm text-red-600">{serverError}</p> : null}
       <Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>
         {isSubmitting ? <LoaderCircle className="animate-spin" /> : "Set new password"}
       </Button>

@@ -24,7 +24,10 @@ export interface RequestContext {
 export type ContextRequest = Request & { context: RequestContext };
 
 export function requestContextMiddleware(request: Request, response: Response, next: NextFunction) {
-  const requestId = request.header("x-request-id")?.trim() || randomUUID();
+  const candidate = request.header("x-request-id")?.trim();
+  const requestId = candidate && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)
+    ? candidate
+    : randomUUID();
   const contextRequest = request as ContextRequest;
   contextRequest.context = {
     requestId,
