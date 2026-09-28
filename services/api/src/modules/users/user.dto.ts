@@ -67,3 +67,19 @@ export class AssignRoleDto {
   @IsUUID()
   campusId?: string;
 }
+
+export class ApproveInstructorRequestDto {
+  @IsUUID()
+  institutionId!: string;
+
+  @IsOptional()
+  @IsUUID()
+  campusId?: string;
+}
+
+export class RejectInstructorRequestDto {
+  @IsString()
+  @MinLength(3)
+  @MaxLength(1000)
+  reason!: string;
+}

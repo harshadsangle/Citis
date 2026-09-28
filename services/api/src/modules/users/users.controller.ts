@@ -5,7 +5,13 @@ import { paginatedResponse, successResponse } from "../../common/response";
 import { RequirePermission } from "../../guards/permission.decorator";
 import { PermissionGuard } from "../../guards/permission.guard";
 import { AuthGuard } from "../auth/auth.guard";
-import { AssignRoleDto, CreateUserDto, UpdateUserDto } from "./user.dto";
+import {
+  ApproveInstructorRequestDto,
+  AssignRoleDto,
+  CreateUserDto,
+  RejectInstructorRequestDto,
+  UpdateUserDto,
+} from "./user.dto";
 import { UsersService } from "./users.service";
 
 @Controller("users")
@@ -56,5 +62,25 @@ export class UsersController {
   @RequirePermission("lms.instructor_assignment.create")
   async assignRole(@Param("id") id: string, @Body() input: AssignRoleDto, @Req() request: ContextRequest) {
     return successResponse(await this.users.assignRole(id, input, request), request);
+  }
+
+  @Post(":id/instructor-request/approve")
+  @RequirePermission("lms.instructor_assignment.create")
+  async approveInstructorRequest(
+    @Param("id") id: string,
+    @Body() input: ApproveInstructorRequestDto,
+    @Req() request: ContextRequest,
+  ) {
+    return successResponse(await this.users.approveInstructorRequest(id, input, request), request);
+  }
+
+  @Post(":id/instructor-request/reject")
+  @RequirePermission("lms.instructor_assignment.create")
+  async rejectInstructorRequest(
+    @Param("id") id: string,
+    @Body() input: RejectInstructorRequestDto,
+    @Req() request: ContextRequest,
+  ) {
+    return successResponse(await this.users.rejectInstructorRequest(id, input, request), request);
   }
 }
