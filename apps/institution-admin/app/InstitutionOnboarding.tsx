@@ -170,6 +170,7 @@ export default function InstitutionOnboarding({
       setError("The CSV file exceeds the 5 MB limit.");
       return;
     }
+    setError("");
     setFile(selected);
   }
 
@@ -337,18 +338,21 @@ export default function InstitutionOnboarding({
               <p>Existing College User IDs in this institution are updated, including password and active status. Duplicate IDs within the same CSV are reported, not imported twice.</p>
             </div>
 
-            {error && <div className="relationship-alert error-box" role="alert"><strong>CSV import needs attention</strong><p>{error}</p></div>}
+            {error && <div className="relationship-alert error-box" role="alert" aria-live="assertive"><strong>CSV import needs attention</strong><p id="institution-student-csv-error">{error}</p></div>}
 
-            <form className="institution-onboarding-form" onSubmit={(event) => void importStudents(event)}>
+            <form className="institution-onboarding-form" aria-busy={importing} onSubmit={(event) => void importStudents(event)}>
               <label htmlFor="institution-student-csv">Student CSV</label>
               <input
                 id="institution-student-csv"
                 type="file"
                 accept=".csv,text/csv"
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? "institution-student-csv-error" : undefined}
                 onChange={(event) => chooseFile(event.target.files?.[0] ?? null)}
                 disabled={importing}
               />
               {file && <span className="institution-file-name">{file.name} · {(file.size / 1024).toFixed(1)} KB</span>}
+              <span className="sr-only" role="status" aria-live="polite">{importing ? "Validating and importing the student CSV." : ""}</span>
               <div className="modal-actions">
                 <button className="secondary-button" type="button" onClick={onClose} disabled={importing}>Close</button>
                 <button className="primary-button" type="submit" disabled={!file || importing}>
