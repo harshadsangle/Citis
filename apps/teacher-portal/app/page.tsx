@@ -2,12 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
+import { displayName, firstNameForGreeting, timeGreeting, type InstructorIdentity } from "./greeting";
 
-type Principal = {
-  firstName?: string;
-  lastName?: string;
-  first_name?: string;
-  last_name?: string;
+type Principal = InstructorIdentity & {
   roles?: Array<{ code: string; name?: string }>;
 };
 
@@ -335,21 +332,6 @@ async function loadCourseStructure(courseId: string): Promise<CourseModuleData[]
   }));
 }
 
-function displayName(principal?: Principal) {
-  return [
-    principal?.firstName || principal?.first_name,
-    principal?.lastName || principal?.last_name,
-  ].filter(Boolean).join(" ") || "Instructor";
-}
-
-function timeGreeting(date: Date) {
-  const hour = date.getHours();
-  if (hour >= 5 && hour < 12) return "Good Morning";
-  if (hour >= 12 && hour < 17) return "Good Afternoon";
-  if (hour >= 17 && hour < 21) return "Good Evening";
-  return "Good Night";
-}
-
 function learnerName(learner: Enrollment | Submission | AssessmentAttempt) {
   return [
     learner.learner_first_name,
@@ -473,7 +455,7 @@ function StatusPill({ status }: { status: string }) {
 export default function TeacherPortalPage() {
   const profileMenuRef = useRef<HTMLDetailsElement>(null);
   const [name, setName] = useState("Instructor");
-  const [greeting, setGreeting] = useState("Good Morning");
+  const [greeting, setGreeting] = useState("");
   const [courseData, setCourseData] = useState<CourseData[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [gradeDrafts, setGradeDrafts] = useState<Record<string, { grade: string; feedback: string }>>({});
@@ -564,11 +546,14 @@ export default function TeacherPortalPage() {
     else setLoading(true);
     setError("");
     try {
+      const principalRequest = request<Principal>("/auth/me").then((principal) => {
+        setName(displayName(principal));
+        return principal;
+      });
       const [principal, courses] = await Promise.all([
-        request<Principal>("/auth/me"),
+        principalRequest,
         list<Course>("/courses"),
       ]);
-      setName(displayName(principal));
 
       const selectedProvider = normalizeLmsCourseProvider(new URLSearchParams(window.location.search).get("provider"));
       const providerCourses = selectedProvider
@@ -1602,7 +1587,7 @@ export default function TeacherPortalPage() {
              <header className="page-heading" id="overview">
                <div className="page-heading-copy">
                 <p className="eyebrow">Daily teaching workspace</p>
-                 <h1>{greeting}, {name.split(" ")[0]}.</h1>
+                  <h1>{greeting ? `${greeting}, ${firstNameForGreeting(name)}` : firstNameForGreeting(name)}.</h1>
                 <p className="intro">Keep your assigned courses moving, check learner progress, and clear the review queue from one secure view.</p>
                  <div className="heading-identity"><span className="heading-avatar">{name.slice(0, 1).toUpperCase()}</span><span><strong>{name}</strong><small>Instructor · Teaching workspace</small></span></div>
               </div>
