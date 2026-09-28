@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser } from "../../common/request-context";
 import { AssessmentService } from "./assessment.service";
 import type { ContextRequest } from "../../common/request-context";
@@ -106,6 +106,83 @@ test("assessment listing honors status and denies unsupported roles", async () =
   const restricted = await unsupportedRoleService.listAssessments(unsupportedRole, 1, 25, 0, {});
   assert.deepEqual(restricted.data, []);
   assert.equal(unsupportedRoleQueries, 0);
+});
+
+test("published assessments can be unpublished to draft with an audit event", async () => {
+  const staff: AuthenticatedUser = {
+    ...learner,
+    id: "teacher-1",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: ["lms.assessment.publish"],
+  };
+  const staffRequest = { context: { ...request.context, user: staff } } as unknown as ContextRequest;
+  const before = {
+    id: "assessment-1",
+    tenant_id: staff.tenantId,
+    institution_id: "institution-1",
+    campus_id: "campus-1",
+    course_id: "course-1",
+    module_id: "module-1",
+    status: "PUBLISHED",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+  };
+  let updateValues: unknown[] | undefined;
+  const auditEvents: Array<Record<string, unknown>> = [];
+  const db = {
+    query: async (text: string, values?: unknown[]) => {
+      if (text.startsWith("SELECT a.*")) return { rows: [before] };
+      if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+      if (text.startsWith("UPDATE lms_assessments")) {
+        updateValues = values;
+        return { rows: [{ ...before, status: "DRAFT" }] };
+      }
+      return { rows: [] };
+    },
+  };
+  const service = new AssessmentService(db as never, { record: async (event: Record<string, unknown>) => { auditEvents.push(event); } } as never);
+
+  const result = await service.changeAssessmentStatus("assessment-1", "DRAFT", staffRequest);
+
+  assert.equal(result.status, "DRAFT");
+  assert.equal(updateValues?.[2], "DRAFT");
+  assert.equal(updateValues?.[3], "PUBLISHED");
+  assert.equal(auditEvents.length, 1);
+  assert.equal(auditEvents[0].action, "UNPUBLISH");
+});
+
+test("only published assessments can be unpublished", async () => {
+  const staff: AuthenticatedUser = {
+    ...learner,
+    id: "teacher-1",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: ["lms.assessment.publish"],
+  };
+  const staffRequest = { context: { ...request.context, user: staff } } as unknown as ContextRequest;
+  const before = {
+    id: "assessment-1",
+    tenant_id: staff.tenantId,
+    institution_id: "institution-1",
+    campus_id: "campus-1",
+    course_id: "course-1",
+    module_id: "module-1",
+    status: "DRAFT",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+  };
+  let updateAttempted = false;
+  const db = {
+    query: async (text: string) => {
+      if (text.startsWith("SELECT a.*")) return { rows: [before] };
+      if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+      if (text.startsWith("UPDATE lms_assessments")) updateAttempted = true;
+      return { rows: [] };
+    },
+  };
+  const service = new AssessmentService(db as never, { record: async () => undefined } as never);
+
+  await assert.rejects(service.changeAssessmentStatus("assessment-1", "DRAFT", staffRequest), ConflictException);
+  assert.equal(updateAttempted, false);
 });
 
 test("question updates scope submitted-attempt checks to the current tenant", async () => {
