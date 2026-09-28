@@ -1,10 +1,16 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
 import { assertScope, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
-import type { AssignRoleDto, CreateUserDto, UpdateUserDto } from "./user.dto";
+import type {
+  ApproveInstructorRequestDto,
+  AssignRoleDto,
+  CreateUserDto,
+  RejectInstructorRequestDto,
+  UpdateUserDto,
+} from "./user.dto";
 import { hashPassword } from "../auth/password-security";
 
 const unscopedRegistrationRoleCodes = new Set(["TEACHER", "INSTRUCTOR", "INSTITUTION_ADMINISTRATOR"]);
@@ -221,6 +227,172 @@ export class UsersService {
     const assignment = result.rows[0] ?? { userId: id, roleId: input.roleId, institutionId: input.institutionId ?? null, campusId: input.campusId ?? null };
     await this.audit.record({ tenantId: user.tenant_id, actorUserId: actor.id, requestId: request.context.requestId, module: "identity", resource: "user_role", resourceId: id, action: "CREATE", newValue: assignment, ipAddress: request.context.ipAddress, deviceContext: { userAgent: request.context.userAgent } });
     return assignment;
+  }
+
+  async approveInstructorRequest(id: string, input: ApproveInstructorRequestDto, request: ContextRequest) {
+    const actor = request.context.user!;
+    const approved = await this.db.transaction(async (client) => {
+      const pending = await client.query<{
+        id: string;
+        tenant_id: string;
+        role_id: string;
+        role_code: string;
+        user_role_id: string;
+      }>(
+        `SELECT u.id, u.tenant_id, r.id AS role_id, r.code AS role_code, ur.id AS user_role_id
+         FROM users u
+         JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+         JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+         WHERE u.id = $1
+           AND ($2::uuid IS NULL OR u.tenant_id = $2)
+           AND u.status = 'PENDING'
+           AND ur.institution_id IS NULL
+           AND ur.campus_id IS NULL
+           AND r.code IN ('TEACHER', 'INSTRUCTOR')
+           AND r.status = 'ACTIVE'
+         ORDER BY CASE r.code WHEN 'TEACHER' THEN 0 ELSE 1 END
+         FOR UPDATE OF u, ur`,
+        [id, this.platform(actor) ? null : actor.tenantId],
+      );
+      if (!pending.rows.length) throw new NotFoundException("Pending instructor request not found.");
+      if (pending.rows.length !== 1) {
+        throw new ConflictException("This request has multiple instructor roles and needs administrator review.");
+      }
+
+      const target = pending.rows[0];
+      const institution = await client.query<{ id: string; campus_id: string | null }>(
+        `SELECT i.id, c.id AS campus_id
+         FROM institutions i
+         LEFT JOIN campuses c
+           ON c.id = $3
+          AND c.tenant_id = i.tenant_id
+          AND c.institution_id = i.id
+          AND c.status = 'ACTIVE'
+         WHERE i.id = $1
+           AND i.tenant_id = $2
+           AND i.status = 'ACTIVE'
+           AND ($3::uuid IS NULL OR c.id IS NOT NULL)`,
+        [input.institutionId, target.tenant_id, input.campusId ?? null],
+      );
+      if (!institution.rows[0]) {
+        throw new NotFoundException("The selected active institution or campus was not found.");
+      }
+      assertScope(actor, input.institutionId, input.campusId ?? null);
+
+      const duplicateAssignment = await client.query<{ id: string }>(
+        `SELECT id FROM user_roles
+         WHERE tenant_id = $1
+           AND user_id = $2
+           AND role_id = $3
+           AND institution_id = $4
+           AND campus_id IS NOT DISTINCT FROM $5::uuid
+         LIMIT 1`,
+        [target.tenant_id, target.id, target.role_id, input.institutionId, input.campusId ?? null],
+      );
+      if (duplicateAssignment.rows[0]) {
+        throw new ConflictException("This instructor role is already assigned to the selected scope.");
+      }
+
+      const assigned = await client.query(
+        `UPDATE user_roles
+         SET institution_id = $2, campus_id = $3
+         WHERE id = $1
+           AND user_id = $4
+           AND tenant_id = $5
+           AND institution_id IS NULL
+           AND campus_id IS NULL
+         RETURNING id`,
+        [target.user_role_id, input.institutionId, input.campusId ?? null, target.id, target.tenant_id],
+      );
+      if (!assigned.rows[0]) throw new ConflictException("The instructor request changed before it could be approved.");
+
+      const user = await client.query(
+        `UPDATE users
+         SET status = 'ACTIVE', updated_by = $2, updated_at = now()
+         WHERE id = $1 AND tenant_id = $3 AND status = 'PENDING'
+         RETURNING id, tenant_id, email, mobile, first_name, last_name, status`,
+        [target.id, actor.id, target.tenant_id],
+      );
+      if (!user.rows[0]) throw new ConflictException("The instructor request changed before it could be approved.");
+      return { user: user.rows[0], tenantId: target.tenant_id, roleCode: target.role_code };
+    });
+
+    await this.audit.record({
+      tenantId: approved.tenantId,
+      institutionId: input.institutionId,
+      campusId: input.campusId ?? null,
+      actorUserId: actor.id,
+      requestId: request.context.requestId,
+      module: "identity",
+      resource: "instructor_request",
+      resourceId: id,
+      action: "APPROVE",
+      previousValue: { status: "PENDING" },
+      newValue: {
+        status: "ACTIVE",
+        roleCode: approved.roleCode,
+        institutionId: input.institutionId,
+        campusId: input.campusId ?? null,
+      },
+      ipAddress: request.context.ipAddress,
+      deviceContext: { userAgent: request.context.userAgent },
+    });
+    return approved.user;
+  }
+
+  async rejectInstructorRequest(id: string, input: RejectInstructorRequestDto, request: ContextRequest) {
+    const actor = request.context.user!;
+    const reason = input.reason.trim();
+    if (reason.length < 3) throw new BadRequestException("Enter a reason for rejecting this request.");
+
+    const rejected = await this.db.transaction(async (client) => {
+      const pending = await client.query<{ id: string; tenant_id: string; role_code: string }>(
+        `SELECT u.id, u.tenant_id, r.code AS role_code
+         FROM users u
+         JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+         JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+         WHERE u.id = $1
+           AND ($2::uuid IS NULL OR u.tenant_id = $2)
+           AND u.status = 'PENDING'
+           AND ur.institution_id IS NULL
+           AND ur.campus_id IS NULL
+           AND r.code IN ('TEACHER', 'INSTRUCTOR')
+           AND r.status = 'ACTIVE'
+         ORDER BY CASE r.code WHEN 'TEACHER' THEN 0 ELSE 1 END
+         FOR UPDATE OF u, ur`,
+        [id, this.platform(actor) ? null : actor.tenantId],
+      );
+      if (!pending.rows.length) throw new NotFoundException("Pending instructor request not found.");
+      if (pending.rows.length !== 1) {
+        throw new ConflictException("This request has multiple instructor roles and needs administrator review.");
+      }
+
+      const target = pending.rows[0];
+      const user = await client.query(
+        `UPDATE users
+         SET status = 'DISABLED', updated_by = $2, updated_at = now()
+         WHERE id = $1 AND tenant_id = $3 AND status = 'PENDING'
+         RETURNING id, tenant_id, email, mobile, first_name, last_name, status`,
+        [target.id, actor.id, target.tenant_id],
+      );
+      if (!user.rows[0]) throw new ConflictException("The instructor request changed before it could be rejected.");
+      return { user: user.rows[0], tenantId: target.tenant_id, roleCode: target.role_code };
+    });
+
+    await this.audit.record({
+      tenantId: rejected.tenantId,
+      actorUserId: actor.id,
+      requestId: request.context.requestId,
+      module: "identity",
+      resource: "instructor_request",
+      resourceId: id,
+      action: "REJECT",
+      previousValue: { status: "PENDING" },
+      newValue: { status: "DISABLED", roleCode: rejected.roleCode, reason },
+      ipAddress: request.context.ipAddress,
+      deviceContext: { userAgent: request.context.userAgent },
+    });
+    return rejected.user;
   }
 
   private userScopePredicate(alias: string, actorParameter: number) {

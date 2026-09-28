@@ -58,10 +58,15 @@ export type AccountRequest = {
 };
 
 const registrationRoleCodes = new Set(["TEACHER", "INSTRUCTOR", "INSTITUTION_ADMINISTRATOR"]);
+const instructorRoleCodes = new Set(["TEACHER", "INSTRUCTOR"]);
 
 export function isPendingAccountRequest(user: AccountRequest) {
   return user.status === "PENDING"
     && Boolean(user.roles?.some((role) => registrationRoleCodes.has(role.code?.toUpperCase() || "")));
+}
+
+function isInstructorRequest(user: AccountRequest) {
+  return user.roles?.some((role) => instructorRoleCodes.has(role.code?.toUpperCase() || "")) === true;
 }
 
 function requestedRole(user: AccountRequest) {
@@ -140,6 +145,15 @@ export default function AdminAccessView({
   const [accountRequestPage, setAccountRequestPage] = useState(1);
   const [accountRequestTotalPages, setAccountRequestTotalPages] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<AccountRequest | null>(null);
+  const [requestInstitutions, setRequestInstitutions] = useState<Institution[]>([]);
+  const [requestCampuses, setRequestCampuses] = useState<Campus[]>([]);
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState("");
+  const [selectedCampusId, setSelectedCampusId] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectingRequest, setRejectingRequest] = useState(false);
+  const [requestActionBusy, setRequestActionBusy] = useState(false);
+  const [requestActionError, setRequestActionError] = useState("");
+  const [requestNotice, setRequestNotice] = useState("");
   const [institutions, setInstitutions] = useState<Institution[]>([]);
   const [canCreateInstitution, setCanCreateInstitution] = useState(false);
   const [tenantId, setTenantId] = useState("");
@@ -170,10 +184,14 @@ export default function AdminAccessView({
           ));
           if (!cancelled) setLearners(scopedLearners);
         } else if (mode === "account-requests") {
-          const payload = await request<unknown>(
-            apiBase,
-            `/users?page=${accountRequestPage}&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR`,
-          );
+          const [payload, institutionPayload, campusPayload] = await Promise.all([
+            request<unknown>(
+              apiBase,
+              `/users?page=${accountRequestPage}&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR`,
+            ),
+            request<unknown>(apiBase, "/institutions/scoped-options"),
+            request<unknown>(apiBase, "/campuses/scoped-options"),
+          ]);
           if (typeof payload !== "object" || payload === null || !Array.isArray((payload as { data?: unknown }).data)) {
             throw new Error("The response did not contain account requests.");
           }
@@ -187,6 +205,8 @@ export default function AdminAccessView({
             const total = paginated.meta?.pagination?.total ?? requests.length;
             setAccountRequestTotal(total);
             setAccountRequestTotalPages(Math.max(1, paginated.meta?.pagination?.totalPages ?? 1));
+            setRequestInstitutions(listData<Institution>(institutionPayload));
+            setRequestCampuses(listData<Campus>(campusPayload));
             onAccountRequestCountChange?.(total);
           }
         } else if (mode === "institution-profile") {
@@ -219,6 +239,72 @@ export default function AdminAccessView({
       cancelled = true;
     };
   }, [accountRequestPage, apiBase, canCreateInstitution, mode, onAccountRequestCountChange]);
+
+  function openAccountRequest(accountRequest: AccountRequest) {
+    const activeInstitutions = requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE");
+    setSelectedRequest(accountRequest);
+    setSelectedInstitutionId(activeInstitutions.length === 1 ? activeInstitutions[0].id : "");
+    setSelectedCampusId("");
+    setRejectionReason("");
+    setRejectingRequest(false);
+    setRequestActionError("");
+  }
+
+  function completeAccountRequest(request: AccountRequest, outcome: "approved" | "rejected") {
+    const nextTotal = Math.max(0, accountRequestTotal - 1);
+    setAccountRequests((current) => current.filter((item) => item.id !== request.id));
+    setAccountRequestTotal(nextTotal);
+    setAccountRequestTotalPages(Math.max(1, Math.ceil(nextTotal / 100)));
+    onAccountRequestCountChange?.(nextTotal);
+    setRequestNotice(outcome === "approved"
+      ? `${personName(request)} was approved. Their instructor account is active.`
+      : `${personName(request)} was rejected. The reason was recorded.`);
+    setSelectedRequest(null);
+    setRejectingRequest(false);
+  }
+
+  async function approveAccountRequest() {
+    if (!selectedRequest || !isInstructorRequest(selectedRequest) || !selectedInstitutionId || requestActionBusy) return;
+    setRequestActionBusy(true);
+    setRequestActionError("");
+    try {
+      await request(apiBase, `/users/${selectedRequest.id}/instructor-request/approve`, {
+        method: "POST",
+        body: JSON.stringify({
+          institutionId: selectedInstitutionId,
+          ...(selectedCampusId ? { campusId: selectedCampusId } : {}),
+        }),
+      });
+      completeAccountRequest(selectedRequest, "approved");
+    } catch (actionError) {
+      setRequestActionError(actionError instanceof Error ? actionError.message : "The instructor request could not be approved.");
+    } finally {
+      setRequestActionBusy(false);
+    }
+  }
+
+  async function rejectAccountRequest(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selectedRequest || !isInstructorRequest(selectedRequest) || requestActionBusy) return;
+    const reason = rejectionReason.trim();
+    if (reason.length < 3) {
+      setRequestActionError("Enter a reason for rejecting this request.");
+      return;
+    }
+    setRequestActionBusy(true);
+    setRequestActionError("");
+    try {
+      await request(apiBase, `/users/${selectedRequest.id}/instructor-request/reject`, {
+        method: "POST",
+        body: JSON.stringify({ reason }),
+      });
+      completeAccountRequest(selectedRequest, "rejected");
+    } catch (actionError) {
+      setRequestActionError(actionError instanceof Error ? actionError.message : "The instructor request could not be rejected.");
+    } finally {
+      setRequestActionBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (mode !== "institution-profile") {
@@ -345,6 +431,7 @@ export default function AdminAccessView({
       </div>
 
       {error && <div className="relationship-alert error-box"><strong>We couldn’t load this view</strong><p>{error}</p></div>}
+      {requestNotice && mode === "account-requests" && <div className="relationship-alert success-box" role="status"><strong>Request updated</strong><p>{requestNotice}</p></div>}
       {!error && loading && <div className="state-box"><div className="spinner" /><div><strong>Loading {title.toLowerCase()}…</strong><p>Checking your institution-scoped records.</p></div></div>}
       {!error && !loading && count === 0 && (
         <div className="state-box empty-box">
@@ -381,7 +468,7 @@ export default function AdminAccessView({
               </div>
               <span className="record-detail">{accountRequest.email || "No email provided"}</span>
               <span className="record-detail">{requestedRole(accountRequest)}</span>
-              <button className="row-action-link" type="button" onClick={() => setSelectedRequest(accountRequest)}>Review request</button>
+              <button className="row-action-link" type="button" onClick={() => openAccountRequest(accountRequest)}>Review request</button>
             </div>
           ))}
           {accountRequestTotalPages > 1 && (
@@ -449,7 +536,7 @@ export default function AdminAccessView({
               </div>
               <button className="close-button" type="button" onClick={() => setSelectedRequest(null)} aria-label="Close request details">×</button>
             </div>
-            <p className="modal-intro">Submitted details are shown below. This review does not approve or change the account.</p>
+            <p className="modal-intro">{isInstructorRequest(selectedRequest) ? "Review the instructor request, assign its institution scope, then approve or reject it." : "Submitted details are shown below. This request type is view-only."}</p>
             <dl className="account-request-details">
               <div><dt>Applicant</dt><dd>{personName(selectedRequest)}</dd></div>
               <div><dt>Email</dt><dd>{selectedRequest.email || "Not provided"}</dd></div>
@@ -457,9 +544,73 @@ export default function AdminAccessView({
               <div><dt>Submitted</dt><dd>{dateLabel(selectedRequest.created_at)}</dd></div>
               <div><dt>Current status</dt><dd><span className="status-badge is-inactive">Pending review</span></dd></div>
             </dl>
-            <div className="modal-actions">
-              <button className="secondary-button" type="button" onClick={() => setSelectedRequest(null)}>Close</button>
-            </div>
+            {isInstructorRequest(selectedRequest) ? (
+              <>
+                <div className="account-request-scope">
+                  <label htmlFor="instructor-request-institution">Institution for teaching access</label>
+                  <select
+                    id="instructor-request-institution"
+                    value={selectedInstitutionId}
+                    onChange={(event) => {
+                      setSelectedInstitutionId(event.target.value);
+                      setSelectedCampusId("");
+                    }}
+                    disabled={requestActionBusy}
+                    required
+                  >
+                    <option value="">Choose an active institution</option>
+                    {requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE").map((institution) => (
+                      <option key={institution.id} value={institution.id}>{institution.name || "Unnamed institution"}</option>
+                    ))}
+                  </select>
+                  <label htmlFor="instructor-request-campus">Campus (optional)</label>
+                  <select
+                    id="instructor-request-campus"
+                    value={selectedCampusId}
+                    onChange={(event) => setSelectedCampusId(event.target.value)}
+                    disabled={requestActionBusy || !selectedInstitutionId}
+                  >
+                    <option value="">All campuses</option>
+                    {requestCampuses.filter((campus) => campus.institution_id === selectedInstitutionId && (!campus.status || campus.status === "ACTIVE")).map((campus) => (
+                      <option key={campus.id} value={campus.id}>{campus.name || "Unnamed campus"}</option>
+                    ))}
+                  </select>
+                </div>
+                {requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE").length === 0 && (
+                  <div className="relationship-alert error-box" role="alert"><strong>No active institution scope</strong><p>Teaching access cannot be activated until an active institution is available in your scope.</p></div>
+                )}
+                {requestActionError && <div className="relationship-alert error-box" role="alert"><strong>Request not updated</strong><p>{requestActionError}</p></div>}
+                {rejectingRequest ? (
+                  <form className="account-request-rejection" onSubmit={(event) => void rejectAccountRequest(event)}>
+                    <label htmlFor="instructor-request-reason">Reason for rejection</label>
+                    <textarea
+                      id="instructor-request-reason"
+                      value={rejectionReason}
+                      onChange={(event) => setRejectionReason(event.target.value)}
+                      minLength={3}
+                      maxLength={1000}
+                      rows={4}
+                      required
+                      disabled={requestActionBusy}
+                    />
+                    <div className="modal-actions">
+                      <button className="secondary-button" type="button" onClick={() => { setRejectingRequest(false); setRequestActionError(""); }} disabled={requestActionBusy}>Back</button>
+                      <button className="primary-button" type="submit" disabled={requestActionBusy || rejectionReason.trim().length < 3}>{requestActionBusy ? "Rejecting…" : "Confirm rejection"}</button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="modal-actions">
+                    <button className="secondary-button" type="button" onClick={() => setSelectedRequest(null)} disabled={requestActionBusy}>Close</button>
+                    <button className="secondary-button" type="button" onClick={() => { setRejectingRequest(true); setRequestActionError(""); }} disabled={requestActionBusy}>Reject</button>
+                    <button className="primary-button" type="button" onClick={() => void approveAccountRequest()} disabled={requestActionBusy || !selectedInstitutionId || requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE").length === 0}>{requestActionBusy ? "Approving…" : "Approve & activate"}</button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="modal-actions">
+                <button className="secondary-button" type="button" onClick={() => setSelectedRequest(null)}>Close</button>
+              </div>
+            )}
           </section>
         </div>
       )}
