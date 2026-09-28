@@ -108,6 +108,198 @@ test("direct purchase creates a provider order from the existing course price", 
   assert.ok(calls.some((call) => call.values.includes("course-existing")));
 });
 
+test("repeated idempotent payment requests return the existing Razorpay order", async () => {
+  const course = {
+    id: "course-existing",
+    tenant_id: "tenant-1",
+    institution_id: "institution-1",
+    campus_id: null,
+    price_minor: "125000",
+    currency: "INR",
+    title: "Existing course",
+  };
+  const existingPayment = {
+    id: "payment-existing",
+    course_id: "course-existing",
+    student_id: "student-1",
+    amount_minor: "125000",
+    currency: "INR",
+    status: "ORDER_CREATED",
+    razorpay_order_id: "order-existing",
+  };
+  let providerOrderCalls = 0;
+  let paymentInsertCalls = 0;
+  const service = serviceWith(
+    async (text) => text.includes("FROM courses c") ? { rows: [course] } : { rows: [] },
+    async (work) => work({
+      query: async (text: string) => {
+        if (text.includes("SELECT * FROM lms_payments")) return { rows: [existingPayment] };
+        if (text.includes("INSERT INTO lms_payments")) paymentInsertCalls += 1;
+        return { rows: [] };
+      },
+    }),
+    {
+      createOrder: async () => {
+        providerOrderCalls += 1;
+        return { id: "unexpected-order", amount: 125000, currency: "INR", status: "created" };
+      },
+    },
+  );
+
+  const result = await service.createOrder(
+    "course-existing",
+    { idempotencyKey: "direct-order-existing" },
+    directStudent,
+  );
+
+  assert.equal(result.id, "payment-existing");
+  assert.equal(result.razorpayOrderId, "order-existing");
+  assert.equal(result.status, "ORDER_CREATED");
+  assert.equal(paymentInsertCalls, 0);
+  assert.equal(providerOrderCalls, 0);
+});
+
+test("concurrent same-key payment requests recover 23505 and reuse one Razorpay order", { timeout: 10_000 }, async () => {
+  const idempotencyKey = "direct-order-race";
+  const course = {
+    id: "course-existing",
+    tenant_id: "tenant-1",
+    institution_id: "institution-1",
+    campus_id: null,
+    price_minor: "125000",
+    currency: "INR",
+    title: "Existing course",
+  };
+  let payment: Record<string, unknown> | null = null;
+  let initialLookupCount = 0;
+  let insertAttempts = 0;
+  let uniqueConflicts = 0;
+  let conflictReselects = 0;
+  let providerOrderCalls = 0;
+  let resolveInitialLookups!: () => void;
+  const bothInitialLookups = new Promise<void>((resolve) => {
+    resolveInitialLookups = resolve;
+  });
+  let resolveConflictReselect!: () => void;
+  const conflictReselect = new Promise<void>((resolve) => {
+    resolveConflictReselect = resolve;
+  });
+  let resolveProviderStarted!: () => void;
+  const providerStarted = new Promise<void>((resolve) => {
+    resolveProviderStarted = resolve;
+  });
+  let releaseProviderOrder!: (order: { id: string; amount: number; currency: string; status: string }) => void;
+  const providerOrder = new Promise<{ id: string; amount: number; currency: string; status: string }>((resolve) => {
+    releaseProviderOrder = resolve;
+  });
+
+  const db = {
+    query: async (text: string, values: unknown[] = []) => {
+      if (text.includes("FROM courses c")) return { rows: [course] };
+      if (text.startsWith("SELECT * FROM lms_payments")) {
+        if (values[3] === idempotencyKey) {
+          conflictReselects += 1;
+          resolveConflictReselect();
+        }
+        return { rows: payment ? [{ ...payment }] : [] };
+      }
+      if (text.startsWith("UPDATE lms_payments")) {
+        assert.ok(payment);
+        payment = {
+          ...payment,
+          razorpay_order_id: values[1],
+          status: "ORDER_CREATED",
+        };
+        return { rows: [{ ...payment }] };
+      }
+      return { rows: [] };
+    },
+    transaction: async (work: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: unknown[] }> }) => Promise<unknown>) =>
+      work({
+        query: async (text: string, values: unknown[] = []) => {
+          if (text.includes("SELECT * FROM lms_payments")) {
+            const snapshot = payment ? { ...payment } : null;
+            initialLookupCount += 1;
+            if (initialLookupCount === 2) resolveInitialLookups();
+            await bothInitialLookups;
+            return { rows: snapshot ? [snapshot] : [] };
+          }
+          if (text.includes("SELECT id FROM lms_enrollments")) return { rows: [] };
+          if (text.includes("INSERT INTO lms_payments")) {
+            insertAttempts += 1;
+            if (payment) {
+              uniqueConflicts += 1;
+              throw Object.assign(new Error("duplicate idempotency key"), {
+                code: "23505",
+                constraint: "lms_payments_idempotency_key",
+              });
+            }
+            payment = {
+              id: "payment-race",
+              tenant_id: "tenant-1",
+              student_id: "student-1",
+              course_id: "course-existing",
+              amount_minor: "125000",
+              currency: "INR",
+              status: "PENDING",
+              razorpay_order_id: null,
+              razorpay_payment_id: null,
+              captured_at: null,
+              refunded_at: null,
+            };
+            return { rows: [{ ...payment }] };
+          }
+          return { rows: [] };
+        },
+      }),
+  };
+  const service = serviceWith(db.query, db.transaction, {
+    createOrder: async () => {
+      providerOrderCalls += 1;
+      resolveProviderStarted();
+      return providerOrder;
+    },
+  });
+
+  const requests = [
+    service.createOrder("course-existing", { idempotencyKey }, directStudent),
+    service.createOrder("course-existing", { idempotencyKey }, directStudent),
+  ];
+  const resultsPromise = Promise.allSettled(requests);
+  await providerStarted;
+
+  let reselectTimeout: ReturnType<typeof setTimeout> | undefined;
+  const reselectedBeforeProviderCompletion = await Promise.race([
+    conflictReselect.then(() => true),
+    new Promise<boolean>((resolve) => {
+      reselectTimeout = setTimeout(() => resolve(false), 1_000);
+    }),
+  ]);
+  if (reselectTimeout) clearTimeout(reselectTimeout);
+  const racedPaymentSnapshot = payment ? { ...payment } : null;
+  releaseProviderOrder({ id: "order-shared", amount: 125000, currency: "INR", status: "created" });
+  const results = await resultsPromise;
+  const successes = results.filter((result) => result.status === "fulfilled");
+
+  assert.equal(reselectedBeforeProviderCompletion, true);
+  assert.equal(racedPaymentSnapshot?.status, "PENDING");
+  assert.equal(racedPaymentSnapshot?.razorpay_order_id, null);
+  assert.equal(successes.length, 2);
+  const orders = successes.map((result) => (result as PromiseFulfilledResult<Record<string, unknown>>).value);
+  assert.deepEqual(
+    orders.map((order) => [order.id, order.razorpayOrderId, order.status]),
+    [
+      ["payment-race", "order-shared", "ORDER_CREATED"],
+      ["payment-race", "order-shared", "ORDER_CREATED"],
+    ],
+  );
+  assert.equal(initialLookupCount, 2);
+  assert.equal(insertAttempts, 2);
+  assert.equal(uniqueConflicts, 1);
+  assert.equal(conflictReselects, 1);
+  assert.equal(providerOrderCalls, 1);
+});
+
 test("college students cannot use the direct purchase endpoint", async () => {
   const collegeStudent = { ...directStudent, studentType: "COLLEGE_STUDENT" as const };
   const service = serviceWith(async () => ({ rows: [] }), async (work) => work({ query: async () => ({ rows: [] }) }), {});
