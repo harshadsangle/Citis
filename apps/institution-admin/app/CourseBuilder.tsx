@@ -287,6 +287,7 @@ export default function CourseBuilder({
 
   function updateCourse(key: keyof CourseForm, value: string | boolean) {
     setCourse((current) => ({ ...current, [key]: value }));
+    setError("");
     setValidationErrors((current) => {
       const next = { ...current };
       delete next[`course.${key}`];
@@ -301,6 +302,7 @@ export default function CourseBuilder({
 
   function fieldProps(key: string) {
     return {
+      id: `${key.replaceAll(".", "-")}-input`,
       "aria-invalid": Boolean(validationErrors[key]),
       "aria-describedby": validationErrors[key] ? `${key.replaceAll(".", "-")}-error` : undefined,
     };
