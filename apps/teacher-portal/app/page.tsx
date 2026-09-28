@@ -342,6 +342,14 @@ function displayName(principal?: Principal) {
   ].filter(Boolean).join(" ") || "Instructor";
 }
 
+function timeGreeting(date: Date) {
+  const hour = date.getHours();
+  if (hour >= 5 && hour < 12) return "Good Morning";
+  if (hour >= 12 && hour < 17) return "Good Afternoon";
+  if (hour >= 17 && hour < 21) return "Good Evening";
+  return "Good Night";
+}
+
 function learnerName(learner: Enrollment | Submission | AssessmentAttempt) {
   return [
     learner.learner_first_name,
@@ -465,6 +473,7 @@ function StatusPill({ status }: { status: string }) {
 export default function TeacherPortalPage() {
   const profileMenuRef = useRef<HTMLDetailsElement>(null);
   const [name, setName] = useState("Instructor");
+  const [greeting, setGreeting] = useState("Good Morning");
   const [courseData, setCourseData] = useState<CourseData[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
   const [gradeDrafts, setGradeDrafts] = useState<Record<string, { grade: string; feedback: string }>>({});
@@ -493,6 +502,13 @@ export default function TeacherPortalPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    const updateGreeting = () => setGreeting(timeGreeting(new Date()));
+    updateGreeting();
+    const interval = window.setInterval(updateGreeting, 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const closeProfileMenuOnOutsidePointer = (event: PointerEvent) => {
@@ -1481,7 +1497,7 @@ export default function TeacherPortalPage() {
              <header className="page-heading" id="overview">
                <div className="page-heading-copy">
                 <p className="eyebrow">Daily teaching workspace</p>
-                <h1>Good morning, {name.split(" ")[0]}.</h1>
+                 <h1>{greeting}, {name.split(" ")[0]}.</h1>
                 <p className="intro">Keep your assigned courses moving, check learner progress, and clear the review queue from one secure view.</p>
                  <div className="heading-identity"><span className="heading-avatar">{name.slice(0, 1).toUpperCase()}</span><span><strong>{name}</strong><small>Instructor · Teaching workspace</small></span></div>
               </div>
