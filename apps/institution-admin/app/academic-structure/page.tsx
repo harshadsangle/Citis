@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
 const base = (process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
@@ -65,8 +65,10 @@ export default function AcademicStructurePage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const listRequestId = useRef(0);
 
   async function loadRows() {
+    const requestId = ++listRequestId.current;
     if (!institutionId) {
       setRows([]);
       return;
@@ -74,9 +76,11 @@ export default function AcademicStructurePage() {
     const query = `?institutionId=${encodeURIComponent(institutionId)}&page=1&pageSize=100`;
     try {
       const result = await request<ListResponse>(kind === "programmes" ? `/programmes${query}` : `/academic/${kind}${query}`);
-      setRows(result.data || []);
+      if (requestId === listRequestId.current) setRows(result.data || []);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Unable to load academic records.");
+      if (requestId === listRequestId.current) {
+        setError(caught instanceof Error ? caught.message : "Unable to load academic records.");
+      }
     }
   }
 
@@ -97,6 +101,14 @@ export default function AcademicStructurePage() {
     setName("");
     setCode("");
     setDescription("");
+    setFacultyId("");
+    setDepartmentId("");
+    setCourseId("");
+    setSemesterId("");
+    setStartDate("");
+    setEndDate("");
+    setSection("");
+    setRows([]);
     void loadRows();
   // loadRows intentionally follows the selected resource and institution.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,22 +116,27 @@ export default function AcademicStructurePage() {
 
   useEffect(() => {
     if (!institutionId) return;
+    let current = true;
+    setFaculties([]);
+    setDepartments([]);
+    setSemesters([]);
+    setCourses([]);
     const query = `?institutionId=${encodeURIComponent(institutionId)}&page=1&pageSize=100`;
     const loadOptions = async () => {
       if (kind === "departments") {
         try {
           const result = await request<ListResponse>(`/academic/faculties${query}`);
-          setFaculties(result.data || []);
+          if (current) setFaculties(result.data || []);
         } catch (caught) {
-          setError(caught instanceof Error ? caught.message : "Unable to load faculties.");
+          if (current) setError(caught instanceof Error ? caught.message : "Unable to load faculties.");
         }
       }
       if (kind === "programmes") {
         try {
           const result = await request<ListResponse>(`/academic/departments${query}`);
-          setDepartments(result.data || []);
+          if (current) setDepartments(result.data || []);
         } catch (caught) {
-          setError(caught instanceof Error ? caught.message : "Unable to load departments.");
+          if (current) setError(caught instanceof Error ? caught.message : "Unable to load departments.");
         }
       }
       if (kind === "course-offerings") {
@@ -127,15 +144,16 @@ export default function AcademicStructurePage() {
           request<ListResponse>(`/academic/semesters${query}`),
           request<ListResponse>(`/academic/course-options?institutionId=${encodeURIComponent(institutionId)}`),
         ]);
-        if (semesterResult.status === "fulfilled") {
+        if (current && semesterResult.status === "fulfilled") {
           setSemesters((semesterResult.value.data || []).filter((item) => item.status !== "ARCHIVED"));
-        } else setError(semesterResult.reason instanceof Error ? semesterResult.reason.message : "Unable to load semesters.");
-        if (courseResult.status === "fulfilled") {
+        } else if (current) setError(semesterResult.reason instanceof Error ? semesterResult.reason.message : "Unable to load semesters.");
+        if (current && courseResult.status === "fulfilled") {
           setCourses(courseResult.value.data || []);
-        } else setError(courseResult.reason instanceof Error ? courseResult.reason.message : "Unable to load courses.");
+        } else if (current) setError(courseResult.reason instanceof Error ? courseResult.reason.message : "Unable to load courses.");
       }
     };
     void loadOptions();
+    return () => { current = false; };
   }, [kind, institutionId]);
 
   function resetForm() {
@@ -310,7 +328,8 @@ export default function AcademicStructurePage() {
               <label style={styles.label}>Semester
                 <select style={styles.input} value={semesterId} onChange={(event) => setSemesterId(event.target.value)} required disabled={!!editingId}>
                   <option value="">Select semester</option>
-                  {semesters.map((item) => <option key={item.id} value={item.id}>{item.name} ({item.code})</option>)}
+                  {semesters.filter((item) => item.status === "ACTIVE" || item.status === "DRAFT")
+                    .map((item) => <option key={item.id} value={item.id}>{item.name} ({item.code})</option>)}
                 </select>
               </label>
               <label style={styles.label}>Section
