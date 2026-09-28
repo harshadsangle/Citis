@@ -80,7 +80,12 @@ type CourseBuilderQuestion = {
   prompt: string;
   questionType: string;
   marks: number;
+  negativeMarks?: number;
+  subject?: string;
+  topic?: string;
+  difficulty?: string;
   options: Array<{ value: string; label: string; isCorrect: boolean }>;
+  matchingPairs?: Array<{ prompt: string; answer: string }>;
 };
 
 type CourseBuilderAssessment = {
@@ -91,6 +96,9 @@ type CourseBuilderAssessment = {
   passingMarks?: number;
   durationMinutes?: number;
   attemptLimit?: number;
+  randomizeQuestions?: boolean;
+  randomizeOptions?: boolean;
+  questionsToSelect?: number | null;
   questions: CourseBuilderQuestion[];
 };
 
@@ -340,26 +348,52 @@ export class LmsService {
         }
         if (assessment.durationMinutes !== undefined) number(assessment.durationMinutes, "Assessment duration", 1, 1_440, true);
         if (assessment.attemptLimit !== undefined) number(assessment.attemptLimit, "Assessment attempts", 1, 100, true);
+        if (assessment.questionsToSelect !== undefined && assessment.questionsToSelect !== null) {
+          number(assessment.questionsToSelect, "Assessment question selection", 1, 500, true);
+        }
         if (!Array.isArray(assessment.questions)) throw new BadRequestException("Each assessment must include a questions array.");
         if (assessment.questions.length > 0) requirePermission("lms.assessment_question.create");
         for (const question of assessment.questions) {
           text(question.prompt, "Question prompt", 2, 2_000);
-          if (!["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"].includes(question.questionType)) {
+          if (!["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC", "FILL_IN_BLANK", "MATCHING", "LONG_ANSWER"].includes(question.questionType)) {
             throw new BadRequestException("Unsupported question type.");
           }
           number(question.marks, "Question marks", 0.01, 100_000);
-          if (!Array.isArray(question.options) || question.options.length === 0) throw new BadRequestException("Each question needs at least one answer option.");
+          number(question.negativeMarks ?? 0, "Question negative marks", 0, question.marks);
+          if (!Array.isArray(question.options)) throw new BadRequestException("Each question needs an options array.");
+          if (question.questionType === "LONG_ANSWER") {
+            if (question.options.length || (question.matchingPairs?.length ?? 0)) {
+              throw new BadRequestException("Long-answer questions do not use options or matching pairs.");
+            }
+            continue;
+          }
+          if (question.questionType === "MATCHING") {
+            const pairs = question.matchingPairs ?? [];
+            if (question.options.length || pairs.length < 2) {
+              throw new BadRequestException("Matching questions need at least two prompt and answer pairs.");
+            }
+            const prompts = pairs.map((pair) => text(pair.prompt, "Matching prompt", 1, 300).toLowerCase());
+            const answers = pairs.map((pair) => text(pair.answer, "Matching answer", 1, 300).toLowerCase());
+            if (new Set(prompts).size !== prompts.length || new Set(answers).size !== answers.length) {
+              throw new BadRequestException("Matching prompts and answers must be unique.");
+            }
+            continue;
+          }
+          if (!question.options.length) throw new BadRequestException("Each question needs at least one answer option.");
           const values = question.options.map((option) => text(option.value, "Question option value", 1, 300));
           if (new Set(values).size !== values.length || question.options.some((option) => !option.isCorrect && option.isCorrect !== false)) {
             throw new BadRequestException("Question options are invalid.");
           }
           const correctCount = question.options.filter((option) => option.isCorrect).length;
-          if (["SINGLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"].includes(question.questionType) && correctCount !== 1) {
+          if (["SINGLE_CHOICE", "TRUE_FALSE", "NUMERIC"].includes(question.questionType) && correctCount !== 1) {
             throw new BadRequestException("This question type needs exactly one correct option.");
           }
           if (question.questionType === "MULTIPLE_CHOICE" && correctCount < 1) throw new BadRequestException("Multiple-choice questions need at least one correct option.");
           if (["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"].includes(question.questionType) && question.options.length < 2) {
             throw new BadRequestException("Choice questions need at least two options.");
+          }
+          if (["SHORT_TEXT", "FILL_IN_BLANK"].includes(question.questionType) && correctCount < 1) {
+            throw new BadRequestException("Text and fill-in-the-blank questions need at least one accepted answer.");
           }
           for (const option of question.options) text(option.label, "Question option label", 1, 300);
           if (question.questionType === "TRUE_FALSE") {
@@ -1007,8 +1041,9 @@ export class LmsService {
             const assessmentResult = await client.query<Record<string, unknown>>(
               `INSERT INTO lms_assessments
                  (tenant_id, institution_id, campus_id, course_id, module_id, title, description, assessment_type,
-                   total_marks, passing_marks, duration_minutes, attempt_limit)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                    total_marks, passing_marks, duration_minutes, attempt_limit, randomize_questions,
+                    randomize_options, questions_to_select)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
                RETURNING *`,
               [
                 user.tenantId,
@@ -1023,6 +1058,9 @@ export class LmsService {
                 assessment.passingMarks ?? null,
                 assessment.durationMinutes ?? null,
                 assessment.attemptLimit ?? null,
+                assessment.randomizeQuestions ?? false,
+                assessment.randomizeOptions ?? false,
+                assessment.questionsToSelect ?? null,
               ],
             );
             const assessmentRow = assessmentResult.rows[0];
@@ -1030,8 +1068,9 @@ export class LmsService {
             for (const [questionIndex, question] of assessment.questions.entries()) {
               const questionResult = await client.query<Record<string, unknown>>(
                 `INSERT INTO lms_assessment_questions
-                   (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, prompt, question_type, marks, sequence)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                   (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, prompt, question_type,
+                    marks, sequence, negative_marks, subject, topic, difficulty, matching_pairs)
+                  VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb)
                  RETURNING *`,
                 [
                   user.tenantId,
@@ -1044,6 +1083,11 @@ export class LmsService {
                   question.questionType,
                   question.marks,
                   questionIndex + 1,
+                  question.negativeMarks ?? 0,
+                  question.subject?.trim() || null,
+                  question.topic?.trim() || null,
+                  question.difficulty?.trim().toUpperCase() || null,
+                  JSON.stringify(question.matchingPairs ?? []),
                 ],
               );
               for (const [optionIndex, option] of question.options.entries()) {

@@ -1300,6 +1300,9 @@ export default function TeacherPortalPage() {
       passingMarks: "",
       durationMinutes: "",
       attemptLimit: "",
+      randomizeQuestions: false,
+      randomizeOptions: false,
+      questionsToSelect: "",
     });
   }
 
@@ -1310,6 +1313,7 @@ export default function TeacherPortalPage() {
     const passingMarks = assessmentEditor.passingMarks.trim() ? Number(assessmentEditor.passingMarks) : undefined;
     const durationMinutes = assessmentEditor.durationMinutes.trim() ? Number(assessmentEditor.durationMinutes) : undefined;
     const attemptLimit = assessmentEditor.attemptLimit.trim() ? Number(assessmentEditor.attemptLimit) : undefined;
+    const questionsToSelect = assessmentEditor.questionsToSelect.trim() ? Number(assessmentEditor.questionsToSelect) : undefined;
     const validNumber = (value: number | undefined) => value === undefined || Number.isFinite(value);
     if (!title || title.length < 2) {
       reportFieldError("teacher-assessment-title", "Add an assessment title.");
@@ -1335,6 +1339,10 @@ export default function TeacherPortalPage() {
       reportFieldError("teacher-assessment-attempt-limit", "Attempt limit must be a whole number between 1 and 100.");
       return;
     }
+    if (!validNumber(questionsToSelect) || (questionsToSelect !== undefined && (!Number.isInteger(questionsToSelect) || questionsToSelect < 1 || questionsToSelect > 500))) {
+      reportFieldError("teacher-assessment-question-pool", "Select between 1 and 500 questions from the pool.");
+      return;
+    }
     setBusyAction(`save-assessment:${assessmentEditor.id || "new"}`);
     setError("");
     setNotice("");
@@ -1349,6 +1357,9 @@ export default function TeacherPortalPage() {
             passingMarks,
             durationMinutes,
             attemptLimit,
+            randomizeQuestions: assessmentEditor.randomizeQuestions,
+            randomizeOptions: assessmentEditor.randomizeOptions,
+            questionsToSelect: questionsToSelect ?? null,
           }),
         });
         setNotice(`${title} was updated.`);
@@ -1365,6 +1376,9 @@ export default function TeacherPortalPage() {
             passingMarks,
             durationMinutes,
             attemptLimit,
+            randomizeQuestions: assessmentEditor.randomizeQuestions,
+            randomizeOptions: assessmentEditor.randomizeOptions,
+            questionsToSelect,
           }),
         });
         setNotice(`${title} was saved as a draft.`);
@@ -1435,7 +1449,13 @@ export default function TeacherPortalPage() {
       prompt: "",
       questionType: "SINGLE_CHOICE",
       marks: "10",
+      negativeMarks: "0",
       sequence: String(currentQuestions.length + 1),
+      subject: "",
+      topic: "",
+      difficulty: "MEDIUM",
+      saveToBank: false,
+      matchingPairsText: "",
       options: defaultQuestionOptions("SINGLE_CHOICE"),
     });
   }
