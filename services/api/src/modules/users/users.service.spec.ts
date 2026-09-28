@@ -1,6 +1,58 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { ForbiddenException } from "@nestjs/common";
 import { UsersService } from "./users.service";
+
+test("institution-scoped administrators cannot assign platform roles", async () => {
+  const platformRoleCodes = ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT"];
+
+  for (const [index, roleCode] of platformRoleCodes.entries()) {
+    let insertAttempted = false;
+    const auditEvents: unknown[] = [];
+    const db = {
+      query: async (sql: string) => {
+        if (sql.startsWith("SELECT id, tenant_id FROM users")) {
+          return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
+        }
+        if (sql.startsWith("SELECT institution_id, campus_id FROM user_roles")) {
+          return { rows: [] };
+        }
+        if (sql.startsWith("SELECT id, code FROM roles")) {
+          return { rows: [{ id: `platform-role-${index}`, code: roleCode }] };
+        }
+        if (sql.startsWith("INSERT INTO user_roles")) {
+          insertAttempted = true;
+          return { rows: [{ id: "assignment-1" }] };
+        }
+        throw new Error(`Unexpected query: ${sql}`);
+      },
+    };
+    const service = new UsersService(
+      db as never,
+      { record: async (event: unknown) => auditEvents.push(event) } as never,
+    );
+    const actor = {
+      id: "institution-admin-1",
+      tenantId: "tenant-1",
+      email: "admin@example.test",
+      firstName: "Institution",
+      lastName: "Admin",
+      roles: [{ code: "INSTITUTION_ADMINISTRATOR", name: "Institution Administrator" }],
+      permissions: [],
+      scopes: [{ institutionId: "institution-1", campusId: null }],
+    };
+    const request = {
+      context: { user: actor, requestId: "request-1", ipAddress: "127.0.0.1", userAgent: "test" },
+    };
+
+    await assert.rejects(
+      service.assignRole("user-1", { roleId: `platform-role-${index}` }, request as never),
+      ForbiddenException,
+    );
+    assert.equal(insertAttempted, false);
+    assert.equal(auditEvents.length, 0);
+  }
+});
 
 test("user listings include active scoped role assignments", async () => {
   const db = {

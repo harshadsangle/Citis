@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
 import { assertScope, isPlatformUser } from "../../common/access-scope";
 import { paginationMeta } from "../../common/pagination";
@@ -193,6 +193,9 @@ export class UsersService {
     const role = await this.db.query<{ id: string; code: string }>("SELECT id, code FROM roles WHERE id = $1 AND tenant_id = $2 AND status = 'ACTIVE'", [input.roleId, user.tenant_id]);
     if (!role.rows[0]) throw new NotFoundException("Role not found in the user tenant.");
     const platformRole = ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT"].includes(role.rows[0].code);
+    if (platformRole && scopedToActor) {
+      throw new ForbiddenException("Only platform administrators can assign platform roles.");
+    }
     if (platformRole && (input.institutionId || input.campusId)) {
       throw new BadRequestException("Platform roles cannot be assigned to an institution or campus.");
     }
