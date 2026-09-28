@@ -1,0 +1,353 @@
+Please perform a blueprint-compliance audit of the existing LMS implementation in the current repository.
+
+IMPORTANT:
+
+I have a detailed LMS blueprint, but I am not providing the blueprint file to you.
+Treat the LMS requirements and audit criteria provided below as the reference requirements derived from that blueprint.
+Inspect the current repository/codebase and compare the existing LMS implementation against those requirements.
+DO NOT make any code, database, migration, configuration, UI, authentication, payment, or deployment changes.
+Do not reimplement or repeat functionality that is already implemented.
+First provide a complete audit/report only.
+Do not start implementation until the audit is reviewed and approved.
+AUDIT CRITERIA
+1. LMS Core Structure
+
+Check whether the current system supports the expected hierarchy:
+
+Programme → Course → Module → Unit → Chapter → Lesson → Learning Resource
+
+Verify actual implementation and identify where the current architecture differs.
+
+2. Course Management
+
+Check:
+
+Course creation
+Course editing
+Draft/Published lifecycle
+Course catalogue
+Module management
+Lesson management
+Learning-resource management
+Course visibility
+Course publishing/approval
+Institution/course allocation
+Instructor assignment
+3. Learning Resources
+
+Check support and actual implementation for:
+
+Video
+PDF/document content
+Presentation
+Interactive content
+Quiz
+Assignment
+Project/practical submission
+SCORM
+External links
+
+For each one, report:
+IMPLEMENTED / PARTIAL / DIFFERENT / MISSING / UNVERIFIED.
+
+4. Learner Experience
+
+Check:
+
+Learner dashboard
+Course access
+Course learning flow
+Lesson completion
+Resource consumption
+Progress tracking
+Course completion
+Assessment access
+Assignment submission
+Results
+Certificate workflow
+
+Also check whether the actual learner experience matches the intended LMS workflow rather than only checking whether APIs exist.
+
+5. Progress Lifecycle
+
+Verify the actual implementation against:
+
+Not Started → In Progress → Completed → Assessment → Certified
+
+Check:
+
+Lesson/resource progress
+Course progress calculation
+Assessment completion
+Assignment completion
+Completion eligibility
+Certificate eligibility
+Admin approval before certificate issuance where applicable
+6. Assessment System
+
+Check:
+
+Practice quizzes
+Formative assessments
+Summative assessments
+Question bank
+Question categories/topic/difficulty
+MCQ
+Multiple select
+True/False
+Fill in the blanks
+Matching
+Short answer
+Long answer
+Randomization/question pools
+Time limits
+Attempts
+Negative marking
+Auto evaluation
+Manual evaluation
+Result publication
+
+Clearly distinguish what is genuinely implemented from placeholder/demo behavior.
+
+7. Assignments / Projects / Practical
+
+Check:
+
+Assignment creation
+Assignment allocation
+Student submission
+Evaluation/grading
+Feedback
+Resubmission where supported
+Project/practical workflow
+Completion impact
+8. Instructor / Teacher Portal
+
+Check:
+
+Instructor dashboard
+Assigned courses
+Assigned institution/tenant scope
+Assigned students
+Course/module/lesson/resource access
+Attendance if implemented
+Assignments
+Assessments
+Evaluation/grading
+Feedback
+Restrictions against unassigned courses/resources
+
+Pay special attention to whether backend authorization actually enforces the same restrictions shown by the UI.
+
+9. Admin Portal
+
+Check:
+
+Course management
+Course approval/rejection
+Publishing
+Institution management
+Institution status
+Institution/course allocation
+Student management
+Instructor management
+Assignment management
+Assessment management
+Certificate approval/issuance
+Reporting/export
+Payment/refund management where applicable
+10. RBAC & Multi-Tenant Architecture
+
+Audit:
+
+CITIS platform/admin roles
+Institution/tenant roles
+Instructor permissions
+Learner permissions
+Tenant isolation
+Institution scoping
+Course scoping
+Student scoping
+Permission enforcement
+Platform-role restrictions
+Platform-permission restrictions
+Audit logging
+
+Do not consider a UI restriction sufficient if the API/backend does not enforce it.
+
+11. Certificates
+
+Check:
+
+Eligibility
+Completion requirements
+Assignment/assessment requirements
+Admin review
+Approval
+Separate issuance
+Certificate status lifecycle
+Certificate records
+Certificate visibility/download
+Revocation where supported
+12. SCORM
+
+Check:
+
+Upload/import
+Package storage
+Launch
+Asset delivery
+Authorization
+Learner access
+Multi-file package behavior
+Progress behavior
+Security/isolation
+
+Clearly identify current limitations rather than proposing a redesign during this audit.
+
+13. Online Classes / Integrations
+
+Check whether the current project supports or has architecture for:
+
+Zoom
+Google Meet
+Microsoft Teams
+Webex
+Scheduling
+Attendance
+Recording links
+
+Mark genuinely missing features as missing; do not assume that an integration exists just because the architecture could support it.
+
+14. Analytics / Reporting
+
+Check:
+
+Learner progress
+Course progress
+Assessment results
+Assignment results
+Attendance if applicable
+Login/activity history
+Certificates
+Payments
+CSV exports
+Admin reporting
+Instructor reporting
+15. Security / Architecture
+
+Check the current implementation for:
+
+Authentication
+MFA
+Authorization
+Tenant isolation
+Input validation
+API validation
+Audit logs
+Transactions
+Idempotency
+Error handling
+CORS
+Request tracing
+Production logging
+File/resource security
+API health
+Payment security
+
+Do not redo the previously completed handbook security work. Only report its current state.
+
+IMPORTANT EXISTING WORK
+
+The repository already contains substantial LMS/security implementation and recent fixes.
+
+Do NOT treat these as automatically missing:
+
+Tenant/platform role restrictions
+Concurrent OTP protection
+Certificate approval/issuance separation
+Partial-refund database index
+Instructor course/resource assignment enforcement
+Razorpay idempotency/race handling
+Webhook retry/state protections
+OTP tenant isolation
+CSV formula protection
+CSV malformed-input handling
+Video Range handling
+CORS normalization
+API health endpoints
+Tenant-isolated OTP throttling
+Platform permission restrictions
+Duplicate role-scope protection
+Razorpay timeout handling
+BigInt monetary handling
+Refund validation
+Portal outage handling
+Webhook audit records
+Resource URL/file clearing
+Accessibility fixes
+UUID-v4 request IDs
+Production exception-log protection
+Institution status and course-allocation workflow
+Instructor time-based greeting
+
+Inspect the current code before deciding whether any of these are implemented.
+
+REQUIRED OUTPUT
+
+Create a structured audit with these statuses:
+
+VERIFIED IMPLEMENTED
+PARTIAL
+DIFFERENT FROM BLUEPRINT
+MISSING
+UNVERIFIED
+FUTURE / OUT OF CURRENT LMS SCOPE
+
+For every non-trivial finding include:
+
+Blueprint requirement
+Current implementation
+Status
+Exact repository evidence (file/path and relevant function/component)
+What differs, if anything
+Whether action is actually required
+
+Then provide:
+
+A. MATCH SUMMARY
+
+Give approximate percentage/category coverage based only on inspected evidence.
+
+B. ALREADY IMPLEMENTED
+
+List everything that matches the blueprint so we never repeat those tasks.
+
+C. DIFFERENCES
+
+List functionality that exists but behaves/works differently from the blueprint.
+
+D. MISSING
+
+List genuine missing LMS functionality.
+
+E. UNVERIFIED
+
+List items that cannot be confirmed from the repository alone.
+
+F. FUTURE / OUT OF SCOPE
+
+Separate broader ERP/platform requirements from the current LMS scope so they are not incorrectly treated as LMS failures.
+
+G. PRIORITY ROADMAP
+
+Group remaining work into:
+
+Critical
+High
+Medium
+Low / Future
+
+Do NOT implement anything yet.
+
+Most important: this is an audit only. No source files, database, migrations, configuration, Git history, or deployment state should be modified.
