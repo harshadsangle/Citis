@@ -729,10 +729,10 @@ test("learning resource PATCH clears only supplied URL and file fields", async (
 
   assert.equal(updates.length, 3);
   assert.equal(updates[0]?.values[4], null);
-  assert.equal(updates[0]?.values[5], null);
+  assert.equal(updates[0]?.values[5], "uploads/old.pdf");
   assert.equal(updates[0]?.values[9], true);
   assert.equal(updates[0]?.values[10], false);
-  assert.equal(updates[1]?.values[4], null);
+  assert.equal(updates[1]?.values[4], "https://example.com/old.pdf");
   assert.equal(updates[1]?.values[5], null);
   assert.equal(updates[1]?.values[9], false);
   assert.equal(updates[1]?.values[10], true);
@@ -788,6 +788,9 @@ test("learning resource PATCH explicitly clears required URL types without weake
   };
   let updateAttempted = false;
   const { service } = serviceWith(async (text) => {
+    if (text.includes("FROM learning_resources x")) {
+      return { rows: [{ ...existingPdf, institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    }
     if (text.startsWith("SELECT * FROM learning_resources")) return { rows: [existingPdf] };
     if (text.startsWith("UPDATE learning_resources")) updateAttempted = true;
     return { rows: [] };
