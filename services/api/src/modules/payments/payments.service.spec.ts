@@ -568,7 +568,10 @@ test("concurrent refunds reserve the refundable amount under the payment lock", 
           refunds.push(refund);
           return { rows: [refund] };
         }
-        if (text.startsWith("SELECT r.*")) return { rows: [refunds.find((refund) => refund.id === values[0])] };
+        if (text.startsWith("SELECT r.*")) {
+          const refund = refunds.find((item) => item.id === values[0]);
+          return { rows: refund ? [{ ...refund, payment_amount: payment.amount_minor }] : [] };
+        }
         if (text.startsWith("UPDATE lms_refunds")) {
           const refund = refunds.find((item) => item.id === values[0]);
           if (!refund || refund.status === "PROCESSED") return { rows: [] };
@@ -600,7 +603,6 @@ test("concurrent refunds reserve the refundable amount under the payment lock", 
   const second = service.initiateRefund("payment-1", { amountMinor: 1000, reason: "Duplicate payment" }, admin);
   const [firstResult, secondResult] = await Promise.allSettled([first, second]);
 
-  if (firstResult.status === "rejected") throw firstResult.reason;
   assert.equal(firstResult.status, "fulfilled");
   assert.equal(secondResult.status, "rejected");
   if (secondResult.status === "rejected") assert.ok(secondResult.reason instanceof BadRequestException);
