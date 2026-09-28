@@ -20,8 +20,9 @@ function serviceWith(
   query: (text: string, values: unknown[]) => Promise<{ rows: Array<Record<string, any>> }>,
   transaction: (work: (client: any) => Promise<unknown>) => Promise<unknown>,
   razorpay: Record<string, any>,
+  audit: { record: (input: Record<string, any>) => Promise<unknown> } = { record: async () => undefined },
 ) {
-  return new PaymentsService({ query, transaction } as never, razorpay as never, { record: async () => undefined } as never);
+  return new PaymentsService({ query, transaction } as never, razorpay as never, audit as never);
 }
 
 function webhookBody(event: string, entityType: "payment" | "refund", entity: Record<string, unknown>) {
@@ -380,7 +381,7 @@ test("a failed webhook handler can retry the same provider event successfully", 
       }
       return { rows: [] };
     }
-    if (text.startsWith("UPDATE lms_payments")) {
+    if (text.includes("UPDATE lms_payments AS payment")) {
       handlerAttempts += 1;
       if (handlerAttempts === 1) throw new Error("temporary payment handler failure");
       return { rows: [] };
@@ -450,7 +451,7 @@ test("a late refund.failed event preserves a processed refund and processed even
       if (event) event.status = "PROCESSED";
       return { rows: [] };
     }
-    if (text.startsWith("UPDATE lms_refunds SET status = 'FAILED'")) {
+    if (text.includes("UPDATE lms_refunds AS refund")) {
       failedUpdateSql = text;
       if (!text.includes("AND status <> 'PROCESSED'") || refund.status !== "PROCESSED") {
         refund.status = "FAILED";
@@ -499,7 +500,7 @@ for (const initialStatus of ["REFUNDED", "PARTIALLY_REFUNDED"] as const) {
         return { rows: [{ tenant_id: "tenant-1", id: "payment-1" }] };
       }
       if (text.startsWith("INSERT INTO lms_payment_events")) return { rows: [{ id: "event-row-1" }] };
-      if (text.startsWith("UPDATE lms_payments")) {
+      if (text.includes("UPDATE lms_payments AS payment")) {
         failureUpdateSql = text;
         const protectedStates = text
           .match(/CASE WHEN status IN \(([^)]+)\) THEN status ELSE 'FAILED' END/)
