@@ -410,6 +410,9 @@ export class AssessmentService {
     const user = request.context.user!;
     const before = await this.assessmentFor(id, user);
     await this.assertStaff(before, user);
+    if (status === "DRAFT" && before.status !== "PUBLISHED") {
+      throw new ConflictException("Only published assessments can be unpublished.");
+    }
     if (status === "PUBLISHED" && (before.course_status !== "PUBLISHED" || before.module_status !== "PUBLISHED")) {
       throw new BadRequestException("Assessments can be published only inside published courses and modules.");
     }
@@ -429,11 +432,16 @@ export class AssessmentService {
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
         `UPDATE lms_assessments SET status = $3, updated_at = now()
-         WHERE id = $1 AND tenant_id = $2 RETURNING *`,
-        [id, user.tenantId, status],
+         WHERE id = $1 AND tenant_id = $2 AND ($4::text IS NULL OR status = $4) RETURNING *`,
+        [id, user.tenantId, status, status === "DRAFT" ? "PUBLISHED" : null],
       );
       const row = result.rows[0];
-      await this.auditMutation(request, "assessment", status === "PUBLISHED" ? "PUBLISH" : "ARCHIVE", row, before);
+      if (!row) {
+        if (status === "DRAFT") throw new ConflictException("Only published assessments can be unpublished.");
+        throw new NotFoundException("Assessment not found.");
+      }
+      const action = status === "PUBLISHED" ? "PUBLISH" : status === "DRAFT" ? "UNPUBLISH" : "ARCHIVE";
+      await this.auditMutation(request, "assessment", action, row, before);
       return row;
     });
   }

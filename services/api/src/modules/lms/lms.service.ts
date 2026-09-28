@@ -3105,6 +3105,9 @@ export class LmsService {
     const user = request.context.user!;
     const before = await this.assignmentFor(id, user);
     await this.assertAssignmentStaffAccess(user, String(before.institution_id), String(before.course_id), before.campus_id as string | null);
+    if (status === "DRAFT" && before.status !== "PUBLISHED") {
+      throw new ConflictException("Only published assignments can be unpublished.");
+    }
     if (status === "PUBLISHED" && (before.course_status !== "PUBLISHED" || before.module_status !== "PUBLISHED")) {
       throw new BadRequestException("Assignments can be published only inside published courses and modules.");
     }
@@ -3113,13 +3116,18 @@ export class LmsService {
         `UPDATE lms_assessments
          SET status = $3, updated_at = now()
          WHERE id = $1 AND tenant_id = $2 AND assessment_type = 'ASSIGNMENT'
+           AND ($4::text IS NULL OR status = $4)
          RETURNING id, tenant_id, institution_id, course_id, module_id, title, description, instructions,
                    due_at, total_marks AS max_marks, assessment_type, status, created_at, updated_at`,
-        [id, user.tenantId, status],
+        [id, user.tenantId, status, status === "DRAFT" ? "PUBLISHED" : null],
       );
-      if (!result.rows[0]) throw new NotFoundException("Assignment not found.");
+      if (!result.rows[0]) {
+        if (status === "DRAFT") throw new ConflictException("Only published assignments can be unpublished.");
+        throw new NotFoundException("Assignment not found.");
+      }
       const row = result.rows[0];
-      await this.auditMutation(request, "assignment", status === "PUBLISHED" ? "PUBLISH" : "ARCHIVE", row, before);
+      const action = status === "PUBLISHED" ? "PUBLISH" : status === "DRAFT" ? "UNPUBLISH" : "ARCHIVE";
+      await this.auditMutation(request, "assignment", action, row, before);
       return row;
     });
   }
@@ -3325,15 +3333,27 @@ export class LmsService {
     if (kind === "course") this.assertCourseAdministrator(request.context.user!);
     const table = kind === "programme" ? "programmes" : kind === "course" ? "courses" : kind === "course_module" ? "course_modules" : kind === "lesson" ? "lessons" : "learning_resources";
     const before = await this.getChild(id, table, request.context.user!);
+    if (status === "DRAFT") {
+      if (kind === "course" || kind === "programme") {
+        throw new BadRequestException("Only course content items can be unpublished to draft.");
+      }
+      if (before.status !== "PUBLISHED") {
+        throw new ConflictException("Only published content can be unpublished.");
+      }
+    }
     return this.run(async () => {
       const result = await this.db.query(
         `UPDATE ${table} SET status = $2, updated_by = $3, updated_at = now()
-         WHERE id = $1 AND tenant_id = $4
+         WHERE id = $1 AND tenant_id = $4 AND ($5::text IS NULL OR status = $5)
          RETURNING *`,
-        [id, status, request.context.user!.id, request.context.user!.tenantId],
+        [id, status, request.context.user!.id, request.context.user!.tenantId, status === "DRAFT" ? "PUBLISHED" : null],
       );
-      if (!result.rows[0]) throw new NotFoundException("LMS content not found.");
-      await this.auditMutation(request, kind, status === "PUBLISHED" ? "PUBLISH" : "ARCHIVE", result.rows[0], before);
+      if (!result.rows[0]) {
+        if (status === "DRAFT") throw new ConflictException("Only published content can be unpublished.");
+        throw new NotFoundException("LMS content not found.");
+      }
+      const action = status === "PUBLISHED" ? "PUBLISH" : status === "DRAFT" ? "UNPUBLISH" : "ARCHIVE";
+      await this.auditMutation(request, kind, action, result.rows[0], before);
       return result.rows[0];
     });
   }
