@@ -2368,7 +2368,7 @@ export class LmsService {
 
   private async progressCourse(courseId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
-      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.description, c.status,
+      `SELECT c.id, c.tenant_id, c.institution_id, c.campus_id, c.title, c.code, c.description, c.thumbnail, c.status,
               p.name AS programme_name, p.status AS programme_status, i.status AS institution_status
        FROM courses c
        JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
@@ -2617,6 +2617,7 @@ export class LmsService {
         title: course.title,
         code: course.code,
         description: course.description,
+        thumbnail: course.thumbnail,
         programme_name: course.programme_name,
         status: course.status,
       },
@@ -2661,14 +2662,17 @@ export class LmsService {
   }
 
   async listLearnerProgress(user: AuthenticatedUser) {
-    const result = await this.db.query<{ course_id: string }>(
-      `SELECT course_id
+    const result = await this.db.query<{ course_id: string; enrolled_at: string }>(
+      `SELECT course_id, enrolled_at
        FROM lms_enrollments
        WHERE tenant_id = $1 AND learner_id = $2 AND status = 'ACTIVE'
        ORDER BY enrolled_at DESC, course_id ASC`,
       [user.tenantId, user.id],
     );
-    return Promise.all(result.rows.map(({ course_id }) => this.getCourseProgress(course_id, user)));
+    return Promise.all(result.rows.map(async ({ course_id, enrolled_at }) => ({
+      ...await this.getCourseProgress(course_id, user),
+      enrolled_at,
+    })));
   }
 
   async getCourseProgress(courseId: string, user: AuthenticatedUser, learnerId = user.id) {

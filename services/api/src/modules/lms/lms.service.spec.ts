@@ -1382,7 +1382,7 @@ test("removing an enrollment preserves the row and audits the removal", async ()
 test("course progress derives lesson and assessment totals by module", async () => {
   const { service } = serviceWith(async (text) => {
     if (text.startsWith("SELECT c.id")) {
-      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", title: "Digital Skills", code: "DS-101", description: "Foundations", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+      return { rows: [{ id: "course-1", tenant_id: user.tenantId, institution_id: "institution-1", title: "Digital Skills", code: "DS-101", description: "Foundations", thumbnail: "https://courses.example.test/digital-skills.png", status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
     }
     if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
     if (text.startsWith("SELECT cm.id")) {
@@ -1400,10 +1400,44 @@ test("course progress derives lesson and assessment totals by module", async () 
 
   assert.equal(result.state, "IN_PROGRESS");
   assert.equal(result.percentage, 50);
+  assert.equal(result.course.thumbnail, "https://courses.example.test/digital-skills.png");
   assert.deepEqual(result.lessons, { completed: 1, total: 3 });
   assert.deepEqual(result.assessments, { completed: 1, total: 1 });
   assert.equal(result.modules[0].percentage, 66.67);
   assert.equal(result.modules[1].state, "NOT_STARTED");
+});
+
+test("learner course progress includes each active enrollment date", async () => {
+  const enrolledAt = "2026-08-10T08:30:00.000Z";
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT course_id, enrolled_at")) {
+      return { rows: [{ course_id: "course-1", enrolled_at: enrolledAt }] };
+    }
+    if (text.startsWith("SELECT c.id")) {
+      return {
+        rows: [{
+          id: "course-1",
+          tenant_id: user.tenantId,
+          institution_id: "institution-1",
+          title: "Digital Skills",
+          code: "DS-101",
+          description: "Foundations",
+          thumbnail: "https://courses.example.test/digital-skills.png",
+          status: "PUBLISHED",
+          programme_status: "PUBLISHED",
+          institution_status: "ACTIVE",
+        }],
+      };
+    }
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("SELECT cm.id")) return { rows: [] };
+    return { rows: [] };
+  });
+
+  const result = await service.listLearnerProgress(user);
+
+  assert.equal(result[0].enrolled_at, enrolledAt);
+  assert.equal(result[0].course.thumbnail, "https://courses.example.test/digital-skills.png");
 });
 
 test("course progress rejects institution staff outside their authorized scope", async () => {

@@ -11,7 +11,8 @@ async function fetchDashboardList<T>(path: string): Promise<T[]> {
 }
 
 type Progress = {
-  course: { id: string; title: string; code: string; description?: string | null; programme_name?: string | null };
+  course: { id: string; title: string; code: string; description?: string | null; thumbnail?: string | null; programme_name?: string | null };
+  enrolled_at?: string | null;
   state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
   percentage: number;
   lessons: { completed: number; total: number };
@@ -268,6 +269,13 @@ function shortCourseDescription(narrative: CourseNarrative, fallback?: string | 
   return firstSentence.length > 190 ? `${firstSentence.slice(0, 187).trimEnd()}…` : firstSentence;
 }
 
+function enrollmentDateLabel(value?: string | null) {
+  if (!value) return "Enrollment date unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Enrollment date unavailable";
+  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+
 function sortRank(state: Progress["state"]) {
   return state === "IN_PROGRESS" ? 0 : state === "NOT_STARTED" ? 1 : 2;
 }
@@ -308,45 +316,39 @@ function CourseCard({
   const category = categoryForCourse(progress.course.programme_name);
   const narrative = parseCourseNarrative(progress.course.description);
   const categoryClass = category.toLowerCase().replaceAll(" ", "-");
-  const actionLabel = progress.state === "NOT_STARTED" ? "Start learning" : "Continue learning";
+  const actionLabel = progress.state === "NOT_STARTED" ? "Start Learning" : "Resume";
   const objectiveItems = narrative.objectives.length ? narrative.objectives : ["Explore the course outline and build practical capability at your own pace."];
   const outcomeItems = narrative.outcomes.length ? narrative.outcomes : ["Work through the published modules and lessons in this course."];
 
   return (
-    <article className={`catalogue-course-card ${expanded ? "is-expanded" : ""}`} id={`course-card-${progress.course.id}`}>
-      <div className={`course-card-art course-card-art-${categoryClass}`}>
-        <span className="course-card-art-kicker">{category === "Career Pathway" ? "IILP" : category === "Global Certifications" ? "CITIS" : "PATHWAY"}</span>
-        <span className="course-card-art-number">{String(progress.modules.length).padStart(2, "0")}</span>
-        <span className="course-card-art-grid" aria-hidden="true" />
+    <article className={`catalogue-course-card enrolled-course-card ${expanded ? "is-expanded" : ""}`} id={`course-card-${progress.course.id}`}>
+      <div className="enrolled-course-heading">
+        <div className={`enrolled-course-thumbnail course-card-art-${categoryClass}`}>
+          {progress.course.thumbnail
+            ? <img src={progress.course.thumbnail} alt="" />
+            : <span aria-hidden="true">{category === "Global Certifications" ? "✦" : category === "Specializations" ? "◇" : "▦"}</span>}
+        </div>
+        <div className="enrolled-course-title">
+          <p className="course-code">{progress.course.code}</p>
+          <h3>{progress.course.title}</h3>
+        </div>
+        <span className={`course-state course-state-${progress.state.toLowerCase()}`}>{stateLabel[progress.state]}</span>
       </div>
-      <div className="course-card-body">
-        <div className="course-card-topline">
-          <span className={`catalogue-category category-${categoryClass}`}>{category}</span>
-          <span className={`course-state course-state-${progress.state.toLowerCase()}`}>{stateLabel[progress.state]}</span>
-        </div>
-        <p className="course-code">{progress.course.code}</p>
-        <h3>{progress.course.title}</h3>
-        <p className="course-short-description">{shortCourseDescription(narrative, progress.course.description)}</p>
-        <div className="course-card-meta">
-          <span><strong>{progress.modules.length}</strong> modules</span>
-          <span><strong>{progress.lessons.total}</strong> lessons</span>
-          <span><strong>{progress.assessments.total}</strong> checks</span>
-        </div>
-        <div className="course-card-progress">
-          <div className="course-progress-label"><span>Course progress</span><strong>{progress.percentage}%</strong></div>
-          <ProgressBar percentage={progress.percentage} />
-          <span className="course-progress-caption">{progress.lessons.completed} of {progress.lessons.total} lessons complete</span>
-        </div>
-        <div className="course-card-actions">
-          <button className="course-details-button" type="button" aria-expanded={expanded} onClick={onToggle}>
-            {expanded ? "Close details" : "Open course page"} <span aria-hidden="true">{expanded ? "↑" : "→"}</span>
-          </button>
-          <button className="course-primary-button" type="button" onClick={onContinue}>
-            {actionLabel} <span aria-hidden="true">↗</span>
-          </button>
-        </div>
+      <div className="enrolled-course-date"><span aria-hidden="true">▣</span> Enrolled on {enrollmentDateLabel(progress.enrolled_at)}</div>
+      <div className="enrolled-course-progress">
+        <div className="course-progress-label"><span>Course progress</span><strong>{progress.percentage}%</strong></div>
+        <ProgressBar percentage={progress.percentage} />
+      </div>
+      <div className="enrolled-course-actions">
+        <button className="course-details-button" type="button" aria-expanded={expanded} onClick={onToggle}>
+          Details <span aria-hidden="true">↗</span>
+        </button>
+        <button className="course-primary-button" type="button" onClick={onContinue}>
+          {actionLabel} <span aria-hidden="true">▶</span>
+        </button>
+      </div>
 
-        {expanded && (
+      {expanded && (
           <div className="course-detail-panel" id={`course-outline-${progress.course.id}`}>
             <div className="course-detail-heading">
               <div>
@@ -416,8 +418,7 @@ function CourseCard({
             </div>
             <button className="course-detail-continue" type="button" onClick={onContinue}>{actionLabel} <span aria-hidden="true">→</span></button>
           </div>
-        )}
-      </div>
+      )}
     </article>
   );
 }
@@ -1637,7 +1638,9 @@ export default function StudentPortalPage() {
     const progressResponse = await fetch(`/api/v1/progress/courses/${courseId}`, { credentials: "include" });
     if (progressResponse.ok) {
       const progressBody = await progressResponse.json() as { data?: Progress };
-      if (progressBody.data) setCourses((current) => current.map((course) => course.course.id === courseId ? progressBody.data! : course));
+      if (progressBody.data) setCourses((current) => current.map((course) => course.course.id === courseId
+        ? { ...progressBody.data!, enrolled_at: progressBody.data!.enrolled_at ?? course.enrolled_at }
+        : course));
     }
     await refreshCertificates();
   }
