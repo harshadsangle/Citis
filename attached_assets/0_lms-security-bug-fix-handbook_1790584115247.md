@@ -80,7 +80,7 @@ python3 scripts/run-migrations.py          # applies pending migrations includin
 | 24 | Portals treat API outage as logout | Medium | IMPLEMENTED |
 | 25 | Webhook payment/refund audit gaps | Medium | IMPLEMENTED |
 | 26 | Resource URL/file cannot be cleared | Medium | IMPLEMENTED |
-| 27 | Form validation errors not accessible | Medium | PARTIAL |
+| 27 | Form validation errors not accessible | Medium | IMPLEMENTED |
 | 28 | Reset-password errors not announced (a11y) | Low | IMPLEMENTED |
 | 29 | Client request IDs affect audit correlation | Medium | IMPLEMENTED |
 | 30 | Production logs expose full stack traces | Medium | IMPLEMENTED |
@@ -261,7 +261,7 @@ Leak of paid/proprietary content across courses.
 ## 6. SCORM files served as executable content from API origin
 
 **Severity:** Critical (XSS / session risk)  
-**Status:** PARTIAL  
+**Status:** IMPLEMENTED  
 
 ### What it means
 
@@ -718,16 +718,18 @@ User-initiated payments had audit rows; webhook-driven state changes did not.
 
 Screen readers may not hear inline validation errors if elements lack `role="alert"`.
 
-### Fix (implemented — marketing forms only)
+### Fix (implemented — shared forms and portals)
 
-**File:** `components/marketing/InteractiveForms.tsx` — `message()` helper uses `role="alert"`.
+**Files:** `citis-infotech/frontend/components/marketing/InteractiveForms.tsx`, `apps/institution-admin/app/CourseBuilder.tsx`, `apps/institution-admin/app/InstitutionOnboarding.tsx`, `apps/teacher-portal/app/page.tsx`, and `apps/student-portal/app/page.tsx`.
 
-### Your tasks (remaining)
+- Login, registration, forgot-password, and reset-password errors are associated with their fields; server errors and success messages use live regions.
+- Course Builder validation errors identify and focus the relevant field; CSV import errors are associated with the file input.
+- Teacher and student portal errors/statuses are announced, with teacher validation linked to and focused on the affected field.
 
-- Audit `apps/institution-admin/**/*.tsx`, `apps/teacher-portal`, `apps/student-portal` for:
-  - `role="alert"` on error summaries
-  - associate errors with inputs via `aria-describedby`
-- Priority: login, reset password, course builder, CSV import (`InstitutionOnboarding.tsx` already has some alerts).
+### Verification
+
+- API tests and production builds/type checks pass for the public frontend and all three portals.
+- Manual VoiceOver/NVDA verification remains recommended.
 
 ---
 
@@ -742,12 +744,12 @@ Server error on reset password was plain text without live region.
 
 ### Fix (implemented)
 
-**File:** `InteractiveForms.tsx` — `ResetPasswordForm` server error: `role="alert"` + `aria-live="assertive"`.
+**File:** `citis-infotech/frontend/components/marketing/InteractiveForms.tsx` — `ResetPasswordForm` server error: `role="alert"` + `aria-live="assertive"`, with field errors linked through `aria-describedby`.
 
 ### Your tasks
 
 - VoiceOver / NVDA manual test on `citisinfotech.in/auth/reset-password`.
-- Mirror fix in `citis-infotech/frontend/components/marketing/InteractiveForms.tsx` if that deploy is still live.
+- The nested `citis-infotech/frontend` app is the active public frontend; keep its shared form component as the source of truth.
 
 ---
 
@@ -763,6 +765,8 @@ Any `X-Request-ID` header was trusted → clients could collide with or spoof au
 ### Fix (implemented)
 
 **File:** `common/request-context.ts` — only accept header if it matches UUID v4 pattern; else generate `randomUUID()`.
+
+**Tests:** `services/api/src/common/request-context.spec.ts` verifies normalized valid UUID-v4 propagation, invalid ID replacement, response metadata, and audit correlation.
 
 ### Your tasks
 
@@ -782,7 +786,9 @@ Any `X-Request-ID` header was trusted → clients could collide with or spoof au
 
 ### Fix (implemented)
 
-**File:** `common/errors.filter.ts` — log `requestId`, name, message only (no stack in production log line).
+**File:** `common/errors.filter.ts` — production logs retain request ID, status, and exception name while omitting raw messages and stacks; development logs retain message and stack diagnostics.
+
+**Tests:** `services/api/src/common/errors.filter.spec.ts` covers production redaction, development diagnostics, and client-error exclusion.
 
 ### Your tasks
 
