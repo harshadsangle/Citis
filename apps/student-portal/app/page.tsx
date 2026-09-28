@@ -1348,7 +1348,7 @@ function CourseCatalogue({
       <div className="catalogue-filter-row" role="group" aria-label="Filter courses by category">
         {catalogueCategories.map((category) => <button className={filter === category.value ? "is-active" : ""} key={category.value} type="button" onClick={() => setFilter(category.value)}>{category.label}<span>{categoryCount(category.value)}</span></button>)}
       </div>
-      <div className="catalogue-results-line"><span>Showing <strong>{visibleCourses.length}</strong> of {courses.length} courses</span>{(search || filter !== "all") && <button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button>}</div>
+      <div className="catalogue-results-line" role="status" aria-live="polite"><span>Showing <strong>{visibleCourses.length}</strong> of {courses.length} courses</span>{(search || filter !== "all") && <button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Clear filters</button>}</div>
       {visibleCourses.length === 0 ? (
         <div className="catalogue-empty"><span>⌕</span><h3>No courses match those filters</h3><p>Try a different keyword or clear the category filter to see your full learning library.</p><button type="button" onClick={() => { setSearch(""); setFilter("all"); }}>Show all courses</button></div>
       ) : (
@@ -1724,7 +1724,7 @@ export default function StudentPortalPage() {
 
         {loading && <section className="portal-state-card portal-loading-card"><span className="portal-loading-mark" aria-hidden="true"><i /><i /><i /></span><strong>Loading your learning space</strong><span>Preparing your courses and progress.</span></section>}
         {!loading && error && (
-          <section className="portal-state-card portal-error-card">
+          <section className="portal-state-card portal-error-card" role="alert" aria-live="assertive">
             <span className="portal-state-icon portal-state-icon-error" aria-hidden="true">!</span>
             <h2>We couldn’t load your progress</h2>
             <p>{error}</p>
@@ -1816,7 +1816,7 @@ export default function StudentPortalPage() {
                 <p className="portal-eyebrow">Knowledge checks</p>
                 <h2>Assessments</h2>
               </div>
-              {assessmentNotice && <span className="assessment-notice">{assessmentNotice}</span>}
+              {assessmentNotice && <span className="assessment-notice" role="status" aria-live="polite">{assessmentNotice}</span>}
             </div>
             {activeAttempt ? (() => {
               const questions = activeAttempt.questions;
@@ -1930,9 +1930,9 @@ export default function StudentPortalPage() {
                 <p className="portal-eyebrow">Course work</p>
                 <h2>Assignments</h2>
               </div>
-              {submissionNotice && <span className="section-heading-notice">{submissionNotice}</span>}
+              {submissionNotice && <span className="section-heading-notice" role="status" aria-live="polite">{submissionNotice}</span>}
             </div>
-            {submissionError && <div className="assignment-error" role="alert">{submissionError}</div>}
+            {submissionError && <div className="assignment-error" role="alert" aria-live="assertive">{submissionError}</div>}
             {assignments.length === 0 && <div className="assignment-empty"><span className="assignment-empty-icon" aria-hidden="true">▤</span><div><strong>No published assignments yet</strong><span>When course work is ready, it will appear here for you to complete and submit.</span></div></div>}
             {activeAssignmentId && assignments.some((assignment) => assignment.id === activeAssignmentId) && (() => {
               const assignment = assignments.find((item) => item.id === activeAssignmentId)!;
