@@ -123,6 +123,7 @@ test("units and chapters migration preserves legacy content and tenant integrity
   assert.match(unitsChaptersMigration, /course_modules_tenant_chapter_fk/);
   assert.match(unitsChaptersMigration, /course_id uuid/);
   assert.match(unitsChaptersMigration, /lms_chapters_tenant_course_unit_fk/);
+  assert.match(unitsChaptersMigration, /UNIQUE \(tenant_id, course_id, id\)/);
   assert.match(unitsChaptersMigration, /FOREIGN KEY \(tenant_id, course_id, chapter_id\)/);
   assert.match(unitsChaptersMigration, /lms\.unit\.create/);
   assert.match(unitsChaptersMigration, /034_lms_units_chapters/);
