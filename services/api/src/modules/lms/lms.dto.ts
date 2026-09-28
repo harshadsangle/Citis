@@ -1,5 +1,5 @@
 import { Type } from "class-transformer";
-import { ArrayMinSize, ArrayUnique, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, MaxLength, Min, ValidateNested } from "class-validator";
+import { ArrayMinSize, ArrayUnique, IsArray, IsBoolean, IsDateString, IsDefined, IsIn, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, IsUrl, Length, Matches, Max, MaxLength, Min, ValidateIf, ValidateNested } from "class-validator";
 
 export const LMS_STATUSES = ["DRAFT", "INSTRUCTOR_PENDING", "REJECTED", "PUBLISHED", "ARCHIVED"] as const;
 export const LMS_RESOURCE_TYPES = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"] as const;
@@ -313,13 +313,14 @@ export class UpdateLearningResourceDto {
   title?: string;
 
   @IsOptional()
+  @ValidateIf((_object, value) => value !== "")
   @IsUrl({ require_tld: false })
-  @Max(2048)
+  @MaxLength(2048)
   url?: string;
 
   @IsOptional()
   @IsString()
-  @Max(2048)
+  @MaxLength(2048)
   filePath?: string;
 
   @IsOptional()

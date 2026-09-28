@@ -1405,12 +1405,26 @@ export class LmsService {
     return this.run(async () => {
       const result = await this.db.query(
         `UPDATE learning_resources
-         SET resource_type = COALESCE($3, resource_type), title = COALESCE($4, title), url = COALESCE($5, url),
-             file_path = COALESCE($6, file_path), duration = COALESCE($7, duration), sequence = COALESCE($8, sequence),
+         SET resource_type = COALESCE($3, resource_type), title = COALESCE($4, title),
+             url = CASE WHEN $10 THEN $5 ELSE url END,
+             file_path = CASE WHEN $11 THEN $6 ELSE file_path END,
+             duration = COALESCE($7, duration), sequence = COALESCE($8, sequence),
              updated_by = $2, updated_at = now()
          WHERE id = $1 AND tenant_id = $9
          RETURNING id, tenant_id, lesson_id, resource_type, title, url, file_path, duration, sequence, status, created_at, updated_at`,
-        [id, user.id, input.resourceType ?? null, input.title?.trim() || null, input.url?.trim() || null, input.filePath?.trim() || null, input.duration ?? null, input.sequence ?? null, user.tenantId],
+        [
+          id,
+          user.id,
+          input.resourceType ?? null,
+          input.title?.trim() || null,
+          typeof input.url === "string" ? input.url.trim() || null : null,
+          typeof input.filePath === "string" ? input.filePath.trim() || null : null,
+          input.duration ?? null,
+          input.sequence ?? null,
+          user.tenantId,
+          input.url !== undefined,
+          input.filePath !== undefined,
+        ],
       );
       if (!result.rows[0]) throw new NotFoundException("Learning resource not found.");
       await this.auditMutation(request, "learning_resource", "UPDATE", result.rows[0], before);

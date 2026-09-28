@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { BadRequestException, ConflictException, ForbiddenException, HttpException, NotFoundException } from "@nestjs/common";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { LmsService, courseCodeFromSeed } from "./lms.service";
+import { UpdateLearningResourceDto } from "./lms.dto";
 import { LmsContentRateLimiter } from "./lms.rate-limit";
 import { ResourceStorageService } from "./resource-storage.service";
 
@@ -670,6 +673,66 @@ test("learning resources reject non-HTTP URL schemes", async () => {
     }, request),
     BadRequestException,
   );
+});
+
+test("learning resource PATCH accepts empty URL and file values as explicit clears", async () => {
+  const dto = plainToInstance(UpdateLearningResourceDto, { url: "", filePath: "" });
+  assert.deepEqual(await validate(dto), []);
+});
+
+test("learning resource PATCH clears only supplied URL and file fields", async () => {
+  const before = {
+    id: "resource-1",
+    tenant_id: user.tenantId,
+    lesson_id: "lesson-1",
+    resource_type: "PDF",
+    title: "Reference PDF",
+    url: "https://example.com/old.pdf",
+    file_path: "uploads/old.pdf",
+    duration: null,
+    sequence: 1,
+    status: "ACTIVE",
+  };
+  const updates: Array<{ text: string; values: unknown[] }> = [];
+  const { service } = serviceWith(async (text, values) => {
+    if (text.includes("FROM learning_resources x")) {
+      return { rows: [{ ...before, institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    }
+    if (text.startsWith("SELECT * FROM learning_resources")) return { rows: [before] };
+    if (text.startsWith("UPDATE learning_resources")) {
+      updates.push({ text, values });
+      return {
+        rows: [{
+          ...before,
+          url: values[4],
+          file_path: values[5],
+          title: values[3] ?? before.title,
+        }],
+      };
+    }
+    return { rows: [] };
+  });
+
+  await service.updateLearningResource("resource-1", { url: "" }, request);
+  await service.updateLearningResource("resource-1", { filePath: "" }, request);
+  await service.updateLearningResource("resource-1", {
+    url: "https://example.com/new.pdf",
+    filePath: "uploads/new.pdf",
+  }, request);
+
+  assert.equal(updates.length, 3);
+  assert.equal(updates[0]?.values[4], null);
+  assert.equal(updates[0]?.values[5], null);
+  assert.equal(updates[0]?.values[9], true);
+  assert.equal(updates[0]?.values[10], false);
+  assert.equal(updates[1]?.values[4], null);
+  assert.equal(updates[1]?.values[5], null);
+  assert.equal(updates[1]?.values[9], false);
+  assert.equal(updates[1]?.values[10], true);
+  assert.equal(updates[2]?.values[4], "https://example.com/new.pdf");
+  assert.equal(updates[2]?.values[5], "uploads/new.pdf");
+  assert.match(updates[0]?.text || "", /url = CASE WHEN \$10 THEN \$5 ELSE url END/);
+  assert.match(updates[0]?.text || "", /file_path = CASE WHEN \$11 THEN \$6 ELSE file_path END/);
 });
 
 test("assigned teachers can read nested course content while unassigned teachers receive not found", async () => {

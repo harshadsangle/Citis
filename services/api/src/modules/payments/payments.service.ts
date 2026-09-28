@@ -337,8 +337,13 @@ export class PaymentsService {
     return activated;
   }
 
-  private async activatePayment(paymentId: string, actorUserId: string | null, providerPayment: ProviderPayment) {
-    return this.db.transaction(async (client) => {
+  private async activatePayment(
+    paymentId: string,
+    actorUserId: string | null,
+    providerPayment: ProviderPayment,
+    webhookEvent?: { providerEventId: string; eventType: string },
+  ) {
+    const activation = await this.db.transaction(async (client) => {
       const locked = await client.query<Record<string, unknown>>(
         "SELECT * FROM lms_payments WHERE id = $1 FOR UPDATE",
         [paymentId],
@@ -346,7 +351,12 @@ export class PaymentsService {
       const payment = locked.rows[0];
       if (!payment) throw new NotFoundException("Payment not found.");
       if (payment.status === "CAPTURED" || payment.status === "REFUNDED" || payment.status === "PARTIALLY_REFUNDED") {
-        return this.paymentSummary(payment);
+        return {
+          summary: this.paymentSummary(payment),
+          tenantId: String(payment.tenant_id),
+          previousStatus: String(payment.status),
+          changed: false,
+        };
       }
       if (
         providerPayment.order_id !== payment.razorpay_order_id
@@ -390,9 +400,55 @@ export class PaymentsService {
         [payment.id, providerPayment.id],
       );
       return {
-        ...this.paymentSummary({ ...payment, razorpay_payment_id: providerPayment.id, status: "CAPTURED", captured_at: new Date() }),
-        enrollmentId,
+        summary: {
+          ...this.paymentSummary({ ...payment, razorpay_payment_id: providerPayment.id, status: "CAPTURED", captured_at: new Date() }),
+          enrollmentId,
+        },
+        tenantId: String(payment.tenant_id),
+        previousStatus: String(payment.status),
+        changed: true,
       };
+    });
+    if (webhookEvent && activation.changed) {
+      await this.recordWebhookAudit({
+        providerEventId: webhookEvent.providerEventId,
+        eventType: webhookEvent.eventType,
+        tenantId: activation.tenantId,
+        resource: "payment",
+        resourceId: paymentId,
+        action: "CAPTURE",
+        previousValue: { status: activation.previousStatus },
+        newValue: activation.summary,
+      });
+    }
+    return activation.summary;
+  }
+
+  private async recordWebhookAudit(input: {
+    providerEventId: string;
+    eventType: string;
+    tenantId: string;
+    resource: "payment" | "refund";
+    resourceId: string;
+    action: "CAPTURE" | "FAIL" | "PROCESS";
+    previousValue: unknown;
+    newValue: unknown;
+  }) {
+    await this.audit.record({
+      tenantId: input.tenantId,
+      actorUserId: null,
+      requestId: `razorpay:${input.providerEventId}`,
+      module: "payments",
+      resource: input.resource,
+      resourceId: input.resourceId,
+      action: input.action,
+      previousValue: input.previousValue,
+      newValue: input.newValue,
+      deviceContext: {
+        source: "razorpay_webhook",
+        eventType: input.eventType,
+        providerEventId: input.providerEventId,
+      },
     });
   }
 
@@ -443,23 +499,92 @@ export class PaymentsService {
             currency: paymentEntity.currency,
             status: "captured",
             captured: true,
-          });
+          }, { providerEventId, eventType });
         }
       } else if (eventType === "payment.failed" && paymentEntity?.order_id) {
-        await this.db.query(
-          `UPDATE lms_payments
+        const failedPayments = await this.db.query<{
+          id: string;
+          tenant_id: string;
+          status: string;
+          previous_status: string;
+        }>(
+          `WITH prior AS (
+             SELECT id, status AS previous_status
+             FROM lms_payments
+             WHERE razorpay_order_id = $1
+             FOR UPDATE
+           )
+           UPDATE lms_payments AS payment
            SET status = CASE WHEN status IN ('CAPTURED', 'REFUNDED', 'PARTIALLY_REFUNDED') THEN status ELSE 'FAILED' END,
                failure_code = $2, failure_reason = $3, failed_at = now(), updated_at = now()
-           WHERE razorpay_order_id = $1`,
+           FROM prior
+           WHERE payment.id = prior.id
+           RETURNING payment.id, payment.tenant_id, payment.status, prior.previous_status`,
           [paymentEntity.order_id, paymentEntity.error_code || null, paymentEntity.error_description || "Payment failed."],
         );
+        for (const payment of failedPayments.rows) {
+          if (payment.status === "FAILED" && payment.previous_status !== "FAILED") {
+            await this.recordWebhookAudit({
+              providerEventId,
+              eventType,
+              tenantId: payment.tenant_id,
+              resource: "payment",
+              resourceId: payment.id,
+              action: "FAIL",
+              previousValue: { status: payment.previous_status },
+              newValue: {
+                status: payment.status,
+                failureCode: paymentEntity.error_code || null,
+                failureReason: paymentEntity.error_description || "Payment failed.",
+              },
+            });
+          }
+        }
       } else if (eventType === "refund.processed" && refundEntity?.id) {
-         await this.markRefundProcessed(String(refundEntity.id), minorUnitsNumber(refundEntity.amount), undefined, refundEntity.payment_id ? String(refundEntity.payment_id) : undefined);
+        await this.markRefundProcessed(
+          String(refundEntity.id),
+          minorUnitsNumber(refundEntity.amount),
+          undefined,
+          refundEntity.payment_id ? String(refundEntity.payment_id) : undefined,
+          { providerEventId, eventType },
+        );
       } else if (eventType === "refund.failed" && refundEntity?.id) {
-        await this.db.query(
-          "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE razorpay_refund_id = $1 AND status <> 'PROCESSED'",
+        const failedRefunds = await this.db.query<{
+          id: string;
+          tenant_id: string;
+          status: string;
+          previous_status: string;
+        }>(
+          `WITH prior AS (
+             SELECT id, tenant_id, status AS previous_status
+             FROM lms_refunds
+             WHERE razorpay_refund_id = $1 AND status <> 'PROCESSED'
+             FOR UPDATE
+           )
+           UPDATE lms_refunds AS refund
+           SET status = 'FAILED', failure_reason = $2, updated_at = now()
+           FROM prior
+           WHERE refund.id = prior.id AND refund.status <> 'PROCESSED'
+           RETURNING refund.id, refund.tenant_id, refund.status, prior.previous_status`,
           [refundEntity.id, refundEntity.error_description || "Refund failed."],
         );
+        for (const refund of failedRefunds.rows) {
+          if (refund.status === "FAILED" && refund.previous_status !== "FAILED") {
+            await this.recordWebhookAudit({
+              providerEventId,
+              eventType,
+              tenantId: refund.tenant_id,
+              resource: "refund",
+              resourceId: refund.id,
+              action: "FAIL",
+              previousValue: { status: refund.previous_status },
+              newValue: {
+                status: refund.status,
+                failureReason: refundEntity.error_description || "Refund failed.",
+              },
+            });
+          }
+        }
       }
       await this.db.query("UPDATE lms_payment_events SET processing_status = 'PROCESSED', processed_at = now() WHERE id = $1", [inserted.rows[0].id]);
       return { received: true };
@@ -586,8 +711,14 @@ export class PaymentsService {
     }
   }
 
-  private async markRefundProcessed(providerRefundId: string, amount: number, refundId?: string, providerPaymentId?: string) {
-    return this.db.transaction(async (client) => {
+  private async markRefundProcessed(
+    providerRefundId: string,
+    amount: number,
+    refundId?: string,
+    providerPaymentId?: string,
+    webhookEvent?: { providerEventId: string; eventType: string },
+  ) {
+    const outcome = await this.db.transaction(async (client) => {
       const refundResult = await client.query<Record<string, unknown>>(
         `SELECT r.*, p.student_id, p.course_id, p.amount_minor AS payment_amount
          FROM lms_refunds r JOIN lms_payments p ON p.id = r.payment_id
@@ -597,14 +728,14 @@ export class PaymentsService {
         refundId ? [refundId] : [providerRefundId, providerPaymentId || null],
       );
       const refund = refundResult.rows[0];
-      if (!refund) return { received: true, ignored: true };
+      if (!refund) return { result: { received: true, ignored: true }, audit: null };
       const updated = await client.query<Record<string, unknown>>(
         `UPDATE lms_refunds SET razorpay_refund_id = COALESCE(razorpay_refund_id, $2), status = 'PROCESSED',
            processed_at = COALESCE(processed_at, now()), updated_at = now()
          WHERE id = $1 AND status <> 'PROCESSED' RETURNING *`,
         [refund.id, providerRefundId],
       );
-      if (!updated.rows[0]) return updated.rows[0] || refund;
+      if (!updated.rows[0]) return { result: refund, audit: null };
       const total = await client.query<{ total: string }>(
         "SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM lms_refunds WHERE payment_id = $1 AND status = 'PROCESSED'",
         [refund.payment_id],
@@ -621,7 +752,28 @@ export class PaymentsService {
          WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $4 AND assignment_source = 'DIRECT' AND status = 'ACTIVE'`,
         [refund.tenant_id, refund.course_id, refund.initiated_by, refund.student_id],
       );
-      return updated.rows[0];
+      return {
+        result: updated.rows[0],
+        audit: {
+          tenantId: String(refund.tenant_id),
+          resourceId: String(refund.id),
+          previousStatus: String(refund.status),
+          newValue: updated.rows[0],
+        },
+      };
     });
+    if (webhookEvent && outcome.audit) {
+      await this.recordWebhookAudit({
+        providerEventId: webhookEvent.providerEventId,
+        eventType: webhookEvent.eventType,
+        tenantId: outcome.audit.tenantId,
+        resource: "refund",
+        resourceId: outcome.audit.resourceId,
+        action: "PROCESS",
+        previousValue: { status: outcome.audit.previousStatus },
+        newValue: outcome.audit.newValue,
+      });
+    }
+    return outcome.result;
   }
 }
