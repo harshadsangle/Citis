@@ -1401,7 +1401,21 @@ export class LmsService {
     const user = request.context.user!;
     const before = await this.getChild(id, "learning_resources", user) as Record<string, unknown>;
     const resourceType = (input.resourceType ?? String(before.resource_type ?? "")) as string;
-    this.validateResource(resourceType, input.url ?? (before.url as string | null | undefined), input.filePath ?? (before.file_path as string | null | undefined));
+    const contentFieldsWereUpdated = input.resourceType !== undefined || input.url !== undefined || input.filePath !== undefined;
+    const url = typeof input.url === "string"
+      ? input.url.trim() || null
+      : input.url === undefined
+        ? before.url as string | null | undefined
+        : null;
+    const filePath = typeof input.filePath === "string"
+      ? input.filePath.trim() || null
+      : input.filePath === undefined
+        ? before.file_path as string | null | undefined
+        : null;
+    const explicitlyClearsRequiredContent = input.url === "" || (resourceType === "VIDEO" && input.filePath === "");
+    if (contentFieldsWereUpdated) {
+      this.validateResource(resourceType, url, filePath, explicitlyClearsRequiredContent);
+    }
     return this.run(async () => {
       const result = await this.db.query(
         `UPDATE learning_resources
@@ -1417,8 +1431,8 @@ export class LmsService {
           user.id,
           input.resourceType ?? null,
           input.title?.trim() || null,
-          typeof input.url === "string" ? input.url.trim() || null : null,
-          typeof input.filePath === "string" ? input.filePath.trim() || null : null,
+          url,
+          filePath,
           input.duration ?? null,
           input.sequence ?? null,
           user.tenantId,
@@ -1917,7 +1931,7 @@ export class LmsService {
     });
   }
 
-  private validateResource(resourceType: string, url?: string | null, filePath?: string | null) {
+  private validateResource(resourceType: string, url?: string | null, filePath?: string | null, allowExplicitClear = false) {
     if (url) {
       let parsed: URL;
       try {
@@ -1929,7 +1943,7 @@ export class LmsService {
         throw new BadRequestException("Learning resource URLs must use HTTP or HTTPS.");
       }
     }
-     if (RESOURCE_TYPES_WITH_URL.includes(resourceType as LmsResourceType) && !url && filePath !== "uploaded-file") {
+    if (RESOURCE_TYPES_WITH_URL.includes(resourceType as LmsResourceType) && !url && filePath !== "uploaded-file" && !allowExplicitClear) {
       throw new BadRequestException(`${resourceType} resources require a URL.`);
     }
     if (RESOURCE_TYPES_WITH_FILE_OR_URL.includes(resourceType as LmsResourceType) && !url && !filePath) return;
