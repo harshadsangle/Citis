@@ -49,6 +49,7 @@ type Role = {
 
 export type AccountRequest = {
   id: string;
+  tenant_id?: string;
   first_name?: string;
   last_name?: string;
   email?: string | null;
@@ -151,6 +152,7 @@ export default function AdminAccessView({
   const [selectedCampusId, setSelectedCampusId] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectingRequest, setRejectingRequest] = useState(false);
+  const [requestOptionsLoading, setRequestOptionsLoading] = useState(false);
   const [requestActionBusy, setRequestActionBusy] = useState(false);
   const [requestActionError, setRequestActionError] = useState("");
   const [requestNotice, setRequestNotice] = useState("");
@@ -184,14 +186,10 @@ export default function AdminAccessView({
           ));
           if (!cancelled) setLearners(scopedLearners);
         } else if (mode === "account-requests") {
-          const [payload, institutionPayload, campusPayload] = await Promise.all([
-            request<unknown>(
-              apiBase,
-              `/users?page=${accountRequestPage}&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR`,
-            ),
-            request<unknown>(apiBase, "/institutions/scoped-options"),
-            request<unknown>(apiBase, "/campuses/scoped-options"),
-          ]);
+          const payload = await request<unknown>(
+            apiBase,
+            `/users?page=${accountRequestPage}&pageSize=100&status=PENDING&roleCode=TEACHER,INSTRUCTOR,INSTITUTION_ADMINISTRATOR`,
+          );
           if (typeof payload !== "object" || payload === null || !Array.isArray((payload as { data?: unknown }).data)) {
             throw new Error("The response did not contain account requests.");
           }
@@ -205,8 +203,6 @@ export default function AdminAccessView({
             const total = paginated.meta?.pagination?.total ?? requests.length;
             setAccountRequestTotal(total);
             setAccountRequestTotalPages(Math.max(1, paginated.meta?.pagination?.totalPages ?? 1));
-            setRequestInstitutions(listData<Institution>(institutionPayload));
-            setRequestCampuses(listData<Campus>(campusPayload));
             onAccountRequestCountChange?.(total);
           }
         } else if (mode === "institution-profile") {
@@ -240,10 +236,50 @@ export default function AdminAccessView({
     };
   }, [accountRequestPage, apiBase, canCreateInstitution, mode, onAccountRequestCountChange]);
 
+  useEffect(() => {
+    if (mode !== "account-requests" || !selectedRequest || !isInstructorRequest(selectedRequest)) {
+      setRequestOptionsLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const tenantQuery = selectedRequest.tenant_id
+      ? `?tenantId=${encodeURIComponent(selectedRequest.tenant_id)}`
+      : "";
+    setRequestOptionsLoading(true);
+    setRequestActionError("");
+
+    async function loadRequestOptions() {
+      try {
+        const [institutionPayload, campusPayload] = await Promise.all([
+          request<unknown>(apiBase, `/institutions/scoped-options${tenantQuery}`),
+          request<unknown>(apiBase, `/campuses/scoped-options${tenantQuery}`),
+        ]);
+        const nextInstitutions = listData<Institution>(institutionPayload);
+        const nextCampuses = listData<Campus>(campusPayload);
+        if (cancelled) return;
+        const activeInstitutions = nextInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE");
+        setRequestInstitutions(nextInstitutions);
+        setRequestCampuses(nextCampuses);
+        setSelectedInstitutionId(activeInstitutions.length === 1 ? activeInstitutions[0].id : "");
+      } catch (loadError) {
+        if (!cancelled) {
+          setRequestActionError(loadError instanceof Error ? loadError.message : "The institution options could not be loaded.");
+        }
+      } finally {
+        if (!cancelled) setRequestOptionsLoading(false);
+      }
+    }
+
+    void loadRequestOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase, mode, selectedRequest?.id, selectedRequest?.tenant_id]);
+
   function openAccountRequest(accountRequest: AccountRequest) {
-    const activeInstitutions = requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE");
     setSelectedRequest(accountRequest);
-    setSelectedInstitutionId(activeInstitutions.length === 1 ? activeInstitutions[0].id : "");
+    setSelectedInstitutionId("");
     setSelectedCampusId("");
     setRejectionReason("");
     setRejectingRequest(false);
@@ -252,9 +288,11 @@ export default function AdminAccessView({
 
   function completeAccountRequest(request: AccountRequest, outcome: "approved" | "rejected") {
     const nextTotal = Math.max(0, accountRequestTotal - 1);
+    const nextTotalPages = Math.max(1, Math.ceil(nextTotal / 100));
     setAccountRequests((current) => current.filter((item) => item.id !== request.id));
     setAccountRequestTotal(nextTotal);
-    setAccountRequestTotalPages(Math.max(1, Math.ceil(nextTotal / 100)));
+    setAccountRequestTotalPages(nextTotalPages);
+    if (accountRequestPage > nextTotalPages) setAccountRequestPage(nextTotalPages);
     onAccountRequestCountChange?.(nextTotal);
     setRequestNotice(outcome === "approved"
       ? `${personName(request)} was approved. Their instructor account is active.`
@@ -555,7 +593,7 @@ export default function AdminAccessView({
                       setSelectedInstitutionId(event.target.value);
                       setSelectedCampusId("");
                     }}
-                    disabled={requestActionBusy}
+                    disabled={requestActionBusy || requestOptionsLoading}
                     required
                   >
                     <option value="">Choose an active institution</option>
@@ -568,7 +606,7 @@ export default function AdminAccessView({
                     id="instructor-request-campus"
                     value={selectedCampusId}
                     onChange={(event) => setSelectedCampusId(event.target.value)}
-                    disabled={requestActionBusy || !selectedInstitutionId}
+                    disabled={requestActionBusy || requestOptionsLoading || !selectedInstitutionId}
                   >
                     <option value="">All campuses</option>
                     {requestCampuses.filter((campus) => campus.institution_id === selectedInstitutionId && (!campus.status || campus.status === "ACTIVE")).map((campus) => (
@@ -579,6 +617,7 @@ export default function AdminAccessView({
                 {requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE").length === 0 && (
                   <div className="relationship-alert error-box" role="alert"><strong>No active institution scope</strong><p>Teaching access cannot be activated until an active institution is available in your scope.</p></div>
                 )}
+                {requestOptionsLoading && <div className="state-box" role="status"><div className="spinner" /><div><strong>Loading institution scope…</strong><p>Checking the institutions available for this request.</p></div></div>}
                 {requestActionError && <div className="relationship-alert error-box" role="alert"><strong>Request not updated</strong><p>{requestActionError}</p></div>}
                 {rejectingRequest ? (
                   <form className="account-request-rejection" onSubmit={(event) => void rejectAccountRequest(event)}>
@@ -602,7 +641,7 @@ export default function AdminAccessView({
                   <div className="modal-actions">
                     <button className="secondary-button" type="button" onClick={() => setSelectedRequest(null)} disabled={requestActionBusy}>Close</button>
                     <button className="secondary-button" type="button" onClick={() => { setRejectingRequest(true); setRequestActionError(""); }} disabled={requestActionBusy}>Reject</button>
-                    <button className="primary-button" type="button" onClick={() => void approveAccountRequest()} disabled={requestActionBusy || !selectedInstitutionId || requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE").length === 0}>{requestActionBusy ? "Approving…" : "Approve & activate"}</button>
+                    <button className="primary-button" type="button" onClick={() => void approveAccountRequest()} disabled={requestActionBusy || requestOptionsLoading || !selectedInstitutionId || requestInstitutions.filter((institution) => !institution.status || institution.status === "ACTIVE").length === 0}>{requestActionBusy ? "Approving…" : "Approve & activate"}</button>
                   </div>
                 )}
               </>

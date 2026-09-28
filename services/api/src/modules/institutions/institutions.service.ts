@@ -34,11 +34,12 @@ export class InstitutionsService {
     return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
-  async scopedOptions(user: AuthenticatedUser) {
+  async scopedOptions(user: AuthenticatedUser, tenantId?: string) {
+    const scopeTenant = this.targetTenant(user, tenantId) ?? user.tenantId;
     if (isPlatformUser(user)) {
       const result = await this.db.query(
         "SELECT id, tenant_id, name, slug, institution_type, status FROM institutions WHERE tenant_id = $1 AND status <> 'ARCHIVED' ORDER BY name",
-        [user.tenantId],
+        [scopeTenant],
       );
       return result.rows;
     }
@@ -47,7 +48,7 @@ export class InstitutionsService {
     if (!institutionIds.length) return [];
     const result = await this.db.query(
       "SELECT id, tenant_id, name, slug, institution_type, status FROM institutions WHERE tenant_id = $1 AND id = ANY($2::uuid[]) AND status <> 'ARCHIVED' ORDER BY name",
-      [user.tenantId, institutionIds],
+      [scopeTenant, institutionIds],
     );
     return result.rows;
   }

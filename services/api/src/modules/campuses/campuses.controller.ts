@@ -23,8 +23,12 @@ export class CampusesController {
 
   @Get("scoped-options")
   @RequirePermission("lms.instructor_assignment.create")
-  async scopedOptions(@Query("institutionId") institutionId: string | undefined, @Req() request: ContextRequest) {
-    return successResponse(await this.campuses.scopedOptions(request.context.user!, institutionId), request);
+  async scopedOptions(
+    @Query("institutionId") institutionId: string | undefined,
+    @Query("tenantId") tenantId: string | undefined,
+    @Req() request: ContextRequest,
+  ) {
+    return successResponse(await this.campuses.scopedOptions(request.context.user!, institutionId, tenantId), request);
   }
 
   @Get(":id")
