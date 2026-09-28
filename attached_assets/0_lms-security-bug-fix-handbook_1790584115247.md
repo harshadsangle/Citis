@@ -716,12 +716,13 @@ Resource editors need an explicit way to clear a URL or file path without weaken
 
 ### What it means
 
-Screen readers may not hear inline validation errors if elements lack `role="alert"`.
+Inline errors need to be announced and programmatically associated with the relevant form fields.
 
 ### Fix (implemented — shared forms and portals)
 
 **Files:** `citis-infotech/frontend/components/marketing/InteractiveForms.tsx`, `apps/institution-admin/app/CourseBuilder.tsx`, `apps/institution-admin/app/InstitutionOnboarding.tsx`, `apps/teacher-portal/app/page.tsx`, and `apps/student-portal/app/page.tsx`.
 
+- Partner Inquiry and Job Application errors are associated with their inputs; the shared inline-message helper announces errors through a live region.
 - Login, registration, forgot-password, and reset-password errors are associated with their fields; server errors and success messages use live regions.
 - Course Builder validation errors identify and focus the relevant field; CSV import errors are associated with the file input.
 - Teacher and student portal errors/statuses are announced, with teacher validation linked to and focused on the affected field.
