@@ -324,9 +324,14 @@ function CourseCard({
     <article className={`catalogue-course-card enrolled-course-card ${expanded ? "is-expanded" : ""}`} id={`course-card-${progress.course.id}`}>
       <div className="enrolled-course-heading">
         <div className={`enrolled-course-thumbnail course-card-art-${categoryClass}`}>
-          {progress.course.thumbnail
-            ? <img src={progress.course.thumbnail} alt="" />
-            : <span aria-hidden="true">{category === "Global Certifications" ? "✦" : category === "Specializations" ? "◇" : "▦"}</span>}
+          <span aria-hidden="true">{category === "Global Certifications" ? "✦" : category === "Specializations" ? "◇" : "▦"}</span>
+          {progress.course.thumbnail && (
+            <img
+              src={progress.course.thumbnail}
+              alt=""
+              onError={(event) => { event.currentTarget.style.display = "none"; }}
+            />
+          )}
         </div>
         <div className="enrolled-course-title">
           <p className="course-code">{progress.course.code}</p>

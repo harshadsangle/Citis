@@ -229,11 +229,11 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .enrolled-course-card { gap: 15px; padding: 17px !important; }
 .enrolled-course-card:hover { border-color: #a5c9cc !important; box-shadow: 0 16px 32px rgb(18 75 115 / .1) !important; transform: translateY(-2px); }
 .enrolled-course-heading { align-items: center; display: flex; gap: 12px !important; min-width: 0; }
-.enrolled-course-thumbnail { align-items: center; background: linear-gradient(135deg, #e9f4f3, #d6e8eb); border: 1px solid #d7e5e8; border-radius: 13px; color: #267d76; display: flex; flex: 0 0 58px; height: 58px; justify-content: center; overflow: hidden; }
+.enrolled-course-thumbnail { align-items: center; background: linear-gradient(135deg, #e9f4f3, #d6e8eb); border: 1px solid #d7e5e8; border-radius: 13px; color: #267d76; display: flex; flex: 0 0 58px; height: 58px; justify-content: center; overflow: hidden; position: relative; }
 .enrolled-course-thumbnail.course-card-art-specializations { background: linear-gradient(135deg, #f1eaf4, #e5d9eb); color: #76517c; }
 .enrolled-course-thumbnail.course-card-art-certificate-programs { background: linear-gradient(135deg, #fff0e7, #f6dcc8); color: #a35b37; }
 .enrolled-course-thumbnail.course-card-art-global-certifications { background: linear-gradient(135deg, #e8f0f4, #d5e7ec); color: #28617b; }
-.enrolled-course-thumbnail img { height: 100%; object-fit: cover; width: 100%; }
+.enrolled-course-thumbnail img { height: 100%; inset: 0; object-fit: cover; position: absolute; width: 100%; }
 .enrolled-course-thumbnail > span { font-size: 25px; font-weight: 800; }
 .enrolled-course-title { flex: 1; min-width: 0; }
 .enrolled-course-title .course-code { margin: 0 0 4px; }
@@ -1062,6 +1062,8 @@ button:disabled { cursor: not-allowed; opacity: .52; }
   .catalogue-course-card.is-expanded { grid-column: auto; }
   .course-card-actions { flex-direction: column; }
   .course-card-actions button { width: 100% !important; }
+  .enrolled-course-actions { align-items: stretch; flex-direction: column; }
+  .enrolled-course-actions button { width: 100% !important; }
   .course-detail-grid { grid-template-columns: 1fr; }
   .course-detail-overview { grid-column: auto; }
   .course-module summary { grid-template-columns: 34px minmax(0, 1fr); }
