@@ -686,9 +686,17 @@ export class AssessmentService {
       ?? this.questionRows(executor, String(attempt.assessment_id), user, includeCorrect);
   }
 
-  private publicAttempt(attempt: Record<string, unknown>) {
+  private publicAttempt(attempt: Record<string, unknown>, revealResults = true) {
     const result = { ...attempt };
     delete result.question_snapshot;
+    if (!revealResults) {
+      delete result.score;
+      delete result.max_score;
+      delete result.passed;
+      delete result.grading_feedback;
+      delete result.grader_id;
+      delete result.graded_at;
+    }
     return result;
   }
 
@@ -1050,7 +1058,7 @@ export class AssessmentService {
   private async attemptFor(id: string, user: AuthenticatedUser): Promise<Record<string, unknown>> {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT at.*, a.title, a.assessment_type, a.status AS assessment_status, a.total_marks,
-              a.passing_marks, a.duration_minutes, a.attempt_limit, c.status AS course_status,
+              a.passing_marks, a.duration_minutes, a.attempt_limit, a.results_published, c.status AS course_status,
               cm.status AS module_status, c.institution_id AS course_institution_id,
               c.campus_id AS course_campus_id, p.status AS programme_status, i.status AS institution_status
        FROM lms_assessment_attempts at
