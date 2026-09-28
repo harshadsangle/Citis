@@ -696,6 +696,7 @@ export class AssessmentService {
       delete result.grading_feedback;
       delete result.grader_id;
       delete result.graded_at;
+      delete result.results;
     }
     return result;
   }
@@ -1232,10 +1233,12 @@ export class AssessmentService {
        FROM lms_assessment_answers WHERE tenant_id = $1 AND attempt_id = $2 ORDER BY question_id`,
       [user.tenantId, id],
     );
+    const revealResults = staff || attempt.results_published === true;
+    const visibleAnswers = revealResults ? answers.rows : answers.rows.map(({ question_id, answer_json }) => ({ question_id, answer_json }));
     const draftAnswers = !staff && attempt.status === "IN_PROGRESS"
       ? await this.draftRows(this.db, String(attempt.id), user.tenantId)
       : [];
-    return { ...this.publicAttempt(attempt), questions, answers: answers.rows, draft_answers: draftAnswers };
+    return { ...this.publicAttempt(attempt, revealResults), questions, answers: visibleAnswers, draft_answers: draftAnswers };
   }
 
   async saveDraft(id: string, input: SaveAssessmentDraftDto, request: ContextRequest) {
@@ -1321,7 +1324,7 @@ export class AssessmentService {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT at.id AS attempt_id, at.tenant_id, at.institution_id, at.campus_id, at.course_id,
               at.module_id, at.assessment_id, at.attempt_number, at.score, at.max_score, at.passed,
-              at.grading_status, at.grading_feedback, at.submitted_at, a.title,
+              at.grading_status, at.grading_feedback, at.submitted_at, a.results_published, a.title,
               a.assessment_type, c.title AS course_title, c.code AS course_code, cm.title AS module_title
        FROM lms_assessment_attempts at
        JOIN lms_assessments a ON a.id = at.assessment_id AND a.tenant_id = at.tenant_id
@@ -1332,14 +1335,21 @@ export class AssessmentService {
       [user.tenantId, user.id],
     );
     const visible = filterScopedRows(user, result.rows);
-    return { data: visible.slice(offset, offset + pageSize), meta: paginationMeta(page, pageSize, visible.length) };
+    const data = visible.slice(offset, offset + pageSize).map((row) => row.results_published
+      ? row
+      : { ...row, score: null, max_score: null, passed: null, grading_feedback: null });
+    return { data, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
   private scoreQuestion(question: Record<string, unknown>, answer: AssessmentAnswerDto) {
     const options = question.options as Array<Record<string, unknown>>;
     const supplied = (answer.answer as { value?: unknown })?.value;
     if (supplied === undefined) throw new BadRequestException("Each answer must include a value.");
-    if (question.question_type === "MULTIPLE_CHOICE") {
+    if (question.question_type === "MATCHING") {
+      if (!supplied || typeof supplied !== "object" || Array.isArray(supplied)) {
+        throw new BadRequestException("Matching answers must map each prompt to one answer.");
+      }
+    } else if (question.question_type === "MULTIPLE_CHOICE") {
       if (!Array.isArray(supplied) || supplied.some((value) => typeof value !== "string")) {
         throw new BadRequestException("Multiple-choice answers must be arrays of strings.");
       }
@@ -1350,12 +1360,25 @@ export class AssessmentService {
     } else if (typeof supplied !== "string") {
       throw new BadRequestException("This answer must contain a string value.");
     }
-    const normalized = normalizeAnswer(supplied);
+    const normalized = question.question_type === "MATCHING" ? supplied : normalizeAnswer(supplied);
     const correctValues = options.filter((option) => option.is_correct === true).map((option) => String(option.value));
     let correct = false;
     if (question.question_type === "MULTIPLE_CHOICE") {
       if (!Array.isArray(normalized)) throw new BadRequestException("Multiple-choice answers must be arrays.");
       correct = sameValues(normalized, correctValues);
+    } else if (question.question_type === "MATCHING") {
+      const pairs = Array.isArray(question.matching_pairs) ? question.matching_pairs as Array<Record<string, unknown>> : [];
+      const suppliedMap = normalized as Record<string, unknown>;
+      const expected = pairs.map((pair, index) => [String(`match-${index}`), String(pair.answer)] as const);
+      const actualKeys = Object.keys(suppliedMap);
+      const actualValues = Object.values(suppliedMap);
+      if (actualKeys.length !== expected.length ||
+          actualKeys.some((key) => !expected.some(([expectedKey]) => key === expectedKey)) ||
+          actualValues.some((value) => typeof value !== "string") ||
+          new Set(actualValues).size !== actualValues.length) {
+        throw new BadRequestException("Provide one unique answer for every matching prompt.");
+      }
+      correct = expected.every(([key, answerValue]) => String(suppliedMap[key]).toLowerCase() === answerValue.toLowerCase());
     } else if (question.question_type === "NUMERIC") {
       if (typeof supplied === "string" && supplied.trim() === "") {
         return { correct: false, awardedMarks: 0 };
@@ -1368,7 +1391,11 @@ export class AssessmentService {
       const actual = Array.isArray(normalized) ? normalized[0] : normalized;
       correct = correctValues.some((value) => value.toLowerCase() === actual.toLowerCase());
     }
-    return { correct, awardedMarks: correct ? Number(question.marks) : 0 };
+    const isBlank = typeof supplied === "string"
+      ? supplied.trim() === ""
+      : Array.isArray(supplied) ? supplied.length === 0 : false;
+    const penalty = isBlank ? 0 : Math.min(Number(question.negative_marks ?? 0), Number(question.marks));
+    return { correct, awardedMarks: correct ? Number(question.marks) : -penalty };
   }
 
   async submitAttempt(id: string, input: SubmitAssessmentAttemptDto, request: ContextRequest) {
@@ -1386,17 +1413,22 @@ export class AssessmentService {
     if (input.answers.length !== questionMap.size || new Set(input.answers.map((answer) => answer.questionId)).size !== input.answers.length) {
       throw new BadRequestException("Submit exactly one answer for every active assessment question.");
     }
-    const requiresManualGrading = manuallyGradedAssessmentTypes.includes(String(attempt.assessment_type));
+    const requiresManualGrading = manuallyGradedAssessmentTypes.includes(String(attempt.assessment_type))
+      || questions.some((question) => question.question_type === "LONG_ANSWER");
     const results = input.answers.map((answer) => {
       const question = questionMap.get(answer.questionId);
       if (!question) throw new BadRequestException("An answer references an invalid assessment question.");
+      const manualQuestion = requiresManualGrading && (
+        manuallyGradedAssessmentTypes.includes(String(attempt.assessment_type)) ||
+        question.question_type === "LONG_ANSWER"
+      );
       return {
         questionId: answer.questionId,
-        ...(requiresManualGrading ? { correct: null, awardedMarks: 0 } : this.scoreQuestion(question, answer)),
+        ...(manualQuestion ? { correct: null, awardedMarks: 0 } : this.scoreQuestion(question, answer)),
         answer: answer.answer,
       };
     });
-    const score = results.reduce((sum, result) => sum + result.awardedMarks, 0);
+    const score = Math.max(0, results.reduce((sum, result) => sum + result.awardedMarks, 0));
     const maxScore = attempt.total_marks_snapshot === null || attempt.total_marks_snapshot === undefined
       ? questions.reduce((sum, question) => sum + Number(question.marks), 0)
       : Number(attempt.total_marks_snapshot);
@@ -1464,7 +1496,7 @@ export class AssessmentService {
     if ("expired" in outcome && outcome.expired) {
       throw new ConflictException("This assessment attempt expired before it was submitted.");
     }
-    return outcome;
+    return this.publicAttempt({ ...outcome, results_published: attempt.results_published }, attempt.results_published === true);
   }
 
   async gradeAttempt(id: string, input: GradeAssessmentAttemptDto, request: ContextRequest) {
@@ -1472,13 +1504,14 @@ export class AssessmentService {
     const attempt = await this.attemptFor(id, user);
     const staff = await this.hasStaffAccess(user, String(attempt.institution_id), String(attempt.course_id), attempt.campus_id as string | null);
     if (!staff) throw new ForbiddenException("You are not authorized to grade this assessment attempt.");
-    if (!manuallyGradedAssessmentTypes.includes(String(attempt.assessment_type))) {
+    const questions = await this.questionsForAttempt(this.db, attempt, user, false);
+    if (!manuallyGradedAssessmentTypes.includes(String(attempt.assessment_type)) &&
+        !questions.some((question) => question.question_type === "LONG_ANSWER")) {
       throw new BadRequestException("This assessment is scored automatically.");
     }
     if (attempt.status !== "SUBMITTED" || attempt.grading_status !== "PENDING") {
       throw new ConflictException("This assessment attempt is no longer awaiting grading.");
     }
-    const questions = await this.questionsForAttempt(this.db, attempt, user, false);
     const questionMap = new Map(questions.map((question) => [String(question.id), question]));
     if (input.grades.length !== questionMap.size || new Set(input.grades.map((grade) => grade.questionId)).size !== input.grades.length) {
       throw new BadRequestException("Grade exactly one mark for every active assessment question.");
