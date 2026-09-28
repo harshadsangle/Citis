@@ -739,6 +739,21 @@ export default function TeacherPortalPage() {
     }
   }
 
+  async function unpublishModule(module: CourseModule) {
+    setBusyAction(`unpublish-module:${module.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/course-modules/${encodeURIComponent(module.id)}/unpublish`, { method: "POST" });
+      setNotice(`${module.title} is now a draft and hidden from learners.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The module could not be unpublished."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
   async function archiveModule(module: CourseModule) {
     setBusyAction(`archive-module:${module.id}`);
     setError("");
@@ -825,6 +840,21 @@ export default function TeacherPortalPage() {
       await loadDashboard(true);
     } catch (reason) {
       setError(errorMessage(reason, "The lesson could not be published."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function unpublishLesson(lesson: Lesson) {
+    setBusyAction(`unpublish-lesson:${lesson.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/lessons/${encodeURIComponent(lesson.id)}/unpublish`, { method: "POST" });
+      setNotice(`${lesson.title} is now a draft and hidden from learners.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The lesson could not be unpublished."));
     } finally {
       setBusyAction("");
     }
@@ -946,6 +976,21 @@ export default function TeacherPortalPage() {
     }
   }
 
+  async function unpublishResource(resource: LearningResource) {
+    setBusyAction(`unpublish-resource:${resource.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/learning-resources/${encodeURIComponent(resource.id)}/unpublish`, { method: "POST" });
+      setNotice(`${resource.title} is now a draft and hidden from learners.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The learning resource could not be unpublished."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
   async function archiveResource(resource: LearningResource) {
     setBusyAction(`archive-resource:${resource.id}`);
     setError("");
@@ -1050,6 +1095,21 @@ export default function TeacherPortalPage() {
       await loadDashboard(true);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "The assignment could not be published.");
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function unpublishAssignment(assignment: Assignment) {
+    setBusyAction(`unpublish:${assignment.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assignments/${encodeURIComponent(assignment.id)}/unpublish`, { method: "POST" });
+      setNotice(`${assignment.title} is now a draft and hidden from learners.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assignment could not be unpublished."));
     } finally {
       setBusyAction("");
     }
@@ -1174,6 +1234,21 @@ export default function TeacherPortalPage() {
       await loadDashboard(true);
     } catch (reason) {
       setError(errorMessage(reason, "The assessment could not be published."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
+  async function unpublishAssessment(assessment: Assessment) {
+    setBusyAction(`unpublish-assessment:${assessment.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assessments/${encodeURIComponent(assessment.id)}/unpublish`, { method: "POST" });
+      setNotice(`${assessment.title} is now a draft and hidden from learners.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The assessment could not be unpublished."));
     } finally {
       setBusyAction("");
     }
