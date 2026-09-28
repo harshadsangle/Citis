@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, HttpException, NotFoundException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { LmsService, courseCodeFromSeed } from "./lms.service";
 import { LmsContentRateLimiter } from "./lms.rate-limit";
@@ -1332,7 +1332,24 @@ test("instructors can access file, SCORM, and video resources only for explicitl
 
   const video = await assigned.service.openManagedFile("video-resource", instructorRequest);
   assert.equal(video.stream, "video-stream");
+  assert.equal(video.partial, false);
   assert.equal(assigned.storageStats(), 1);
+  const rangedVideo = await assigned.service.openManagedFile("video-resource", instructorRequest, "bytes=2-5");
+  assert.equal(rangedVideo.partial, true);
+  assert.equal(rangedVideo.start, 2);
+  assert.equal(rangedVideo.end, 5);
+  assert.equal(rangedVideo.size, 4);
+  const suffixVideo = await assigned.service.openManagedFile("video-resource", instructorRequest, "bytes=-3");
+  assert.equal(suffixVideo.start, 7);
+  assert.equal(suffixVideo.end, 9);
+  await assert.rejects(
+    assigned.service.openManagedFile("video-resource", instructorRequest, "invalid"),
+    BadRequestException,
+  );
+  await assert.rejects(
+    assigned.service.openManagedFile("video-resource", instructorRequest, "bytes=999999-"),
+    (error: unknown) => error instanceof HttpException && error.getStatus() === 416,
+  );
 
   const launch = await assigned.service.getScormLaunch("scorm-resource", instructorRequest);
   assert.equal(launch.launchUrl, "/api/v1/learning-resources/scorm-resource/scorm/index.html");

@@ -50,6 +50,30 @@ test("admin CSV exports filtered rows with safe escaping", async () => {
   assert.doesNotMatch(result.content, /password|otp|secret/i);
 });
 
+test("CSV export neutralizes formula-leading values while retaining quoted CSV cells", async () => {
+  const db = {
+    query: async () => ({
+      rows: [{
+        id: "=1+1",
+        student_type: "+SUM(1,2)",
+        institution_name: '-value, "quoted"',
+        college_user_id: "@SUM(A1:A2)",
+        status: "ACTIVE",
+        created_at: "2026-09-01T00:00:00.000Z",
+        last_login_at: null,
+      }],
+    }),
+  };
+  const service = new ReportService(db as never);
+
+  const result = await service.csv("students", {}, admin);
+
+  assert.ok(result.content.includes("\"'=1+1\""));
+  assert.ok(result.content.includes("\"'+SUM(1,2)\""));
+  assert.ok(result.content.includes('"\'-value, ""quoted"""'));
+  assert.ok(result.content.includes("\"'@SUM(A1:A2)\""));
+});
+
 test("unsupported report names are rejected", async () => {
   const service = new ReportService({ query: async () => ({ rows: [] }) } as never);
   await assert.rejects(service.run("credentials", {}, admin));

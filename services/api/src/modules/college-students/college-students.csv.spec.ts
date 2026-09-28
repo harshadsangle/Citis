@@ -19,3 +19,10 @@ test("college student CSV parser ignores blank records", () => {
   assert.equal(parsed.records.length, 1);
   assert.equal(parsed.records[0].rowNumber, 2);
 });
+
+test("college student CSV parser rejects an unclosed quoted field at EOF", () => {
+  assert.throws(
+    () => parseCsv('College User ID,Student Name\nNC-001,"Asha Sharma'),
+    /unclosed quoted field/i,
+  );
+});

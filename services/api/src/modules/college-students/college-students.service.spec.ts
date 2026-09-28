@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ForbiddenException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException } from "@nestjs/common";
 import type { AuthenticatedUser, ContextRequest } from "../../common/request-context";
 import { CollegeStudentsService } from "./college-students.service";
 
@@ -71,6 +71,23 @@ test("instructors cannot invoke the college student import API", async () => {
   const instructorRequest = { context: { ...request.context, user: instructor } } as unknown as ContextRequest;
   const service = new CollegeStudentsService({} as never, {} as never);
   await assert.rejects(service.importCsv(undefined, instructorRequest), ForbiddenException);
+});
+
+test("college student imports return a bad request for an unclosed quoted field", async () => {
+  const csv = 'College User ID,Student Name\nNC-001,"Asha Sharma';
+  const service = new CollegeStudentsService({} as never, {} as never);
+
+  await assert.rejects(
+    service.importCsv({
+      originalname: "students.csv",
+      mimetype: "text/csv",
+      size: Buffer.byteLength(csv),
+      buffer: Buffer.from(csv),
+    }, request),
+    (error: unknown) => error instanceof BadRequestException
+      && error.getStatus() === 400
+      && /unclosed quoted field/i.test(error.message),
+  );
 });
 
 test("an institution-scoped CSV import links rows by institution ID without requiring a college-name column", async () => {
