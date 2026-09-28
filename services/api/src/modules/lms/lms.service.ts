@@ -15,6 +15,10 @@ import type {
   AssignmentListQueryDto,
   CreateCourseDto,
   CreateCourseModuleDto,
+  CreateCourseUnitDto,
+  UpdateCourseUnitDto,
+  CreateCourseChapterDto,
+  UpdateCourseChapterDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
@@ -39,7 +43,7 @@ import { LmsContentRateLimiter } from "./lms.rate-limit";
 
 type LmsStatus = "DRAFT" | "INSTRUCTOR_PENDING" | "REJECTED" | "PUBLISHED" | "ARCHIVED";
 type LmsResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | "SCORM" | "INTERACTIVE";
-type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources";
+type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources" | "lms_course_units" | "lms_course_chapters";
 type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
 
@@ -96,6 +100,15 @@ type CourseBuilderModule = {
   lessons: CourseBuilderLesson[];
   assignments: CourseBuilderAssignment[];
   assessments: CourseBuilderAssessment[];
+  __unitTitle?: string;
+  __chapterTitle?: string;
+};
+
+type CourseBuilderUnit = {
+  title: string;
+  description?: string;
+  sequence?: number;
+  chapters: Array<{ title: string; description?: string; sequence?: number; modules: CourseBuilderModule[] }>;
 };
 
 type CourseBuilderPayload = {
@@ -112,6 +125,7 @@ type CourseBuilderPayload = {
     purchasable?: boolean;
   };
   modules: CourseBuilderModule[];
+  units?: CourseBuilderUnit[];
 };
 
 type CourseBuilderUpload = LmsUpload & { fieldname: string };
@@ -230,7 +244,27 @@ export class LmsService {
     if (course.priceMinor !== undefined) number(course.priceMinor, "Course price", 0, 1_000_000_000, true);
     if (course.currency !== undefined && course.currency !== "INR") throw new BadRequestException("Course currency must be INR.");
 
-    if (!Array.isArray(payload.modules) || payload.modules.length === 0) {
+    const hierarchicalModules = Array.isArray(payload.units)
+      ? payload.units.flatMap((unit) => (Array.isArray(unit.chapters) ? unit.chapters : []).flatMap((chapter) => (
+        Array.isArray(chapter.modules) ? chapter.modules.map((module) => ({
+          ...module,
+          __unitTitle: unit.title,
+          __chapterTitle: chapter.title,
+        })) : []
+      )))
+      : [];
+    const modules = hierarchicalModules.length > 0 ? hierarchicalModules : payload.modules;
+    if (Array.isArray(payload.units)) {
+      for (const [unitIndex, unit] of payload.units.entries()) {
+        text(unit.title, `Unit ${unitIndex + 1} title`, 2, 180);
+        if (!Array.isArray(unit.chapters)) throw new BadRequestException(`Unit ${unitIndex + 1} must include chapters.`);
+        for (const [chapterIndex, chapter] of unit.chapters.entries()) {
+          text(chapter.title, `Chapter ${chapterIndex + 1} title`, 2, 180);
+          if (!Array.isArray(chapter.modules)) throw new BadRequestException(`Chapter ${chapterIndex + 1} must include modules.`);
+        }
+      }
+    }
+    if (!Array.isArray(modules) || modules.length === 0) {
       throw new BadRequestException("Add at least one module before creating the course.");
     }
 
@@ -248,7 +282,7 @@ export class LmsService {
     };
     requirePermission("lms.course_module.create");
 
-    for (const [moduleIndex, module] of payload.modules.entries()) {
+    for (const [moduleIndex, module] of modules.entries()) {
       if (!module || typeof module !== "object") throw new BadRequestException(`Module ${moduleIndex + 1} is invalid.`);
       text(module.title, `Module ${moduleIndex + 1} title`, 2, 180);
       if (module.description !== undefined) text(module.description, `Module ${moduleIndex + 1} description`, 0, 2000);
@@ -343,6 +377,7 @@ export class LmsService {
     return {
       payload: {
         ...payload,
+        modules,
         course: { ...course, codeSeed },
       } as CourseBuilderPayload,
       filesByField,
@@ -837,13 +872,37 @@ export class LmsService {
         );
         await this.auditMutation(request, "course", "CREATE", course);
 
+        const unitsByTitle = new Map<string, string>();
+        const chaptersByKey = new Map<string, string>();
+        for (const module of payload.modules) {
+          const unitTitle = module.__unitTitle?.trim() || "General unit";
+          const chapterTitle = module.__chapterTitle?.trim() || "Default chapter";
+          if (!unitsByTitle.has(unitTitle)) {
+            const unitResult = await client.query<{ id: string }>(
+              `INSERT INTO lms_course_units (tenant_id, course_id, title, sequence, status, created_by, updated_by)
+               VALUES ($1,$2,$3,$4,'PUBLISHED',$5,$5) RETURNING id`,
+              [user.tenantId, course.id, unitTitle, unitsByTitle.size + 1, user.id],
+            );
+            unitsByTitle.set(unitTitle, unitResult.rows[0].id);
+          }
+          const key = `${unitTitle}\u0000${chapterTitle}`;
+          if (!chaptersByKey.has(key)) {
+            const chapterResult = await client.query<{ id: string }>(
+              `INSERT INTO lms_course_chapters (tenant_id, unit_id, title, sequence, status, created_by, updated_by)
+               VALUES ($1,$2,$3,$4,'PUBLISHED',$5,$5) RETURNING id`,
+              [user.tenantId, unitsByTitle.get(unitTitle), chapterTitle, [...chaptersByKey.keys()].filter((item) => item.startsWith(`${unitTitle}\u0000`)).length + 1, user.id],
+            );
+            chaptersByKey.set(key, chapterResult.rows[0].id);
+          }
+        }
         for (const [moduleIndex, module] of payload.modules.entries()) {
+          const chapterId = chaptersByKey.get(`${module.__unitTitle?.trim() || "General unit"}\u0000${module.__chapterTitle?.trim() || "Default chapter"}`);
           const moduleResult = await client.query<Record<string, unknown>>(
             `INSERT INTO course_modules
-                (tenant_id, course_id, title, description, sequence, status, created_by, updated_by)
-              VALUES ($1, $2, $3, $4, $5, 'PUBLISHED', $6, $6)
+                (tenant_id, course_id, chapter_id, title, description, sequence, status, created_by, updated_by)
+              VALUES ($1, $2, $3, $4, $5, $6, 'PUBLISHED', $7, $7)
              RETURNING *`,
-            [user.tenantId, course.id, module.title.trim(), module.description?.trim() || null, moduleIndex + 1, user.id],
+            [user.tenantId, course.id, chapterId, module.title.trim(), module.description?.trim() || null, moduleIndex + 1, user.id],
           );
           const moduleRow = moduleResult.rows[0];
           await this.auditMutation(request, "course_module", "CREATE", moduleRow);
@@ -1226,6 +1285,122 @@ export class LmsService {
     return this.listChild("course_modules", "course_id", "course", user, page, pageSize, offset, query, courseId, "course_module");
   }
 
+  async listCourseUnits(user: AuthenticatedUser, courseId?: string) {
+    const values: unknown[] = [user.tenantId];
+    const filter = courseId ? " AND u.course_id = $2" : "";
+    if (courseId) values.push(courseId);
+    const result = await this.db.query(
+      `SELECT u.* FROM lms_course_units u
+       JOIN courses c ON c.tenant_id = u.tenant_id AND c.id = u.course_id
+       WHERE u.tenant_id = $1${filter} ORDER BY u.sequence ASC`,
+      values,
+    );
+    if (courseId) {
+      const course = await this.db.query<{ institution_id: string; campus_id: string | null }>(
+        "SELECT institution_id, campus_id FROM courses WHERE tenant_id = $1 AND id = $2", [user.tenantId, courseId],
+      );
+      if (!course.rows[0]) throw new NotFoundException("Course not found in the current tenant.");
+      assertScopeForRead(user, course.rows[0].institution_id, course.rows[0].campus_id);
+      await this.assertLearnerCourseAccess(user, courseId, course.rows[0].institution_id, course.rows[0].campus_id);
+      await this.assertAssignedTeacherRead(user, course.rows[0].institution_id, courseId, course.rows[0].campus_id);
+    }
+    return result.rows;
+  }
+
+  async listCourseChapters(user: AuthenticatedUser, unitId?: string) {
+    const values: unknown[] = [user.tenantId];
+    const filter = unitId ? " AND ch.unit_id = $2" : "";
+    if (unitId) values.push(unitId);
+    const result = await this.db.query(
+      `SELECT ch.*, u.course_id FROM lms_course_chapters ch
+       JOIN lms_course_units u ON u.tenant_id = ch.tenant_id AND u.id = ch.unit_id
+       WHERE ch.tenant_id = $1${filter} ORDER BY ch.sequence ASC`,
+      values,
+    );
+    if (unitId && result.rows.length === 0) {
+      const parent = await this.db.query("SELECT id FROM lms_course_units WHERE tenant_id = $1 AND id = $2", values);
+      if (!parent.rows[0]) throw new NotFoundException("Unit not found in the current tenant.");
+    }
+    return result.rows;
+  }
+
+  async createCourseUnit(input: CreateCourseUnitDto, request: ContextRequest) {
+    const user = request.context.user!;
+    await this.assertParent("courses", input.courseId, user);
+    return this.run(async () => {
+      const result = await this.db.query(
+        `INSERT INTO lms_course_units (tenant_id, course_id, title, description, sequence, created_by, updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$6) RETURNING *`,
+        [user.tenantId, input.courseId, input.title.trim(), input.description?.trim() || null, input.sequence, user.id],
+      );
+      await this.auditMutation(request, "unit", "CREATE", result.rows[0]);
+      return result.rows[0];
+    });
+  }
+
+  async updateCourseUnit(id: string, input: UpdateCourseUnitDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const before = await this.hierarchyRow(id, "unit", user);
+    await this.assertAssignedTeacherManage(user, String(before.course_id), String(before.campus_id ?? ""));
+    return this.run(async () => {
+      const result = await this.db.query(
+        `UPDATE lms_course_units SET title=COALESCE($3,title), description=COALESCE($4,description),
+         sequence=COALESCE($5,sequence), updated_by=$2, updated_at=now()
+         WHERE id=$1 AND tenant_id=$6 RETURNING *`,
+        [id, user.id, input.title?.trim() || null, input.description?.trim() || null, input.sequence ?? null, user.tenantId],
+      );
+      if (!result.rows[0]) throw new NotFoundException("Unit not found.");
+      await this.auditMutation(request, "unit", "UPDATE", result.rows[0], before);
+      return result.rows[0];
+    });
+  }
+
+  async createCourseChapter(input: CreateCourseChapterDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const parent = await this.db.query<{ course_id: string }>(
+      "SELECT course_id FROM lms_course_units WHERE id=$1 AND tenant_id=$2 AND status <> 'ARCHIVED'", [input.unitId, user.tenantId],
+    );
+    if (!parent.rows[0]) throw new NotFoundException("Unit not found in the current tenant.");
+    await this.assertAssignedTeacherManage(user, parent.rows[0].course_id);
+    return this.run(async () => {
+      const result = await this.db.query(
+        `INSERT INTO lms_course_chapters (tenant_id,unit_id,title,description,sequence,created_by,updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$6) RETURNING *`,
+        [user.tenantId, input.unitId, input.title.trim(), input.description?.trim() || null, input.sequence, user.id],
+      );
+      await this.auditMutation(request, "chapter", "CREATE", result.rows[0]);
+      return result.rows[0];
+    });
+  }
+
+  async updateCourseChapter(id: string, input: UpdateCourseChapterDto, request: ContextRequest) {
+    const user = request.context.user!;
+    const before = await this.hierarchyRow(id, "chapter", user);
+    await this.assertAssignedTeacherManage(user, String(before.course_id));
+    return this.run(async () => {
+      const result = await this.db.query(
+        `UPDATE lms_course_chapters SET title=COALESCE($3,title), description=COALESCE($4,description),
+         sequence=COALESCE($5,sequence), updated_by=$2, updated_at=now()
+         WHERE id=$1 AND tenant_id=$6 RETURNING *`,
+        [id, user.id, input.title?.trim() || null, input.description?.trim() || null, input.sequence ?? null, user.tenantId],
+      );
+      if (!result.rows[0]) throw new NotFoundException("Chapter not found.");
+      await this.auditMutation(request, "chapter", "UPDATE", result.rows[0], before);
+      return result.rows[0];
+    });
+  }
+
+  private async hierarchyRow(id: string, kind: "unit" | "chapter", user: AuthenticatedUser) {
+    const query = kind === "unit"
+      ? "SELECT u.*, c.institution_id, c.campus_id FROM lms_course_units u JOIN courses c ON c.tenant_id=u.tenant_id AND c.id=u.course_id WHERE u.id=$1 AND u.tenant_id=$2"
+      : "SELECT ch.*, u.course_id, c.institution_id, c.campus_id FROM lms_course_chapters ch JOIN lms_course_units u ON u.tenant_id=ch.tenant_id AND u.id=ch.unit_id JOIN courses c ON c.tenant_id=u.tenant_id AND c.id=u.course_id WHERE ch.id=$1 AND ch.tenant_id=$2";
+    const result = await this.db.query<Record<string, unknown>>(query, [id, user.tenantId]);
+    if (!result.rows[0]) throw new NotFoundException(`${kind === "unit" ? "Unit" : "Chapter"} not found.`);
+    assertScope(user, String(result.rows[0].institution_id), result.rows[0].campus_id as string | null | undefined);
+    if (this.isLearnerOnly(user) && result.rows[0].status !== "PUBLISHED") throw new NotFoundException("LMS content not found.");
+    return result.rows[0];
+  }
+
   async listLessons(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: ContentListQueryDto, moduleId?: string) {
     return this.listChild("lessons", "module_id", "course_modules", user, page, pageSize, offset, query, moduleId, "lesson");
   }
@@ -1377,12 +1552,35 @@ export class LmsService {
   async createCourseModule(input: CreateCourseModuleDto, request: ContextRequest) {
     const user = request.context.user!;
     await this.assertParent("courses", input.courseId, user);
-    return this.createChild("course_modules", "course_module", input.courseId, input.title, input.description, input.sequence, user, request);
+    const chapter = input.chapterId
+      ? await this.db.query("SELECT id FROM lms_course_chapters ch JOIN lms_course_units u ON u.id=ch.unit_id AND u.tenant_id=ch.tenant_id WHERE ch.id=$1 AND ch.tenant_id=$2 AND u.course_id=$3 AND ch.status <> 'ARCHIVED'", [input.chapterId, user.tenantId, input.courseId])
+      : await this.db.query("SELECT ch.id FROM lms_course_chapters ch JOIN lms_course_units u ON u.id=ch.unit_id AND u.tenant_id=ch.tenant_id WHERE ch.tenant_id=$1 AND u.course_id=$2 ORDER BY u.sequence,ch.sequence LIMIT 1", [user.tenantId, input.courseId]);
+    if (!chapter.rows[0]) throw new NotFoundException("Chapter not found for this course.");
+    return this.run(async () => {
+      const result = await this.db.query(
+        `INSERT INTO course_modules (tenant_id, course_id, chapter_id, title, description, sequence, created_by, updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$7) RETURNING *`,
+        [user.tenantId, input.courseId, chapter.rows[0].id, input.title.trim(), input.description?.trim() || null, input.sequence, user.id],
+      );
+      await this.auditMutation(request, "course_module", "CREATE", result.rows[0]);
+      return result.rows[0];
+    });
   }
 
   async updateCourseModule(id: string, input: UpdateCourseModuleDto, request: ContextRequest) {
     const before = await this.getChild(id, "course_modules", request.context.user!);
-    return this.updateChild("course_modules", "course_module", id, input, request, before, "title, description, sequence");
+    if (!input.chapterId) return this.updateChild("course_modules", "course_module", id, input, request, before, "title, description, sequence");
+    const chapter = await this.db.query("SELECT ch.id FROM lms_course_chapters ch JOIN lms_course_units u ON u.id=ch.unit_id AND u.tenant_id=ch.tenant_id JOIN course_modules m ON m.course_id=u.course_id AND m.id=$3 WHERE ch.id=$1 AND ch.tenant_id=$2", [input.chapterId, request.context.user!.tenantId, id]);
+    if (!chapter.rows[0]) throw new NotFoundException("Chapter not found for this course.");
+    return this.run(async () => {
+      const result = await this.db.query(
+        `UPDATE course_modules SET title=COALESCE($3,title), description=COALESCE($4,description), sequence=COALESCE($5,sequence), chapter_id=$6, updated_by=$2, updated_at=now()
+         WHERE id=$1 AND tenant_id=$7 RETURNING *`,
+        [id, request.context.user!.id, input.title?.trim() || null, input.description?.trim() || null, input.sequence ?? null, chapter.rows[0].id, request.context.user!.tenantId],
+      );
+      await this.auditMutation(request, "course_module", "UPDATE", result.rows[0], before);
+      return result.rows[0];
+    });
   }
 
   async createLesson(input: CreateLessonDto, request: ContextRequest) {
@@ -2589,6 +2787,8 @@ export class LmsService {
   private async calculateCourseProgress(course: Record<string, unknown>, learnerId: string, user: AuthenticatedUser) {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT cm.id AS module_id, cm.title AS module_title, cm.sequence,
+              ch.id AS chapter_id, ch.title AS chapter_title, ch.sequence AS chapter_sequence, ch.status AS chapter_status,
+              u.id AS unit_id, u.title AS unit_title, u.sequence AS unit_sequence, u.status AS unit_status,
               (SELECT count(*)::int
                FROM lessons l
                WHERE l.tenant_id = $2 AND l.module_id = cm.id AND l.status = 'PUBLISHED') AS lesson_total,
@@ -2640,8 +2840,11 @@ export class LmsService {
                 FROM lessons l
                 WHERE l.tenant_id = $2 AND l.module_id = cm.id AND l.status = 'PUBLISHED') AS lesson_items
        FROM course_modules cm
+       JOIN lms_course_chapters ch ON ch.tenant_id = cm.tenant_id AND ch.id = cm.chapter_id
+       JOIN lms_course_units u ON u.tenant_id = ch.tenant_id AND u.id = ch.unit_id
        WHERE cm.tenant_id = $2 AND cm.course_id = $1 AND cm.status = 'PUBLISHED'
-       ORDER BY cm.sequence ASC, cm.id ASC`,
+         AND ch.status = 'PUBLISHED' AND u.status = 'PUBLISHED'
+       ORDER BY u.sequence ASC, ch.sequence ASC, cm.sequence ASC, cm.id ASC`,
       [course.id, user.tenantId, learnerId],
     );
 
@@ -2676,8 +2879,37 @@ export class LmsService {
         assessments: { completed: assessmentCompleted, total: assessmentTotal },
         assignments: { completed: assignmentCompleted, total: assignmentTotal },
         lessonItems,
+        _unitId: row.unit_id,
+        _unitTitle: row.unit_title,
+        _unitSequence: Number(row.unit_sequence),
+        _unitStatus: row.unit_status,
+        _chapterId: row.chapter_id,
+        _chapterTitle: row.chapter_title,
+        _chapterSequence: Number(row.chapter_sequence),
+        _chapterStatus: row.chapter_status,
       };
     });
+    const units = modules.reduce<Array<Record<string, unknown>>>((items, module) => {
+      let unit = items.find((item) => item.id === module._unitId);
+      if (!unit) {
+        unit = { id: module._unitId, title: module._unitTitle, sequence: module._unitSequence, status: module._unitStatus, chapters: [] };
+        items.push(unit);
+      }
+      const chapters = unit.chapters as Array<Record<string, unknown>>;
+      let chapter = chapters.find((item) => item.id === module._chapterId);
+      if (!chapter) {
+        chapter = { id: module._chapterId, title: module._chapterTitle, sequence: module._chapterSequence, status: module._chapterStatus, modules: [] };
+        chapters.push(chapter);
+      }
+      (chapter.modules as Array<Record<string, unknown>>).push(module);
+      return items;
+    }, []).map((unit) => ({
+      ...unit,
+      chapters: (unit.chapters as Array<Record<string, unknown>>).map((chapter) => ({
+        ...chapter,
+        modules: (chapter.modules as Array<Record<string, unknown>>).map(({ _unitId, _unitTitle, _unitSequence, _unitStatus, _chapterId, _chapterTitle, _chapterSequence, _chapterStatus, ...module }) => module),
+      })),
+    }));
     const lessons = modules.reduce((summary, module) => ({
       completed: summary.completed + module.lessons.completed,
       total: summary.total + module.lessons.total,
@@ -2709,7 +2941,8 @@ export class LmsService {
       lessons,
       assessments,
       assignments,
-      modules,
+      modules: modules.map(({ _unitId, _unitTitle, _unitSequence, _unitStatus, _chapterId, _chapterTitle, _chapterSequence, _chapterStatus, ...module }) => module),
+      units,
     };
   }
 
@@ -3411,10 +3644,15 @@ export class LmsService {
     });
   }
 
-  async changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest) {
+  async changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource" | "unit" | "chapter", status: LmsStatus, request: ContextRequest) {
     if (kind === "course") this.assertCourseAdministrator(request.context.user!);
-    const table = kind === "programme" ? "programmes" : kind === "course" ? "courses" : kind === "course_module" ? "course_modules" : kind === "lesson" ? "lessons" : "learning_resources";
-    const before = await this.getChild(id, table, request.context.user!) as Record<string, unknown>;
+    const table = kind === "programme" ? "programmes" : kind === "course" ? "courses" : kind === "course_module" ? "course_modules" : kind === "lesson" ? "lessons" : kind === "learning_resource" ? "learning_resources" : kind === "unit" ? "lms_course_units" : "lms_course_chapters";
+    const before = kind === "unit" || kind === "chapter"
+      ? await this.hierarchyRow(id, kind, request.context.user!)
+      : await this.getChild(id, table as LmsTable, request.context.user!) as Record<string, unknown>;
+    if (kind === "unit" || kind === "chapter") {
+      await this.assertAssignedTeacherManage(request.context.user!, String(before.course_id), before.campus_id as string | null | undefined);
+    }
     if (status === "DRAFT") {
       if (kind === "course" || kind === "programme") {
         throw new BadRequestException("Only course content items can be unpublished to draft.");

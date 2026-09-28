@@ -34,6 +34,7 @@ const academicStructureMigration = readFileSync(resolve(process.cwd(), "../../pa
 const progressIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/024_lms_progress_assessment_assignment_integrity.sql"), "utf8");
 const certificateLifecycleMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/025_lms_certificate_lifecycle.sql"), "utf8");
 const tenantParentIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/026_lms_tenant_parent_integrity.sql"), "utf8");
+const unitsChaptersMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/034_lms_units_chapters.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -113,6 +114,15 @@ test("LMS migration defines hierarchy constraints and resource validation", () =
   assert.match(lmsMigration, /UNIQUE \(lesson_id, sequence\)/);
   assert.match(lmsMigration, /resource_type IN \('VIDEO', 'PDF', 'DOCUMENT', 'PRESENTATION', 'LINK', 'SCORM', 'INTERACTIVE'\)/);
   assert.match(lmsMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("units and chapters migration preserves legacy content and tenant integrity", () => {
+  assert.match(unitsChaptersMigration, /CREATE TABLE IF NOT EXISTS lms_course_units\b/);
+  assert.match(unitsChaptersMigration, /CREATE TABLE IF NOT EXISTS lms_course_chapters\b/);
+  assert.match(unitsChaptersMigration, /ALTER TABLE course_modules ADD COLUMN IF NOT EXISTS chapter_id/);
+  assert.match(unitsChaptersMigration, /course_modules_tenant_chapter_fk/);
+  assert.match(unitsChaptersMigration, /lms\.unit\.create/);
+  assert.match(unitsChaptersMigration, /034_lms_units_chapters/);
 });
 
 for (const table of ["lms_enrollments", "lms_instructor_assignments"]) {
@@ -284,7 +294,7 @@ test("refund index migration allows multiple processed refunds but keeps one pen
 });
 
 test("academic structure migration is registered and keeps parent relationships tenant-scoped", () => {
-  assert.equal(MIGRATION_VERSIONS.at(-1), "033_academic_structure");
+  assert.equal(MIGRATION_VERSIONS.at(-2), "033_academic_structure");
   assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_faculties/);
   assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_departments/);
   assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_semesters/);

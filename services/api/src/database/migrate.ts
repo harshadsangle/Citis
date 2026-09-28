@@ -39,6 +39,7 @@ export const MIGRATION_VERSIONS = [
   "031_lms_course_institution_allocations",
   "032_lms_refund_partial_index",
   "033_academic_structure",
+  "034_lms_units_chapters",
 ] as const;
 
 const MIGRATION_LOCK_ID = 728431;

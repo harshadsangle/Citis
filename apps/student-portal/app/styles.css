@@ -1680,6 +1680,81 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
   line-height: 1.55;
 }
 
+.course-unit-list,
+.course-chapter-list,
+.learning-curriculum-chapter {
+  display: grid;
+  gap: 10px;
+}
+
+.course-unit,
+.course-chapter {
+  border: 1px solid #dfe9ed;
+  border-radius: 12px;
+  background: #f8fbfc;
+}
+
+.course-unit > summary,
+.course-chapter > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  padding: 12px 14px;
+  color: #173c59;
+}
+
+.course-unit > summary::-webkit-details-marker,
+.course-chapter > summary::-webkit-details-marker {
+  display: none;
+}
+
+.course-unit > summary > :last-child,
+.course-chapter > summary > :last-child {
+  margin-left: auto;
+}
+
+.course-unit-number,
+.course-chapter-number {
+  color: #0f766e;
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.course-chapter-list {
+  padding: 0 10px 10px;
+}
+
+.course-chapter {
+  background: #fff;
+}
+
+.course-unit .course-module-list {
+  padding: 0 8px 8px;
+}
+
+.learning-curriculum-label {
+  display: grid;
+  gap: 2px;
+  margin: 7px 0 0;
+  padding: 9px 12px;
+  border-left: 3px solid #0f766e;
+  color: #173c59;
+  background: #f1f8f7;
+}
+
+.learning-curriculum-label span,
+.learning-curriculum-label small {
+  color: #607989;
+  font-size: .72rem;
+}
+
+.learning-curriculum-label strong {
+  font-size: .9rem;
+}
+
 .purchase-error {
   border: 1px solid #f2c7c3;
   color: #9a352c;

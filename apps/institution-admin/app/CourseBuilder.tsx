@@ -61,6 +61,20 @@ type BuilderModule = {
   assessments: BuilderAssessment[];
 };
 
+type BuilderChapter = {
+  id: string;
+  title: string;
+  description: string;
+  modules: string[];
+};
+
+type BuilderUnit = {
+  id: string;
+  title: string;
+  description: string;
+  chapters: BuilderChapter[];
+};
+
 type CourseForm = {
   title: string;
   description: string;
@@ -96,6 +110,14 @@ function newLesson(): BuilderLesson {
 
 function newModule(): BuilderModule {
   return { id: newId("module"), title: "", description: "", lessons: [], assignments: [], assessments: [] };
+}
+
+function newChapter(): BuilderChapter {
+  return { id: newId("chapter"), title: "Chapter 1", description: "", modules: [] };
+}
+
+function newUnit(): BuilderUnit {
+  return { id: newId("unit"), title: "Unit 1", description: "", chapters: [newChapter()] };
 }
 
 function newResource(): BuilderResource {
@@ -259,7 +281,9 @@ export default function CourseBuilder({
   const courseCode = courseCodeFromSeed(courseCodeSeed);
   const [course, setCourse] = useState<CourseForm>({ title: "", description: "", thumbnail: "", price: "", purchasable: false });
   const [modules, setModules] = useState<BuilderModule[]>([]);
+  const [units, setUnits] = useState<BuilderUnit[]>([newUnit()]);
   const [selectedModuleId, setSelectedModuleId] = useState("");
+  const [selectedChapterId, setSelectedChapterId] = useState("");
   const [selectedLessonId, setSelectedLessonId] = useState("");
   const [moduleDraft, setModuleDraft] = useState<BuilderModule | null>(null);
   const [lessonDraft, setLessonDraft] = useState<BuilderLesson | null>(null);
@@ -343,6 +367,18 @@ export default function CourseBuilder({
   function validateStructure(): ValidationErrors {
     const errors: ValidationErrors = {};
     if (modules.length === 0) errors.modules = "Add at least one module before creating the course.";
+    if (units.length === 0) errors.units = "Add at least one unit.";
+    units.forEach((unit, unitIndex) => {
+      if (unit.title.trim().length < 2 || unit.title.trim().length > 180) errors[`units.${unitIndex}.title`] = `Unit ${unitIndex + 1} title must be between 2 and 180 characters.`;
+      if (unit.chapters.length === 0) errors[`units.${unitIndex}.chapters`] = `Unit ${unitIndex + 1} must have at least one chapter.`;
+      unit.chapters.forEach((chapter, chapterIndex) => {
+        if (chapter.title.trim().length < 2 || chapter.title.trim().length > 180) errors[`units.${unitIndex}.chapters.${chapterIndex}.title`] = `Chapter ${chapterIndex + 1} title must be between 2 and 180 characters.`;
+      });
+    });
+    const assigned = new Set(units.flatMap((unit) => unit.chapters.flatMap((chapter) => chapter.modules)));
+    modules.forEach((module, index) => {
+      if (!assigned.has(module.id)) errors[`modules.${index}`] = `Module ${index + 1} must be assigned to a chapter.`;
+    });
     modules.forEach((module, moduleIndex) => {
       const modulePrefix = `modules.${moduleIndex}`;
       if (module.title.trim().length < 2 || module.title.trim().length > 180) {
@@ -493,6 +529,12 @@ export default function CourseBuilder({
       ? current.map((item) => item.id === editingId ? savedModule : item)
       : [...current, savedModule]);
     if (!editingId) {
+      const chapterId = selectedChapterId || units[0]?.chapters[0]?.id;
+      if (chapterId) setUnits((current) => current.map((unit) => ({ ...unit, chapters: unit.chapters.map((chapter) => chapter.id === chapterId ? { ...chapter, modules: [...chapter.modules, savedModule.id] } : chapter) })));
+    } else if (selectedChapterId) {
+      setUnits((current) => current.map((unit) => ({ ...unit, chapters: unit.chapters.map((chapter) => ({ ...chapter, modules: chapter.id === selectedChapterId ? Array.from(new Set([...chapter.modules, savedModule.id])) : chapter.modules.filter((id) => id !== savedModule.id) })) })));
+    }
+    if (!editingId) {
       setSelectedModuleId(savedModule.id);
       setSelectedLessonId("");
     }
@@ -575,6 +617,8 @@ export default function CourseBuilder({
   function beginModule(module?: BuilderModule) {
     setStep(1);
     setEditingId(module?.id || "");
+    const existingChapter = module && units.flatMap((unit) => unit.chapters).find((chapter) => chapter.modules.includes(module.id));
+    setSelectedChapterId(existingChapter?.id || units[0]?.chapters[0]?.id || "");
     setModuleDraft(module ? { ...module, lessons: [...module.lessons], assignments: [...module.assignments], assessments: [...module.assessments] } : newModule());
   }
 
@@ -610,6 +654,7 @@ export default function CourseBuilder({
 
   function removeModule(id: string) {
     setModules((current) => current.filter((item) => item.id !== id));
+    setUnits((current) => current.map((unit) => ({ ...unit, chapters: unit.chapters.map((chapter) => ({ ...chapter, modules: chapter.modules.filter((moduleId) => moduleId !== id) })) })));
     if (selectedModuleId === id) {
       const next = modules.find((item) => item.id !== id);
       setSelectedModuleId(next?.id || "");
@@ -637,6 +682,59 @@ export default function CourseBuilder({
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
+  }
+
+  function addUnit() {
+    const unit = newUnit();
+    setUnits((current) => [...current, unit]);
+    setSelectedChapterId(unit.chapters[0].id);
+  }
+
+  function addChapter(unitId: string) {
+    const chapter = newChapter();
+    setUnits((current) => current.map((unit) => unit.id === unitId ? { ...unit, chapters: [...unit.chapters, chapter] } : unit));
+    setSelectedChapterId(chapter.id);
+  }
+
+  function updateUnit(unitId: string, patch: Partial<BuilderUnit>) {
+    setUnits((current) => current.map((unit) => unit.id === unitId ? { ...unit, ...patch } : unit));
+  }
+
+  function updateChapter(unitId: string, chapterId: string, patch: Partial<BuilderChapter>) {
+    setUnits((current) => current.map((unit) => unit.id === unitId ? { ...unit, chapters: unit.chapters.map((chapter) => chapter.id === chapterId ? { ...chapter, ...patch } : chapter) } : unit));
+  }
+
+  function removeChapter(unitId: string, chapterId: string) {
+    setUnits((current) => current.map((unit) => unit.id === unitId ? { ...unit, chapters: unit.chapters.filter((chapter) => chapter.id !== chapterId) } : unit));
+    setSelectedChapterId("");
+  }
+
+  function removeUnit(unitId: string) {
+    const removed = units.find((unit) => unit.id === unitId);
+    const removedModules = new Set(removed?.chapters.flatMap((chapter) => chapter.modules));
+    setUnits((current) => current.filter((unit) => unit.id !== unitId));
+    setModules((current) => current.filter((module) => !removedModules.has(module.id)));
+  }
+
+  function moveUnit(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= units.length) return;
+    setUnits((current) => {
+      const next = [...current];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function moveChapter(unitId: string, index: number, direction: -1 | 1) {
+    setUnits((current) => current.map((unit) => {
+      if (unit.id !== unitId) return unit;
+      const target = index + direction;
+      if (target < 0 || target >= unit.chapters.length) return unit;
+      const chapters = [...unit.chapters];
+      [chapters[index], chapters[target]] = [chapters[target], chapters[index]];
+      return { ...unit, chapters };
+    }));
   }
 
   function moveLesson(index: number, direction: -1 | 1) {
@@ -668,6 +766,29 @@ export default function CourseBuilder({
     setValidationErrors({});
     try {
       setProgress("Preparing the course upload…");
+      const modulePayload = (courseModule: BuilderModule) => ({
+        title: courseModule.title.trim(),
+        description: courseModule.description.trim() || undefined,
+        lessons: courseModule.lessons.map((lesson) => ({
+          title: lesson.title.trim(), description: lesson.description.trim() || undefined,
+          estimatedDuration: numberOrUndefined(lesson.estimatedDuration),
+          resources: lesson.resources.map((resource) => ({
+            title: resource.title.trim(), resourceType: resource.resourceType, url: resource.url.trim() || undefined,
+            duration: numberOrUndefined(resource.duration), fileField: resource.file ? `resource-file-${resource.id}` : undefined,
+          })),
+        })),
+        assignments: courseModule.assignments.map((assignment) => ({
+          title: assignment.title.trim(), description: assignment.description.trim() || undefined,
+          instructions: assignment.instructions.trim(), dueAt: assignment.dueAt ? new Date(assignment.dueAt).toISOString() : undefined,
+          maxMarks: Number(assignment.maxMarks),
+        })),
+        assessments: courseModule.assessments.map((assessment) => ({
+          title: assessment.title.trim(), description: assessment.description.trim() || undefined, assessmentType: assessment.assessmentType,
+          totalMarks: Number(assessment.totalMarks), passingMarks: Number(assessment.passingMarks),
+          durationMinutes: numberOrUndefined(assessment.durationMinutes), attemptLimit: Number(assessment.attemptLimit),
+          questions: assessment.questions.map((question) => ({ prompt: question.prompt.trim(), questionType: question.questionType, marks: Number(question.marks), options: parseOptions(question.options) })),
+        })),
+      });
       const structure = {
         catalogueProvider: catalogueProvider || undefined,
         course: {
@@ -679,44 +800,14 @@ export default function CourseBuilder({
           currency: course.price.trim() ? "INR" : undefined,
           purchasable: course.purchasable,
         },
-        modules: modules.map((courseModule) => ({
-          title: courseModule.title.trim(),
-          description: courseModule.description.trim() || undefined,
-          lessons: courseModule.lessons.map((lesson) => ({
-            title: lesson.title.trim(),
-            description: lesson.description.trim() || undefined,
-            estimatedDuration: numberOrUndefined(lesson.estimatedDuration),
-            resources: lesson.resources.map((resource) => ({
-              title: resource.title.trim(),
-              resourceType: resource.resourceType,
-              url: resource.url.trim() || undefined,
-              duration: numberOrUndefined(resource.duration),
-              fileField: resource.file ? `resource-file-${resource.id}` : undefined,
-            })),
-          })),
-          assignments: courseModule.assignments.map((assignment) => ({
-            title: assignment.title.trim(),
-            description: assignment.description.trim() || undefined,
-            instructions: assignment.instructions.trim(),
-            dueAt: assignment.dueAt ? new Date(assignment.dueAt).toISOString() : undefined,
-            maxMarks: Number(assignment.maxMarks),
-          })),
-          assessments: courseModule.assessments.map((assessment) => ({
-            title: assessment.title.trim(),
-            description: assessment.description.trim() || undefined,
-            assessmentType: assessment.assessmentType,
-            totalMarks: Number(assessment.totalMarks),
-            passingMarks: Number(assessment.passingMarks),
-            durationMinutes: numberOrUndefined(assessment.durationMinutes),
-            attemptLimit: Number(assessment.attemptLimit),
-            questions: assessment.questions.map((question) => ({
-              prompt: question.prompt.trim(),
-              questionType: question.questionType,
-              marks: Number(question.marks),
-              options: parseOptions(question.options),
-            })),
+        units: units.map((unit, unitIndex) => ({
+          title: unit.title.trim(), description: unit.description.trim() || undefined, sequence: unitIndex + 1,
+          chapters: unit.chapters.map((chapter, chapterIndex) => ({
+            title: chapter.title.trim(), description: chapter.description.trim() || undefined, sequence: chapterIndex + 1,
+            modules: chapter.modules.map((id) => modules.find((item) => item.id === id)).filter((item): item is BuilderModule => Boolean(item)).map(modulePayload),
           })),
         })),
+        modules: modules.map(modulePayload),
       };
       const formData = new FormData();
       formData.append("structure", JSON.stringify(structure));
@@ -784,6 +875,11 @@ export default function CourseBuilder({
       <div className="builder-form-heading"><strong>{editingId ? "Edit module" : "Add module"}</strong><button type="button" className="builder-link" onClick={() => { setModuleDraft(null); setEditingId(""); }}>Cancel</button></div>
       <label>Module title *<input autoFocus required minLength={2} {...fieldProps("moduleDraft.title")} value={moduleDraft.title} onChange={(event) => { clearFieldError("moduleDraft.title"); setModuleDraft({ ...moduleDraft, title: event.target.value }); }} placeholder="e.g. Foundations" />{fieldError("moduleDraft.title")}</label>
       <label>Description<textarea rows={2} {...fieldProps("moduleDraft.description")} value={moduleDraft.description} onChange={(event) => { clearFieldError("moduleDraft.description"); setModuleDraft({ ...moduleDraft, description: event.target.value }); }} placeholder="What this module covers" />{fieldError("moduleDraft.description")}</label>
+      <label>Chapter *
+        <select required value={selectedChapterId} onChange={(event) => setSelectedChapterId(event.target.value)}>
+          {units.flatMap((unit) => unit.chapters.map((chapter) => <option key={chapter.id} value={chapter.id}>{unit.title || "Unit"} / {chapter.title || "Chapter"}</option>))}
+        </select>
+      </label>
       <button className="primary-button compact-button" type="submit">Save Module</button>
     </form>;
   }
@@ -847,6 +943,29 @@ export default function CourseBuilder({
 
   function renderHierarchy() {
     return <div className="builder-hierarchy">
+      <div className="builder-panel-heading">
+        <div><h3>Units and chapters</h3><p>Organize modules into a clear learning path. Every module belongs to one chapter.</p></div>
+        <button type="button" className="primary-button compact-button" onClick={addUnit}>+ Add unit</button>
+      </div>
+      {units.map((unit, unitIndex) => <article className="builder-module-card" key={unit.id}>
+        <div className="builder-node-row">
+          <span className="builder-node-title"><span className="builder-node-number">{unitIndex + 1}</span><span><strong>{unit.title || "Untitled unit"}</strong><small>{unit.chapters.length} chapter{unit.chapters.length === 1 ? "" : "s"}</small></span></span>
+          <span className="builder-row-actions"><button type="button" className="builder-link" onClick={() => moveUnit(unitIndex, -1)} disabled={unitIndex === 0}>↑</button><button type="button" className="builder-link" onClick={() => moveUnit(unitIndex, 1)} disabled={unitIndex === units.length - 1}>↓</button><button type="button" className="builder-danger" onClick={() => removeUnit(unit.id)} disabled={units.length === 1}>Remove unit</button></span>
+        </div>
+        <div className="builder-inline-form">
+          <label>Unit title *<input value={unit.title} onChange={(event) => updateUnit(unit.id, { title: event.target.value })} placeholder="e.g. Foundations" /></label>
+          <label>Description<textarea rows={2} value={unit.description} onChange={(event) => updateUnit(unit.id, { description: event.target.value })} /></label>
+          {unit.chapters.map((chapter, chapterIndex) => <div className="builder-asset-row" key={chapter.id}>
+            <span className="builder-child-mark">C</span>
+            <label className="builder-span-two">Chapter {chapterIndex + 1}
+              <input value={chapter.title} onFocus={() => setSelectedChapterId(chapter.id)} onChange={(event) => updateChapter(unit.id, chapter.id, { title: event.target.value })} placeholder="e.g. Getting started" />
+            </label>
+            <button type="button" className="builder-link" onClick={() => moveChapter(unit.id, chapterIndex, -1)} disabled={chapterIndex === 0}>↑</button><button type="button" className="builder-link" onClick={() => moveChapter(unit.id, chapterIndex, 1)} disabled={chapterIndex === unit.chapters.length - 1}>↓</button><button type="button" className="builder-danger" onClick={() => removeChapter(unit.id, chapter.id)} disabled={unit.chapters.length === 1}>Remove</button>
+            <small>{chapter.modules.length} module{chapter.modules.length === 1 ? "" : "s"} assigned</small>
+          </div>)}
+          <button type="button" className="builder-add-child" onClick={() => addChapter(unit.id)}>+ Add chapter</button>
+        </div>
+      </article>)}
       {modules.length === 0 && <div className="builder-empty">No modules yet. Add at least one module to start shaping the course.</div>}
       {modules.map((module, moduleIndex) => {
         const modulePrefix = `modules.${moduleIndex}`;

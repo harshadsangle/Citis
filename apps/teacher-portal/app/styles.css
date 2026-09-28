@@ -91,6 +91,50 @@ textarea:focus-visible {
   min-height: 40px;
 }
 
+.hierarchy-panel {
+  margin: 14px 0 20px;
+  padding: 16px;
+  border: 1px solid var(--teacher-line);
+  border-radius: 14px;
+  background: #f7fbfc;
+}
+
+.unit-card,
+.chapter-card {
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px solid var(--teacher-line);
+  border-radius: 10px;
+  background: white;
+}
+
+.chapter-card {
+  margin-left: 18px;
+  background: #fbfdfd;
+}
+
+.chapter-module-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.inline-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.inline-editor input {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--teacher-line);
+  border-radius: 8px;
+}
+
 @media (max-width: 780px) {
   .sidebar {
     position: static;

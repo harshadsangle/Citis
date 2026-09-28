@@ -10,6 +10,37 @@ async function fetchDashboardList<T>(path: string): Promise<T[]> {
   return body?.data || [];
 }
 
+type CourseModuleProgress = {
+  id: string;
+  title: string;
+  sequence: number;
+  state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
+  percentage: number;
+  lessons: { completed: number; total: number };
+  assessments: { completed: number; total: number };
+  lessonItems: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    sequence: number;
+    estimatedDuration?: number | null;
+  }>;
+};
+
+type CourseUnitProgress = {
+  id: string;
+  title: string;
+  sequence: number;
+  status: string;
+  chapters: Array<{
+    id: string;
+    title: string;
+    sequence: number;
+    status: string;
+    modules: CourseModuleProgress[];
+  }>;
+};
+
 type Progress = {
   course: { id: string; title: string; code: string; description?: string | null; thumbnail?: string | null; programme_name?: string | null };
   enrolled_at?: string | null;
@@ -17,22 +48,8 @@ type Progress = {
   percentage: number;
   lessons: { completed: number; total: number };
   assessments: { completed: number; total: number };
-  modules: Array<{
-    id: string;
-    title: string;
-    sequence: number;
-    state: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
-    percentage: number;
-    lessons: { completed: number; total: number };
-    assessments: { completed: number; total: number };
-    lessonItems: Array<{
-      id: string;
-      title: string;
-      description?: string | null;
-      sequence: number;
-      estimatedDuration?: number | null;
-    }>;
-  }>;
+  modules: CourseModuleProgress[];
+  units?: CourseUnitProgress[];
 };
 
 type LearningResource = {
@@ -302,6 +319,48 @@ function answerDisplay(question: AssessmentQuestion, value?: string | string[]) 
   return values.map((item) => question.options.find((option) => option.value === item)?.label || item).join(", ");
 }
 
+function CourseRoadmap({ progress, compact = false }: { progress: Progress; compact?: boolean }) {
+  const renderModule = (module: CourseModuleProgress) => (
+    <details className="course-module" key={module.id} open={module.sequence === 1}>
+      <summary>
+        <span className="course-module-number">{String(module.sequence).padStart(2, "0")}</span>
+        <span className="course-module-name"><strong>{module.title}</strong><small>{module.lessons.total} lessons · {module.assessments.total} assessments</small></span>
+        <span className="course-module-progress">{module.percentage}% <span aria-hidden="true">⌄</span></span>
+      </summary>
+      <div className="course-module-content">
+        <div className="module-progress-line"><span>{module.lessons.completed} of {module.lessons.total} lessons complete</span><strong>{module.state === "COMPLETED" ? "Complete" : stateLabel[module.state]}</strong></div>
+        <ProgressBar percentage={module.percentage} />
+        <div className="course-lesson-list">
+          {module.lessonItems.map((lesson) => (
+            <div className="course-lesson" key={lesson.id}>
+              <span className="course-lesson-status" aria-hidden="true">○</span>
+              <span><strong>{lesson.title}</strong>{lesson.description && <small>{lesson.description}</small>}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </details>
+  );
+  if (!progress.units?.length) return <div className="course-module-list">{progress.modules.map(renderModule)}</div>;
+  return (
+    <div className={`course-unit-list ${compact ? "is-compact" : ""}`}>
+      {progress.units.slice().sort((a, b) => a.sequence - b.sequence).map((unit) => (
+        <details className="course-unit" key={unit.id} open={unit.sequence === 1}>
+          <summary><span className="course-unit-number">{String(unit.sequence).padStart(2, "0")}</span><strong>{unit.title}</strong><span aria-hidden="true">⌄</span></summary>
+          <div className="course-chapter-list">
+            {unit.chapters.slice().sort((a, b) => a.sequence - b.sequence).map((chapter) => (
+              <details className="course-chapter" key={chapter.id} open={chapter.sequence === 1}>
+                <summary><span className="course-chapter-number">{String(chapter.sequence).padStart(2, "0")}</span><strong>{chapter.title}</strong><span aria-hidden="true">⌄</span></summary>
+                <div className="course-module-list">{chapter.modules.map(renderModule)}</div>
+              </details>
+            ))}
+          </div>
+        </details>
+      ))}
+    </div>
+  );
+}
+
 function CourseCard({
   progress,
   expanded,
@@ -397,29 +456,7 @@ function CourseCard({
                 <div><span className="course-detail-label">Course roadmap</span><h4>Modules & lessons</h4></div>
                 <span>{progress.modules.length} modules · {progress.lessons.total} lessons</span>
               </div>
-              <div className="course-module-list">
-                {progress.modules.map((module) => (
-                  <details className="course-module" key={module.id} open={module.sequence === 1}>
-                    <summary>
-                      <span className="course-module-number">{String(module.sequence).padStart(2, "0")}</span>
-                      <span className="course-module-name"><strong>{module.title}</strong><small>{module.lessons.total} lessons · {module.assessments.total} assessments</small></span>
-                      <span className="course-module-progress">{module.percentage}% <span aria-hidden="true">⌄</span></span>
-                    </summary>
-                    <div className="course-module-content">
-                      <div className="module-progress-line"><span>{module.lessons.completed} of {module.lessons.total} lessons complete</span><strong>{module.state === "COMPLETED" ? "Complete" : stateLabel[module.state]}</strong></div>
-                      <ProgressBar percentage={module.percentage} />
-                      <div className="course-lesson-list">
-                        {module.lessonItems.map((lesson) => (
-                          <div className="course-lesson" key={lesson.id}>
-                            <span className="course-lesson-status" aria-hidden="true">○</span>
-                            <span><strong>{lesson.title}</strong>{lesson.description && <small>{lesson.description}</small>}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </details>
-                ))}
-              </div>
+              <CourseRoadmap progress={progress} />
             </div>
             <button className="course-detail-continue" type="button" onClick={onContinue}>{actionLabel} <span aria-hidden="true">→</span></button>
           </div>
@@ -429,8 +466,18 @@ function CourseCard({
 }
 
 function firstLessonId(progress: Progress) {
-  const firstIncompleteModule = progress.modules.find((module) => module.state !== "COMPLETED" && module.lessonItems.length > 0);
-  return firstIncompleteModule?.lessonItems[0]?.id || progress.modules[0]?.lessonItems[0]?.id || "";
+  const modules = orderedCurriculumModules(progress);
+  const firstIncompleteModule = modules.find((module) => module.state !== "COMPLETED" && module.lessonItems.length > 0);
+  return firstIncompleteModule?.lessonItems[0]?.id || modules[0]?.lessonItems[0]?.id || "";
+}
+
+function orderedCurriculumModules(progress: Progress) {
+  const hierarchical = (progress.units || [])
+    .slice()
+    .sort((left, right) => left.sequence - right.sequence)
+    .flatMap((unit) => unit.chapters.slice().sort((left, right) => left.sequence - right.sequence)
+      .flatMap((chapter) => chapter.modules.slice().sort((left, right) => left.sequence - right.sequence)));
+  return hierarchical.length ? hierarchical : progress.modules;
 }
 
 function resourceTypeLabel(resourceType: string) {
@@ -946,10 +993,11 @@ function CourseLearningView({
   certificate?: Certificate;
   onViewCertificates: () => void;
 }) {
-  const allLessons = progress.modules.flatMap((module) => module.lessonItems.map((lesson) => ({ lesson, module })));
+  const curriculumModules = orderedCurriculumModules(progress);
+  const allLessons = curriculumModules.flatMap((module) => module.lessonItems.map((lesson) => ({ lesson, module })));
   const [activeLessonId, setActiveLessonId] = useState(() => firstLessonId(progress));
   const [completedLessonIds, setCompletedLessonIds] = useState<Set<string>>(() => new Set(
-    progress.modules.flatMap((module) => module.lessonItems.slice(0, module.lessons.completed).map((lesson) => lesson.id)),
+    curriculumModules.flatMap((module) => module.lessonItems.slice(0, module.lessons.completed).map((lesson) => lesson.id)),
   ));
   const [busyLessonId, setBusyLessonId] = useState("");
   const [lessonError, setLessonError] = useState("");
@@ -1057,7 +1105,24 @@ function CourseLearningView({
           <div className="learning-roadmap-heading"><div><span className="course-detail-label">Your roadmap</span><h3>Course content</h3></div><span>{progress.modules.length} modules</span></div>
           <div className="learning-roadmap-progress"><div><span>Overall progress</span><strong>{completionPercent}%</strong></div><ProgressBar percentage={completionPercent} /></div>
           <div className="learning-module-list">
-            {progress.modules.map((courseModule) => (
+            {(progress.units?.length ? progress.units.slice().sort((a, b) => a.sequence - b.sequence).flatMap((unit) =>
+              unit.chapters.slice().sort((a, b) => a.sequence - b.sequence).map((chapter) => (
+                <div className="learning-curriculum-chapter" key={chapter.id}>
+                  <div className="learning-curriculum-label"><span>Unit {String(unit.sequence).padStart(2, "0")}</span><strong>{unit.title}</strong><small>Chapter {String(chapter.sequence).padStart(2, "0")} · {chapter.title}</small></div>
+                  {chapter.modules.map((courseModule) => (
+                    <div className={`learning-module ${courseModule.id === activeModule.id ? "is-current" : ""}`} key={courseModule.id}>
+                      <div className="learning-module-heading"><span className="learning-module-number">{String(courseModule.sequence).padStart(2, "0")}</span><span><strong>{courseModule.title}</strong><small>{courseModule.lessons.completed}/{courseModule.lessons.total} lessons</small></span></div>
+                      <div className="learning-lesson-list">
+                        {courseModule.lessonItems.map((courseLesson) => {
+                          const lessonCompleted = completedLessonIds.has(courseLesson.id) || courseModule.state === "COMPLETED" || courseModule.lessonItems.indexOf(courseLesson) < courseModule.lessons.completed;
+                          return <button className={`learning-lesson-item ${courseLesson.id === activeLesson.id ? "is-current" : ""} ${lessonCompleted ? "is-completed" : ""}`} key={courseLesson.id} type="button" onClick={() => selectLesson(courseLesson.id)}><span className="learning-lesson-marker" aria-hidden="true">{lessonCompleted ? "✓" : courseLesson.id === activeLesson.id ? "•" : "○"}</span><span><strong>{courseLesson.title}</strong>{courseLesson.estimatedDuration != null && <small>{courseLesson.estimatedDuration} min</small>}</span></button>;
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))
+            ) : progress.modules.map((courseModule) => (
               <div className={`learning-module ${courseModule.id === activeModule.id ? "is-current" : ""}`} key={courseModule.id}>
                 <div className="learning-module-heading"><span className="learning-module-number">{String(courseModule.sequence).padStart(2, "0")}</span><span><strong>{courseModule.title}</strong><small>{courseModule.lessons.completed}/{courseModule.lessons.total} lessons</small></span></div>
                 <div className="learning-lesson-list">
@@ -1072,7 +1137,7 @@ function CourseLearningView({
                   })}
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </aside>
         <main className="learning-content" id="lesson-content">

@@ -44,6 +44,14 @@ export class ContentListQueryDto {
   @IsOptional()
   @IsUUID()
   lessonId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  unitId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  chapterId?: string;
 }
 
 export class UpdateLearningResourceProgressDto {
@@ -62,6 +70,32 @@ export class UpdateLearningResourceProgressDto {
   @IsOptional()
   @IsBoolean()
   completed?: boolean;
+}
+
+export class CreateCourseUnitDto {
+  @IsUUID() courseId!: string;
+  @IsString() @Length(2, 180) title!: string;
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
+  @IsInt() @Min(1) sequence!: number;
+}
+
+export class UpdateCourseUnitDto {
+  @IsOptional() @IsString() @Length(2, 180) title?: string;
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
+  @IsOptional() @IsInt() @Min(1) sequence?: number;
+}
+
+export class CreateCourseChapterDto {
+  @IsUUID() unitId!: string;
+  @IsString() @Length(2, 180) title!: string;
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
+  @IsInt() @Min(1) sequence!: number;
+}
+
+export class UpdateCourseChapterDto {
+  @IsOptional() @IsString() @Length(2, 180) title?: string;
+  @IsOptional() @IsString() @MaxLength(2000) description?: string;
+  @IsOptional() @IsInt() @Min(1) sequence?: number;
 }
 
 export class CreateProgrammeDto {
@@ -216,6 +250,10 @@ export class CreateCourseModuleDto {
   @IsInt()
   @Min(1)
   sequence!: number;
+
+  @IsOptional()
+  @IsUUID()
+  chapterId?: string;
 }
 
 export class UpdateCourseModuleDto {
@@ -233,6 +271,10 @@ export class UpdateCourseModuleDto {
   @IsInt()
   @Min(1)
   sequence?: number;
+
+  @IsOptional()
+  @IsUUID()
+  chapterId?: string;
 }
 
 export class CreateLessonDto {

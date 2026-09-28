@@ -18,6 +18,10 @@ import {
   CreateAssessmentOptionDto,
   CreateCourseDto,
   CreateCourseModuleDto,
+  CreateCourseUnitDto,
+  UpdateCourseUnitDto,
+  CreateCourseChapterDto,
+  UpdateCourseChapterDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
@@ -501,6 +505,78 @@ export class LmsController {
     const page = paginationFrom(request);
     const result = await this.lms.listCourseModules(request.context.user!, page.page, page.pageSize, page.offset, query, courseId);
     return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Get("course-units")
+  @RequirePermission("lms.unit.view")
+  async courseUnits(@Req() request: ContextRequest, @Query("courseId") courseId: string | undefined) {
+    return successResponse(await this.lms.listCourseUnits(request.context.user!, courseId), request);
+  }
+
+  @Post("course-units")
+  @RequirePermission("lms.unit.create")
+  async createCourseUnit(@Body() input: CreateCourseUnitDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.createCourseUnit(input, request), request);
+  }
+
+  @Patch("course-units/:id")
+  @RequirePermission("lms.unit.update")
+  async updateCourseUnit(@Param("id") id: string, @Body() input: UpdateCourseUnitDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.updateCourseUnit(id, input, request), request);
+  }
+
+  @Post("course-units/:id/publish")
+  @RequirePermission("lms.unit.publish")
+  async publishCourseUnit(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "unit", "PUBLISHED", request), request);
+  }
+
+  @Post("course-units/:id/unpublish")
+  @RequirePermission("lms.unit.publish")
+  async unpublishCourseUnit(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "unit", "DRAFT", request), request);
+  }
+
+  @Post("course-units/:id/archive")
+  @RequirePermission("lms.unit.archive")
+  async archiveCourseUnit(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "unit", "ARCHIVED", request), request);
+  }
+
+  @Get("course-chapters")
+  @RequirePermission("lms.chapter.view")
+  async courseChapters(@Req() request: ContextRequest, @Query("unitId") unitId: string | undefined) {
+    return successResponse(await this.lms.listCourseChapters(request.context.user!, unitId), request);
+  }
+
+  @Post("course-chapters")
+  @RequirePermission("lms.chapter.create")
+  async createCourseChapter(@Body() input: CreateCourseChapterDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.createCourseChapter(input, request), request);
+  }
+
+  @Patch("course-chapters/:id")
+  @RequirePermission("lms.chapter.update")
+  async updateCourseChapter(@Param("id") id: string, @Body() input: UpdateCourseChapterDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.updateCourseChapter(id, input, request), request);
+  }
+
+  @Post("course-chapters/:id/publish")
+  @RequirePermission("lms.chapter.publish")
+  async publishCourseChapter(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "chapter", "PUBLISHED", request), request);
+  }
+
+  @Post("course-chapters/:id/unpublish")
+  @RequirePermission("lms.chapter.publish")
+  async unpublishCourseChapter(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "chapter", "DRAFT", request), request);
+  }
+
+  @Post("course-chapters/:id/archive")
+  @RequirePermission("lms.chapter.archive")
+  async archiveCourseChapter(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "chapter", "ARCHIVED", request), request);
   }
 
   @Post("course-modules")

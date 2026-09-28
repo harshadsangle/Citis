@@ -166,6 +166,26 @@ type CourseModule = {
   description?: string | null;
   sequence: number;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  chapter_id?: string | null;
+};
+
+type CourseUnit = {
+  id: string;
+  course_id: string;
+  title: string;
+  description?: string | null;
+  sequence: number;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+};
+
+type CourseChapter = {
+  id: string;
+  unit_id: string;
+  course_id?: string;
+  title: string;
+  description?: string | null;
+  sequence: number;
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
 };
 
 type Lesson = {
@@ -194,6 +214,7 @@ type LearningResource = {
 
 type ModuleEditor = {
   id?: string;
+  chapterId?: string;
   title: string;
   description: string;
   sequence: string;
@@ -227,8 +248,12 @@ type CourseModuleData = {
   lessons: Array<{ lesson: Lesson; resources: LearningResource[] }>;
 };
 
+type CourseChapterData = CourseChapter & { modules: CourseModuleData[] };
+type CourseUnitData = CourseUnit & { chapters: CourseChapterData[] };
+
 type CourseStructure = {
   modules: CourseModuleData[];
+  units: CourseUnitData[];
   error?: string;
 };
 
@@ -257,6 +282,7 @@ type Submission = {
 type CourseData = {
   course: Course;
   modules: CourseModuleData[];
+  units: CourseUnitData[];
   structureError?: string;
   enrollments: Enrollment[];
   progress: ProgressRow[];
@@ -318,9 +344,9 @@ function providerForProgrammeName(value?: string | null): LmsCourseProvider | nu
   return null;
 }
 
-async function loadCourseStructure(courseId: string): Promise<CourseModuleData[]> {
+async function loadCourseStructure(courseId: string): Promise<CourseStructure> {
   const modules = await list<CourseModule>(`/course-modules?courseId=${encodeURIComponent(courseId)}`);
-  return Promise.all(modules.map(async (module) => {
+  const moduleData = await Promise.all(modules.map(async (module) => {
     const lessons = await list<Lesson>(`/lessons?moduleId=${encodeURIComponent(module.id)}`);
     return {
       module,
@@ -330,6 +356,23 @@ async function loadCourseStructure(courseId: string): Promise<CourseModuleData[]
       }))),
     };
   }));
+  try {
+    const units = await list<CourseUnit>(`/course-units?courseId=${encodeURIComponent(courseId)}&page=1&pageSize=100`);
+    const unitData = await Promise.all(units.map(async (unit) => {
+      const chapters = await list<CourseChapter>(`/course-chapters?unitId=${encodeURIComponent(unit.id)}&page=1&pageSize=100`);
+      return {
+        ...unit,
+        chapters: chapters.map((chapter) => ({
+          ...chapter,
+          modules: moduleData.filter(({ module }) => module.chapter_id === chapter.id),
+        })).sort((a, b) => a.sequence - b.sequence),
+      };
+    }));
+    return { modules: moduleData, units: unitData.sort((a, b) => a.sequence - b.sequence) };
+  } catch {
+    // Older API deployments may not expose units yet; keep the existing flat authoring view.
+    return { modules: moduleData, units: [] };
+  }
 }
 
 function learnerName(learner: Enrollment | Submission | AssessmentAttempt) {
@@ -464,6 +507,8 @@ export default function TeacherPortalPage() {
   const [busyAction, setBusyAction] = useState("");
   const [moduleEditor, setModuleEditor] = useState<ModuleEditor | null>(null);
   const [moduleArchiveCandidate, setModuleArchiveCandidate] = useState<CourseModule | null>(null);
+  const [unitEditor, setUnitEditor] = useState<{ id?: string; title: string; sequence: string } | null>(null);
+  const [chapterEditor, setChapterEditor] = useState<{ id?: string; unitId: string; title: string; sequence: string } | null>(null);
   const [lessonEditor, setLessonEditor] = useState<LessonEditor | null>(null);
   const [lessonArchiveCandidate, setLessonArchiveCandidate] = useState<Lesson | null>(null);
   const [resourceEditor, setResourceEditor] = useState<ResourceEditor | null>(null);
@@ -574,8 +619,9 @@ export default function TeacherPortalPage() {
           list<Assessment>(`/assessments?courseId=${encodeURIComponent(course.id)}`)
             .then((data) => ({ data, error: undefined }))
             .catch((reason: unknown) => ({ data: [], error: errorMessage(reason, "Assessments could not be loaded.") })),
-          loadCourseStructure(course.id).then((modules): CourseStructure => ({ modules })).catch((reason: unknown): CourseStructure => ({
+          loadCourseStructure(course.id).catch((reason: unknown): CourseStructure => ({
             modules: [],
+            units: [],
             error: errorMessage(reason, "Course content could not be loaded."),
           })),
         ]);
@@ -607,6 +653,7 @@ export default function TeacherPortalPage() {
         return {
           course,
           modules: structure.modules,
+          units: structure.units,
           structureError: "error" in structure ? structure.error : undefined,
           enrollments,
           rosterError: enrollmentResult.error,
@@ -689,10 +736,12 @@ export default function TeacherPortalPage() {
   function openModuleEditor(module?: CourseModule) {
     setModuleEditor(module ? {
       id: module.id,
+      chapterId: module.chapter_id || undefined,
       title: module.title,
       description: module.description || "",
       sequence: String(module.sequence),
     } : {
+      chapterId: selected?.units[0]?.chapters[0]?.id,
       title: "",
       description: "",
       sequence: String((selected?.modules.length || 0) + 1),
@@ -719,6 +768,7 @@ export default function TeacherPortalPage() {
         method: moduleEditor.id ? "PATCH" : "POST",
         body: JSON.stringify({
           ...(moduleEditor.id ? {} : { courseId: selected.course.id }),
+          ...(moduleEditor.chapterId ? { chapterId: moduleEditor.chapterId } : {}),
           title,
           description: moduleEditor.description.trim() || undefined,
           sequence,
@@ -732,6 +782,59 @@ export default function TeacherPortalPage() {
     } finally {
       setBusyAction("");
     }
+  }
+
+  function openUnitEditor(unit?: CourseUnit) {
+    setUnitEditor(unit ? { id: unit.id, title: unit.title, sequence: String(unit.sequence) } : {
+      title: "", sequence: String((selected?.units.length || 0) + 1),
+    });
+  }
+
+  function openChapterEditor(unit: CourseUnit, chapter?: CourseChapter) {
+    setChapterEditor(chapter
+      ? { id: chapter.id, unitId: unit.id, title: chapter.title, sequence: String(chapter.sequence) }
+      : { unitId: unit.id, title: "", sequence: String((selected?.units.find((item) => item.id === unit.id)?.chapters.length || 0) + 1) });
+  }
+
+  async function saveUnit() {
+    if (!selected || !unitEditor) return;
+    const title = unitEditor.title.trim();
+    const sequence = Number(unitEditor.sequence);
+    if (title.length < 2 || !Number.isInteger(sequence) || sequence < 1) { setError("Unit title and sequence are required."); return; }
+    setBusyAction(`save-unit:${unitEditor.id || "new"}`);
+    try {
+      await request(unitEditor.id ? `/course-units/${encodeURIComponent(unitEditor.id)}` : "/course-units", {
+        method: unitEditor.id ? "PATCH" : "POST",
+        body: JSON.stringify({ ...(unitEditor.id ? {} : { courseId: selected.course.id }), title, sequence }),
+      });
+      setUnitEditor(null); setNotice(unitEditor.id ? "Unit updated." : "Unit created."); await loadDashboard(true);
+    } catch (reason) { setError(errorMessage(reason, "The unit could not be saved.")); }
+    finally { setBusyAction(""); }
+  }
+
+  async function saveChapter() {
+    if (!selected || !chapterEditor) return;
+    const title = chapterEditor.title.trim();
+    const sequence = Number(chapterEditor.sequence);
+    if (title.length < 2 || !Number.isInteger(sequence) || sequence < 1) { setError("Chapter title and sequence are required."); return; }
+    setBusyAction(`save-chapter:${chapterEditor.id || "new"}`);
+    try {
+      await request(chapterEditor.id ? `/course-chapters/${encodeURIComponent(chapterEditor.id)}` : "/course-chapters", {
+        method: chapterEditor.id ? "PATCH" : "POST",
+        body: JSON.stringify({ ...(chapterEditor.id ? {} : { unitId: chapterEditor.unitId }), title, sequence }),
+      });
+      setChapterEditor(null); setNotice(chapterEditor.id ? "Chapter updated." : "Chapter created."); await loadDashboard(true);
+    } catch (reason) { setError(errorMessage(reason, "The chapter could not be saved.")); }
+    finally { setBusyAction(""); }
+  }
+
+  async function archiveHierarchyItem(kind: "unit" | "chapter", id: string) {
+    setBusyAction(`archive-${kind}:${id}`);
+    try {
+      await request(`/course-${kind}s/${encodeURIComponent(id)}/archive`, { method: "POST" });
+      setNotice(`${kind === "unit" ? "Unit" : "Chapter"} archived.`); await loadDashboard(true);
+    } catch (reason) { setError(errorMessage(reason, `The ${kind} could not be archived.`)); }
+    finally { setBusyAction(""); }
   }
 
   async function publishModule(module: CourseModule) {
@@ -1696,7 +1799,8 @@ export default function TeacherPortalPage() {
                {!loading && !selected && <div className="state"><div className="state-icon">≡</div><div><strong>No course selected</strong><p>Assigned course content will appear here after you select a course.</p></div></div>}
                {!loading && selected?.structureError && <div className="state"><div className="state-icon error-icon">!</div><div><strong>Course content is unavailable</strong><p>{selected.structureError}</p><button className="text-button" type="button" onClick={() => void loadDashboard(true)} disabled={refreshing}>Retry</button></div></div>}
                {moduleEditor && selected && <form className="content-editor" onSubmit={(event) => { event.preventDefault(); void saveModule(); }}>
-                 <div className="editor-heading"><div><p className="eyebrow">{moduleEditor.id ? "Edit module" : "New module"}</p><h3>{moduleEditor.id ? "Update module details" : "Create a draft module"}</h3></div><button className="icon-button" type="button" onClick={() => setModuleEditor(null)} aria-label="Close module editor">×</button></div>
+                  <div className="editor-heading"><div><p className="eyebrow">{moduleEditor.id ? "Edit module" : "New module"}</p><h3>{moduleEditor.id ? "Update module details" : "Create a draft module"}</h3></div><button className="icon-button" type="button" onClick={() => setModuleEditor(null)} aria-label="Close module editor">×</button></div>
+                   {selected.units.length > 0 && <label>Chapter <select value={moduleEditor.chapterId || ""} onChange={(event) => setModuleEditor((current) => current && { ...current, chapterId: event.target.value || undefined })}><option value="">Unassigned chapter</option>{selected.units.flatMap((unit) => unit.chapters).map((chapter) => <option value={chapter.id} key={chapter.id}>{chapter.title}</option>)}</select></label>}
                   <div className="form-grid"><label>Title<input {...fieldProps("teacher-module-title")} value={moduleEditor.title} onChange={(event) => { clearFieldError("teacher-module-title"); setModuleEditor((current) => current && { ...current, title: event.target.value }); }} placeholder="e.g. Digital foundations" maxLength={180} required /></label><label>Sequence<input {...fieldProps("teacher-module-sequence")} type="number" value={moduleEditor.sequence} onChange={(event) => { clearFieldError("teacher-module-sequence"); setModuleEditor((current) => current && { ...current, sequence: event.target.value }); }} min="1" step="1" required /></label><label className="full-field">Description <span className="optional-label">(optional)</span><textarea value={moduleEditor.description} onChange={(event) => setModuleEditor((current) => current && { ...current, description: event.target.value })} placeholder="Describe what learners will cover." maxLength={2000} rows={3} /></label></div>
                   <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setModuleEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-module:${moduleEditor.id || "new"}`}>{busyAction === `save-module:${moduleEditor.id || "new"}` ? "Saving…" : "Save Module"}</button></div>
                </form>}
@@ -1710,6 +1814,27 @@ export default function TeacherPortalPage() {
                   <div className="form-grid"><label>Title<input {...fieldProps("teacher-resource-title")} value={resourceEditor.title} onChange={(event) => { clearFieldError("teacher-resource-title"); setResourceEditor((current) => current && { ...current, title: event.target.value }); }} placeholder="e.g. Download the practice guide" maxLength={180} required /></label><label>Resource type{resourceEditor.id ? <span className="readonly-field">{statusLabel(resourceEditor.resourceType)}</span> : <select value={resourceEditor.resourceType} onChange={(event) => setResourceEditor((current) => current && { ...current, resourceType: event.target.value, url: ["VIDEO", "LINK", "INTERACTIVE"].includes(event.target.value) ? current.url : "" })}>{resourceTypes.map((type) => <option value={type} key={type}>{statusLabel(type)}</option>)}</select>}</label><label className="full-field">URL {resourceEditor.resourceType === "VIDEO" ? <span className="optional-label">(or upload an MP4 below)</span> : ["LINK", "INTERACTIVE"].includes(resourceEditor.resourceType) ? <span className="optional-label">(required)</span> : <span className="optional-label">(optional; SCORM may use the uploaded package)</span>}<input {...fieldProps("teacher-resource-url")} type="url" value={resourceEditor.url} onChange={(event) => { clearFieldError("teacher-resource-url"); setResourceEditor((current) => current && { ...current, url: event.target.value }); }} placeholder="https://…" maxLength={2048} required={["LINK", "INTERACTIVE"].includes(resourceEditor.resourceType)} /></label><label>Duration <span className="optional-label">(minutes)</span><input {...fieldProps("teacher-resource-duration")} type="number" value={resourceEditor.duration} onChange={(event) => { clearFieldError("teacher-resource-duration"); setResourceEditor((current) => current && { ...current, duration: event.target.value }); }} min="0" max="100000" step="1" placeholder="Optional" /></label><label>Sequence<input {...fieldProps("teacher-resource-sequence")} type="number" value={resourceEditor.sequence} onChange={(event) => { clearFieldError("teacher-resource-sequence"); setResourceEditor((current) => current && { ...current, sequence: event.target.value }); }} min="1" step="1" required /></label><label className="full-field">Managed file <span className="optional-label">(optional; video, PDF, document, presentation, or SCORM)</span><input {...fieldProps("teacher-resource-file")} type="file" accept={resourceEditor.resourceType === "VIDEO" ? ".mp4,video/mp4" : resourceEditor.resourceType === "SCORM" ? ".zip,.scorm" : resourceEditor.resourceType === "PDF" ? ".pdf" : resourceEditor.resourceType === "DOCUMENT" ? ".doc,.docx,.txt" : resourceEditor.resourceType === "PRESENTATION" ? ".ppt,.pptx" : undefined} onChange={(event) => { clearFieldError("teacher-resource-file"); setResourceEditor((current) => current && { ...current, file: event.target.files?.[0] }); }} /></label></div>
                   <div className="editor-actions"><button className="secondary-button" type="button" onClick={() => setResourceEditor(null)}>Cancel</button><button className="primary-button" type="submit" disabled={busyAction === `save-resource:${resourceEditor.id || "new"}`}>{busyAction === `save-resource:${resourceEditor.id || "new"}` ? "Saving…" : "Save Resource"}</button></div>
                </form>}
+               {!loading && selected && !selected.structureError && <div className="hierarchy-panel">
+                 <div className="nested-toolbar"><strong>Units &amp; chapters</strong><button className="text-button strong" type="button" onClick={() => openUnitEditor()}>+ Add unit</button></div>
+                 {unitEditor && <form className="inline-editor" onSubmit={(event) => { event.preventDefault(); void saveUnit(); }}>
+                   <input aria-label="Unit title" value={unitEditor.title} onChange={(event) => setUnitEditor((current) => current && { ...current, title: event.target.value })} placeholder="Unit title" required />
+                   <input aria-label="Unit sequence" type="number" min="1" value={unitEditor.sequence} onChange={(event) => setUnitEditor((current) => current && { ...current, sequence: event.target.value })} required />
+                   <button className="primary-button small-button" type="submit">Save unit</button><button className="text-button" type="button" onClick={() => setUnitEditor(null)}>Cancel</button>
+                 </form>}
+                 {selected.units.length === 0 && <div className="nested-state">No units yet. Existing modules remain available below while you organize the course.</div>}
+                 {selected.units.map((unit) => <div className="unit-card" key={unit.id}>
+                   <div className="nested-toolbar"><span><strong>{unit.title}</strong> <StatusPill status={unit.status} /></span><span className="content-actions"><button className="text-button" type="button" onClick={() => openUnitEditor(unit)}>Edit</button><button className="text-button strong" type="button" onClick={() => openChapterEditor(unit)}>+ Chapter</button>{unit.status !== "ARCHIVED" && <button className="text-button danger-text" type="button" onClick={() => void archiveHierarchyItem("unit", unit.id)}>Archive</button>}</span></div>
+                   {unit.chapters.map((chapter) => <div className="chapter-card" key={chapter.id}>
+                     <div className="nested-toolbar"><span><strong>{chapter.title}</strong> <StatusPill status={chapter.status} /> <small>{chapter.modules.length} module{chapter.modules.length === 1 ? "" : "s"}</small></span><span className="content-actions"><button className="text-button" type="button" onClick={() => openChapterEditor(unit, chapter)}>Edit</button>{chapter.status !== "ARCHIVED" && <button className="text-button danger-text" type="button" onClick={() => void archiveHierarchyItem("chapter", chapter.id)}>Archive</button>}</span></div>
+                     {chapter.modules.length > 0 && <div className="chapter-module-list">{chapter.modules.map(({ module }) => <button className="text-button" type="button" key={module.id} onClick={() => openModuleEditor(module)}>Edit module: {module.title}</button>)}</div>}
+                   </div>)}
+                   {chapterEditor?.unitId === unit.id && <form className="inline-editor" onSubmit={(event) => { event.preventDefault(); void saveChapter(); }}>
+                     <input aria-label="Chapter title" value={chapterEditor.title} onChange={(event) => setChapterEditor((current) => current && { ...current, title: event.target.value })} placeholder="Chapter title" required />
+                     <input aria-label="Chapter sequence" type="number" min="1" value={chapterEditor.sequence} onChange={(event) => setChapterEditor((current) => current && { ...current, sequence: event.target.value })} required />
+                     <button className="primary-button small-button" type="submit">Save chapter</button><button className="text-button" type="button" onClick={() => setChapterEditor(null)}>Cancel</button>
+                   </form>}
+                 </div>)}
+               </div>}
                {!loading && selected && !selected.structureError && selected.modules.length === 0 && !moduleEditor && <div className="state compact"><div className="state-icon">+</div><div><strong>No modules available</strong><p>Create the first module to start building this assigned course.</p><button className="text-button" type="button" onClick={() => openModuleEditor()}>Create a module →</button></div></div>}
                {!loading && selected && !selected.structureError && selected.modules.length > 0 && <div className="module-list">
                  {selected.modules.map(({ module, lessons }) => (
