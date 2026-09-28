@@ -565,6 +565,9 @@ export default function TeacherPortalPage() {
   const [assessmentDetails, setAssessmentDetails] = useState<Record<string, AssessmentAttemptDetail>>({});
   const [assessmentQuestions, setAssessmentQuestions] = useState<Record<string, AssessmentQuestion[]>>({});
   const [assessmentQuestionLoading, setAssessmentQuestionLoading] = useState("");
+  const [assessmentQuestionBank, setAssessmentQuestionBank] = useState<Record<string, BankQuestion[]>>({});
+  const [questionBankAssessmentId, setQuestionBankAssessmentId] = useState("");
+  const [questionBankLoading, setQuestionBankLoading] = useState("");
   const [attemptGradeDrafts, setAttemptGradeDrafts] = useState<Record<string, AttemptGradeDraft>>({});
   const [assessmentDetailLoading, setAssessmentDetailLoading] = useState("");
   const [error, setErrorState] = useState("");
@@ -1422,6 +1425,24 @@ export default function TeacherPortalPage() {
     }
   }
 
+  async function setAssessmentResults(assessment: Assessment, published: boolean) {
+    const action = published ? "publish" : "unpublish";
+    setBusyAction(`${action}-assessment-results:${assessment.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assessments/${encodeURIComponent(assessment.id)}/results/${action}`, { method: "POST" });
+      setNotice(published
+        ? `Results for ${assessment.title} are now visible to learners.`
+        : `Results for ${assessment.title} are hidden from learners.`);
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "Assessment result visibility could not be changed."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
   async function archiveAssessment(assessment: Assessment) {
     setBusyAction(`archive-assessment:${assessment.id}`);
     setError("");
@@ -1473,18 +1494,58 @@ export default function TeacherPortalPage() {
     }
   }
 
+  async function loadAssessmentQuestionBank(assessment: Assessment) {
+    setQuestionBankAssessmentId(assessment.id);
+    if (assessmentQuestionBank[assessment.id]) return;
+    setQuestionBankLoading(assessment.id);
+    setError("");
+    try {
+      const bank = await list<BankQuestion>(`/assessments/${encodeURIComponent(assessment.id)}/question-bank`);
+      setAssessmentQuestionBank((current) => ({ ...current, [assessment.id]: bank }));
+    } catch (reason) {
+      setError(errorMessage(reason, "The institution question bank could not be loaded."));
+    } finally {
+      setQuestionBankLoading("");
+    }
+  }
+
+  async function importBankQuestion(assessment: Assessment, question: BankQuestion) {
+    setBusyAction(`import-bank-question:${question.id}`);
+    setError("");
+    setNotice("");
+    try {
+      await request(`/assessments/${encodeURIComponent(assessment.id)}/questions/from-bank`, {
+        method: "POST",
+        body: JSON.stringify({ bankQuestionId: question.id }),
+      });
+      setAssessmentQuestions((current) => {
+        const next = { ...current };
+        delete next[assessment.id];
+        return next;
+      });
+      setQuestionBankAssessmentId("");
+      setNotice("Question copied into the assessment.");
+      await loadDashboard(true);
+    } catch (reason) {
+      setError(errorMessage(reason, "The bank question could not be imported."));
+    } finally {
+      setBusyAction("");
+    }
+  }
+
   function updateQuestionType(questionType: string) {
     setQuestionEditor((current) => current ? {
       ...current,
       questionType,
       options: defaultQuestionOptions(questionType),
+      matchingPairsText: questionType === "MATCHING" ? current.matchingPairsText : "",
     } : current);
   }
 
   function toggleOptionCorrect(index: number) {
     setQuestionEditor((current) => {
       if (!current) return current;
-      const single = current.questionType === "SINGLE_CHOICE" || current.questionType === "TRUE_FALSE" || current.questionType === "SHORT_TEXT" || current.questionType === "NUMERIC";
+      const single = current.questionType === "SINGLE_CHOICE" || current.questionType === "TRUE_FALSE" || current.questionType === "NUMERIC";
       return {
         ...current,
         options: current.options.map((option, optionIndex) => ({
@@ -1520,7 +1581,19 @@ export default function TeacherPortalPage() {
     if (!questionEditor) return;
     const prompt = questionEditor.prompt.trim();
     const marks = Number(questionEditor.marks);
+    const negativeMarks = questionEditor.negativeMarks.trim() ? Number(questionEditor.negativeMarks) : 0;
     const sequence = Number(questionEditor.sequence);
+    const matchingPairs = questionEditor.matchingPairsText
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const separator = line.indexOf("|");
+        return separator < 0 ? { prompt: line, answer: "" } : {
+          prompt: line.slice(0, separator).trim(),
+          answer: line.slice(separator + 1).trim(),
+        };
+      });
     const options = questionEditor.options.map((option) => ({
       value: option.value.trim(),
       label: option.label.trim(),
@@ -1534,8 +1607,34 @@ export default function TeacherPortalPage() {
       reportFieldError("teacher-question-marks", "Enter question marks between 0.01 and 100,000.");
       return;
     }
+    if (!Number.isFinite(negativeMarks) || negativeMarks < 0 || negativeMarks > marks) {
+      reportFieldError("teacher-question-negative-marks", "Negative marks must be between 0 and the question marks.");
+      return;
+    }
     if (!Number.isInteger(sequence) || sequence < 1) {
       reportFieldError("teacher-question-sequence", "Question sequence must be a positive whole number.");
+      return;
+    }
+    if (questionEditor.questionType === "MATCHING") {
+      if (matchingPairs.length < 2 || matchingPairs.some((pair) => !pair.prompt || !pair.answer)) {
+        reportFieldError("teacher-question-matching-pairs", "Add at least two complete matching pairs using “prompt | answer”.");
+        return;
+      }
+      if (new Set(matchingPairs.map((pair) => pair.prompt.toLowerCase())).size !== matchingPairs.length ||
+          new Set(matchingPairs.map((pair) => pair.answer.toLowerCase())).size !== matchingPairs.length) {
+        reportFieldError("teacher-question-matching-pairs", "Matching prompts and answers must each be unique.");
+        return;
+      }
+    }
+    const choiceType = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"].includes(questionEditor.questionType);
+    const answerType = ["SHORT_TEXT", "NUMERIC", "FILL_IN_BLANK"].includes(questionEditor.questionType);
+    if (questionEditor.questionType === "LONG_ANSWER" && options.length) {
+      reportFieldError("teacher-question-prompt", "Long-answer questions do not use answer options.");
+      return;
+    }
+    if (questionEditor.questionType !== "MATCHING" && questionEditor.questionType !== "LONG_ANSWER" &&
+        (!options.length || (choiceType && options.length < 2))) {
+      reportFieldError("teacher-question-option-0-value", "Add the required answer options.");
       return;
     }
     if (options.some((option) => !option.value || !option.label)) {
@@ -1550,11 +1649,39 @@ export default function TeacherPortalPage() {
       reportFieldError("teacher-question-option-0-value", "Answer option values must be unique.");
       return;
     }
+    const correctCount = options.filter((option) => option.isCorrect).length;
+    if ((["SINGLE_CHOICE", "TRUE_FALSE", "NUMERIC"].includes(questionEditor.questionType) && correctCount !== 1) ||
+        (questionEditor.questionType === "MULTIPLE_CHOICE" && correctCount < 1) ||
+        (answerType && correctCount < 1)) {
+      reportFieldError("teacher-question-option-0-value", "Mark the correct option or accepted answer.");
+      return;
+    }
+    if (questionEditor.questionType === "TRUE_FALSE" &&
+        (new Set(options.map((option) => option.value.toLowerCase())).size !== 2 ||
+         !options.some((option) => option.value.toLowerCase() === "true") ||
+         !options.some((option) => option.value.toLowerCase() === "false"))) {
+      reportFieldError("teacher-question-option-0-value", "True/false questions need options with the values true and false.");
+      return;
+    }
     setBusyAction(`save-question:${questionEditor.id || "new"}`);
     setError("");
     setNotice("");
     try {
-      const body = { prompt, marks, sequence, ...(questionEditor.id ? { options } : { questionType: questionEditor.questionType, options }) };
+      const body = {
+        prompt,
+        marks,
+        sequence,
+        negativeMarks,
+        subject: questionEditor.subject.trim() || undefined,
+        topic: questionEditor.topic.trim() || undefined,
+        difficulty: questionEditor.difficulty || undefined,
+        options,
+        matchingPairs,
+        ...(!questionEditor.id ? {
+          questionType: questionEditor.questionType,
+          saveToBank: questionEditor.saveToBank,
+        } : {}),
+      };
       if (questionEditor.id) {
         await request(`/assessment-questions/${encodeURIComponent(questionEditor.id)}`, { method: "PATCH", body: JSON.stringify(body) });
       } else {

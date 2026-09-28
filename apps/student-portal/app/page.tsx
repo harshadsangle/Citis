@@ -115,18 +115,22 @@ type Assessment = {
 type AssessmentQuestion = {
   id: string;
   prompt: string;
-  question_type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_TEXT" | "NUMERIC";
+  question_type: "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_TEXT" | "NUMERIC" | "FILL_IN_BLANK" | "MATCHING" | "LONG_ANSWER";
   marks: number;
   options: Array<{ id: string; value: string; label: string }>;
+  matching_items?: Array<{ id: string; prompt: string }>;
+  matching_options?: string[];
 };
+type AssessmentAnswerValue = string | string[] | Record<string, string>;
 type AssessmentAttempt = {
   id: string;
-  assessment: { id: string; title: string; assessment_type: string; duration_minutes?: number | null };
+  assessment: { id: string; title: string; assessment_type: string; duration_minutes?: number | null; results_published?: boolean };
   questions: AssessmentQuestion[];
   status: "IN_PROGRESS" | "SUBMITTED" | "EXPIRED";
   expires_at?: string | null;
   started_at?: string;
-  draft_answers?: Array<{ question_id: string; answer_json: { value?: string | string[] } }>;
+  results_published?: boolean;
+  draft_answers?: Array<{ question_id: string; answer_json: { value?: AssessmentAnswerValue } }>;
   score?: number | null;
   max_score?: number | null;
   passed?: boolean | null;
@@ -306,15 +310,24 @@ function ProgressBar({ percentage }: { percentage: number }) {
 }
 
 function answerHasValue(value?: string | string[]) {
-  return Array.isArray(value) ? value.length > 0 : Boolean(value?.trim());
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "string") return Boolean(value.trim());
+  if (value && typeof value === "object") return Object.values(value).some((item) => Boolean(item?.trim()));
+  return false;
 }
 
 function assessmentTypeLabel(value: string) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function answerDisplay(question: AssessmentQuestion, value?: string | string[]) {
+function answerDisplay(question: AssessmentQuestion, value?: AssessmentAnswerValue) {
   if (!answerHasValue(value)) return "No response";
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    return Object.entries(value).map(([id, answer]) => {
+      const item = question.matching_items?.find((entry) => entry.id === id);
+      return `${item?.prompt || id}: ${answer}`;
+    }).join(", ");
+  }
   const values = Array.isArray(value) ? value : [value];
   return values.map((item) => question.options.find((option) => option.value === item)?.label || item).join(", ");
 }
@@ -1433,7 +1446,7 @@ export default function StudentPortalPage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [activeAttempt, setActiveAttempt] = useState<AssessmentAttempt | null>(null);
   const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [answers, setAnswers] = useState<Record<string, AssessmentAnswerValue>>({});
   const [assessmentNotice, setAssessmentNotice] = useState("");
   const [assessmentBusy, setAssessmentBusy] = useState("");
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
@@ -1591,7 +1604,7 @@ export default function StudentPortalPage() {
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't start this assessment.");
       setActiveAttempt(body.data);
       setActiveQuestionIndex(0);
-      setAnswers(Object.fromEntries((body.data.draft_answers || []).map((draft) => [draft.question_id, draft.answer_json.value ?? ""])));
+       setAnswers(Object.fromEntries((body.data.draft_answers || []).map((draft) => [draft.question_id, draft.answer_json.value ?? ""])));
       setRemainingSeconds(body.data.expires_at ? Math.max(0, Math.ceil((new Date(body.data.expires_at).getTime() - Date.now()) / 1000)) : null);
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "We couldn't start this assessment.");
@@ -1644,13 +1657,22 @@ export default function StudentPortalPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers: activeAttempt.questions.map((question) => ({ questionId: question.id, answer: { value: answers[question.id] ?? (question.question_type === "MULTIPLE_CHOICE" ? [] : "") } })) }),
       });
-    const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
+      const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't submit this assessment.");
-      setActiveAttempt(body.data);
+      setActiveAttempt((current) => current ? {
+        ...current,
+        ...body.data,
+        assessment: current.assessment,
+        questions: current.questions,
+      } : body.data!);
       await loadAssessmentHistory();
       await refreshProgress();
       await refreshCertificates();
-      setAssessmentNotice(body.data.grading_status === "PENDING" ? "Assessment submitted. It is waiting for instructor review." : "Assessment submitted. Your result was calculated by the server.");
+      setAssessmentNotice(body.data.grading_status === "PENDING"
+        ? "Assessment submitted. It is waiting for instructor review."
+        : body.data.results_published === true
+          ? "Assessment submitted. Your result was calculated by the server."
+          : "Assessment submitted. Results will appear after your instructor releases them.");
     } catch (reason: unknown) {
       setError(reason instanceof Error ? reason.message : "We couldn't submit this assessment.");
     } finally {
@@ -1663,6 +1685,16 @@ export default function StudentPortalPage() {
       if (question.question_type !== "MULTIPLE_CHOICE") return { ...current, [question.id]: value };
       const previous = Array.isArray(current[question.id]) ? current[question.id] as string[] : [];
       return { ...current, [question.id]: checked ? [...previous, value] : previous.filter((item) => item !== value) };
+    });
+  }
+
+  function setMatchingAnswer(questionId: string, itemId: string, value: string) {
+    setAnswers((current) => {
+      const existing = current[questionId];
+      const previous = existing && typeof existing === "object" && !Array.isArray(existing)
+        ? existing as Record<string, string>
+        : {};
+      return { ...current, [questionId]: { ...previous, [itemId]: value } };
     });
   }
 
