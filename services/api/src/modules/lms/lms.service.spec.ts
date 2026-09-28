@@ -836,6 +836,70 @@ test("publishing content writes an auditable status mutation", async () => {
   assert.equal(audits[0].tenantId, user.tenantId);
 });
 
+test("unpublishing assigned course content returns it to draft and records an audit event", async () => {
+  const teacher: AuthenticatedUser = {
+    ...user,
+    id: "teacher-1",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: ["lms.course_module.publish"],
+  };
+  const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  const { service, audits } = serviceWith(async (text, values) => {
+    if (text.startsWith("SELECT p.institution_id")) {
+      return { rows: [{ id: "module-1", institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    }
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("SELECT * FROM course_modules")) {
+      return { rows: [{ id: "module-1", tenant_id: teacher.tenantId, course_id: "course-1", status: "PUBLISHED" }] };
+    }
+    if (text.startsWith("UPDATE course_modules")) {
+      assert.equal(values[1], "DRAFT");
+      assert.equal(values[4], "PUBLISHED");
+      return { rows: [{ id: "module-1", tenant_id: teacher.tenantId, course_id: "course-1", status: "DRAFT" }] };
+    }
+    return { rows: [] };
+  });
+
+  const result = await service.changeStatus("module-1", "course_module", "DRAFT", teacherRequest);
+
+  assert.equal(result.status, "DRAFT");
+  assert.equal(audits.length, 1);
+  assert.equal(audits[0].action, "UNPUBLISH");
+});
+
+test("only published assignments can be unpublished", async () => {
+  const teacher: AuthenticatedUser = {
+    ...user,
+    id: "teacher-1",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    permissions: ["lms.assignment.publish"],
+  };
+  const teacherRequest = { context: { ...request.context, user: teacher } } as unknown as ContextRequest;
+  let updateAttempted = false;
+  const assignment = {
+    id: "assignment-1",
+    tenant_id: teacher.tenantId,
+    institution_id: "institution-1",
+    campus_id: null,
+    course_id: "course-1",
+    module_id: "module-1",
+    assessment_type: "ASSIGNMENT",
+    status: "DRAFT",
+    course_status: "PUBLISHED",
+    module_status: "PUBLISHED",
+  };
+  const { service, audits } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT a.*")) return { rows: [assignment] };
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("UPDATE lms_assessments")) updateAttempted = true;
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.changeAssignmentStatus("assignment-1", "DRAFT", teacherRequest), ConflictException);
+  assert.equal(updateAttempted, false);
+  assert.equal(audits.length, 0);
+});
+
 test("only an LMS administrator can publish a pending course", async () => {
   const teacher: AuthenticatedUser = {
     id: "teacher-1",
