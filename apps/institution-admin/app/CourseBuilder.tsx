@@ -266,6 +266,7 @@ export default function CourseBuilder({
   const [resourceDraft, setResourceDraft] = useState<BuilderResource | null>(null);
   const [assignmentDraft, setAssignmentDraft] = useState<BuilderAssignment | null>(null);
   const [assessmentDraft, setAssessmentDraft] = useState<BuilderAssessment | null>(null);
+  const [assessmentEditingId, setAssessmentEditingId] = useState("");
   const [questionDraft, setQuestionDraft] = useState<BuilderQuestion | null>(null);
   const [editingId, setEditingId] = useState("");
   const [error, setError] = useState("");
@@ -526,11 +527,13 @@ export default function CourseBuilder({
     if (!assessmentDraft?.title.trim() || !selectedModuleId) return;
     setModules((current) => current.map((module) => module.id !== selectedModuleId ? module : {
       ...module,
-      assessments: editingId
-        ? module.assessments.map((item) => item.id === editingId ? { ...assessmentDraft, id: editingId } : item)
+      assessments: assessmentEditingId
+        ? module.assessments.map((item) => item.id === assessmentEditingId ? { ...assessmentDraft, id: assessmentEditingId } : item)
         : [...module.assessments, { ...assessmentDraft, id: newId("assessment") }],
     }));
     setAssessmentDraft(null);
+    setAssessmentEditingId("");
+    setQuestionDraft(null);
     setEditingId("");
   }
 
@@ -577,7 +580,9 @@ export default function CourseBuilder({
   function beginAssessment(assessment?: BuilderAssessment, moduleId = selectedModuleId) {
     setStep(2);
     setSelectedModuleId(moduleId);
-    setEditingId(assessment?.id || "");
+    setAssessmentEditingId(assessment?.id || "");
+    setQuestionDraft(null);
+    setEditingId("");
     setAssessmentDraft(assessment ? { ...assessment, questions: [...assessment.questions] } : newAssessment());
   }
 
@@ -757,7 +762,7 @@ export default function CourseBuilder({
       <div className="builder-form-heading"><strong>{editingId ? "Edit module" : "Add module"}</strong><button type="button" className="builder-link" onClick={() => { setModuleDraft(null); setEditingId(""); }}>Cancel</button></div>
       <label>Module title *<input autoFocus required minLength={2} value={moduleDraft.title} onChange={(event) => setModuleDraft({ ...moduleDraft, title: event.target.value })} placeholder="e.g. Foundations" /></label>
       <label>Description<textarea rows={2} value={moduleDraft.description} onChange={(event) => setModuleDraft({ ...moduleDraft, description: event.target.value })} placeholder="What this module covers" /></label>
-      <button className="primary-button compact-button" type="submit">{editingId ? "Save module" : "Add module"}</button>
+      <button className="primary-button compact-button" type="submit">Save Module</button>
     </form>;
   }
 
@@ -782,7 +787,7 @@ export default function CourseBuilder({
        {resourceDraft.resourceType === "VIDEO" && <label>Video URL (optional)<input type="url" value={resourceDraft.url} onChange={(event) => setResourceDraft({ ...resourceDraft, url: event.target.value })} placeholder="https://…" /></label>}
        {["PDF", "DOCUMENT", "PRESENTATION", "SCORM", "VIDEO"].includes(resourceDraft.resourceType) && <label>{resourceDraft.resourceType === "SCORM" ? "SCORM package (.zip)" : resourceDraft.resourceType === "VIDEO" ? "Upload Video" : "Managed document"}<input type="file" accept={resourceDraft.resourceType === "SCORM" ? ".zip,application/zip" : resourceDraft.resourceType === "VIDEO" ? "video/mp4,video/webm,video/ogg,video/quicktime,video/x-m4v,.mp4,.webm,.ogg,.ogv,.mov,.m4v" : ".pdf,.doc,.docx,.odt,.ppt,.pptx,.odp"} onChange={onFile} />{resourceDraft.file && <span className="selected-file">{resourceDraft.file.name} · {(resourceDraft.file.size / 1024 / 1024).toFixed(1)} MB selected</span>}</label>}
       <p className="field-hint">Resources are stored securely and remain attached to this lesson.</p>
-      <button className="primary-button compact-button" type="submit">{editingId ? "Save resource" : "Add resource"}</button>
+      <button className="primary-button compact-button" type="submit">Save Resource</button>
     </form>;
   }
 
@@ -801,14 +806,14 @@ export default function CourseBuilder({
   function renderAssessmentForm() {
     if (!assessmentDraft) return null;
     return <div className="builder-inline-form">
-      <div className="builder-form-heading"><strong>{editingId ? "Edit assessment" : "Add assessment"}</strong><button type="button" className="builder-link" onClick={() => { setAssessmentDraft(null); setEditingId(""); }}>Done</button></div>
+      <div className="builder-form-heading"><strong>{assessmentEditingId ? "Edit assessment" : "Add assessment"}</strong><button type="button" className="builder-link" onClick={() => { setAssessmentDraft(null); setAssessmentEditingId(""); setQuestionDraft(null); setEditingId(""); }}>Cancel</button></div>
       <form onSubmit={saveAssessment}>
         <label>Assessment title *<input autoFocus required minLength={2} value={assessmentDraft.title} onChange={(event) => setAssessmentDraft({ ...assessmentDraft, title: event.target.value })} /></label>
         <label>Description<textarea rows={2} value={assessmentDraft.description} onChange={(event) => setAssessmentDraft({ ...assessmentDraft, description: event.target.value })} /></label>
         <div className="builder-two-col"><label>Type<select value={assessmentDraft.assessmentType} onChange={(event) => setAssessmentDraft({ ...assessmentDraft, assessmentType: event.target.value as AssessmentType })}>{assessmentTypes.map((type) => <option key={type} value={type}>{labelForType(type)}</option>)}</select></label><label>Attempts<input required min={1} type="number" value={assessmentDraft.attemptLimit} onChange={(event) => setAssessmentDraft({ ...assessmentDraft, attemptLimit: event.target.value })} /></label></div>
         <div className="builder-two-col"><label>Total marks *<input required min={0} step="0.01" type="number" value={assessmentDraft.totalMarks} onChange={(event) => setAssessmentDraft({ ...assessmentDraft, totalMarks: event.target.value })} /></label><label>Passing marks *<input required min={0} step="0.01" type="number" value={assessmentDraft.passingMarks} onChange={(event) => setAssessmentDraft({ ...assessmentDraft, passingMarks: event.target.value })} /></label></div>
         <label>Duration (minutes)<input min={1} type="number" value={assessmentDraft.durationMinutes} onChange={(event) => setAssessmentDraft({ ...assessmentDraft, durationMinutes: event.target.value })} /></label>
-        <button className="primary-button compact-button" type="submit">{editingId ? "Save assessment" : "Add assessment"}</button>
+        <button className="primary-button compact-button" type="submit">Save Assessment</button>
       </form>
       <div className="builder-subsection">
         <div className="builder-form-heading"><strong>Questions ({assessmentDraft.questions.length})</strong><button type="button" className="builder-link" onClick={() => { setEditingId(""); setQuestionDraft(newQuestion()); }}>+ Add question</button></div>
