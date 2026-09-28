@@ -24,6 +24,10 @@ function serviceWith(
   return new PaymentsService({ query, transaction } as never, razorpay as never, { record: async () => undefined } as never);
 }
 
+function webhookBody(event: string, entityType: "payment" | "refund", entity: Record<string, unknown>) {
+  return Buffer.from(JSON.stringify({ event, payload: { [entityType]: { entity } } }));
+}
+
 test("direct students can list only published paid courses in their tenant", async () => {
   let queryText = "";
   let queryValues: unknown[] = [];
@@ -130,6 +134,179 @@ test("invalid signatures cannot activate an enrollment", async () => {
   );
   assert.equal(fetchCalled, false);
 });
+
+test("a failed webhook handler can retry the same provider event successfully", async () => {
+  const event = { id: "event-row-1", processing_status: "RECEIVED", processed_at: null as string | null };
+  let eventExists = false;
+  let handlerAttempts = 0;
+  let insertSql = "";
+  const service = serviceWith(async (text, values) => {
+    if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) {
+      return { rows: [{ tenant_id: "tenant-1", id: "payment-1" }] };
+    }
+    if (text.startsWith("INSERT INTO lms_payment_events")) {
+      insertSql = text;
+      if (!eventExists) {
+        eventExists = true;
+        return { rows: [{ id: event.id }] };
+      }
+      if (
+        event.processing_status === "FAILED"
+        && text.includes("WHERE lms_payment_events.processing_status = 'FAILED'")
+      ) {
+        event.processing_status = "RECEIVED";
+        event.processed_at = null;
+        return { rows: [{ id: event.id }] };
+      }
+      return { rows: [] };
+    }
+    if (text.startsWith("UPDATE lms_payments")) {
+      handlerAttempts += 1;
+      if (handlerAttempts === 1) throw new Error("temporary payment handler failure");
+      return { rows: [] };
+    }
+    if (text.includes("UPDATE lms_payment_events SET processing_status = 'FAILED'")) {
+      event.processing_status = "FAILED";
+      event.processed_at = "failed";
+      return { rows: [] };
+    }
+    if (text.includes("UPDATE lms_payment_events SET processing_status = 'PROCESSED'")) {
+      event.processing_status = "PROCESSED";
+      event.processed_at = "processed";
+      return { rows: [] };
+    }
+    return { rows: [] };
+  }, async (work) => work({ query: async () => ({ rows: [] }) }), {
+    verifyWebhookSignature: () => true,
+  });
+  const body = webhookBody("payment.failed", "payment", {
+    order_id: "order-1",
+    error_code: "TEMPORARY_ERROR",
+    error_description: "Temporary handler failure.",
+  });
+
+  await assert.rejects(service.handleWebhook(body, "valid-signature", "provider-event-1"), /temporary payment handler failure/);
+  assert.equal(event.processing_status, "FAILED");
+
+  const retried = await service.handleWebhook(body, "valid-signature", "provider-event-1");
+  assert.deepEqual(retried, { received: true });
+  assert.equal(event.processing_status, "PROCESSED");
+  assert.equal(handlerAttempts, 2);
+  assert.match(insertSql, /WHERE lms_payment_events\.processing_status = 'FAILED'/);
+
+  const duplicate = await service.handleWebhook(body, "valid-signature", "provider-event-1");
+  assert.deepEqual(duplicate, { received: true, duplicate: true });
+  assert.equal(handlerAttempts, 2);
+});
+
+test("a late refund.failed event preserves a processed refund and processed events remain idempotent", async () => {
+  const refund: Record<string, any> = {
+    id: "refund-1",
+    tenant_id: "tenant-1",
+    payment_id: "payment-1",
+    initiated_by: "admin-1",
+    razorpay_refund_id: "provider-refund-1",
+    amount_minor: 500,
+    payment_amount: "1000",
+    course_id: "course-1",
+    student_id: "student-1",
+    status: "PROCESSED",
+  };
+  const events = new Map<string, { id: string; status: string }>();
+  let nextEventId = 1;
+  let processedUpdateAttempts = 0;
+  let failedUpdateSql = "";
+  const service = serviceWith(async (text, values) => {
+    if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_payment_events")) {
+      const providerEventId = String(values[2]);
+      if (events.has(providerEventId)) return { rows: [] };
+      const inserted = { id: `event-row-${nextEventId++}`, status: "RECEIVED" };
+      events.set(providerEventId, inserted);
+      return { rows: [{ id: inserted.id }] };
+    }
+    if (text.includes("UPDATE lms_payment_events SET processing_status = 'PROCESSED'")) {
+      const event = [...events.values()].find((entry) => entry.id === values[0]);
+      if (event) event.status = "PROCESSED";
+      return { rows: [] };
+    }
+    if (text.startsWith("UPDATE lms_refunds SET status = 'FAILED'")) {
+      failedUpdateSql = text;
+      if (!text.includes("AND status <> 'PROCESSED'") || refund.status !== "PROCESSED") {
+        refund.status = "FAILED";
+      }
+      return { rows: [] };
+    }
+    return { rows: [] };
+  }, async (work) => work({
+    query: async (text: string) => {
+      if (text.startsWith("SELECT r.*")) return { rows: [{ ...refund }] };
+      if (text.startsWith("UPDATE lms_refunds SET razorpay_refund_id")) {
+        processedUpdateAttempts += 1;
+        return { rows: [] };
+      }
+      throw new Error(`Unexpected transaction query: ${text}`);
+    },
+  }), {
+    verifyWebhookSignature: () => true,
+  });
+  const processedBody = webhookBody("refund.processed", "refund", {
+    id: "provider-refund-1",
+    amount: 500,
+    payment_id: "provider-payment-1",
+  });
+
+  await service.handleWebhook(processedBody, "valid-signature", "provider-event-processed-1");
+  await service.handleWebhook(processedBody, "valid-signature", "provider-event-processed-2");
+  assert.equal(refund.status, "PROCESSED");
+  assert.equal(processedUpdateAttempts, 2);
+
+  await service.handleWebhook(webhookBody("refund.failed", "refund", {
+    id: "provider-refund-1",
+    error_description: "Late failure notification.",
+  }), "valid-signature", "provider-event-failed");
+
+  assert.equal(refund.status, "PROCESSED");
+  assert.match(failedUpdateSql, /AND status <> 'PROCESSED'/);
+});
+
+for (const initialStatus of ["REFUNDED", "PARTIALLY_REFUNDED"] as const) {
+  test(`a late payment.failed event preserves ${initialStatus} payment state`, async () => {
+    let paymentStatus = initialStatus;
+    let failureUpdateSql = "";
+    const service = serviceWith(async (text) => {
+      if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) {
+        return { rows: [{ tenant_id: "tenant-1", id: "payment-1" }] };
+      }
+      if (text.startsWith("INSERT INTO lms_payment_events")) return { rows: [{ id: "event-row-1" }] };
+      if (text.startsWith("UPDATE lms_payments")) {
+        failureUpdateSql = text;
+        const protectedStates = text
+          .match(/CASE WHEN status IN \(([^)]+)\) THEN status ELSE 'FAILED' END/)
+          ?.[1]
+          .match(/'[^']+'/g)
+          ?.map((status) => status.slice(1, -1)) ?? [];
+        if (!protectedStates.includes(paymentStatus)) paymentStatus = "FAILED";
+        return { rows: [] };
+      }
+      return { rows: [] };
+    }, async (work) => work({ query: async () => ({ rows: [] }) }), {
+      verifyWebhookSignature: () => true,
+    });
+
+    await service.handleWebhook(webhookBody("payment.failed", "payment", {
+      order_id: "order-1",
+      error_code: "PAYMENT_FAILED",
+      error_description: "Late failure notification.",
+    }), "valid-signature", `provider-event-${initialStatus}`);
+
+    assert.equal(paymentStatus, initialStatus);
+    assert.match(
+      failureUpdateSql,
+      /CASE WHEN status IN \('CAPTURED', 'REFUNDED', 'PARTIALLY_REFUNDED'\) THEN status ELSE 'FAILED' END/,
+    );
+  });
+}
 
 test("concurrent refunds reserve the refundable amount under the payment lock", async () => {
   const admin: AuthenticatedUser = {

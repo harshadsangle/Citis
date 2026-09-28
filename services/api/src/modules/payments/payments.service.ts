@@ -331,7 +331,9 @@ export class PaymentsService {
       `INSERT INTO lms_payment_events
         (tenant_id, payment_id, provider_event_id, event_type, payload)
        VALUES ($1, $2, $3, $4, $5::jsonb)
-       ON CONFLICT (provider_event_id) DO NOTHING
+       ON CONFLICT (provider_event_id) DO UPDATE
+       SET processing_status = 'RECEIVED', processed_at = NULL
+       WHERE lms_payment_events.processing_status = 'FAILED'
        RETURNING id`,
       [owner.rows[0]?.tenant_id || null, owner.rows[0]?.id || null, providerEventId, eventType, rawBody.toString("utf8")],
     );
@@ -356,7 +358,7 @@ export class PaymentsService {
       } else if (eventType === "payment.failed" && paymentEntity?.order_id) {
         await this.db.query(
           `UPDATE lms_payments
-           SET status = CASE WHEN status = 'CAPTURED' THEN status ELSE 'FAILED' END,
+           SET status = CASE WHEN status IN ('CAPTURED', 'REFUNDED', 'PARTIALLY_REFUNDED') THEN status ELSE 'FAILED' END,
                failure_code = $2, failure_reason = $3, failed_at = now(), updated_at = now()
            WHERE razorpay_order_id = $1`,
           [paymentEntity.order_id, paymentEntity.error_code || null, paymentEntity.error_description || "Payment failed."],
@@ -365,7 +367,7 @@ export class PaymentsService {
         await this.markRefundProcessed(String(refundEntity.id), Number(refundEntity.amount), undefined, refundEntity.payment_id ? String(refundEntity.payment_id) : undefined);
       } else if (eventType === "refund.failed" && refundEntity?.id) {
         await this.db.query(
-          "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE razorpay_refund_id = $1",
+          "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE razorpay_refund_id = $1 AND status <> 'PROCESSED'",
           [refundEntity.id, refundEntity.error_description || "Refund failed."],
         );
       }
