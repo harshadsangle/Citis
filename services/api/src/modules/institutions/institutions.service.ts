@@ -71,10 +71,10 @@ export class InstitutionsService {
     if (!tenantId) throw new NotFoundException("A tenant scope is required.");
     const slug = input.slug?.trim() || input.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const result = await this.db.query(
-      `INSERT INTO institutions (tenant_id, name, slug, institution_type, email, phone, website, created_by, updated_by)
-       VALUES ($1, $2, $3, COALESCE($4, 'SCHOOL'), $5, $6, $7, $8, $8)
+      `INSERT INTO institutions (tenant_id, name, slug, institution_type, email, phone, website, status, created_by, updated_by)
+       VALUES ($1, $2, $3, COALESCE($4, 'SCHOOL'), $5, $6, $7, $8, $9, $9)
        RETURNING id, tenant_id, name, slug, institution_type, email, phone, website, status, created_at, updated_at`,
-      [tenantId, input.name.trim(), slug, input.institutionType?.trim() || null, input.email?.trim() || null, input.phone?.trim() || null, input.website?.trim() || null, user.id],
+      [tenantId, input.name.trim(), slug, input.institutionType?.trim() || null, input.email?.trim() || null, input.phone?.trim() || null, input.website?.trim() || null, input.status ?? "ACTIVE", user.id],
     );
     const institution = result.rows[0];
     await this.audit.record({

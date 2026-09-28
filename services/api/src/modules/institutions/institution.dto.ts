@@ -1,5 +1,7 @@
 import { IsEmail, IsIn, IsOptional, IsString, IsUrl, Length, Matches } from "class-validator";
 
+export type InstitutionStatus = "ACTIVE" | "SUSPENDED" | "ARCHIVED";
+
 export class CreateInstitutionDto {
   @IsString()
   @Length(2, 180)
@@ -30,6 +32,10 @@ export class CreateInstitutionDto {
   website?: string;
 
   @IsOptional()
+  @IsIn(["ACTIVE", "SUSPENDED", "ARCHIVED"])
+  status?: InstitutionStatus;
+
+  @IsOptional()
   @IsString()
   tenantId?: string;
 }
@@ -42,7 +48,7 @@ export class UpdateInstitutionDto {
 
   @IsOptional()
   @IsIn(["ACTIVE", "SUSPENDED", "ARCHIVED"])
-  status?: string;
+  status?: InstitutionStatus;
 
   @IsOptional()
   @IsEmail()

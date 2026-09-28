@@ -34,6 +34,8 @@ type ImportResult = {
   rows: ImportRow[];
 };
 
+type InstitutionStatus = "ACTIVE" | "SUSPENDED" | "ARCHIVED";
+
 type ApiEnvelope<T> = { success: true; data: T };
 
 async function request<T>(apiBase: string, path: string, init?: RequestInit): Promise<T> {
@@ -91,6 +93,7 @@ export default function InstitutionOnboarding({
 }) {
   const [name, setName] = useState("");
   const [institutionType, setInstitutionType] = useState("");
+  const [status, setStatus] = useState<InstitutionStatus>("ACTIVE");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [website, setWebsite] = useState("");
@@ -127,6 +130,7 @@ export default function InstitutionOnboarding({
         body: JSON.stringify({
           name: cleanName,
           institutionType: institutionType.trim() || undefined,
+          status,
           email: email.trim() || undefined,
           phone: phone.trim() || undefined,
           website: website.trim() || undefined,
@@ -215,6 +219,7 @@ export default function InstitutionOnboarding({
     setInstitution(null);
     setName("");
     setInstitutionType("");
+    setStatus("ACTIVE");
     setEmail("");
     setPhone("");
     setWebsite("");
@@ -280,6 +285,17 @@ export default function InstitutionOnboarding({
                 maxLength={60}
                 placeholder="College, university, or institute"
               />
+              <label htmlFor="institution-status">Status</label>
+              <select
+                id="institution-status"
+                value={status}
+                onChange={(event) => setStatus(event.target.value as InstitutionStatus)}
+              >
+                <option value="ACTIVE">Active</option>
+                <option value="SUSPENDED">Suspended</option>
+                <option value="ARCHIVED">Archived</option>
+              </select>
+              <p className="field-hint">Only active institutions can be selected for new course allocations.</p>
               <div className="form-grid-two">
                 <div>
                   <label htmlFor="institution-email">Contact email</label>
