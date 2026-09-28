@@ -88,13 +88,13 @@ function CourseCard({
             ))}
           </span>
         </span>
-        <span className="lms-card-action"><span>Enroll now</span><span className="lms-card-open"><ArrowRight className="size-4" /></span></span>
+        <span className="lms-card-action"><span>View course</span><span className="lms-card-open"><ArrowRight className="size-4" /></span></span>
       </summary>
       <div className="lms-discovery-card-detail">
         <div className="lms-detail-intro"><div><span className="lms-detail-pill"><FileText className="size-3.5" />Official exam objectives</span><span className="lms-detail-pill lms-detail-pill-orange"><Sparkles className="size-3.5" />Career-ready pathway</span></div><p>{course.description}</p></div>
         <div className="lms-detail-facts">{course.details.map((detail, detailIndex) => <div key={detail.label}><span>{detailIndex === 0 ? <Clock3 className="size-4" /> : detailIndex === 1 ? <Layers3 className="size-4" /> : <Award className="size-4" />}</span><small>{detail.label}</small><strong>{detail.value}</strong></div>)}</div>
         <div className="lms-detail-columns"><div><span className="lms-detail-heading">Target candidate</span><p>{course.audience}</p><span className="lms-detail-check"><Check className="size-3.5" />Access through your institution or programme team.</span></div><div><span className="lms-detail-heading">Objective areas</span><div className="lms-objective-grid">{course.objectiveAreas.map((area) => <div key={area.number} className="lms-objective"><strong>{area.number}</strong><span><b>{area.title}</b><small>{area.description}</small></span></div>)}</div></div></div>
-        <Link href={purchaseHref} className="lms-detail-cta">Continue to direct-student checkout <ArrowRight className="size-4" /></Link>
+        <Link href={purchaseHref} className="lms-detail-cta" aria-label={`Enroll now in ${course.title}`}>Enroll Now <ArrowRight className="size-4" /></Link>
       </div>
     </details>
   );

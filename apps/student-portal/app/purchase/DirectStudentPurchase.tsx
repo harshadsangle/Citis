@@ -479,6 +479,7 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
               clearPurchaseIdempotencyKey(requestedCourse.id);
               setUnlocked(true);
               setCheckoutError("");
+              window.location.replace(`/?courseId=${encodeURIComponent(requestedCourse.id)}`);
             } catch (reason) {
               setCheckoutError(reason instanceof Error ? reason.message : "Payment verification failed. Course access remains locked.");
             } finally {
@@ -564,15 +565,15 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
                   <div className="purchase-success" role="status">
                     <span className="purchase-success-icon" aria-hidden="true">✓</span>
                     <h2>Course unlocked</h2>
-                    <p>Payment was verified and your course is available in your learning library.</p>
-                    <Link className="purchase-primary" href="/">Open my learning library</Link>
+                    <p>Payment was verified. Opening your course in the learner portal.</p>
+                    <Link className="purchase-primary" href={`/?courseId=${encodeURIComponent(requestedCourse.id)}`}>Open my course</Link>
                   </div>
                 ) : requestedCourse?.isEnrolled ? (
                   <div className="purchase-success" role="status">
                     <span className="purchase-success-icon" aria-hidden="true">✓</span>
                     <h2>You already have access</h2>
                     <p>This course is already active in your learning library.</p>
-                    <Link className="purchase-primary" href="/">Open my learning library</Link>
+                    <Link className="purchase-primary" href={`/?courseId=${encodeURIComponent(requestedCourse.id)}`}>Open my course</Link>
                   </div>
                 ) : requestedCourse ? (
                   <>
