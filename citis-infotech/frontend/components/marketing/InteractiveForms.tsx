@@ -408,7 +408,7 @@ export function ForgotPasswordForm() {
     }
   };
   if (done) return <FormSuccess title="Check your inbox" copy="If an account exists for that email, we sent a secure password reset link." />;
-  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "forgot-email-error" : undefined} {...register("email")} />{message(errors.email?.message, "forgot-email-error")}</div>{serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}<Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
+  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "forgot-email-error" : undefined} {...register("email")} />{message(errors.email?.message, "forgot-email-error")}</div>{serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}<Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
 }
 
 export function ResetPasswordForm() {

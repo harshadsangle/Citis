@@ -1477,8 +1477,9 @@ export default function TeacherPortalPage() {
     const draft = attemptGradeDrafts[attempt.id];
     if (!detail || !draft) return;
     const grades = detail.questions.map((question) => ({ questionId: question.id, awardedMarks: Number(draft.grades[question.id]) }));
-    if (grades.some((grade) => !Number.isFinite(grade.awardedMarks) || grade.awardedMarks < 0 || grade.awardedMarks > Number(detail.questions.find((question) => question.id === grade.questionId)?.marks))) {
-      setError("Each question grade must be within its configured marks.");
+    const invalidGrade = grades.find((grade) => !Number.isFinite(grade.awardedMarks) || grade.awardedMarks < 0 || grade.awardedMarks > Number(detail.questions.find((question) => question.id === grade.questionId)?.marks));
+    if (invalidGrade) {
+      reportFieldError(`teacher-attempt-grade-${attempt.id}-${invalidGrade.questionId}`, "Each question grade must be within its configured marks.");
       return;
     }
     setBusyAction(`grade-attempt:${attempt.id}`);
@@ -1502,7 +1503,7 @@ export default function TeacherPortalPage() {
     const draft = gradeDrafts[submission.id];
     const grade = Number(draft?.grade);
     if (!draft?.grade || !Number.isFinite(grade) || grade < 0 || grade > Number(assignment.max_marks)) {
-      setError(`Enter a grade from 0 to ${assignment.max_marks} for ${learnerName(submission)}.`);
+      reportFieldError(`teacher-submission-grade-${submission.id}`, `Enter a grade from 0 to ${assignment.max_marks} for ${learnerName(submission)}.`);
       return;
     }
     setBusyAction(`grade:${submission.id}`);

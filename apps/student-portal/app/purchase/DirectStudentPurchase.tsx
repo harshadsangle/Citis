@@ -616,8 +616,8 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
                   </div>
                 )}
 
-                {authError && <p className="purchase-error" role="alert">{authError}</p>}
-                {authNotice && <p className="purchase-notice" role="status">{authNotice}</p>}
+                {authError && <p id="direct-purchase-auth-error" className="purchase-error" role="alert" aria-live="assertive">{authError}</p>}
+                {authNotice && <p className="purchase-notice" role="status" aria-live="polite">{authNotice}</p>}
 
                 {showOtpForm ? (
                   <form className="purchase-form" onSubmit={verifyCode}>
