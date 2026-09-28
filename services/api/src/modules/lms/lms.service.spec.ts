@@ -126,6 +126,8 @@ test("course builder resolves its hidden programme relationship and creates a va
           insertedProgrammeId = values[3];
           return { rows: [{ id: "course-resolved", tenant_id: user.tenantId, institution_id: "institution-1", campus_id: null }] };
         }
+        if (text.includes("INSERT INTO lms_course_units")) return { rows: [{ id: "unit-resolved" }] };
+        if (text.includes("INSERT INTO lms_course_chapters")) return { rows: [{ id: "chapter-resolved" }] };
         if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-resolved" }] };
         if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "lesson-resolved" }] };
         return { rows: [] };
@@ -174,6 +176,8 @@ test("course builder resolves the programme matching its provider-scoped catalog
           insertedProgrammeId = values[3];
           return { rows: [{ id: "course-comptia", tenant_id: user.tenantId, institution_id: "institution-1", status: values[12] }] };
         }
+        if (text.includes("INSERT INTO lms_course_units")) return { rows: [{ id: "unit-comptia" }] };
+        if (text.includes("INSERT INTO lms_course_chapters")) return { rows: [{ id: "chapter-comptia" }] };
         if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "module-comptia" }] };
         if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "lesson-comptia" }] };
         return { rows: [] };
@@ -220,6 +224,8 @@ test("course builder sends the course to the instructor-pending listing", async 
           };
           return { rows: [createdCourse] };
         }
+        if (text.includes("INSERT INTO lms_course_units")) return { rows: [{ id: "unit-pending-course" }] };
+        if (text.includes("INSERT INTO lms_course_chapters")) return { rows: [{ id: "chapter-pending-course" }] };
         if (text.includes("INSERT INTO course_modules")) return { rows: [{ id: "pending-course-module" }] };
         if (text.includes("INSERT INTO lessons")) return { rows: [{ id: "pending-course-lesson" }] };
         return { rows: [] };
@@ -277,7 +283,15 @@ function builderDb(
     },
     transaction: async <T>(work: (client: { query: typeof clientQuery }) => Promise<T>) => {
       try {
-        return await work({ query: clientQuery });
+        return await work({
+          query: async (text, values) => {
+            const result = await clientQuery(text, values);
+            if (result.rows.length > 0) return result;
+            if (text.includes("INSERT INTO lms_course_units")) return { rows: [{ id: "unit-builder-test" }] };
+            if (text.includes("INSERT INTO lms_course_chapters")) return { rows: [{ id: "chapter-builder-test" }] };
+            return result;
+          },
+        });
       } catch (error) {
         rolledBack = true;
         throw error;
@@ -1009,6 +1023,8 @@ test("only assigned teachers can create nested course content", async () => {
     if (text.startsWith("SELECT id FROM courses")) return { rows: [{ id: "course-1" }] };
     if (text.startsWith("SELECT institution_id, campus_id FROM courses")) return { rows: [{ institution_id: "institution-1", campus_id: null }] };
     if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.includes("INSERT INTO lms_course_units")) return { rows: [{ id: "unit-1" }] };
+    if (text.includes("INSERT INTO lms_course_chapters")) return { rows: [{ id: "chapter-1" }] };
     if (text.startsWith("INSERT INTO course_modules")) {
       inserted = true;
       return { rows: [{ id: "module-1", tenant_id: teacher.tenantId, course_id: "course-1", title: "Module one", status: "DRAFT" }] };
