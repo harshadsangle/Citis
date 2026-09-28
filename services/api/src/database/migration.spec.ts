@@ -35,6 +35,7 @@ const progressIntegrityMigration = readFileSync(resolve(process.cwd(), "../../pa
 const certificateLifecycleMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/025_lms_certificate_lifecycle.sql"), "utf8");
 const tenantParentIntegrityMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/026_lms_tenant_parent_integrity.sql"), "utf8");
 const unitsChaptersMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/034_lms_units_chapters.sql"), "utf8");
+const assessmentControlsMigration = readFileSync(resolve(process.cwd(), "../../packages/database/migrations/035_lms_question_bank_assessment_controls.sql"), "utf8");
 
 for (const table of ["tenants", "institutions", "campuses", "users", "roles", "permissions", "user_roles", "role_permissions", "modules", "tenant_modules", "audit_logs", "auth_sessions"]) {
   test(`migration defines ${table}`, () => {
@@ -211,6 +212,20 @@ test("assessment attempt stability migration snapshots content, enforces expiry,
   assert.match(attemptStabilityMigration, /CREATE TABLE IF NOT EXISTS lms_assessment_attempt_drafts/);
   assert.match(attemptStabilityMigration, /status IN \('IN_PROGRESS', 'SUBMITTED', 'EXPIRED'\)/);
   assert.match(attemptStabilityMigration, /INSERT INTO schema_migrations \(version\)/);
+});
+
+test("assessment controls migration adds reusable scoped questions, pools, scoring, and result publication", () => {
+  assert.match(assessmentControlsMigration, /CREATE TABLE IF NOT EXISTS lms_question_bank_questions/);
+  assert.match(assessmentControlsMigration, /subject text NOT NULL/);
+  assert.match(assessmentControlsMigration, /topic text NOT NULL/);
+  assert.match(assessmentControlsMigration, /difficulty text NOT NULL/);
+  assert.match(assessmentControlsMigration, /FILL_IN_BLANK.*MATCHING.*LONG_ANSWER/s);
+  assert.match(assessmentControlsMigration, /randomize_questions boolean/);
+  assert.match(assessmentControlsMigration, /questions_to_select integer/);
+  assert.match(assessmentControlsMigration, /negative_marks numeric/);
+  assert.match(assessmentControlsMigration, /results_published boolean/);
+  assert.match(assessmentControlsMigration, /FOREIGN KEY \(tenant_id, bank_question_id\)/);
+  assert.match(assessmentControlsMigration, /035_lms_question_bank_assessment_controls/);
 });
 
 test("instructor dashboard migration grants read-only course and roster access", () => {

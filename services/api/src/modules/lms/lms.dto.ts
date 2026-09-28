@@ -579,7 +579,16 @@ export class GradeAssignmentSubmissionDto {
 }
 
 export const LMS_ASSESSMENT_TYPES = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"] as const;
-export const LMS_QUESTION_TYPES = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"] as const;
+export const LMS_QUESTION_TYPES = [
+  "SINGLE_CHOICE",
+  "MULTIPLE_CHOICE",
+  "TRUE_FALSE",
+  "SHORT_TEXT",
+  "NUMERIC",
+  "FILL_IN_BLANK",
+  "MATCHING",
+  "LONG_ANSWER",
+] as const;
 
 export class CreateAssessmentDto {
   @IsUUID()
@@ -621,6 +630,20 @@ export class CreateAssessmentDto {
   @Min(1)
   @Max(100)
   attemptLimit?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  randomizeQuestions?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  randomizeOptions?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  questionsToSelect?: number | null;
 }
 
 export class UpdateAssessmentDto {
@@ -655,6 +678,20 @@ export class UpdateAssessmentDto {
   @Min(1)
   @Max(100)
   attemptLimit?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  randomizeQuestions?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  randomizeOptions?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  questionsToSelect?: number | null;
 }
 
 export class CreateAssessmentOptionDto {
@@ -686,6 +723,16 @@ export class UpdateAssessmentOptionDto {
   isCorrect?: boolean;
 }
 
+export class CreateAssessmentMatchingPairDto {
+  @IsString()
+  @Length(1, 300)
+  prompt!: string;
+
+  @IsString()
+  @Length(1, 300)
+  answer!: string;
+}
+
 export class CreateAssessmentQuestionDto {
   @IsString()
   @Length(2, 2000)
@@ -703,10 +750,40 @@ export class CreateAssessmentQuestionDto {
   @Min(1)
   sequence!: number;
 
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100000)
+  negativeMarks?: number;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  topic?: string;
+
+  @IsOptional()
+  @IsIn(["EASY", "MEDIUM", "HARD"])
+  difficulty?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  saveToBank?: boolean;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateAssessmentOptionDto)
   options!: CreateAssessmentOptionDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateAssessmentMatchingPairDto)
+  matchingPairs?: CreateAssessmentMatchingPairDto[];
 }
 
 export class UpdateAssessmentQuestionDto {
@@ -727,10 +804,46 @@ export class UpdateAssessmentQuestionDto {
   sequence?: number;
 
   @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100000)
+  negativeMarks?: number;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(1, 120)
+  topic?: string;
+
+  @IsOptional()
+  @IsIn(["EASY", "MEDIUM", "HARD"])
+  difficulty?: string;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateAssessmentOptionDto)
   options?: CreateAssessmentOptionDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateAssessmentMatchingPairDto)
+  matchingPairs?: CreateAssessmentMatchingPairDto[];
+}
+
+export class ImportQuestionBankQuestionDto {
+  @IsUUID()
+  bankQuestionId!: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  sequence?: number;
 }
 
 export class AssessmentAnswerDto {
