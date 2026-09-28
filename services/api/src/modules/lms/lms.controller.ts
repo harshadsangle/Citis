@@ -16,6 +16,7 @@ import {
   CreateAssessmentDto,
   CreateAssessmentQuestionDto,
   CreateAssessmentOptionDto,
+  ImportQuestionBankQuestionDto,
   CreateCourseDto,
   CreateCourseModuleDto,
   CreateCourseUnitDto,
@@ -371,6 +372,18 @@ export class LmsController {
     return successResponse(await this.assessments.changeAssessmentStatus(id, "DRAFT", request), request);
   }
 
+  @Post("assessments/:id/results/publish")
+  @RequirePermission("lms.assessment.publish")
+  async publishAssessmentResults(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.setAssessmentResultsPublished(id, true, request), request);
+  }
+
+  @Post("assessments/:id/results/unpublish")
+  @RequirePermission("lms.assessment.publish")
+  async unpublishAssessmentResults(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.setAssessmentResultsPublished(id, false, request), request);
+  }
+
   @Post("assessments/:id/archive")
   @RequirePermission("lms.assessment.archive")
   async archiveAssessment(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
@@ -381,6 +394,18 @@ export class LmsController {
   @RequirePermission("lms.assessment_question.view")
   async assessmentQuestions(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.listQuestions(id, request.context.user!), request);
+  }
+
+  @Get("assessments/:id/question-bank")
+  @RequirePermission("lms.assessment_question.view")
+  async assessmentQuestionBank(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.listQuestionBank(id, request.context.user!), request);
+  }
+
+  @Post("assessments/:id/questions/from-bank")
+  @RequirePermission("lms.assessment_question.create")
+  async importAssessmentQuestion(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: ImportQuestionBankQuestionDto, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.importQuestionBankQuestion(id, input, request), request);
   }
 
   @Post("assessments/:id/questions")

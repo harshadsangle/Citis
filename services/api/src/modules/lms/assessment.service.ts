@@ -482,6 +482,26 @@ export class AssessmentService {
     });
   }
 
+  async setAssessmentResultsPublished(id: string, published: boolean, request: ContextRequest) {
+    const user = request.context.user!;
+    const before = await this.assessmentFor(id, user);
+    await this.assertStaff(before, user);
+    if (before.status === "ARCHIVED") throw new ConflictException("Archived assessment results cannot be changed.");
+    if (published && before.status !== "PUBLISHED") {
+      throw new ConflictException("Publish the assessment before releasing results to learners.");
+    }
+    const result = await this.db.query<Record<string, unknown>>(
+      `UPDATE lms_assessments
+       SET results_published = $3, updated_at = now()
+       WHERE id = $1 AND tenant_id = $2
+       RETURNING *`,
+      [id, user.tenantId, published],
+    );
+    const row = result.rows[0];
+    await this.auditMutation(request, "assessment_results", published ? "PUBLISH" : "UNPUBLISH", row, before);
+    return row;
+  }
+
   private validateOptions(
     questionType: string,
     options: CreateAssessmentOptionDto[],
@@ -857,13 +877,35 @@ export class AssessmentService {
       [user.tenantId, assessment.id],
     );
     if (attempts.rows[0]) throw new ConflictException("Questions cannot be edited after an attempt has been submitted.");
-    if (input.options) this.validateOptions(String(before.question_type), input.options);
+    const matchingPairs = input.matchingPairs ?? (
+      typeof before.matching_pairs === "string" ? JSON.parse(before.matching_pairs) : before.matching_pairs ?? []
+    ) as CreateAssessmentMatchingPairDto[];
+    if (input.options || input.matchingPairs) {
+      this.validateOptions(
+        String(before.question_type),
+        input.options ?? await this.allOptions(id, user),
+        matchingPairs,
+      );
+    }
+    const updatedMarks = input.marks ?? Number(before.marks);
+    if ((input.negativeMarks ?? Number(before.negative_marks ?? 0)) > updatedMarks) {
+      throw new BadRequestException("Negative marks cannot exceed the question's marks.");
+    }
     return this.run(async () => this.db.transaction(async (client) => {
       const result = await client.query<Record<string, unknown>>(
         `UPDATE lms_assessment_questions
-         SET prompt = COALESCE($3, prompt), marks = COALESCE($4, marks), sequence = COALESCE($5, sequence), updated_at = now()
+         SET prompt = COALESCE($3, prompt), marks = COALESCE($4, marks), sequence = COALESCE($5, sequence),
+             negative_marks = COALESCE($6, negative_marks), subject = COALESCE($7, subject),
+             topic = COALESCE($8, topic), difficulty = COALESCE($9, difficulty),
+             matching_pairs = CASE WHEN $10::boolean THEN $11::jsonb ELSE matching_pairs END,
+             updated_at = now()
          WHERE id = $1 AND tenant_id = $2 RETURNING *`,
-        [id, user.tenantId, input.prompt?.trim() || null, input.marks ?? null, input.sequence ?? null],
+        [
+          id, user.tenantId, input.prompt?.trim() || null, input.marks ?? null, input.sequence ?? null,
+          input.negativeMarks ?? null, input.subject?.trim() || null, input.topic?.trim() || null,
+          input.difficulty?.trim().toUpperCase() || null, input.matchingPairs !== undefined,
+          JSON.stringify(matchingPairs),
+        ],
       );
       const row = result.rows[0];
       if (input.options) {
