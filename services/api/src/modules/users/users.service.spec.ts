@@ -77,7 +77,7 @@ test("assigning an existing role scope returns it without inserting or auditing 
       if (sql.startsWith("SELECT id, code FROM roles")) {
         return { rows: [{ id: "student-role", code: "STUDENT" }] };
       }
-      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id FROM user_roles")) {
+      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id")) {
         return { rows: [assignment] };
       }
       throw new Error(`Unexpected query: ${sql}`);
@@ -132,7 +132,7 @@ test("a role-scope insert race reselects and returns the winning assignment with
       if (sql.startsWith("SELECT id, code FROM roles")) {
         return { rows: [{ id: "student-role", code: "STUDENT" }] };
       }
-      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id FROM user_roles")) {
+      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id")) {
         assignmentLookups += 1;
         return { rows: assignmentLookups === 1 ? [] : [assignment] };
       }
@@ -191,7 +191,7 @@ test("a new role scope is inserted and audited once", async () => {
       if (sql.startsWith("SELECT id, code FROM roles")) {
         return { rows: [{ id: "student-role", code: "STUDENT" }] };
       }
-      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id FROM user_roles")) {
+      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id")) {
         return { rows: [] };
       }
       if (sql.startsWith("INSERT INTO user_roles")) {
