@@ -276,7 +276,7 @@ Malicious or compromised SCORM package → stolen session cookies, phishing UI.
 **Files:**
 
 - `services/api/src/modules/lms/lms.controller.ts` — `serveScormAsset`: headers  
-  `Content-Security-Policy: sandbox allow-scripts allow-downloads allow-forms allow-popups`  
+  CSP sandbox intentionally deferred: authenticated SCORM subresources may depend on cookies; full isolation needs a separate content-origin/authentication design.
   `Cross-Origin-Resource-Policy: same-site`  
   `X-Content-Type-Options: nosniff`
 
