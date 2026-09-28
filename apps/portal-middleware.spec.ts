@@ -61,15 +61,38 @@ test("wrong roles are redirected away from protected portal apps", async () => {
   assert.equal(redirectPath(await teacherMiddleware(request("/instructor"))), "/auth/login");
 });
 
-test("auth service errors, timeouts, and malformed responses fail closed", async () => {
-  globalThis.fetch = (async () => {
-    throw new Error("auth service unavailable");
-  }) as typeof fetch;
-  assert.equal(redirectPath(await studentMiddleware(request("/dashboard"))), "/auth/login");
+test("auth service errors and malformed responses return service unavailable without redirecting", async () => {
+  for (const middleware of [adminMiddleware, teacherMiddleware, studentMiddleware]) {
+    globalThis.fetch = (async () => new Response("auth service unavailable", { status: 503 })) as typeof fetch;
+    const failedResponse = await middleware(request("/dashboard"));
+    assert.equal(failedResponse.status, 503);
+    assert.equal(failedResponse.headers.get("location"), null);
+    assert.match(await failedResponse.text(), /temporarily unavailable/i);
 
-  setAuthResponse({ code: "STUDENT" });
-  assert.equal(redirectPath(await adminMiddleware(request("/dashboard"))), "/auth/login");
+    globalThis.fetch = (async () => {
+      throw new Error("network failure");
+    }) as typeof fetch;
+    const networkResponse = await middleware(request("/dashboard"));
+    assert.equal(networkResponse.status, 503);
+    assert.equal(networkResponse.headers.get("location"), null);
 
+    setAuthResponse({ code: "STUDENT" });
+    const malformedResponse = await middleware(request("/dashboard"));
+    assert.equal(malformedResponse.status, 503);
+    assert.equal(malformedResponse.headers.get("location"), null);
+  }
+});
+
+test("a 401 response still redirects to the login page", async () => {
+  for (const middleware of [adminMiddleware, teacherMiddleware, studentMiddleware]) {
+    setAuthResponse([], 401);
+    const response = await middleware(request("/dashboard"));
+    assert.equal(response.status, 307);
+    assert.equal(redirectPath(response), "/auth/login");
+  }
+});
+
+test("auth/me timeouts return 503 without redirecting", async () => {
   globalThis.fetch = (async (_input, init) => {
     assert.ok(init?.signal, "auth/me must receive an abort signal");
     return new Promise<Response>((_resolve, reject) => {
@@ -81,5 +104,6 @@ test("auth service errors, timeouts, and malformed responses fail closed", async
     new Promise<"timeout">((resolve) => setTimeout(() => resolve("timeout"), 3500)),
   ]);
   assert.notEqual(timeoutResult, "timeout", "auth/me middleware call must not hang indefinitely");
-  assert.equal(redirectPath(timeoutResult as Response), "/auth/login");
+  assert.equal((timeoutResult as Response).status, 503);
+  assert.equal((timeoutResult as Response).headers.get("location"), null);
 });

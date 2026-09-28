@@ -7,7 +7,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-async function rolesForRequest(request: NextRequest) {
+type AuthCheck =
+  | { status: "authenticated"; roles: Set<string> }
+  | { status: "unauthenticated" }
+  | { status: "unavailable" };
+
+async function rolesForRequest(request: NextRequest): Promise<AuthCheck> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), AUTH_ME_TIMEOUT_MS);
   try {
@@ -16,16 +21,36 @@ async function rolesForRequest(request: NextRequest) {
       headers: { cookie: request.headers.get("cookie") || "" },
       signal: controller.signal,
     });
-    if (!response.ok) return null;
-    const payload: unknown = await response.json();
-    if (!isRecord(payload) || !isRecord(payload.data) || !Array.isArray(payload.data.roles)) return null;
-    if (!payload.data.roles.every((role) => isRecord(role) && typeof role.code === "string")) return null;
-    return new Set(payload.data.roles.map((role) => String((role as Record<string, unknown>).code)));
+    if (response.status === 401) return { status: "unauthenticated" };
+    if (!response.ok) return { status: "unavailable" };
+    let payload: unknown;
+    try {
+      payload = await response.json();
+    } catch {
+      return { status: "unavailable" };
+    }
+    if (!isRecord(payload) || !isRecord(payload.data) || !Array.isArray(payload.data.roles)) {
+      return { status: "unavailable" };
+    }
+    if (!payload.data.roles.every((role) => isRecord(role) && typeof role.code === "string")) {
+      return { status: "unavailable" };
+    }
+    return {
+      status: "authenticated",
+      roles: new Set(payload.data.roles.map((role) => String((role as Record<string, unknown>).code))),
+    };
   } catch {
-    return null;
+    return { status: "unavailable" };
   } finally {
     clearTimeout(timeout);
   }
+}
+
+function unavailableResponse() {
+  return new NextResponse("Authentication service is temporarily unavailable. Please try again shortly.", {
+    status: 503,
+    headers: { "Cache-Control": "no-store", "Retry-After": "30" },
+  });
 }
 
 function publicPortal(request: NextRequest, portal: "admin" | "learner") {
@@ -45,8 +70,10 @@ function publicPortal(request: NextRequest, portal: "admin" | "learner") {
 }
 
 export async function middleware(request: NextRequest) {
-  const roles = await rolesForRequest(request);
-  if (!roles) return NextResponse.redirect(new URL("/auth/login", request.url));
+  const auth = await rolesForRequest(request);
+  if (auth.status === "unauthenticated") return NextResponse.redirect(new URL("/auth/login", request.url));
+  if (auth.status === "unavailable") return unavailableResponse();
+  const roles = auth.roles;
   if (roles.has("TEACHER") || roles.has("INSTRUCTOR")) return NextResponse.next();
   if (roles.has("STUDENT")) {
     const destination = publicPortal(request, "learner");
