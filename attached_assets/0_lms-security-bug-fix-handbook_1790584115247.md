@@ -289,7 +289,7 @@ Malicious or compromised SCORM package → stolen session cookies, phishing UI.
 ### Your tasks
 
 - Design and verify isolation without breaking authenticated multi-file package loads.
-- Do **not** remove sandbox headers without architecture sign-off.
+- Until then, keep the verified CORP + `nosniff` headers unchanged; do not claim the issue is fully fixed.
 
 ---
 
@@ -694,18 +694,18 @@ User-initiated payments had audit rows; webhook-driven state changes did not.
 
 ### What it means
 
-`UPDATE … url = COALESCE($5, url)` could not set URL to empty/null when admin removes link.
+Resource editors need an explicit way to clear a URL or file path without weakening required-content checks for normal creates and updates.
 
 ### Fix (implemented)
 
 **Files:**
 
-- `lms.service.ts` — `updateLearningResource`: if `input.url !== undefined`, set `trim() || null` (same for `filePath`).
-- `lms.dto.ts` — `ValidateIf` so `""` is allowed for clear URL on update.
+- `lms.service.ts` — `updateLearningResource`: explicitly supplied empty strings clear only their matching field; normal required URL checks remain active.
+- `lms.dto.ts` — permits explicit empty strings for clears but rejects `null` values.
 
 ### Your tasks
 
-- PATCH resource with `"url": ""` → DB `NULL`; learner no longer sees external link.
+- Regression tests cover VIDEO, LINK, and INTERACTIVE URL clears, file clears, normal required-field validation, and rejection of `null`.
 
 ---
 
