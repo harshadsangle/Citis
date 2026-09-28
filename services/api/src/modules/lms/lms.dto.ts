@@ -31,6 +31,10 @@ export class ContentListQueryDto {
 
   @IsOptional()
   @IsUUID()
+  institutionId?: string;
+
+  @IsOptional()
+  @IsUUID()
   courseId?: string;
 
   @IsOptional()
@@ -97,6 +101,10 @@ export class UpdateProgrammeDto {
   @IsString()
   @MaxLength(2000)
   description?: string;
+
+  @IsOptional()
+  @IsUUID()
+  departmentId?: string | null;
 }
 
 export class CreateCourseDto {

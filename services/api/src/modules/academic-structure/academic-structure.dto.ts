@@ -11,5 +11,14 @@ export class CreateSemesterDto {
  @IsString() @Length(1,48) code!: string; @IsString() @Length(1,160) name!: string;
  @IsDateString() startDate!: string; @IsDateString() endDate!: string;
 }
-export class UpdateAcademicDto { @IsOptional() @IsString() @Length(1,160) name?: string; @IsOptional() @IsString() @MaxLength(2000) description?: string; @IsOptional() @IsIn(["ACTIVE","ARCHIVED","DRAFT","CLOSED"]) status?: string; }
+export class UpdateAcademicDto {
+ @IsOptional() @IsString() @Length(1,160) name?: string;
+ @IsOptional() @IsString() @Length(1,48) code?: string;
+ @IsOptional() @IsString() @MaxLength(2000) description?: string;
+ @IsOptional() @IsIn(["ACTIVE","ARCHIVED","DRAFT","CLOSED"]) status?: string;
+ @IsOptional() @IsUUID() facultyId?: string;
+ @IsOptional() @IsDateString() startDate?: string;
+ @IsOptional() @IsDateString() endDate?: string;
+ @IsOptional() @IsString() @MaxLength(80) section?: string;
+}
 export class CreateOfferingDto { @IsUUID() institutionId!: string; @IsUUID() courseId!: string; @IsUUID() semesterId!: string; @IsOptional() @IsUUID() campusId?: string; @IsOptional() @IsString() @MaxLength(80) section?: string; }
