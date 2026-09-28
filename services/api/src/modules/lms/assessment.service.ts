@@ -632,6 +632,30 @@ export class AssessmentService {
     });
   }
 
+  private prepareAttemptQuestions(assessment: Record<string, unknown>, questions: Array<Record<string, unknown>>) {
+    const selectionCount = assessment.questions_to_select === null || assessment.questions_to_select === undefined
+      ? questions.length
+      : Number(assessment.questions_to_select);
+    if (!Number.isInteger(selectionCount) || selectionCount < 1 || selectionCount > questions.length) {
+      throw new BadRequestException("The configured question pool does not contain enough active questions.");
+    }
+    let prepared = selectionCount < questions.length ? shuffle(questions).slice(0, selectionCount) : [...questions];
+    if (assessment.randomize_questions) prepared = shuffle(prepared);
+    return prepared.map((question) => {
+      const options = Array.isArray(question.options) ? question.options as Array<Record<string, unknown>> : [];
+      const pairs = Array.isArray(question.matching_pairs) ? question.matching_pairs as Array<Record<string, unknown>> : [];
+      return {
+        ...question,
+        options: assessment.randomize_options ? shuffle(options) : options,
+        ...(question.question_type === "MATCHING" ? {
+          matching_options: assessment.randomize_options
+            ? shuffle(pairs.map((pair) => String(pair.answer)))
+            : pairs.map((pair) => String(pair.answer)),
+        } : {}),
+      };
+    });
+  }
+
   private snapshotQuestions(attempt: Record<string, unknown>, includeCorrect: boolean) {
     const raw = attempt.question_snapshot;
     const snapshot = typeof raw === "string" ? JSON.parse(raw) : raw;
