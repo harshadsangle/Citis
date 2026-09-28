@@ -271,7 +271,7 @@ SCORM packages contain HTML/JS. Serving them **inline** from the **same origin**
 
 Malicious or compromised SCORM package → stolen session cookies, phishing UI.
 
-### Fix (implemented — mitigation)
+### Current mitigation
 
 **Files:**
 
