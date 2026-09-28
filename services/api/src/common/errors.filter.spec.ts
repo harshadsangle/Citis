@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { ArgumentsHost, BadRequestException, type HttpException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
+import type { ArgumentsHost } from "@nestjs/common";
 import { ApiExceptionFilter } from "./errors.filter";
 
 function createHost(requestId: string) {
@@ -86,7 +87,7 @@ test("client errors are not logged as server exceptions", () => {
   console.error = (...values: unknown[]) => { logs.push(values.join(" ")); };
   try {
     const { host, response } = createHost("request-client-error");
-    new ApiExceptionFilter().catch(new BadRequestException("Invalid input") as HttpException, host);
+    new ApiExceptionFilter().catch(new BadRequestException("Invalid input"), host);
     assert.equal(response.statusCode, 400);
     assert.equal(logs.length, 0);
   } finally {

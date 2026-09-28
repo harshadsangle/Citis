@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { randomUUID } from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import { AuditService } from "./audit.service";
 import { requestContextMiddleware, type ContextRequest } from "./request-context";
@@ -60,5 +59,5 @@ test("request middleware replaces malformed, blank, and non-v4 request IDs", () 
   const missing = runMiddleware();
   assert.match(missing.request.context.requestId, uuidV4Pattern);
   assert.equal(missing.headers["X-Request-ID"], missing.request.context.requestId);
-  assert.notEqual(missing.request.context.requestId, randomUUID());
+  assert.notEqual(missing.request.context.requestId, "not-a-uuid");
 });
