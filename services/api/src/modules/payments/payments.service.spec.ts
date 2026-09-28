@@ -272,7 +272,7 @@ test("a late refund.failed event preserves a processed refund and processed even
 
 for (const initialStatus of ["REFUNDED", "PARTIALLY_REFUNDED"] as const) {
   test(`a late payment.failed event preserves ${initialStatus} payment state`, async () => {
-    let paymentStatus = initialStatus;
+    let paymentStatus: string = initialStatus;
     let failureUpdateSql = "";
     const service = serviceWith(async (text) => {
       if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) {
