@@ -3,6 +3,13 @@ import test from "node:test";
 import { ForbiddenException } from "@nestjs/common";
 import { UsersService } from "./users.service";
 
+function databaseWithTransaction(query: (sql: string, values?: unknown[]) => Promise<{ rows: any[] }>) {
+  return {
+    query,
+    transaction: async (work: (client: { query: typeof query }) => Promise<unknown>) => work({ query }),
+  };
+}
+
 test("institution-scoped administrators cannot assign platform roles", async () => {
   const platformRoleCodes = ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT"];
 
@@ -65,14 +72,16 @@ test("assigning an existing role scope returns it without inserting or auditing 
   };
   const calls: string[] = [];
   const auditEvents: unknown[] = [];
-  const db = {
-    query: async (sql: string) => {
+  const query = async (sql: string) => {
       calls.push(sql);
       if (sql.startsWith("SELECT id, tenant_id FROM users")) {
         return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
       }
       if (sql.startsWith("SELECT institution_id, campus_id FROM user_roles")) {
         return { rows: [] };
+      }
+      if (sql.startsWith("SELECT id FROM users WHERE id = $1 AND tenant_id = $2 FOR UPDATE")) {
+        return { rows: [{ id: "user-1" }] };
       }
       if (sql.startsWith("SELECT id, code FROM roles")) {
         return { rows: [{ id: "student-role", code: "STUDENT" }] };
@@ -81,8 +90,8 @@ test("assigning an existing role scope returns it without inserting or auditing 
         return { rows: [assignment] };
       }
       throw new Error(`Unexpected query: ${sql}`);
-    },
   };
+  const db = databaseWithTransaction(query);
   const service = new UsersService(
     db as never,
     { record: async (event: unknown) => auditEvents.push(event) } as never,
@@ -121,13 +130,15 @@ test("a role-scope insert race reselects and returns the winning assignment with
   let assignmentLookups = 0;
   let insertAttempts = 0;
   const auditEvents: unknown[] = [];
-  const db = {
-    query: async (sql: string) => {
+  const query = async (sql: string) => {
       if (sql.startsWith("SELECT id, tenant_id FROM users")) {
         return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
       }
       if (sql.startsWith("SELECT institution_id, campus_id FROM user_roles")) {
         return { rows: [] };
+      }
+      if (sql.startsWith("SELECT id FROM users WHERE id = $1 AND tenant_id = $2 FOR UPDATE")) {
+        return { rows: [{ id: "user-1" }] };
       }
       if (sql.startsWith("SELECT id, code FROM roles")) {
         return { rows: [{ id: "student-role", code: "STUDENT" }] };
@@ -141,8 +152,8 @@ test("a role-scope insert race reselects and returns the winning assignment with
         return { rows: [] };
       }
       throw new Error(`Unexpected query: ${sql}`);
-    },
   };
+  const db = databaseWithTransaction(query);
   const service = new UsersService(
     db as never,
     { record: async (event: unknown) => auditEvents.push(event) } as never,
@@ -180,13 +191,15 @@ test("a new role scope is inserted and audited once", async () => {
     campus_id: null,
   };
   const auditEvents: unknown[] = [];
-  const db = {
-    query: async (sql: string) => {
+  const query = async (sql: string) => {
       if (sql.startsWith("SELECT id, tenant_id FROM users")) {
         return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
       }
       if (sql.startsWith("SELECT institution_id, campus_id FROM user_roles")) {
         return { rows: [] };
+      }
+      if (sql.startsWith("SELECT id FROM users WHERE id = $1 AND tenant_id = $2 FOR UPDATE")) {
+        return { rows: [{ id: "user-1" }] };
       }
       if (sql.startsWith("SELECT id, code FROM roles")) {
         return { rows: [{ id: "student-role", code: "STUDENT" }] };
@@ -198,8 +211,8 @@ test("a new role scope is inserted and audited once", async () => {
         return { rows: [assignment] };
       }
       throw new Error(`Unexpected query: ${sql}`);
-    },
   };
+  const db = databaseWithTransaction(query);
   const service = new UsersService(
     db as never,
     { record: async (event: unknown) => auditEvents.push(event) } as never,

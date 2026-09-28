@@ -227,34 +227,45 @@ export class UsersService {
       input.institutionId ?? null,
       input.campusId ?? null,
     ];
-    const findExistingAssignment = () => this.db.query<Record<string, unknown>>(
-      `SELECT id, tenant_id, user_id, role_id, institution_id, campus_id
-       FROM user_roles
-       WHERE tenant_id = $1 AND user_id = $2 AND role_id = $3
-         AND institution_id IS NOT DISTINCT FROM $4::uuid
-         AND campus_id IS NOT DISTINCT FROM $5::uuid
-       ORDER BY id ASC
-       LIMIT 1`,
-      assignmentValues,
-    );
-    const existingAssignment = await findExistingAssignment();
-    if (existingAssignment.rows[0]) return existingAssignment.rows[0];
+    const outcome = await this.db.transaction(async (client) => {
+      const lockedUser = await client.query<{ id: string }>(
+        "SELECT id FROM users WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
+        [id, user.tenant_id],
+      );
+      if (!lockedUser.rows[0]) throw new NotFoundException("User not found.");
 
-    const result = await this.db.query<Record<string, unknown>>(
-      `INSERT INTO user_roles (tenant_id, user_id, role_id, institution_id, campus_id)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (user_id, role_id, institution_id, campus_id) DO NOTHING
-       RETURNING id, tenant_id, user_id, role_id, institution_id, campus_id`,
-      assignmentValues,
-    );
-    const assignment = result.rows[0];
-    if (!assignment) {
+      const findExistingAssignment = () => client.query<Record<string, unknown>>(
+        `SELECT id, tenant_id, user_id, role_id, institution_id, campus_id
+         FROM user_roles
+         WHERE tenant_id = $1 AND user_id = $2 AND role_id = $3
+           AND institution_id IS NOT DISTINCT FROM $4::uuid
+           AND campus_id IS NOT DISTINCT FROM $5::uuid
+         ORDER BY id ASC
+         LIMIT 1`,
+        assignmentValues,
+      );
+      const existingAssignment = await findExistingAssignment();
+      if (existingAssignment.rows[0]) {
+        return { assignment: existingAssignment.rows[0], created: false };
+      }
+
+      const result = await client.query<Record<string, unknown>>(
+        `INSERT INTO user_roles (tenant_id, user_id, role_id, institution_id, campus_id)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (user_id, role_id, institution_id, campus_id) DO NOTHING
+         RETURNING id, tenant_id, user_id, role_id, institution_id, campus_id`,
+        assignmentValues,
+      );
+      if (result.rows[0]) return { assignment: result.rows[0], created: true };
+
       const conflictedAssignment = await findExistingAssignment();
       if (!conflictedAssignment.rows[0]) {
         throw new ConflictException("The existing role assignment could not be confirmed.");
       }
-      return conflictedAssignment.rows[0];
-    }
+      return { assignment: conflictedAssignment.rows[0], created: false };
+    });
+    const assignment = outcome.assignment;
+    if (!outcome.created) return assignment;
     await this.audit.record({ tenantId: user.tenant_id, actorUserId: actor.id, requestId: request.context.requestId, module: "identity", resource: "user_role", resourceId: id, action: "CREATE", newValue: assignment, ipAddress: request.context.ipAddress, deviceContext: { userAgent: request.context.userAgent } });
     return assignment;
   }
