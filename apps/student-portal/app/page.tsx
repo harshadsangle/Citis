@@ -309,7 +309,7 @@ function ProgressBar({ percentage }: { percentage: number }) {
   );
 }
 
-function answerHasValue(value?: string | string[]) {
+function answerHasValue(value?: AssessmentAnswerValue) {
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "string") return Boolean(value.trim());
   if (value && typeof value === "object") return Object.values(value).some((item) => Boolean(item?.trim()));
@@ -328,8 +328,10 @@ function answerDisplay(question: AssessmentQuestion, value?: AssessmentAnswerVal
       return `${item?.prompt || id}: ${answer}`;
     }).join(", ");
   }
-  const values = Array.isArray(value) ? value : [value];
-  return values.map((item) => question.options.find((option) => option.value === item)?.label || item).join(", ");
+  if (Array.isArray(value)) {
+    return value.map((item) => question.options.find((option) => option.value === item)?.label || item).join(", ");
+  }
+  return typeof value === "string" ? question.options.find((option) => option.value === value)?.label || value : "No response";
 }
 
 function CourseRoadmap({ progress, compact = false }: { progress: Progress; compact?: boolean }) {
@@ -1655,7 +1657,10 @@ export default function StudentPortalPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: activeAttempt.questions.map((question) => ({ questionId: question.id, answer: { value: answers[question.id] ?? (question.question_type === "MULTIPLE_CHOICE" ? [] : "") } })) }),
+        body: JSON.stringify({ answers: activeAttempt.questions.map((question) => ({
+          questionId: question.id,
+          answer: { value: answers[question.id] ?? (question.question_type === "MULTIPLE_CHOICE" ? [] : question.question_type === "MATCHING" ? {} : "") },
+        })) }),
       });
       const body = await response.json().catch(() => null) as { data?: AssessmentAttempt; error?: { message?: string } } | null;
       if (!response.ok || !body?.data) throw new Error(body?.error?.message || "We couldn't submit this assessment.");
