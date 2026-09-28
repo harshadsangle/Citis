@@ -281,6 +281,12 @@ export class LmsController {
     return successResponse(await this.lms.changeAssignmentStatus(id, "PUBLISHED", request), request);
   }
 
+  @Post("assignments/:id/unpublish")
+  @RequirePermission("lms.assignment.publish")
+  async unpublishAssignment(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeAssignmentStatus(id, "DRAFT", request), request);
+  }
+
   @Post("assignments/:id/archive")
   @RequirePermission("lms.assignment.archive")
   async archiveAssignment(@Param("id") id: string, @Req() request: ContextRequest) {
@@ -353,6 +359,12 @@ export class LmsController {
   @RequirePermission("lms.assessment.publish")
   async publishAssessment(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
     return successResponse(await this.assessments.changeAssessmentStatus(id, "PUBLISHED", request), request);
+  }
+
+  @Post("assessments/:id/unpublish")
+  @RequirePermission("lms.assessment.publish")
+  async unpublishAssessment(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.assessments.changeAssessmentStatus(id, "DRAFT", request), request);
   }
 
   @Post("assessments/:id/archive")
@@ -515,6 +527,12 @@ export class LmsController {
     return successResponse(await this.lms.changeStatus(id, "course_module", "PUBLISHED", request), request);
   }
 
+  @Post("course-modules/:id/unpublish")
+  @RequirePermission("lms.course_module.publish")
+  async unpublishCourseModule(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "course_module", "DRAFT", request), request);
+  }
+
   @Post("course-modules/:id/archive")
   @RequirePermission("lms.course_module.archive")
   async archiveCourseModule(@Param("id") id: string, @Req() request: ContextRequest) {
@@ -553,6 +571,12 @@ export class LmsController {
     return successResponse(await this.lms.changeStatus(id, "lesson", "PUBLISHED", request), request);
   }
 
+  @Post("lessons/:id/unpublish")
+  @RequirePermission("lms.lesson.publish")
+  async unpublishLesson(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "lesson", "DRAFT", request), request);
+  }
+
   @Post("lessons/:id/archive")
   @RequirePermission("lms.lesson.archive")
   async archiveLesson(@Param("id") id: string, @Req() request: ContextRequest) {
@@ -589,6 +613,12 @@ export class LmsController {
   @RequirePermission("lms.learning_resource.publish")
   async publishLearningResource(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.changeStatus(id, "learning_resource", "PUBLISHED", request), request);
+  }
+
+  @Post("learning-resources/:id/unpublish")
+  @RequirePermission("lms.learning_resource.publish")
+  async unpublishLearningResource(@Param("id") id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.changeStatus(id, "learning_resource", "DRAFT", request), request);
   }
 
   @Post("learning-resources/:id/archive")
