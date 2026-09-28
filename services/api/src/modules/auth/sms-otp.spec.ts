@@ -124,6 +124,109 @@ test("mobile OTP verification consumes a challenge once within its tenant", asyn
   assert.equal(sessionCount, 1);
 });
 
+test("concurrent mobile OTP verification consumes one tenant-scoped challenge exactly once", async () => {
+  const code = "a1b2c3";
+  let consumed = false;
+  let consumeStatements = 0;
+  let consumeTransitions = 0;
+  let sessionCount = 0;
+  const verificationQueries: Array<{ text: string; values: unknown[] }> = [];
+  const consumedAtSelection: boolean[] = [];
+  const challenge = {
+    id: "challenge-concurrent",
+    user_id: "user-1",
+    code_hash: hash(code),
+    attempts: 0,
+  };
+
+  let rowLockQueue: Promise<void> = Promise.resolve();
+  async function acquireChallengeLock() {
+    let release!: () => void;
+    const previous = rowLockQueue;
+    rowLockQueue = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await previous;
+    return release;
+  }
+
+  let releaseUnserializedReads!: () => void;
+  const bothUnserializedReads = new Promise<void>((resolve) => {
+    releaseUnserializedReads = resolve;
+  });
+  let unserializedReadCount = 0;
+
+  const db = {
+    query: async (text: string) => {
+      if (text.includes("INSERT INTO auth_sessions")) sessionCount += 1;
+      return { rows: [] };
+    },
+    transaction: async (
+      operation: (client: {
+        query: (text: string, values?: unknown[]) => Promise<{ rows: unknown[] }>;
+      }) => Promise<unknown>,
+    ) => {
+      let releaseLock: (() => void) | undefined;
+      const client = {
+        query: async (text: string, values?: unknown[]) => {
+          if (text.includes("SELECT c.id, u.id AS user_id, c.code_hash, c.attempts")) {
+            verificationQueries.push({ text, values: values ?? [] });
+            if (text.includes("FOR UPDATE OF c")) {
+              releaseLock = await acquireChallengeLock();
+              consumedAtSelection.push(consumed);
+              return { rows: consumed ? [] : [challenge] };
+            }
+
+            // Force both unlocked SELECTs to observe the unconsumed row before either UPDATE.
+            const rowWasAvailable = !consumed;
+            unserializedReadCount += 1;
+            if (unserializedReadCount === 2) releaseUnserializedReads();
+            await bothUnserializedReads;
+            consumedAtSelection.push(!rowWasAvailable);
+            return { rows: rowWasAvailable ? [challenge] : [] };
+          }
+          if (text.includes("SET consumed_at = now()")) {
+            consumeStatements += 1;
+            if (!consumed) {
+              consumed = true;
+              consumeTransitions += 1;
+            }
+          }
+          return { rows: [] };
+        },
+      };
+      try {
+        return await operation(client);
+      } finally {
+        releaseLock?.();
+      }
+    },
+  };
+  const service = new AuthService(db as never, noOpLimiter() as never, {} as never);
+  const input = { mobile, tenantSlug: "demo", code };
+
+  const results = await Promise.allSettled([
+    service.verifyOtp(input, metadata),
+    service.verifyOtp(input, metadata),
+  ]);
+
+  const successes = results.filter((result) => result.status === "fulfilled");
+  const failures = results.filter((result) => result.status === "rejected");
+  assert.equal(successes.length, 1);
+  assert.equal(failures.length, 1);
+  assert.match(String((failures[0] as PromiseRejectedResult).reason), /Invalid or expired verification code/);
+  assert.equal(consumed, true);
+  assert.equal(consumeStatements, 1);
+  assert.equal(consumeTransitions, 1);
+  assert.equal(sessionCount, 1);
+  assert.deepEqual(consumedAtSelection.sort(), [false, true]);
+  assert.equal(verificationQueries.length, 2);
+  for (const query of verificationQueries) {
+    assert.match(query.text, /t\.slug = \$2/);
+    assert.deepEqual(query.values, [mobile, "demo"]);
+  }
+});
+
 test("expired mobile OTPs cannot create sessions", async () => {
   let sessionCount = 0;
   let verificationSql = "";
