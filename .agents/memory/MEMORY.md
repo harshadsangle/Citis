@@ -28,6 +28,7 @@
 - [Class-validator string limits](class-validator-string-limits.md) — use `@MaxLength` for text and URL limits instead of numeric `@Max`.
 - [Permission guard scope](permission-guard-scope.md) — institution-scoped LMS administrator roles must not globally bypass unrelated permission checks.
 - [Refund concurrency safety](refund-concurrency.md) — reserve refundable balance under a payment-row lock before calling Razorpay.
+- [Payment idempotency race recovery](payment-idempotency-races.md) — after a unique conflict, reselect only after rollback and reuse the winning provider order.
 - [Video completion authority](video-completion-authority.md) — browser playback state never authorizes lesson, course, or certificate completion.
 - [Public frontend dependency install](public-frontend-dependency-install.md) — keep its separate lockfile aligned; optional Tailwind WASI fetches may fail through the package firewall.
 - [Hidden Course Builder programme](hidden-course-builder-programme.md) — programme linkage is internal and must resolve server-side rather than blocking the visible builder flow.
