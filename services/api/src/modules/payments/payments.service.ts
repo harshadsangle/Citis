@@ -10,6 +10,34 @@ import { RazorpayClient } from "./razorpay.client";
 const IDEMPOTENCY_ORDER_WAIT_TIMEOUT_MS = 30_000;
 const IDEMPOTENCY_ORDER_POLL_INITIAL_MS = 25;
 const IDEMPOTENCY_ORDER_POLL_MAX_MS = 500;
+const MAX_SAFE_MINOR_UNITS = BigInt(Number.MAX_SAFE_INTEGER);
+const MAX_REFUND_MINOR_UNITS = 1_000_000_000n;
+
+function minorUnitsBigInt(value: unknown) {
+  let amount: bigint;
+  if (typeof value === "bigint") {
+    amount = value;
+  } else if (typeof value === "number") {
+    if (!Number.isSafeInteger(value)) {
+      throw new BadRequestException("Monetary amounts must be safe integer minor units.");
+    }
+    amount = BigInt(value);
+  } else if (typeof value === "string" && /^-?\d+$/.test(value.trim())) {
+    amount = BigInt(value.trim());
+  } else {
+    throw new BadRequestException("Monetary amounts must be integer minor units.");
+  }
+  if (amount < 0n) throw new BadRequestException("Monetary amounts cannot be negative.");
+  return amount;
+}
+
+function minorUnitsNumber(value: unknown) {
+  const amount = minorUnitsBigInt(value);
+  if (amount > MAX_SAFE_MINOR_UNITS) {
+    throw new BadRequestException("Monetary amount exceeds the safe integer limit.");
+  }
+  return Number(amount);
+}
 
 type ProviderPayment = {
   id: string;
@@ -60,7 +88,7 @@ export class PaymentsService {
       [courseId, user.tenantId],
     );
     if (!result.rows[0]) throw new NotFoundException("The course is not available for purchase.");
-    return { ...result.rows[0], amountMinor: Number(result.rows[0].price_minor) };
+    return { ...result.rows[0], amountMinor: minorUnitsNumber(result.rows[0].price_minor) };
   }
 
   private paymentSummary(row: Record<string, unknown>) {
@@ -70,7 +98,7 @@ export class PaymentsService {
       studentId: row.student_id,
       razorpayOrderId: row.razorpay_order_id,
       razorpayPaymentId: row.razorpay_payment_id,
-      amountMinor: Number(row.amount_minor),
+      amountMinor: minorUnitsNumber(row.amount_minor),
       currency: row.currency,
       status: row.status,
       createdAt: row.created_at,
@@ -140,7 +168,7 @@ export class PaymentsService {
       code: course.code,
       description: course.description,
       thumbnail: course.thumbnail,
-      priceMinor: Number(course.price_minor),
+      priceMinor: minorUnitsNumber(course.price_minor),
       currency: course.currency,
       isEnrolled: course.is_enrolled,
     }));
@@ -210,10 +238,11 @@ export class PaymentsService {
       };
     }
 
+    const amountMinor = minorUnitsNumber(payment.amount_minor);
     let order: { id: string; amount: number; currency: string; status: string };
     try {
       order = await this.razorpay.createOrder({
-        amount: Number(payment.amount_minor),
+        amount: amountMinor,
         currency: String(payment.currency),
         receipt: String(payment.id),
       });
@@ -225,7 +254,7 @@ export class PaymentsService {
       );
       throw error;
     }
-    if (order.amount !== Number(payment.amount_minor) || order.currency !== payment.currency) {
+    if (!Number.isSafeInteger(order.amount) || order.amount !== amountMinor || order.currency !== payment.currency) {
       await this.db.query(
         "UPDATE lms_payments SET status = 'FAILED', failure_reason = $2, failed_at = now(), updated_at = now() WHERE id = $1",
         [payment.id, "Razorpay order amount mismatch."],
@@ -278,10 +307,12 @@ export class PaymentsService {
       throw new UnauthorizedException("Payment verification failed.");
     }
 
+    const expectedAmount = minorUnitsNumber(payment.amount_minor);
     const providerPayment = await this.razorpay.fetchPayment(input.razorpayPaymentId);
     if (
       providerPayment.order_id !== input.razorpayOrderId
-      || providerPayment.amount !== Number(payment.amount_minor)
+      || !Number.isSafeInteger(providerPayment.amount)
+      || providerPayment.amount !== expectedAmount
       || providerPayment.currency !== payment.currency
       || (providerPayment.status !== "captured" && providerPayment.captured !== true)
     ) {
@@ -319,7 +350,8 @@ export class PaymentsService {
       }
       if (
         providerPayment.order_id !== payment.razorpay_order_id
-        || providerPayment.amount !== Number(payment.amount_minor)
+        || !Number.isSafeInteger(providerPayment.amount)
+        || providerPayment.amount !== minorUnitsNumber(payment.amount_minor)
         || providerPayment.currency !== payment.currency
       ) {
         throw new BadRequestException("Payment details do not match the course order.");
@@ -407,7 +439,7 @@ export class PaymentsService {
           await this.activatePayment(payment.rows[0].id, payment.rows[0].student_id, {
             id: paymentEntity.id,
             order_id: paymentEntity.order_id,
-            amount: Number(paymentEntity.amount),
+            amount: minorUnitsNumber(paymentEntity.amount),
             currency: paymentEntity.currency,
             status: "captured",
             captured: true,
@@ -422,7 +454,7 @@ export class PaymentsService {
           [paymentEntity.order_id, paymentEntity.error_code || null, paymentEntity.error_description || "Payment failed."],
         );
       } else if (eventType === "refund.processed" && refundEntity?.id) {
-        await this.markRefundProcessed(String(refundEntity.id), Number(refundEntity.amount), undefined, refundEntity.payment_id ? String(refundEntity.payment_id) : undefined);
+         await this.markRefundProcessed(String(refundEntity.id), minorUnitsNumber(refundEntity.amount), undefined, refundEntity.payment_id ? String(refundEntity.payment_id) : undefined);
       } else if (eventType === "refund.failed" && refundEntity?.id) {
         await this.db.query(
           "UPDATE lms_refunds SET status = 'FAILED', failure_reason = $2, updated_at = now() WHERE razorpay_refund_id = $1 AND status <> 'PROCESSED'",
@@ -488,6 +520,12 @@ export class PaymentsService {
 
   async initiateRefund(id: string, input: CreateRefundDto, user: AuthenticatedUser, requestId = "payment-refund") {
     this.assertCitisAdmin(user);
+    const requestedAmount = input.amountMinor == null ? undefined : minorUnitsBigInt(input.amountMinor);
+    if (requestedAmount !== undefined && (
+      requestedAmount <= 0n || requestedAmount > MAX_REFUND_MINOR_UNITS
+    )) {
+      throw new BadRequestException("The refund amount is invalid.");
+    }
     const reservation = await this.db.transaction(async (client) => {
       const paymentResult = await client.query<Record<string, unknown>>(
         "SELECT * FROM lms_payments WHERE id = $1 AND tenant_id = $2 FOR UPDATE",
@@ -501,9 +539,20 @@ export class PaymentsService {
         "SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM lms_refunds WHERE payment_id = $1 AND status IN ('PENDING', 'PROCESSED')",
         [id],
       );
-      const remaining = Number(payment.amount_minor) - Number(refundedResult.rows[0]?.total || 0);
-      const amount = input.amountMinor ?? remaining;
-      if (amount <= 0 || amount > remaining) throw new BadRequestException("The refund amount is invalid.");
+      const paymentAmount = minorUnitsBigInt(payment.amount_minor);
+      const refundedAmount = minorUnitsBigInt(refundedResult.rows[0]?.total || "0");
+      if (refundedAmount > paymentAmount) throw new BadRequestException("The refundable balance is invalid.");
+      const remaining = paymentAmount - refundedAmount;
+      const amountMinor = requestedAmount ?? remaining;
+      if (
+        amountMinor <= 0n
+        || amountMinor > remaining
+        || amountMinor > MAX_REFUND_MINOR_UNITS
+        || amountMinor > MAX_SAFE_MINOR_UNITS
+      ) {
+        throw new BadRequestException("The refund amount is invalid.");
+      }
+      const amount = Number(amountMinor);
       const refund = await client.query<Record<string, unknown>>(
         `INSERT INTO lms_refunds (tenant_id, payment_id, initiated_by, amount_minor, reason, status)
          VALUES ($1, $2, $3, $4, $5, 'PENDING') RETURNING *`,
@@ -516,7 +565,7 @@ export class PaymentsService {
         amount: reservation.amount,
         notes: { reason: input.reason.trim(), paymentReference: id },
       });
-      const processed = await this.markRefundProcessed(String(providerRefund.id), Number(providerRefund.amount), String(reservation.refund.id));
+      const processed = await this.markRefundProcessed(String(providerRefund.id), minorUnitsNumber(providerRefund.amount), String(reservation.refund.id));
       await this.audit.record({
         tenantId: user.tenantId,
         actorUserId: user.id,
@@ -560,7 +609,9 @@ export class PaymentsService {
         "SELECT COALESCE(sum(amount_minor), 0)::text AS total FROM lms_refunds WHERE payment_id = $1 AND status = 'PROCESSED'",
         [refund.payment_id],
       );
-      const paymentStatus = Number(total.rows[0]?.total || 0) >= Number(refund.payment_amount) ? "REFUNDED" : "PARTIALLY_REFUNDED";
+      const processedAmount = minorUnitsBigInt(total.rows[0]?.total || "0");
+      const paymentAmount = minorUnitsBigInt(refund.payment_amount);
+      const paymentStatus = processedAmount >= paymentAmount ? "REFUNDED" : "PARTIALLY_REFUNDED";
       await client.query(
         "UPDATE lms_payments SET status = $2, refunded_at = now(), updated_at = now() WHERE id = $1",
         [refund.payment_id, paymentStatus],

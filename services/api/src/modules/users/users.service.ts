@@ -220,14 +220,41 @@ export class UsersService {
       }
       if (scopedToActor) assertScope(actor, input.institutionId, input.campusId ?? null);
     }
-    const result = await this.db.query(
+    const assignmentValues = [
+      user.tenant_id,
+      id,
+      input.roleId,
+      input.institutionId ?? null,
+      input.campusId ?? null,
+    ];
+    const findExistingAssignment = () => this.db.query<Record<string, unknown>>(
+      `SELECT id, tenant_id, user_id, role_id, institution_id, campus_id
+       FROM user_roles
+       WHERE tenant_id = $1 AND user_id = $2 AND role_id = $3
+         AND institution_id IS NOT DISTINCT FROM $4::uuid
+         AND campus_id IS NOT DISTINCT FROM $5::uuid
+       ORDER BY id ASC
+       LIMIT 1`,
+      assignmentValues,
+    );
+    const existingAssignment = await findExistingAssignment();
+    if (existingAssignment.rows[0]) return existingAssignment.rows[0];
+
+    const result = await this.db.query<Record<string, unknown>>(
       `INSERT INTO user_roles (tenant_id, user_id, role_id, institution_id, campus_id)
        VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (user_id, role_id, institution_id, campus_id) DO NOTHING
        RETURNING id, tenant_id, user_id, role_id, institution_id, campus_id`,
-      [user.tenant_id, id, input.roleId, input.institutionId ?? null, input.campusId ?? null],
+      assignmentValues,
     );
-    const assignment = result.rows[0] ?? { userId: id, roleId: input.roleId, institutionId: input.institutionId ?? null, campusId: input.campusId ?? null };
+    const assignment = result.rows[0];
+    if (!assignment) {
+      const conflictedAssignment = await findExistingAssignment();
+      if (!conflictedAssignment.rows[0]) {
+        throw new ConflictException("The existing role assignment could not be confirmed.");
+      }
+      return conflictedAssignment.rows[0];
+    }
     await this.audit.record({ tenantId: user.tenant_id, actorUserId: actor.id, requestId: request.context.requestId, module: "identity", resource: "user_role", resourceId: id, action: "CREATE", newValue: assignment, ipAddress: request.context.ipAddress, deviceContext: { userAgent: request.context.userAgent } });
     return assignment;
   }

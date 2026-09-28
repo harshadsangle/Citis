@@ -25,6 +25,8 @@ type RazorpayRefund = {
   status: string;
 };
 
+const DEFAULT_RAZORPAY_TIMEOUT_MS = 30_000;
+
 @Injectable()
 export class RazorpayClient {
   private configuration() {
@@ -93,15 +95,32 @@ export class RazorpayClient {
       config: { keyId: string; keySecret: string; baseUrl: string };
     },
   ) {
-    const response = await fetch(`${input.config.baseUrl}${path}`, {
-      method: input.method,
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${input.config.keyId}:${input.config.keySecret}`).toString("base64")}`,
-        ...input.headers,
-      },
-      body: input.body,
-    });
-    const body = await response.text();
+    const configuredTimeout = Number(process.env.RAZORPAY_TIMEOUT_MS);
+    const timeoutMs = Number.isSafeInteger(configuredTimeout) && configuredTimeout > 0
+      ? Math.min(configuredTimeout, DEFAULT_RAZORPAY_TIMEOUT_MS)
+      : DEFAULT_RAZORPAY_TIMEOUT_MS;
+    let response: Response;
+    let body: string;
+    try {
+      response = await fetch(`${input.config.baseUrl}${path}`, {
+        method: input.method,
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${input.config.keyId}:${input.config.keySecret}`).toString("base64")}`,
+          ...input.headers,
+        },
+        body: input.body,
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      body = await response.text();
+    } catch (error) {
+      const errorName = typeof error === "object" && error !== null
+        ? (error as { name?: unknown }).name
+        : undefined;
+      if (errorName === "AbortError" || errorName === "TimeoutError") {
+        throw new ServiceUnavailableException("Razorpay request timed out.");
+      }
+      throw error;
+    }
     let parsed: T | { error?: { code?: string; description?: string } } = {};
     try {
       parsed = JSON.parse(body) as T;
