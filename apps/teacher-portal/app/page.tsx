@@ -719,11 +719,11 @@ export default function TeacherPortalPage() {
     const title = moduleEditor.title.trim();
     const sequence = Number(moduleEditor.sequence);
     if (title.length < 2) {
-      setError("Add a module title.");
+      reportFieldError("teacher-module-title", "Add a module title.");
       return;
     }
     if (!Number.isInteger(sequence) || sequence < 1) {
-      setError("Module sequence must be a positive whole number.");
+      reportFieldError("teacher-module-sequence", "Module sequence must be a positive whole number.");
       return;
     }
     setBusyAction(`save-module:${moduleEditor.id || "new"}`);
@@ -820,15 +820,15 @@ export default function TeacherPortalPage() {
     const sequence = Number(lessonEditor.sequence);
     const estimatedDuration = lessonEditor.estimatedDuration.trim() ? Number(lessonEditor.estimatedDuration) : undefined;
     if (title.length < 2) {
-      setError("Add a lesson title.");
+      reportFieldError("teacher-lesson-title", "Add a lesson title.");
       return;
     }
     if (!Number.isInteger(sequence) || sequence < 1) {
-      setError("Lesson sequence must be a positive whole number.");
+      reportFieldError("teacher-lesson-sequence", "Lesson sequence must be a positive whole number.");
       return;
     }
     if (estimatedDuration !== undefined && (!Number.isInteger(estimatedDuration) || estimatedDuration < 0 || estimatedDuration > 100000)) {
-      setError("Lesson duration must be a whole number between 0 and 100,000 minutes.");
+      reportFieldError("teacher-lesson-duration", "Lesson duration must be a whole number between 0 and 100,000 minutes.");
       return;
     }
     setBusyAction(`save-lesson:${lessonEditor.id || "new"}`);
