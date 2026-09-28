@@ -1248,12 +1248,14 @@ function ContinueLearning({
 function CourseCatalogue({
   courses,
   provider,
+  requestedCourseId,
   onCompleteLesson,
   certificates,
   onViewCertificates,
 }: {
   courses: Progress[];
   provider: LmsCourseProvider | null;
+  requestedCourseId: string | null;
   onCompleteLesson: (courseId: string, lessonId: string) => Promise<void>;
   certificates: Certificate[];
   onViewCertificates: () => void;
@@ -1263,7 +1265,15 @@ function CourseCatalogue({
   const [sort, setSort] = useState<CatalogueSort>("recommended");
   const [detailCourseId, setDetailCourseId] = useState<string | null>(null);
   const [learningCourseId, setLearningCourseId] = useState<string | null>(null);
+  const deepLinkedCourseId = useRef<string | null>(null);
   const normalizedSearch = search.trim().toLowerCase();
+
+  useEffect(() => {
+    if (!requestedCourseId || deepLinkedCourseId.current === requestedCourseId) return;
+    if (!courses.some((progress) => progress.course.id === requestedCourseId)) return;
+    deepLinkedCourseId.current = requestedCourseId;
+    setLearningCourseId(requestedCourseId);
+  }, [courses, requestedCourseId]);
 
   const visibleCourses = courses
     .filter((progress) => {
@@ -1367,13 +1377,16 @@ export default function StudentPortalPage() {
   const [certificateNotice, setCertificateNotice] = useState("");
   const [provider, setProvider] = useState<LmsCourseProvider | null>(null);
   const [providerReady, setProviderReady] = useState(false);
+  const [requestedCourseId, setRequestedCourseId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profileNotice, setProfileNotice] = useState("");
 
   useEffect(() => {
-    setProvider(normalizeLmsCourseProvider(new URLSearchParams(window.location.search).get("provider")));
+    const query = new URLSearchParams(window.location.search);
+    setProvider(normalizeLmsCourseProvider(query.get("provider")));
+    setRequestedCourseId(query.get("courseId"));
     setProviderReady(true);
   }, []);
 
@@ -1717,7 +1730,7 @@ export default function StudentPortalPage() {
             <p>Your institution’s learning team will show your courses here after you are enrolled.</p>
           </section>
         )}
-        {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} certificates={certificates} onViewCertificates={() => document.getElementById("certificates")?.scrollIntoView({ behavior: "smooth", block: "start" })} onCompleteLesson={completeLesson} />}
+        {!loading && !error && courses.length > 0 && <CourseCatalogue courses={courses} provider={provider} requestedCourseId={requestedCourseId} certificates={certificates} onViewCertificates={() => document.getElementById("certificates")?.scrollIntoView({ behavior: "smooth", block: "start" })} onCompleteLesson={completeLesson} />}
         {!loading && !error && (
           <section className="assessment-history-section" id="assessment-history">
             <div className="portal-section-heading">
