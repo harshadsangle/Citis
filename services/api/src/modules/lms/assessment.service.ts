@@ -1093,6 +1093,7 @@ export class AssessmentService {
       assessment.total_marks as number | null,
       assessment.passing_marks as number | null,
       user.tenantId,
+      assessment.questions_to_select as number | null,
     );
     return this.run(async () => this.db.transaction(async (client) => {
       await client.query("SELECT id FROM lms_assessments WHERE id = $1 AND tenant_id = $2 FOR UPDATE", [assessment.id, user.tenantId]);
@@ -1119,7 +1120,10 @@ export class AssessmentService {
         } else {
           let snapshot = this.snapshotQuestions(attempt, true);
           if (!snapshot) {
-            snapshot = await this.questionRows(client, String(assessment.id), user, true);
+            snapshot = this.prepareAttemptQuestions(
+              assessment,
+              await this.questionRows(client, String(assessment.id), user, true),
+            );
             const updated = await client.query<Record<string, unknown>>(
               `UPDATE lms_assessment_attempts
                SET question_snapshot = $3::jsonb,
@@ -1156,6 +1160,7 @@ export class AssessmentService {
               assessment_type: assessment.assessment_type,
               duration_minutes: attempt.duration_minutes_snapshot ?? assessment.duration_minutes,
               attempt_limit: assessment.attempt_limit,
+              results_published: assessment.results_published,
             },
             questions: this.snapshotQuestions(attempt, false) ?? [],
             draft_answers: drafts,
@@ -1171,6 +1176,11 @@ export class AssessmentService {
       if (assessment.attempt_limit !== null && attemptNumber > Number(assessment.attempt_limit)) {
         throw new BadRequestException("The assessment attempt limit has been reached.");
       }
+      const questionSnapshot = this.prepareAttemptQuestions(
+        assessment,
+        await this.questionRows(client, String(assessment.id), user, true),
+      );
+      const attemptMaxScore = questionSnapshot.reduce((sum, question) => sum + Number(question.marks), 0);
       const inserted = await client.query<Record<string, unknown>>(
         `INSERT INTO lms_assessment_attempts
            (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, learner_id, attempt_number,
@@ -1187,8 +1197,8 @@ export class AssessmentService {
           assessment.id,
           user.id,
           attemptNumber,
-          JSON.stringify(await this.questionRows(client, String(assessment.id), user, true)),
-          assessment.total_marks ?? null,
+          JSON.stringify(questionSnapshot),
+          attemptMaxScore,
           assessment.passing_marks ?? null,
           assessment.duration_minutes ?? null,
         ],
@@ -1204,6 +1214,7 @@ export class AssessmentService {
           assessment_type: assessment.assessment_type,
           duration_minutes: attempt.duration_minutes_snapshot ?? assessment.duration_minutes,
           attempt_limit: assessment.attempt_limit,
+          results_published: assessment.results_published,
         },
         questions,
         draft_answers: [],
