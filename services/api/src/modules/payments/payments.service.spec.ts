@@ -77,6 +77,31 @@ test("college students cannot list the direct-student purchase catalogue", async
   assert.equal(queryCalled, false);
 });
 
+test("course prices at the safe-integer boundary remain supported and larger values are rejected", async () => {
+  const purchasableCourse = {
+    id: "course-1",
+    title: "Safe course",
+    code: "SAFE-101",
+    description: "Course description",
+    thumbnail: null,
+    currency: "INR",
+    is_enrolled: false,
+  };
+  const serviceForPrice = (priceMinor: string) => serviceWith(
+    async () => ({ rows: [{ ...purchasableCourse, price_minor: priceMinor }] }),
+    async (work) => work({ query: async () => ({ rows: [] }) }),
+    {},
+  );
+
+  const supported = await serviceForPrice(String(Number.MAX_SAFE_INTEGER)).listPurchasableCourses(directStudent);
+  assert.equal(supported[0]?.priceMinor, Number.MAX_SAFE_INTEGER);
+
+  await assert.rejects(
+    serviceForPrice("9007199254740992").listPurchasableCourses(directStudent),
+    BadRequestException,
+  );
+});
+
 test("direct purchase creates a provider order from the existing course price", async () => {
   const calls: Array<{ text: string; values: unknown[] }> = [];
   const razorpay = {

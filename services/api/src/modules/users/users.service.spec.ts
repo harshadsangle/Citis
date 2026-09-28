@@ -54,6 +54,169 @@ test("institution-scoped administrators cannot assign platform roles", async () 
   }
 });
 
+test("assigning an existing role scope returns it without inserting or auditing again", async () => {
+  const assignment = {
+    id: "assignment-existing",
+    tenant_id: "tenant-1",
+    user_id: "user-1",
+    role_id: "student-role",
+    institution_id: null,
+    campus_id: null,
+  };
+  const calls: string[] = [];
+  const auditEvents: unknown[] = [];
+  const db = {
+    query: async (sql: string) => {
+      calls.push(sql);
+      if (sql.startsWith("SELECT id, tenant_id FROM users")) {
+        return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
+      }
+      if (sql.startsWith("SELECT id, code FROM roles")) {
+        return { rows: [{ id: "student-role", code: "STUDENT" }] };
+      }
+      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id FROM user_roles")) {
+        return { rows: [assignment] };
+      }
+      throw new Error(`Unexpected query: ${sql}`);
+    },
+  };
+  const service = new UsersService(
+    db as never,
+    { record: async (event: unknown) => auditEvents.push(event) } as never,
+  );
+  const actor = {
+    id: "platform-admin",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Platform",
+    lastName: "Admin",
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    permissions: [],
+    scopes: [],
+  };
+
+  const result = await service.assignRole(
+    "user-1",
+    { roleId: "student-role" },
+    { context: { user: actor, requestId: "request-duplicate" } } as never,
+  );
+
+  assert.deepEqual(result, assignment);
+  assert.equal(calls.filter((sql) => sql.startsWith("INSERT INTO user_roles")).length, 0);
+  assert.equal(auditEvents.length, 0);
+});
+
+test("a role-scope insert race reselects and returns the winning assignment without a duplicate audit", async () => {
+  const assignment = {
+    id: "assignment-winner",
+    tenant_id: "tenant-1",
+    user_id: "user-1",
+    role_id: "student-role",
+    institution_id: null,
+    campus_id: null,
+  };
+  let assignmentLookups = 0;
+  let insertAttempts = 0;
+  const auditEvents: unknown[] = [];
+  const db = {
+    query: async (sql: string) => {
+      if (sql.startsWith("SELECT id, tenant_id FROM users")) {
+        return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
+      }
+      if (sql.startsWith("SELECT id, code FROM roles")) {
+        return { rows: [{ id: "student-role", code: "STUDENT" }] };
+      }
+      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id FROM user_roles")) {
+        assignmentLookups += 1;
+        return { rows: assignmentLookups === 1 ? [] : [assignment] };
+      }
+      if (sql.startsWith("INSERT INTO user_roles")) {
+        insertAttempts += 1;
+        return { rows: [] };
+      }
+      throw new Error(`Unexpected query: ${sql}`);
+    },
+  };
+  const service = new UsersService(
+    db as never,
+    { record: async (event: unknown) => auditEvents.push(event) } as never,
+  );
+  const actor = {
+    id: "platform-admin",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Platform",
+    lastName: "Admin",
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    permissions: [],
+    scopes: [],
+  };
+
+  const result = await service.assignRole(
+    "user-1",
+    { roleId: "student-role" },
+    { context: { user: actor, requestId: "request-race" } } as never,
+  );
+
+  assert.deepEqual(result, assignment);
+  assert.equal(assignmentLookups, 2);
+  assert.equal(insertAttempts, 1);
+  assert.equal(auditEvents.length, 0);
+});
+
+test("a new role scope is inserted and audited once", async () => {
+  const assignment = {
+    id: "assignment-new",
+    tenant_id: "tenant-1",
+    user_id: "user-1",
+    role_id: "student-role",
+    institution_id: null,
+    campus_id: null,
+  };
+  const auditEvents: unknown[] = [];
+  const db = {
+    query: async (sql: string) => {
+      if (sql.startsWith("SELECT id, tenant_id FROM users")) {
+        return { rows: [{ id: "user-1", tenant_id: "tenant-1" }] };
+      }
+      if (sql.startsWith("SELECT id, code FROM roles")) {
+        return { rows: [{ id: "student-role", code: "STUDENT" }] };
+      }
+      if (sql.startsWith("SELECT id, tenant_id, user_id, role_id, institution_id, campus_id FROM user_roles")) {
+        return { rows: [] };
+      }
+      if (sql.startsWith("INSERT INTO user_roles")) {
+        return { rows: [assignment] };
+      }
+      throw new Error(`Unexpected query: ${sql}`);
+    },
+  };
+  const service = new UsersService(
+    db as never,
+    { record: async (event: unknown) => auditEvents.push(event) } as never,
+  );
+  const actor = {
+    id: "platform-admin",
+    tenantId: "tenant-1",
+    email: "admin@example.test",
+    firstName: "Platform",
+    lastName: "Admin",
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    permissions: [],
+    scopes: [],
+  };
+
+  const result = await service.assignRole(
+    "user-1",
+    { roleId: "student-role" },
+    { context: { user: actor, requestId: "request-new" } } as never,
+  );
+
+  assert.deepEqual(result, assignment);
+  assert.equal(auditEvents.length, 1);
+  assert.equal((auditEvents[0] as { action: string }).action, "CREATE");
+});
+
 test("user listings include active scoped role assignments", async () => {
   const db = {
     query: async (sql: string) => {
