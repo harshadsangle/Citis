@@ -499,9 +499,34 @@ export default function TeacherPortalPage() {
   const [assessmentQuestionLoading, setAssessmentQuestionLoading] = useState("");
   const [attemptGradeDrafts, setAttemptGradeDrafts] = useState<Record<string, AttemptGradeDraft>>({});
   const [assessmentDetailLoading, setAssessmentDetailLoading] = useState("");
-  const [error, setError] = useState("");
+  const [error, setErrorState] = useState("");
+  const [errorFieldId, setErrorFieldId] = useState("");
   const [notice, setNotice] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
+
+  function setError(message: string) {
+    setErrorState(message);
+    setErrorFieldId("");
+  }
+
+  function reportFieldError(fieldId: string, message: string) {
+    setErrorState(message);
+    setErrorFieldId(fieldId);
+    window.requestAnimationFrame(() => document.getElementById(fieldId)?.focus());
+  }
+
+  function fieldProps(fieldId: string) {
+    const invalid = Boolean(error && errorFieldId === fieldId);
+    return {
+      id: fieldId,
+      "aria-invalid": invalid,
+      "aria-describedby": invalid ? "teacher-action-error" : undefined,
+    };
+  }
+
+  function clearFieldError(fieldId: string) {
+    if (errorFieldId === fieldId) setError("");
+  }
 
   useEffect(() => {
     const updateGreeting = () => setGreeting(timeGreeting(new Date()));
@@ -1584,8 +1609,8 @@ export default function TeacherPortalPage() {
                </div>
             </header>
 
-            {error && <div className="alert error" role="alert"><strong>We couldn’t complete that action</strong><span>{error}</span><button type="button" onClick={() => setError("")} aria-label="Dismiss error">×</button></div>}
-            {notice && <div className="alert success" role="status"><strong>Workspace updated</strong><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
+            {error && <div id="teacher-action-error" className="alert error" role="alert" aria-live="assertive"><strong>We couldn’t complete that action</strong><span>{error}</span><button type="button" onClick={() => setError("")} aria-label="Dismiss error">×</button></div>}
+            {notice && <div className="alert success" role="status" aria-live="polite"><strong>Workspace updated</strong><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
 
              <section className="metrics" aria-label="Teaching summary">
                 <article className="metric-card"><span className="metric-card-icon">▦</span><div><span className="metric-label">Assigned courses</span><strong>{loading ? "—" : activeCourses.length}</strong><span className="metric-foot">Published courses in your teaching scope</span></div></article>
