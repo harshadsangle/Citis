@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { AuditService } from "../../common/audit.service";
+import { isPlatformPermission, isPlatformUser } from "../../common/access-scope";
 import type { ContextRequest } from "../../common/request-context";
 import { DatabaseService } from "../../database/database.service";
 import type { AssignPermissionsDto, CreateRoleDto } from "./rbac.dto";
@@ -38,9 +39,17 @@ export class RbacService {
   }
 
   async assignPermissions(roleId: string, input: AssignPermissionsDto, request: ContextRequest) {
-    const tenantId = request.context.user!.tenantId;
+    const actor = request.context.user!;
+    const tenantId = actor.tenantId;
     const role = await this.db.query<{ id: string }>("SELECT id FROM roles WHERE id = $1 AND tenant_id = $2", [roleId, tenantId]);
     if (!role.rows[0]) throw new NotFoundException("Role not found.");
+    const permissions = await this.db.query<{ code: string }>(
+      "SELECT code FROM permissions WHERE id = ANY($1::uuid[])",
+      [input.permissionIds],
+    );
+    if (!isPlatformUser(actor) && permissions.rows.some(({ code }) => isPlatformPermission(code))) {
+      throw new ForbiddenException("Tenant role managers cannot assign platform permissions.");
+    }
     await this.db.transaction(async (client) => {
       await client.query("DELETE FROM role_permissions WHERE role_id = $1", [roleId]);
       for (const permissionId of input.permissionIds) {

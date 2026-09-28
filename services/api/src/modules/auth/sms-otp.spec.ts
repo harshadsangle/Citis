@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 import test from "node:test";
+import { HttpException, UnauthorizedException } from "@nestjs/common";
 import { AuthService } from "./auth.service";
+import { AuthRateLimiter } from "./auth.rate-limit";
 
 const metadata = { ipAddress: "127.0.0.1" };
 const mobile = "+919876543210";
@@ -43,6 +45,50 @@ test("mobile OTP sends an SMS to the registered mobile number", async () => {
   assert.equal(delivered?.purpose, "LOGIN");
   assert.match(delivered?.code ?? "", /^[0-9a-f]{6}$/);
   assert.equal(statements.some((statement) => statement.includes("RETURNING id")), true);
+});
+
+test("mobile OTP IP limits are independent across tenants sharing the same IP", async () => {
+  let challengeId = 0;
+  const db = {
+    query: async (text: string, values: unknown[] = []) => {
+      if (text.includes("SELECT id FROM tenants")) return { rows: [{ id: `id-${values[0]}` }] };
+      if (text.includes("RETURNING id")) return { rows: [{ id: `challenge-${++challengeId}` }] };
+      return { rows: [] };
+    },
+    transaction: async (operation: (client: { query: () => Promise<{ rows: unknown[] }> }) => unknown) =>
+      operation({ query: async () => ({ rows: [] }) }),
+  };
+  const service = new AuthService(db as never, new AuthRateLimiter() as never, {
+    deliver: async () => undefined,
+  } as never);
+  const mobileFor = (index: number) => `+9198765432${String(index).padStart(2, "0")}`;
+
+  for (let index = 0; index < 10; index += 1) {
+    await service.requestOtp({ mobile: mobileFor(index), tenantSlug: "tenant-a" }, metadata);
+  }
+  await assert.rejects(
+    service.requestOtp({ mobile: mobileFor(10), tenantSlug: "tenant-a" }, metadata),
+    (error: unknown) => error instanceof HttpException && error.getStatus() === 429,
+  );
+  assert.deepEqual(
+    await service.requestOtp({ mobile: mobileFor(11), tenantSlug: "tenant-b" }, metadata),
+    { accepted: true, expiresInSeconds: 600 },
+  );
+
+  for (let index = 0; index < 20; index += 1) {
+    await assert.rejects(
+      service.verifyOtp({ mobile: mobileFor(index), tenantSlug: "tenant-a", code: "wrong" }, metadata),
+      UnauthorizedException,
+    );
+  }
+  await assert.rejects(
+    service.verifyOtp({ mobile: mobileFor(20), tenantSlug: "tenant-a", code: "wrong" }, metadata),
+    (error: unknown) => error instanceof HttpException && error.getStatus() === 429,
+  );
+  await assert.rejects(
+    service.verifyOtp({ mobile: mobileFor(21), tenantSlug: "tenant-b", code: "wrong" }, metadata),
+    UnauthorizedException,
+  );
 });
 
 test("failed mobile OTP delivery consumes the challenge and a retry creates a new challenge", async () => {

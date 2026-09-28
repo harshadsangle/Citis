@@ -8,6 +8,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { CampusesModule } from "./modules/campuses/campuses.module";
 import { CollegeStudentsModule } from "./modules/college-students/college-students.module";
 import { InstitutionsModule } from "./modules/institutions/institutions.module";
+import { HealthModule } from "./modules/health/health.module";
 import { LmsModule } from "./modules/lms/lms.module";
 import { ModulesModule } from "./modules/modules/modules.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
@@ -25,6 +26,7 @@ import { UsersModule } from "./modules/users/users.module";
     InstitutionsModule,
     CampusesModule,
     CollegeStudentsModule,
+    HealthModule,
     UsersModule,
     RbacModule,
     ModulesModule,

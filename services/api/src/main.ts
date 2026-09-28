@@ -6,6 +6,7 @@ import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import type { NextFunction, Request, Response } from "express";
 import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./common/errors.filter";
+import { registerRootHealthEndpoint } from "./common/health-route";
 import { requestContextMiddleware } from "./common/request-context";
 import { isOriginAllowed, normalizeOrigin } from "./common/cors-origin";
 
@@ -44,6 +45,7 @@ async function bootstrap() {
       : true,
     credentials: true,
   });
+  registerRootHealthEndpoint(app.getHttpAdapter().getInstance());
 
   if (process.env.NODE_ENV !== "production") {
     const swaggerConfig = new DocumentBuilder()

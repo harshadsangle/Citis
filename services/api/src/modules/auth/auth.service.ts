@@ -955,10 +955,11 @@ export class AuthService {
   }
 
   async requestOtp(input: OtpRequestDto, metadata: { ipAddress?: string }) {
-    const ipKey = metadata.ipAddress || "unknown";
     const tenantSlug = input.tenantSlug.trim();
     const mobile = input.mobile.trim();
-    const mobileKey = `${ipKey}:${tenantSlug}:${mobile}`;
+    const ipAddress = metadata.ipAddress || "unknown";
+    const ipKey = `${tenantSlug}:${ipAddress}`;
+    const mobileKey = `${ipAddress}:${tenantSlug}:${mobile}`;
     this.rateLimiter.assertAllowed("otp-request-ip", ipKey, 10, OTP_WINDOW_MS);
     this.rateLimiter.assertAllowed("otp-request-mobile", mobileKey, 5, OTP_WINDOW_MS);
     this.rateLimiter.record("otp-request-ip", ipKey, OTP_WINDOW_MS);
@@ -1002,10 +1003,11 @@ export class AuthService {
   }
 
   async verifyOtp(input: OtpVerifyDto, metadata: { ipAddress?: string; userAgent?: string }) {
-    const ipKey = metadata.ipAddress || "unknown";
     const tenantSlug = input.tenantSlug.trim();
     const mobile = input.mobile.trim();
-    const mobileKey = `${ipKey}:${tenantSlug}:${mobile}`;
+    const ipAddress = metadata.ipAddress || "unknown";
+    const ipKey = `${tenantSlug}:${ipAddress}`;
+    const mobileKey = `${ipAddress}:${tenantSlug}:${mobile}`;
     this.rateLimiter.assertAllowed("otp-verify-ip", ipKey, 20, OTP_WINDOW_MS);
     this.rateLimiter.assertAllowed("otp-verify-mobile", mobileKey, 5, OTP_WINDOW_MS);
     const result = await this.db.transaction(async (client) => {
