@@ -702,3 +702,82 @@ test("two successive partial refunds can be followed by a final refund", async (
   assert.equal(final.status, "PROCESSED");
   assert.equal(payment.status, "REFUNDED");
 });
+
+test("refund service rejects invalid, unsafe, and over-cap amounts before reserving a refund", async () => {
+  const admin: AuthenticatedUser = {
+    ...directStudent,
+    id: "admin-1",
+    studentType: undefined,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  };
+  let transactionCalls = 0;
+  let providerCalls = 0;
+  const service = serviceWith(
+    async () => ({ rows: [] }),
+    async (work) => {
+      transactionCalls += 1;
+      return work({ query: async () => ({ rows: [] }) });
+    },
+    { refundPayment: async () => { providerCalls += 1; return {}; } },
+  );
+
+  for (const amountMinor of [
+    0,
+    -1,
+    1.5,
+    Number.MAX_SAFE_INTEGER + 1,
+    1_000_000_001,
+    Number.POSITIVE_INFINITY,
+  ]) {
+    await assert.rejects(
+      service.initiateRefund("payment-1", { amountMinor, reason: "Invalid amount" }, admin),
+      BadRequestException,
+    );
+  }
+  assert.equal(transactionCalls, 0);
+  assert.equal(providerCalls, 0);
+});
+
+test("refund service rejects amounts above the remaining balance before insertion or provider calls", async () => {
+  const admin: AuthenticatedUser = {
+    ...directStudent,
+    id: "admin-1",
+    studentType: undefined,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+  };
+  let refundInsertCalls = 0;
+  let providerCalls = 0;
+  const service = serviceWith(
+    async () => ({ rows: [] }),
+    async (work) => work({
+      query: async (text: string) => {
+        if (text.startsWith("SELECT * FROM lms_payments")) {
+          return {
+            rows: [{
+              id: "payment-1",
+              tenant_id: admin.tenantId,
+              student_id: "student-1",
+              course_id: "course-1",
+              amount_minor: "1000",
+              status: "CAPTURED",
+              razorpay_payment_id: "provider-payment-1",
+            }],
+          };
+        }
+        if (text.includes("SELECT COALESCE(sum(amount_minor), 0)::text AS total")) {
+          return { rows: [{ total: "500" }] };
+        }
+        if (text.startsWith("INSERT INTO lms_refunds")) refundInsertCalls += 1;
+        throw new Error(`Unexpected transaction query: ${text}`);
+      },
+    }),
+    { refundPayment: async () => { providerCalls += 1; return {}; } },
+  );
+
+  await assert.rejects(
+    service.initiateRefund("payment-1", { amountMinor: 501, reason: "Over remaining balance" }, admin),
+    BadRequestException,
+  );
+  assert.equal(refundInsertCalls, 0);
+  assert.equal(providerCalls, 0);
+});
