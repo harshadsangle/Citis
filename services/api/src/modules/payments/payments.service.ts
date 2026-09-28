@@ -1,11 +1,15 @@
 import { createHash } from "node:crypto";
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from "@nestjs/common";
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
 import type { ContextRequest, AuthenticatedUser } from "../../common/request-context";
 import { isLmsAdministrator } from "../../common/access-scope";
 import { DatabaseService } from "../../database/database.service";
 import { AuditService } from "../../common/audit.service";
 import type { CreatePaymentOrderDto, CreateRefundDto, PaymentListQueryDto, VerifyPaymentDto } from "./payments.dto";
 import { RazorpayClient } from "./razorpay.client";
+
+const IDEMPOTENCY_ORDER_WAIT_TIMEOUT_MS = 30_000;
+const IDEMPOTENCY_ORDER_POLL_INITIAL_MS = 25;
+const IDEMPOTENCY_ORDER_POLL_MAX_MS = 500;
 
 type ProviderPayment = {
   id: string;
@@ -75,6 +79,34 @@ export class PaymentsService {
     };
   }
 
+  private async waitForOrderAfterIdempotencyConflict(
+    payment: Record<string, unknown>,
+    user: AuthenticatedUser,
+  ) {
+    const deadline = Date.now() + IDEMPOTENCY_ORDER_WAIT_TIMEOUT_MS;
+    let pollDelayMs = IDEMPOTENCY_ORDER_POLL_INITIAL_MS;
+
+    while (Date.now() < deadline) {
+      const remainingMs = deadline - Date.now();
+      if (remainingMs <= 0) break;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(pollDelayMs, remainingMs)));
+      const latest = await this.db.query<Record<string, unknown>>(
+        `SELECT * FROM lms_payments
+         WHERE id = $1 AND tenant_id = $2 AND student_id = $3 AND course_id = $4`,
+        [payment.id, user.tenantId, user.id, payment.course_id],
+      );
+      const current = latest.rows[0];
+      if (!current) break;
+      if (current.razorpay_order_id || current.status === "CAPTURED") return current;
+      if (current.status !== "PENDING") break;
+      pollDelayMs = Math.min(pollDelayMs * 2, IDEMPOTENCY_ORDER_POLL_MAX_MS);
+    }
+
+    throw new ServiceUnavailableException(
+      "The existing payment order could not be confirmed. Retry with the same idempotency key.",
+    );
+  }
+
   async listPurchasableCourses(user: AuthenticatedUser) {
     this.assertDirectStudent(user);
     const result = await this.db.query<{
@@ -118,36 +150,62 @@ export class PaymentsService {
     this.assertDirectStudent(user);
     const course = await this.purchaseCourse(courseId, user);
     const idempotencyKey = input.idempotencyKey.trim();
-    const payment = await this.db.transaction(async (client) => {
-      const existing = await client.query<Record<string, unknown>>(
+    let payment: Record<string, unknown>;
+    let lostIdempotencyRace = false;
+    try {
+      payment = await this.db.transaction(async (client) => {
+        const existing = await client.query<Record<string, unknown>>(
+          `SELECT * FROM lms_payments
+           WHERE tenant_id = $1 AND student_id = $2 AND course_id = $3 AND idempotency_key = $4
+           FOR UPDATE`,
+          [user.tenantId, user.id, course.id, idempotencyKey],
+        );
+        if (existing.rows[0]) return existing.rows[0];
+
+        const active = await client.query(
+          `SELECT id FROM lms_enrollments
+           WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+           LIMIT 1`,
+          [user.tenantId, course.id, user.id],
+        );
+        if (active.rows[0]) throw new ConflictException("You already have access to this course.");
+
+        const inserted = await client.query<Record<string, unknown>>(
+          `INSERT INTO lms_payments
+            (tenant_id, student_id, course_id, idempotency_key, amount_minor, currency, status)
+           VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
+           RETURNING *`,
+          [user.tenantId, user.id, course.id, idempotencyKey, course.amountMinor, course.currency],
+        );
+        return inserted.rows[0];
+      });
+    } catch (error) {
+      const errorCode = typeof error === "object" && error !== null
+        ? (error as { code?: unknown }).code
+        : undefined;
+      if (errorCode !== "23505") throw error;
+
+      const racedPayment = await this.db.query<Record<string, unknown>>(
         `SELECT * FROM lms_payments
-         WHERE tenant_id = $1 AND student_id = $2 AND course_id = $3 AND idempotency_key = $4
-         FOR UPDATE`,
+         WHERE tenant_id = $1 AND student_id = $2 AND course_id = $3 AND idempotency_key = $4`,
         [user.tenantId, user.id, course.id, idempotencyKey],
       );
-      if (existing.rows[0]) return existing.rows[0];
-
-      const active = await client.query(
-        `SELECT id FROM lms_enrollments
-         WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
-         LIMIT 1`,
-        [user.tenantId, course.id, user.id],
-      );
-      if (active.rows[0]) throw new ConflictException("You already have access to this course.");
-
-      const inserted = await client.query<Record<string, unknown>>(
-        `INSERT INTO lms_payments
-          (tenant_id, student_id, course_id, idempotency_key, amount_minor, currency, status)
-         VALUES ($1, $2, $3, $4, $5, $6, 'PENDING')
-         RETURNING *`,
-        [user.tenantId, user.id, course.id, idempotencyKey, course.amountMinor, course.currency],
-      );
-      return inserted.rows[0];
-    });
+      if (!racedPayment.rows[0]) throw error;
+      payment = racedPayment.rows[0];
+      lostIdempotencyRace = true;
+    }
 
     if (payment.razorpay_order_id || payment.status === "CAPTURED") {
       return {
         ...this.paymentSummary(payment),
+        keyId: process.env.RAZORPAY_KEY_ID || null,
+      };
+    }
+
+    if (lostIdempotencyRace) {
+      const completedPayment = await this.waitForOrderAfterIdempotencyConflict(payment, user);
+      return {
+        ...this.paymentSummary(completedPayment),
         keyId: process.env.RAZORPAY_KEY_ID || null,
       };
     }
