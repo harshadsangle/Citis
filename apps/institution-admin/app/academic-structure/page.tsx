@@ -144,12 +144,16 @@ export default function AcademicStructurePage() {
           request<ListResponse>(`/academic/semesters${query}`),
           request<ListResponse>(`/academic/course-options?institutionId=${encodeURIComponent(institutionId)}`),
         ]);
-        if (current && semesterResult.status === "fulfilled") {
-          setSemesters((semesterResult.value.data || []).filter((item) => item.status !== "ARCHIVED"));
-        } else if (current) setError(semesterResult.reason instanceof Error ? semesterResult.reason.message : "Unable to load semesters.");
-        if (current && courseResult.status === "fulfilled") {
-          setCourses(courseResult.value.data || []);
-        } else if (current) setError(courseResult.reason instanceof Error ? courseResult.reason.message : "Unable to load courses.");
+        if (semesterResult.status === "fulfilled") {
+          if (current) setSemesters((semesterResult.value.data || []).filter((item) => item.status !== "ARCHIVED"));
+        } else if (current) {
+          setError(semesterResult.reason instanceof Error ? semesterResult.reason.message : "Unable to load semesters.");
+        }
+        if (courseResult.status === "fulfilled") {
+          if (current) setCourses(courseResult.value.data || []);
+        } else if (current) {
+          setError(courseResult.reason instanceof Error ? courseResult.reason.message : "Unable to load courses.");
+        }
       }
     };
     void loadOptions();
