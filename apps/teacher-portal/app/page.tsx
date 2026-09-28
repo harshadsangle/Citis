@@ -74,6 +74,10 @@ type Assessment = {
   passing_marks?: number | null;
   duration_minutes?: number | null;
   attempt_limit?: number | null;
+  randomize_questions?: boolean;
+  randomize_options?: boolean;
+  questions_to_select?: number | null;
+  results_published?: boolean;
   status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
 };
 
@@ -92,9 +96,23 @@ type AssessmentQuestion = {
   prompt: string;
   question_type: string;
   marks: number;
+  negative_marks?: number;
   sequence: number;
   status: "ACTIVE" | "ARCHIVED";
+  subject?: string | null;
+  topic?: string | null;
+  difficulty?: string | null;
+  bank_question_id?: string | null;
+  matching_pairs?: Array<{ prompt: string; answer: string }>;
+  matching_items?: Array<{ id: string; prompt: string }>;
+  matching_options?: string[];
   options: AssessmentOption[];
+};
+
+type BankQuestion = Omit<AssessmentQuestion, "assessment_id" | "sequence" | "status"> & {
+  subject: string;
+  topic: string;
+  difficulty: "EASY" | "MEDIUM" | "HARD";
 };
 
 type AssessmentAttempt = {
@@ -142,6 +160,9 @@ type AssessmentEditor = {
   passingMarks: string;
   durationMinutes: string;
   attemptLimit: string;
+  randomizeQuestions: boolean;
+  randomizeOptions: boolean;
+  questionsToSelect: string;
 };
 
 type QuestionEditor = {
@@ -150,7 +171,13 @@ type QuestionEditor = {
   prompt: string;
   questionType: string;
   marks: string;
+  negativeMarks: string;
   sequence: string;
+  subject: string;
+  topic: string;
+  difficulty: string;
+  saveToBank: boolean;
+  matchingPairsText: string;
   options: AssessmentOption[];
 };
 
@@ -423,6 +450,9 @@ function assessmentEditorFrom(assessment: Assessment): AssessmentEditor {
     passingMarks: assessment.passing_marks === null || assessment.passing_marks === undefined ? "" : String(assessment.passing_marks),
     durationMinutes: assessment.duration_minutes === null || assessment.duration_minutes === undefined ? "" : String(assessment.duration_minutes),
     attemptLimit: assessment.attempt_limit === null || assessment.attempt_limit === undefined ? "" : String(assessment.attempt_limit),
+    randomizeQuestions: assessment.randomize_questions === true,
+    randomizeOptions: assessment.randomize_options === true,
+    questionsToSelect: assessment.questions_to_select === null || assessment.questions_to_select === undefined ? "" : String(assessment.questions_to_select),
   };
 }
 
@@ -433,8 +463,11 @@ function defaultQuestionOptions(questionType: string): AssessmentOption[] {
       { value: "false", label: "False", isCorrect: false },
     ];
   }
-  if (questionType === "SHORT_TEXT" || questionType === "NUMERIC") {
-    return [{ value: "", label: "Correct answer", isCorrect: true }];
+  if (questionType === "MATCHING" || questionType === "LONG_ANSWER") {
+    return [];
+  }
+  if (questionType === "SHORT_TEXT" || questionType === "NUMERIC" || questionType === "FILL_IN_BLANK") {
+    return [{ value: "", label: "Accepted answer", isCorrect: true }];
   }
   return [
     { value: "option-a", label: "Option A", isCorrect: true },
@@ -449,7 +482,13 @@ function questionEditorFrom(question: AssessmentQuestion): QuestionEditor {
     prompt: question.prompt,
     questionType: question.question_type,
     marks: String(question.marks),
+    negativeMarks: String(question.negative_marks ?? 0),
     sequence: String(question.sequence),
+    subject: question.subject || "",
+    topic: question.topic || "",
+    difficulty: question.difficulty || "MEDIUM",
+    saveToBank: false,
+    matchingPairsText: (question.matching_pairs || []).map((pair) => `${pair.prompt}|${pair.answer}`).join("\n"),
     options: question.options.map((option) => ({
       id: option.id,
       value: option.value,
@@ -463,13 +502,15 @@ function questionEditorFrom(question: AssessmentQuestion): QuestionEditor {
 function answerText(value: unknown): string {
   if (value && typeof value === "object" && "value" in value) {
     const answer = (value as { value?: unknown }).value;
-    return Array.isArray(answer) ? answer.join(", ") : String(answer ?? "No answer");
+    if (Array.isArray(answer)) return answer.join(", ");
+    if (answer && typeof answer === "object") return Object.entries(answer).map(([key, item]) => `${key}: ${String(item)}`).join(", ");
+    return String(answer ?? "No answer");
   }
   return typeof value === "string" ? value : JSON.stringify(value) || "No answer";
 }
 
 const assessmentTypes = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "PROJECT", "VIVA", "PRACTICAL"];
-const questionTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"];
+const questionTypes = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC", "FILL_IN_BLANK", "MATCHING", "LONG_ANSWER"];
 const resourceTypes = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 
 function statusLabel(value: string) {
