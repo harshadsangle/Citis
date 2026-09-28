@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS lms_course_chapters (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   tenant_id uuid NOT NULL REFERENCES tenants(id) ON DELETE RESTRICT,
   unit_id uuid NOT NULL REFERENCES lms_course_units(id) ON DELETE RESTRICT,
+  course_id uuid,
   title text NOT NULL,
   description text,
   sequence integer NOT NULL DEFAULT 1 CHECK (sequence >= 1),
@@ -26,7 +27,8 @@ CREATE TABLE IF NOT EXISTS lms_course_chapters (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (tenant_id, unit_id, sequence),
-  UNIQUE (tenant_id, id)
+  UNIQUE (tenant_id, id),
+  UNIQUE (tenant_id, course_id, id)
 );
 ALTER TABLE course_modules ADD COLUMN IF NOT EXISTS chapter_id uuid;
 INSERT INTO lms_course_units (tenant_id, course_id, title, description, sequence, status)
@@ -35,8 +37,8 @@ FROM courses c
 WHERE NOT EXISTS (
   SELECT 1 FROM lms_course_units u WHERE u.tenant_id = c.tenant_id AND u.course_id = c.id AND u.title = 'General unit'
 );
-INSERT INTO lms_course_chapters (tenant_id, unit_id, title, description, sequence, status)
-SELECT u.tenant_id, u.id, 'Default chapter', 'Legacy content grouping', 1, 'PUBLISHED'
+INSERT INTO lms_course_chapters (tenant_id, unit_id, course_id, title, description, sequence, status)
+SELECT u.tenant_id, u.id, u.course_id, 'Default chapter', 'Legacy content grouping', 1, 'PUBLISHED'
 FROM lms_course_units u
 WHERE u.title = 'General unit'
   AND NOT EXISTS (
@@ -48,6 +50,11 @@ FROM lms_course_chapters ch
 JOIN lms_course_units u ON u.tenant_id = ch.tenant_id AND u.id = ch.unit_id
 WHERE m.tenant_id = u.tenant_id AND m.course_id = u.course_id
   AND m.chapter_id IS NULL AND u.title = 'General unit' AND ch.title = 'Default chapter';
+UPDATE lms_course_chapters ch
+SET course_id = u.course_id
+FROM lms_course_units u
+WHERE u.tenant_id = ch.tenant_id AND u.id = ch.unit_id AND ch.course_id IS NULL;
+ALTER TABLE lms_course_chapters ALTER COLUMN course_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS lms_course_units_course_idx ON lms_course_units(tenant_id, course_id, sequence);
 CREATE INDEX IF NOT EXISTS lms_course_chapters_unit_idx ON lms_course_chapters(tenant_id, unit_id, sequence);
 CREATE INDEX IF NOT EXISTS course_modules_chapter_idx ON course_modules(tenant_id, chapter_id, sequence);
@@ -59,8 +66,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_chapters_tenant_unit_fk' AND connamespace = current_schema()::regnamespace) THEN
     ALTER TABLE lms_course_chapters ADD CONSTRAINT lms_chapters_tenant_unit_fk FOREIGN KEY (tenant_id, unit_id) REFERENCES lms_course_units(tenant_id, id);
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'lms_chapters_tenant_course_unit_fk' AND connamespace = current_schema()::regnamespace) THEN
+    ALTER TABLE lms_course_chapters ADD CONSTRAINT lms_chapters_tenant_course_unit_fk FOREIGN KEY (tenant_id, course_id, unit_id) REFERENCES lms_course_units(tenant_id, course_id, id);
+  END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'course_modules_tenant_chapter_fk' AND connamespace = current_schema()::regnamespace) THEN
-    ALTER TABLE course_modules ADD CONSTRAINT course_modules_tenant_chapter_fk FOREIGN KEY (tenant_id, chapter_id) REFERENCES lms_course_chapters(tenant_id, id);
+    ALTER TABLE course_modules ADD CONSTRAINT course_modules_tenant_chapter_fk FOREIGN KEY (tenant_id, course_id, chapter_id) REFERENCES lms_course_chapters(tenant_id, course_id, id);
   END IF;
 END $$;
 WITH permission_seed(resource, action, description) AS (VALUES

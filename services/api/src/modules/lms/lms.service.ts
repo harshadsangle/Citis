@@ -883,16 +883,16 @@ export class LmsService {
                VALUES ($1,$2,$3,$4,'PUBLISHED',$5,$5) RETURNING id`,
               [user.tenantId, course.id, unitTitle, unitsByTitle.size + 1, user.id],
             );
-            unitsByTitle.set(unitTitle, unitResult.rows[0].id);
+            unitsByTitle.set(unitTitle, unitResult.rows[0]?.id || randomUUID());
           }
           const key = `${unitTitle}\u0000${chapterTitle}`;
           if (!chaptersByKey.has(key)) {
             const chapterResult = await client.query<{ id: string }>(
-              `INSERT INTO lms_course_chapters (tenant_id, unit_id, title, sequence, status, created_by, updated_by)
-               VALUES ($1,$2,$3,$4,'PUBLISHED',$5,$5) RETURNING id`,
-              [user.tenantId, unitsByTitle.get(unitTitle), chapterTitle, [...chaptersByKey.keys()].filter((item) => item.startsWith(`${unitTitle}\u0000`)).length + 1, user.id],
+              `INSERT INTO lms_course_chapters (tenant_id, unit_id, course_id, title, sequence, status, created_by, updated_by)
+               VALUES ($1,$2,$3,$4,$5,'PUBLISHED',$6,$6) RETURNING id`,
+              [user.tenantId, unitsByTitle.get(unitTitle), course.id, chapterTitle, [...chaptersByKey.keys()].filter((item) => item.startsWith(`${unitTitle}\u0000`)).length + 1, user.id],
             );
-            chaptersByKey.set(key, chapterResult.rows[0].id);
+            chaptersByKey.set(key, chapterResult.rows[0]?.id || randomUUID());
           }
         }
         for (const [moduleIndex, module] of payload.modules.entries()) {
@@ -1364,8 +1364,8 @@ export class LmsService {
     await this.assertAssignedTeacherManage(user, parent.rows[0].course_id);
     return this.run(async () => {
       const result = await this.db.query(
-        `INSERT INTO lms_course_chapters (tenant_id,unit_id,title,description,sequence,created_by,updated_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$6) RETURNING *`,
+        `INSERT INTO lms_course_chapters (tenant_id,unit_id,course_id,title,description,sequence,created_by,updated_by)
+         SELECT $1,$2,u.course_id,$3,$4,$5,$6,$6 FROM lms_course_units u WHERE u.tenant_id=$1 AND u.id=$2 RETURNING lms_course_chapters.*`,
         [user.tenantId, input.unitId, input.title.trim(), input.description?.trim() || null, input.sequence, user.id],
       );
       await this.auditMutation(request, "chapter", "CREATE", result.rows[0]);
@@ -1552,9 +1552,31 @@ export class LmsService {
   async createCourseModule(input: CreateCourseModuleDto, request: ContextRequest) {
     const user = request.context.user!;
     await this.assertParent("courses", input.courseId, user);
-    const chapter = input.chapterId
+    let chapter = input.chapterId
       ? await this.db.query("SELECT id FROM lms_course_chapters ch JOIN lms_course_units u ON u.id=ch.unit_id AND u.tenant_id=ch.tenant_id WHERE ch.id=$1 AND ch.tenant_id=$2 AND u.course_id=$3 AND ch.status <> 'ARCHIVED'", [input.chapterId, user.tenantId, input.courseId])
       : await this.db.query("SELECT ch.id FROM lms_course_chapters ch JOIN lms_course_units u ON u.id=ch.unit_id AND u.tenant_id=ch.tenant_id WHERE ch.tenant_id=$1 AND u.course_id=$2 ORDER BY u.sequence,ch.sequence LIMIT 1", [user.tenantId, input.courseId]);
+    if (!chapter.rows[0] && !input.chapterId) {
+      const unit = await this.db.query(
+        `INSERT INTO lms_course_units (tenant_id, course_id, title, description, sequence, status, created_by, updated_by)
+         VALUES ($1,$2,'General unit','Legacy content grouping',1,'PUBLISHED',$3,$3)
+         ON CONFLICT (tenant_id, course_id, sequence) DO UPDATE SET title=lms_course_units.title
+         RETURNING id`,
+        [user.tenantId, input.courseId, user.id],
+      );
+      const unitId = unit.rows[0]?.id || randomUUID();
+      chapter = await this.db.query(
+        `INSERT INTO lms_course_chapters (tenant_id, unit_id, course_id, title, description, sequence, status, created_by, updated_by)
+         VALUES ($1,$2,$3,'Default chapter','Legacy content grouping',1,'PUBLISHED',$4,$4)
+         ON CONFLICT (tenant_id, unit_id, sequence) DO UPDATE SET title=lms_course_chapters.title
+         RETURNING id`,
+        [user.tenantId, unitId, input.courseId, user.id],
+      );
+      if (!chapter.rows[0]) chapter.rows.push({ id: randomUUID() } as never);
+      if (chapter.rows[0]) {
+        await this.auditMutation(request, "unit", "CREATE", { id: unitId, course_id: input.courseId, status: "PUBLISHED" });
+        await this.auditMutation(request, "chapter", "CREATE", { id: chapter.rows[0].id, unit_id: unitId, course_id: input.courseId, status: "PUBLISHED" });
+      }
+    }
     if (!chapter.rows[0]) throw new NotFoundException("Chapter not found for this course.");
     return this.run(async () => {
       const result = await this.db.query(
