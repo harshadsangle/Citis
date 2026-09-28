@@ -483,24 +483,18 @@ export class LmsService {
       clauses.push(`p.institution_id = $${values.length}`);
     }
     const pageParam = values.length + 1;
-    const [rows, total] = await Promise.all([
-      this.db.query(
+    const rows = await this.db.query(
         `SELECT p.id, p.tenant_id, p.institution_id, p.campus_id, i.name AS institution_name, p.name, p.code, p.description, p.status,
                 p.created_at, p.updated_at
          FROM programmes p JOIN institutions i ON i.id = p.institution_id
          WHERE ${clauses.join(" AND ")}
          ORDER BY p.created_at DESC LIMIT $${pageParam} OFFSET $${pageParam + 1}`,
         [...values, pageSize, offset],
-      ),
-      this.db.query<{ count: string }>(
-        `SELECT count(*)::text AS count FROM programmes p WHERE ${clauses.join(" AND ")}`,
-        values,
-      ),
-    ]);
+      );
     const visible = this.isDirectStudentLearner(user)
       ? rows.rows as Array<Record<string, unknown>>
       : filterScopedRows(user, rows.rows as Array<Record<string, unknown>>);
-    return { data: visible, meta: paginationMeta(page, pageSize, Number(total.rows[0]?.count ?? visible.length)) };
+    return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
   }
 
   async getProgramme(id: string, user: AuthenticatedUser) {

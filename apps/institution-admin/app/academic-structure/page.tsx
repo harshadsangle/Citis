@@ -183,13 +183,16 @@ export default function AcademicStructurePage() {
       else Object.assign(body, { institutionId, name, code, description, departmentId: departmentId || undefined });
     } else if (kind === "faculties") {
       Object.assign(body, { name, code, description });
-      if (!editingId) body.institutionId = institutionId;
+      if (editingId) body.code = code;
+      else body.institutionId = institutionId;
     } else if (kind === "departments") {
       Object.assign(body, { name, code, description, facultyId });
-      if (!editingId) body.institutionId = institutionId;
+      if (editingId) body.code = code;
+      else body.institutionId = institutionId;
     } else if (kind === "semesters") {
       Object.assign(body, { name, code, startDate, endDate });
-      if (!editingId) body.institutionId = institutionId;
+      if (editingId) body.code = code;
+      else body.institutionId = institutionId;
     } else {
       Object.assign(body, { section });
       if (!editingId) Object.assign(body, { institutionId, courseId, semesterId });
@@ -320,7 +323,7 @@ export default function AcademicStructurePage() {
               <label style={styles.label}>{kind === "programmes" ? "Programme name" : `${titleFor(kind).replace(/s$/, "")} name`}
                 <input style={styles.input} value={name} onChange={(event) => setName(event.target.value)} minLength={1} maxLength={160} required />
               </label>
-              {!editingId && <label style={styles.label}>Code
+              {(kind !== "programmes" || !editingId) && <label style={styles.label}>Code
                 <input style={styles.input} value={code} onChange={(event) => setCode(event.target.value)} minLength={1} maxLength={48} required />
               </label>}
               {(kind === "programmes" || kind === "faculties" || kind === "departments") && (

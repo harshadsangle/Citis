@@ -45,19 +45,13 @@ export class AcademicStructureService {
     if (query.facultyId && kind === "departments") addFilter("faculty_id", query.facultyId);
     if (query.semesterId && kind === "course-offerings") addFilter("semester_id", query.semesterId);
 
-    const [result, count] = await Promise.all([
-      this.db.query(
-        `SELECT a.* FROM ${table} a WHERE ${filters.join(" AND ")}
-         ORDER BY a.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
-        [...values, size, offset],
-      ),
-      this.db.query<{ count: string }>(
-        `SELECT count(*)::text AS count FROM ${table} a WHERE ${filters.join(" AND ")}`,
-        values,
-      ),
-    ]);
+    const result = await this.db.query(
+      `SELECT a.* FROM ${table} a WHERE ${filters.join(" AND ")}
+       ORDER BY a.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`,
+      [...values, size, offset],
+    );
     const rows = filterScopedRows(user, result.rows as Array<Record<string, unknown>>, "institution_id", "campus_id");
-    return { data: rows, meta: paginationMeta(page, size, Number(count.rows[0]?.count ?? rows.length)) };
+    return { data: rows, meta: paginationMeta(page, size, rows.length) };
   }
 
   async create(
