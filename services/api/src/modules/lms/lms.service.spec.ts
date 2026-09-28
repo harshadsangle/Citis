@@ -774,6 +774,35 @@ test("learning resource PATCH explicitly clears required URL types without weake
     assert.equal(updates[0]?.values[4], null);
   }
 
+  const videoWithFile = {
+    id: "resource-1",
+    tenant_id: user.tenantId,
+    lesson_id: "lesson-1",
+    resource_type: "VIDEO",
+    title: "Uploaded video",
+    url: null,
+    file_path: "uploads/video.mp4",
+    duration: null,
+    sequence: 1,
+    status: "ACTIVE",
+  };
+  let videoUpdateValues: unknown[] | undefined;
+  const { service: videoService } = serviceWith(async (text, values) => {
+    if (text.includes("FROM learning_resources x")) {
+      return { rows: [{ ...videoWithFile, institution_id: "institution-1", campus_id: null, course_id: "course-1" }] };
+    }
+    if (text.startsWith("SELECT * FROM learning_resources")) return { rows: [videoWithFile] };
+    if (text.startsWith("UPDATE learning_resources")) {
+      videoUpdateValues = values;
+      return { rows: [{ ...videoWithFile, file_path: values[5] }] };
+    }
+    return { rows: [] };
+  });
+
+  await videoService.updateLearningResource("resource-1", { filePath: "" }, request);
+  assert.equal(videoUpdateValues?.[5], null);
+  assert.equal(videoUpdateValues?.[10], true);
+
   const existingPdf = {
     id: "resource-1",
     tenant_id: user.tenantId,
