@@ -482,8 +482,26 @@ export class AssessmentService {
     });
   }
 
-  private validateOptions(questionType: string, options: CreateAssessmentOptionDto[]) {
+  private validateOptions(
+    questionType: string,
+    options: CreateAssessmentOptionDto[],
+    matchingPairs: CreateAssessmentMatchingPairDto[] = [],
+  ) {
     if (!questionTypes.includes(questionType as QuestionType)) throw new BadRequestException("Unsupported question type.");
+    if (questionType === "LONG_ANSWER") {
+      if (options.length || matchingPairs.length) throw new BadRequestException("Long-answer questions do not use answer options.");
+      return;
+    }
+    if (questionType === "MATCHING") {
+      if (options.length || matchingPairs.length < 2) throw new BadRequestException("Matching questions need at least two prompt and answer pairs.");
+      const prompts = matchingPairs.map((pair) => pair.prompt.trim().toLowerCase());
+      const answers = matchingPairs.map((pair) => pair.answer.trim().toLowerCase());
+      if (prompts.some((value) => !value) || answers.some((value) => !value) ||
+          new Set(prompts).size !== prompts.length || new Set(answers).size !== answers.length) {
+        throw new BadRequestException("Matching prompts and answers must be non-empty and unique.");
+      }
+      return;
+    }
     if (!options.length) throw new BadRequestException("Each question needs at least one answer option.");
     if (options.some((option) => !option.value.trim() || !option.label.trim())) {
       throw new BadRequestException("Question options must include a value and label.");
@@ -500,8 +518,11 @@ export class AssessmentService {
     if (questionType === "TRUE_FALSE" || questionType === "SINGLE_CHOICE" || questionType === "MULTIPLE_CHOICE") {
       if (options.length < 2) throw new BadRequestException("Choice questions need at least two options.");
     }
-    if (["SHORT_TEXT", "NUMERIC"].includes(questionType) && correct.length !== 1) {
-      throw new BadRequestException("Text and numeric questions need exactly one correct answer.");
+    if (["SHORT_TEXT", "NUMERIC", "FILL_IN_BLANK"].includes(questionType) && correct.length < 1) {
+      throw new BadRequestException("Text, numeric, and fill-in-the-blank questions need at least one accepted answer.");
+    }
+    if (questionType === "NUMERIC" && correct.length !== 1) {
+      throw new BadRequestException("Numeric questions need exactly one correct answer.");
     }
     if (questionType === "TRUE_FALSE" && (() => {
       const normalized = new Set(values.map((value) => value.toLowerCase()));
@@ -533,7 +554,9 @@ export class AssessmentService {
     const correctColumn = includeCorrect ? ", o.is_correct" : "";
     const result = await executor.query(
       `SELECT q.id, q.tenant_id, q.institution_id, q.campus_id, q.course_id, q.module_id,
-              q.assessment_id, q.prompt, q.question_type, q.marks, q.sequence, q.status,
+              q.assessment_id, q.prompt, q.question_type, q.marks, q.negative_marks,
+              q.subject, q.topic, q.difficulty, q.bank_question_id, q.matching_pairs,
+              q.sequence, q.status,
               o.id AS option_id, o.option_value, o.option_label, o.sequence AS option_sequence${correctColumn}
        FROM lms_assessment_questions q
        LEFT JOIN lms_assessment_options o ON o.question_id = q.id AND o.tenant_id = q.tenant_id
@@ -545,7 +568,27 @@ export class AssessmentService {
     for (const row of result.rows) {
       let question = questions.get(String(row.id));
       if (!question) {
-        question = { id: row.id, tenant_id: row.tenant_id, institution_id: row.institution_id, campus_id: row.campus_id, course_id: row.course_id, module_id: row.module_id, assessment_id: row.assessment_id, prompt: row.prompt, question_type: row.question_type, marks: row.marks, sequence: row.sequence, status: row.status, options: [] };
+         question = {
+           id: row.id,
+           tenant_id: row.tenant_id,
+           institution_id: row.institution_id,
+           campus_id: row.campus_id,
+           course_id: row.course_id,
+           module_id: row.module_id,
+           assessment_id: row.assessment_id,
+           prompt: row.prompt,
+           question_type: row.question_type,
+           marks: row.marks,
+           negative_marks: row.negative_marks,
+           subject: row.subject,
+           topic: row.topic,
+           difficulty: row.difficulty,
+           bank_question_id: row.bank_question_id,
+           matching_pairs: typeof row.matching_pairs === "string" ? JSON.parse(row.matching_pairs) : row.matching_pairs ?? [],
+           sequence: row.sequence,
+           status: row.status,
+           options: [],
+         };
         questions.set(String(row.id), question);
       }
       if (row.option_id) {
@@ -554,7 +597,19 @@ export class AssessmentService {
         (question.options as Array<Record<string, unknown>>).push(option);
       }
     }
-    return [...questions.values()];
+    const rows = [...questions.values()];
+    return includeCorrect ? rows : rows.map((question) => {
+      const safe = { ...question };
+      if (safe.question_type === "MATCHING") {
+        const pairs = Array.isArray(safe.matching_pairs) ? safe.matching_pairs as Array<Record<string, unknown>> : [];
+        safe.matching_items = pairs.map((pair, index) => ({ id: `match-${index}`, prompt: pair.prompt }));
+        safe.matching_options = Array.isArray(safe.matching_options)
+          ? safe.matching_options
+          : shuffle(pairs.map((pair) => String(pair.answer)));
+        delete safe.matching_pairs;
+      }
+      return safe;
+    });
   }
 
   private snapshotQuestions(attempt: Record<string, unknown>, includeCorrect: boolean) {
@@ -569,7 +624,16 @@ export class AssessmentService {
           return result;
         })
         : [];
-      return { ...question, options };
+      const result = { ...question, options };
+      if (!includeCorrect && result.question_type === "MATCHING") {
+        const pairs = Array.isArray(result.matching_pairs) ? result.matching_pairs as Array<Record<string, unknown>> : [];
+        result.matching_items = pairs.map((pair, index) => ({ id: `match-${index}`, prompt: pair.prompt }));
+        result.matching_options = Array.isArray(result.matching_options)
+          ? result.matching_options
+          : shuffle(pairs.map((pair) => String(pair.answer)));
+        delete result.matching_pairs;
+      }
+      return result;
     }) as Array<Record<string, unknown>>;
   }
 
@@ -602,19 +666,161 @@ export class AssessmentService {
     return questions;
   }
 
+  private async insertBankQuestion(
+    executor: Queryable,
+    assessment: Record<string, unknown>,
+    input: {
+      prompt: string;
+      questionType: string;
+      marks: number;
+      negativeMarks?: number;
+      subject?: string;
+      topic?: string;
+      difficulty?: string;
+      options: CreateAssessmentOptionDto[];
+      matchingPairs?: CreateAssessmentMatchingPairDto[];
+    },
+    user: AuthenticatedUser,
+  ) {
+    const subject = input.subject?.trim();
+    const topic = input.topic?.trim();
+    const difficulty = input.difficulty?.trim().toUpperCase();
+    if (!subject || !topic || !difficultyLevels.includes(String(difficulty))) {
+      throw new BadRequestException("Saving to the question bank needs a subject, topic, and difficulty.");
+    }
+    const result = await executor.query<Record<string, unknown>>(
+      `INSERT INTO lms_question_bank_questions
+         (tenant_id, institution_id, campus_id, subject, topic, difficulty, question_type,
+          prompt, marks, negative_marks, options, matching_pairs, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::jsonb, $13)
+       RETURNING *`,
+      [
+        user.tenantId,
+        assessment.institution_id,
+        assessment.campus_id ?? null,
+        subject,
+        topic,
+        difficulty,
+        input.questionType,
+        input.prompt.trim(),
+        input.marks,
+        input.negativeMarks ?? 0,
+        JSON.stringify(input.options.map((option) => ({
+          value: option.value.trim(),
+          label: option.label.trim(),
+          isCorrect: option.isCorrect,
+        }))),
+        JSON.stringify((input.matchingPairs ?? []).map((pair) => ({
+          prompt: pair.prompt.trim(),
+          answer: pair.answer.trim(),
+        }))),
+        user.id,
+      ],
+    );
+    return result.rows[0];
+  }
+
+  async listQuestionBank(assessmentId: string, user: AuthenticatedUser) {
+    const assessment = await this.assessmentFor(assessmentId, user);
+    await this.assertStaff(assessment, user);
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT id, subject, topic, difficulty, question_type, prompt, marks, negative_marks,
+              options, matching_pairs, created_at
+       FROM lms_question_bank_questions
+       WHERE tenant_id = $1 AND institution_id = $2
+         AND (campus_id IS NULL OR campus_id = $3)
+         AND status = 'ACTIVE'
+       ORDER BY subject, topic, difficulty, question_type, created_at DESC, id`,
+      [user.tenantId, assessment.institution_id, assessment.campus_id ?? null],
+    );
+    return result.rows;
+  }
+
+  async importQuestionBankQuestion(
+    assessmentId: string,
+    input: ImportQuestionBankQuestionDto,
+    request: ContextRequest,
+  ) {
+    const user = request.context.user!;
+    const assessment = await this.assessmentFor(assessmentId, user);
+    await this.assertStaff(assessment, user);
+    if (assessment.status === "PUBLISHED") {
+      throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
+    }
+    const bankResult = await this.db.query<Record<string, unknown>>(
+      `SELECT * FROM lms_question_bank_questions
+       WHERE id = $1 AND tenant_id = $2 AND institution_id = $3
+         AND (campus_id IS NULL OR campus_id = $4) AND status = 'ACTIVE'`,
+      [input.bankQuestionId, user.tenantId, assessment.institution_id, assessment.campus_id ?? null],
+    );
+    const bank = bankResult.rows[0];
+    if (!bank) throw new NotFoundException("Question bank item not found in this institution scope.");
+    const options = (typeof bank.options === "string" ? JSON.parse(bank.options) : bank.options ?? []) as CreateAssessmentOptionDto[];
+    const matchingPairs = (typeof bank.matching_pairs === "string" ? JSON.parse(bank.matching_pairs) : bank.matching_pairs ?? []) as CreateAssessmentMatchingPairDto[];
+    this.validateOptions(String(bank.question_type), options, matchingPairs);
+    const sequenceResult = await this.db.query<{ sequence: number }>(
+      `SELECT COALESCE(MAX(sequence), 0) + 1 AS sequence
+       FROM lms_assessment_questions
+       WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'ACTIVE'`,
+      [user.tenantId, assessmentId],
+    );
+    const sequence = input.sequence ?? Number(sequenceResult.rows[0]?.sequence ?? 1);
+    return this.run(async () => this.db.transaction(async (client) => {
+      const inserted = await client.query<Record<string, unknown>>(
+        `INSERT INTO lms_assessment_questions
+           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id,
+            prompt, question_type, marks, sequence, negative_marks, subject, topic, difficulty,
+            matching_pairs, bank_question_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb, $16)
+         RETURNING *`,
+        [
+          user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id,
+          assessment.module_id, assessment.id, bank.prompt, bank.question_type, bank.marks, sequence,
+          bank.negative_marks, bank.subject, bank.topic, bank.difficulty,
+          JSON.stringify(matchingPairs), bank.id,
+        ],
+      );
+      const question = inserted.rows[0];
+      for (const [index, option] of options.entries()) {
+        await client.query(
+          `INSERT INTO lms_assessment_options
+             (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id,
+              question_id, option_value, option_label, is_correct, sequence)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          [
+            user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id,
+            assessment.module_id, assessment.id, question.id, option.value.trim(), option.label.trim(),
+            Boolean(option.isCorrect ?? (option as unknown as Record<string, unknown>).is_correct), index + 1,
+          ],
+        );
+      }
+      const row = { ...question, options, matching_pairs: matchingPairs };
+      await this.auditMutation(request, "assessment_question", "IMPORT_FROM_BANK", row);
+      return row;
+    }));
+  }
+
   async createQuestion(assessmentId: string, input: CreateAssessmentQuestionDto, request: ContextRequest) {
     const user = request.context.user!;
     const assessment = await this.assessmentFor(assessmentId, user);
     await this.assertStaff(assessment, user);
     if (assessment.status === "PUBLISHED") throw new ConflictException("Published assessments cannot be changed. Archive and recreate them to change their question set.");
-    this.validateOptions(input.questionType, input.options);
+    const matchingPairs = input.matchingPairs ?? [];
+    this.validateOptions(input.questionType, input.options, matchingPairs);
+    if ((input.negativeMarks ?? 0) > input.marks) throw new BadRequestException("Negative marks cannot exceed the question's marks.");
     return this.run(async () => this.db.transaction(async (client) => {
       const questionResult = await client.query<Record<string, unknown>>(
         `INSERT INTO lms_assessment_questions
-           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, prompt, question_type, marks, sequence)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+           (tenant_id, institution_id, campus_id, course_id, module_id, assessment_id, prompt,
+            question_type, marks, sequence, negative_marks, subject, topic, difficulty, matching_pairs)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::jsonb)
          RETURNING *`,
-        [user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id, assessment.module_id, assessment.id, input.prompt.trim(), input.questionType, input.marks, input.sequence],
+        [
+          user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id,
+          assessment.module_id, assessment.id, input.prompt.trim(), input.questionType, input.marks,
+          input.sequence, input.negativeMarks ?? 0, input.subject?.trim() || null, input.topic?.trim() || null,
+          input.difficulty?.trim().toUpperCase() || null, JSON.stringify(matchingPairs),
+        ],
       );
       const question = questionResult.rows[0];
       for (const [index, option] of input.options.entries()) {
@@ -625,7 +831,16 @@ export class AssessmentService {
           [user.tenantId, assessment.institution_id, assessment.campus_id ?? null, assessment.course_id, assessment.module_id, assessment.id, question.id, option.value.trim(), option.label.trim(), option.isCorrect, index + 1],
         );
       }
-      const row = { ...question, options: input.options };
+      let row = { ...question, options: input.options, matching_pairs: matchingPairs };
+      if (input.saveToBank) {
+        const bank = await this.insertBankQuestion(client, assessment, input, user);
+        const linked = await client.query<Record<string, unknown>>(
+          "UPDATE lms_assessment_questions SET bank_question_id = $3 WHERE id = $1 AND tenant_id = $2 RETURNING *",
+          [question.id, user.tenantId, bank.id],
+        );
+        row = { ...linked.rows[0], options: input.options, matching_pairs: matchingPairs };
+        await this.auditMutation(request, "question_bank_question", "CREATE", bank);
+      }
       await this.auditMutation(request, "assessment_question", "CREATE", row);
       return row;
     }));
