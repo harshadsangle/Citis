@@ -1,0 +1,63 @@
+Address only the remaining security audit items #26, #27, and production-readiness checks for #4 and #6.
+
+Do NOT redo or modify the 26 issues already verified fixed.
+
+### #26 — Resource URL/file clearing
+
+Fix only the remaining gap identified by the final audit:
+
+* VIDEO, LINK, and INTERACTIVE resources currently reject an intentionally empty URL because the URL is required.
+* Preserve normal validation when creating/updating resources with a real URL.
+* Allow an explicit clear operation when the user intentionally wants to remove the existing URL/file value.
+* Do not allow invalid resource states accidentally through normal create/update requests.
+* Add focused regression tests for clearing URL/file fields and for normal required-field validation.
+
+### #27 — Accessibility
+
+Fix only the remaining accessibility gaps:
+
+* Partner Inquiry form errors must be properly associated with their relevant inputs.
+* Job Application form errors must be properly associated with their relevant inputs.
+* The shared message/error helper used by these forms must expose error/status messages as an accessible live region where appropriate.
+* Preserve existing form behavior and styling.
+* Add focused accessibility regression coverage if the project has an appropriate test setup.
+
+### #4 — Production migration verification
+
+DO NOT modify the migration.
+DO NOT create another migration.
+DO NOT change the refund implementation.
+
+Only verify whether migration `032_lms_refund_partial_index.sql` has been applied in the intended production database using the normal migration/status mechanism available in this environment.
+
+If production database access is unavailable, clearly report that instead of guessing.
+
+### #6 — SCORM
+
+DO NOT force-add CSP sandbox.
+DO NOT break the existing authenticated multi-file SCORM flow.
+
+Keep the currently verified CORP + nosniff implementation unchanged.
+
+Document #6 as intentionally deferred until a separate SCORM content-origin/authentication isolation design is available.
+
+### Final verification
+
+After the above:
+
+* Run focused tests for #26 and #27.
+* Run the full API test suite.
+* Run all available portal/public frontend builds and type checks.
+* Run `git diff --check`.
+* Confirm no previously verified security fix regressed.
+* Do not make unrelated changes.
+
+Report:
+
+1. Exactly what changed.
+2. Test/build results.
+3. Production migration #032 status.
+4. Final status of #4, #6, #26, and #27.
+5. Any remaining production blocker.
+
+Do not deploy or push to GitHub during this task.
