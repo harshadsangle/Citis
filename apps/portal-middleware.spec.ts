@@ -39,6 +39,16 @@ test("portal middleware protects nested routes while leaving auth routes outside
   }
 });
 
+test("institution admin middleware leaves API requests for Next rewrites", () => {
+  const matcher = new RegExp(`^${adminConfig.matcher[0]}$`);
+  assert.equal(matcher.test("/api/v1/health"), false);
+  assert.equal(matcher.test("/api/v1/"), false);
+  assert.equal(matcher.test("/api/v1/auth/me"), false);
+  assert.equal(matcher.test("/auth/login"), false);
+  assert.equal(matcher.test("/api/v10/health"), true);
+  assert.equal(matcher.test("/dashboard"), true);
+});
+
 test("authorized admin, instructor, and student roles can enter their intended portals", async () => {
   setAuthResponse([{ code: "INSTITUTION_ADMINISTRATOR", name: "Administrator" }]);
   assert.equal((await adminMiddleware(request("/courses/course-1"))).status, 200);

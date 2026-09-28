@@ -87,4 +87,4 @@ export async function middleware(request: NextRequest) {
   return NextResponse.redirect(new URL("/auth/login", request.url));
 }
 
-export const config = { matcher: ["/((?!auth(?:/.*)?$|_next/static|_next/image|favicon.ico).*)"] };
+export const config = { matcher: ["/((?!api/v1(?:/.*)?$|auth(?:/.*)?$|_next/static|_next/image|favicon.ico).*)"] };
