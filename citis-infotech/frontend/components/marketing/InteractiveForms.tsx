@@ -20,7 +20,7 @@ import { CAREERS_EMAIL, SUPPORT_EMAIL, openMailto } from "@/lib/mailto";
 import { canAccessLmsPortal, firstAvailableLmsPortal, LMS_PORTALS, type LmsPortal } from "@/lib/lms-roles";
 import type { LmsCourseProvider } from "@/lib/lms-catalog";
 
-const message = (text?: string, id?: string) => text && <p id={id} className="mt-1.5 text-xs text-destructive">{text}</p>;
+const message = (text?: string, id?: string) => text && <p id={id} role="alert" aria-live="assertive" aria-atomic="true" className="mt-1.5 text-xs text-destructive">{text}</p>;
 
 function FormSuccess({ title, copy }: { title: string; copy: string }) {
   return <div role="status" aria-live="polite" className="surface rounded-xl p-9 text-center"><CheckCircle2 className="mx-auto size-12 text-success" /><h3 className="mt-4 font-heading text-2xl font-semibold">{title}</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">{copy}</p></div>;
@@ -79,15 +79,15 @@ export function PartnerInquiryForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="surface space-y-5 rounded-xl p-6 sm:p-8" noValidate>
       <div className="grid gap-5 sm:grid-cols-2">
-        <div><Label htmlFor="partner-name">Full name *</Label><Input id="partner-name" className="mt-2" autoComplete="name" {...register("name")} />{message(errors.name?.message)}</div>
-        <div><Label htmlFor="partner-email">Work email *</Label><Input id="partner-email" className="mt-2" type="email" autoComplete="email" {...register("email")} />{message(errors.email?.message)}</div>
-        <div><Label htmlFor="partner-phone">Phone</Label><Input id="partner-phone" className="mt-2" type="tel" {...register("phone")} />{message(errors.phone?.message)}</div>
-        <div><Label htmlFor="partner-company">Organization *</Label><Input id="partner-company" className="mt-2" autoComplete="organization" {...register("company")} />{message(errors.company?.message)}</div>
-        <div><Label htmlFor="partner-website">Website</Label><Input id="partner-website" className="mt-2" type="url" placeholder="https://" {...register("website")} />{message(errors.website?.message)}</div>
-        <div><Label>Partnership model *</Label><Controller name="partnershipType" control={control} render={({ field }) => <Select value={field.value} onValueChange={field.onChange}><SelectTrigger className="mt-2"><SelectValue placeholder="Select a model" /></SelectTrigger><SelectContent><SelectItem value="academic">Academic collaboration</SelectItem><SelectItem value="industry">Industry alliance</SelectItem><SelectItem value="delivery">Delivery partner</SelectItem><SelectItem value="technology">Technology partner</SelectItem></SelectContent></Select>} />{message(errors.partnershipType?.message)}</div>
+        <div><Label htmlFor="partner-name">Full name *</Label><Input id="partner-name" className="mt-2" autoComplete="name" aria-invalid={!!errors.name} aria-describedby={errors.name ? "partner-name-error" : undefined} {...register("name")} />{message(errors.name?.message, "partner-name-error")}</div>
+        <div><Label htmlFor="partner-email">Work email *</Label><Input id="partner-email" className="mt-2" type="email" autoComplete="email" aria-invalid={!!errors.email} aria-describedby={errors.email ? "partner-email-error" : undefined} {...register("email")} />{message(errors.email?.message, "partner-email-error")}</div>
+        <div><Label htmlFor="partner-phone">Phone</Label><Input id="partner-phone" className="mt-2" type="tel" aria-invalid={!!errors.phone} aria-describedby={errors.phone ? "partner-phone-error" : undefined} {...register("phone")} />{message(errors.phone?.message, "partner-phone-error")}</div>
+        <div><Label htmlFor="partner-company">Organization *</Label><Input id="partner-company" className="mt-2" autoComplete="organization" aria-invalid={!!errors.company} aria-describedby={errors.company ? "partner-company-error" : undefined} {...register("company")} />{message(errors.company?.message, "partner-company-error")}</div>
+        <div><Label htmlFor="partner-website">Website</Label><Input id="partner-website" className="mt-2" type="url" placeholder="https://" aria-invalid={!!errors.website} aria-describedby={errors.website ? "partner-website-error" : undefined} {...register("website")} />{message(errors.website?.message, "partner-website-error")}</div>
+        <div><Label htmlFor="partner-partnership">Partnership model *</Label><Controller name="partnershipType" control={control} render={({ field }) => <Select value={field.value} onValueChange={field.onChange}><SelectTrigger id="partner-partnership" className="mt-2" aria-invalid={!!errors.partnershipType} aria-describedby={errors.partnershipType ? "partner-partnership-error" : undefined}><SelectValue placeholder="Select a model" /></SelectTrigger><SelectContent><SelectItem value="academic">Academic collaboration</SelectItem><SelectItem value="industry">Industry alliance</SelectItem><SelectItem value="delivery">Delivery partner</SelectItem><SelectItem value="technology">Technology partner</SelectItem></SelectContent></Select>} />{message(errors.partnershipType?.message, "partner-partnership-error")}</div>
       </div>
-      <div><Label htmlFor="partner-message">What would you like to achieve? *</Label><Textarea id="partner-message" className="mt-2 min-h-32" placeholder="Share your institution, audience, priorities, and preferred timeline." {...register("message")} />{message(errors.message?.message)}</div>
-      {serverError && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+      <div><Label htmlFor="partner-message">What would you like to achieve? *</Label><Textarea id="partner-message" className="mt-2 min-h-32" placeholder="Share your institution, audience, priorities, and preferred timeline." aria-invalid={!!errors.message} aria-describedby={errors.message ? "partner-message-error" : undefined} {...register("message")} />{message(errors.message?.message, "partner-message-error")}</div>
+      {serverError && <p role="alert" aria-live="assertive" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button type="submit" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <><LoaderCircle className="animate-spin" />Sending…</> : <>Send inquiry<Send /></>}</Button>
     </form>
   );
@@ -162,14 +162,14 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
     <form onSubmit={handleSubmit(onSubmit)} className="surface space-y-5 rounded-xl p-6 sm:p-8" noValidate>
       <input type="hidden" {...register("jobId")} />
       <div className="grid gap-5 sm:grid-cols-2">
-       <div><Label htmlFor="apply-name">Full name *</Label><Input id="apply-name" className="mt-2" required aria-invalid={!!errors.name} {...register("name")} onFocus={() => { void handleApplyFieldFocus("name"); }} />{message(errors.name?.message)}</div>
-       <div><Label htmlFor="apply-email">Email *</Label><Input id="apply-email" className="mt-2" type="email" required aria-invalid={!!errors.email} {...register("email")} onFocus={() => { void handleApplyFieldFocus("email"); }} />{message(errors.email?.message)}</div>
-       <div><Label htmlFor="apply-phone">Phone *</Label><Input id="apply-phone" className="mt-2" type="tel" required aria-invalid={!!errors.phone} {...register("phone")} onFocus={() => { void handleApplyFieldFocus("phone"); }} />{message(errors.phone?.message)}</div>
-        <div><Label htmlFor="apply-linkedin">LinkedIn</Label><Input id="apply-linkedin" className="mt-2" type="url" placeholder="https://linkedin.com/in/…" aria-invalid={!!errors.linkedIn} {...register("linkedIn")} onFocus={() => { void handleApplyFieldFocus("linkedIn"); }} />{message(errors.linkedIn?.message)}</div>
+        <div><Label htmlFor="apply-name">Full name *</Label><Input id="apply-name" className="mt-2" required aria-invalid={!!errors.name} aria-describedby={errors.name ? "apply-name-error" : undefined} {...register("name")} onFocus={() => { void handleApplyFieldFocus("name"); }} />{message(errors.name?.message, "apply-name-error")}</div>
+        <div><Label htmlFor="apply-email">Email *</Label><Input id="apply-email" className="mt-2" type="email" required aria-invalid={!!errors.email} aria-describedby={errors.email ? "apply-email-error" : undefined} {...register("email")} onFocus={() => { void handleApplyFieldFocus("email"); }} />{message(errors.email?.message, "apply-email-error")}</div>
+        <div><Label htmlFor="apply-phone">Phone *</Label><Input id="apply-phone" className="mt-2" type="tel" required aria-invalid={!!errors.phone} aria-describedby={errors.phone ? "apply-phone-error" : undefined} {...register("phone")} onFocus={() => { void handleApplyFieldFocus("phone"); }} />{message(errors.phone?.message, "apply-phone-error")}</div>
+        <div><Label htmlFor="apply-linkedin">LinkedIn</Label><Input id="apply-linkedin" className="mt-2" type="url" placeholder="https://linkedin.com/in/…" aria-invalid={!!errors.linkedIn} aria-describedby={errors.linkedIn ? "apply-linkedin-error" : undefined} {...register("linkedIn")} onFocus={() => { void handleApplyFieldFocus("linkedIn"); }} />{message(errors.linkedIn?.message, "apply-linkedin-error")}</div>
       </div>
-      <div><Label htmlFor="apply-portfolio">Portfolio</Label><Input id="apply-portfolio" className="mt-2" type="url" placeholder="https://" aria-invalid={!!errors.portfolio} {...register("portfolio")} onFocus={() => { void handleApplyFieldFocus("portfolio"); }} />{message(errors.portfolio?.message)}</div>
-       <div><Label htmlFor="apply-cover">Why CITIS InfoTech? *</Label><Textarea id="apply-cover" className="mt-2 min-h-28" required aria-invalid={!!errors.coverLetter} {...register("coverLetter")} onFocus={() => { void handleApplyFieldFocus("coverLetter"); }} />{message(errors.coverLetter?.message)}</div>
-       <div><Label htmlFor="apply-skills">Skills *</Label><Input id="apply-skills" className="mt-2" required aria-invalid={!!errors.skills} placeholder="React, Node.js, Instructional design…" {...register("skills")} onFocus={() => { void handleApplyFieldFocus("skills"); }} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message)}</div>
+      <div><Label htmlFor="apply-portfolio">Portfolio</Label><Input id="apply-portfolio" className="mt-2" type="url" placeholder="https://" aria-invalid={!!errors.portfolio} aria-describedby={errors.portfolio ? "apply-portfolio-error" : undefined} {...register("portfolio")} onFocus={() => { void handleApplyFieldFocus("portfolio"); }} />{message(errors.portfolio?.message, "apply-portfolio-error")}</div>
+      <div><Label htmlFor="apply-cover">Why CITIS InfoTech? *</Label><Textarea id="apply-cover" className="mt-2 min-h-28" required aria-invalid={!!errors.coverLetter} aria-describedby={errors.coverLetter ? "apply-cover-error" : undefined} {...register("coverLetter")} onFocus={() => { void handleApplyFieldFocus("coverLetter"); }} />{message(errors.coverLetter?.message, "apply-cover-error")}</div>
+      <div><Label htmlFor="apply-skills">Skills *</Label><Input id="apply-skills" className="mt-2" required aria-invalid={!!errors.skills} aria-describedby={errors.skills ? "apply-skills-error" : undefined} placeholder="React, Node.js, Instructional design…" {...register("skills")} onFocus={() => { void handleApplyFieldFocus("skills"); }} /><p className="mt-1 text-xs text-muted-foreground">Comma-separated skills</p>{message(errors.skills?.message, "apply-skills-error")}</div>
        <div>
          <Label htmlFor="apply-resume">Résumé *</Label>
          {resumeFile ? (
@@ -186,10 +186,10 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
          ) : (
            <label htmlFor="apply-resume" className="mt-2 flex cursor-pointer items-center gap-3 rounded-lg border border-dashed border-input bg-background p-4 text-sm hover:border-primary/50"><Upload className="size-5 text-primary" />Choose a file</label>
          )}
-         <Input id="apply-resume" className="sr-only" required type="file" accept=".pdf,.doc,.docx" aria-invalid={!!errors.resume} onFocus={() => { void handleApplyFieldFocus("resume"); }} onChange={(event) => { const file = event.target.files?.[0]; if (file) { setResumeFile(file); setValue("resume", file, { shouldValidate: true }); } else { setResumeFile(null); resetField("resume"); } }} />
-         {message(errors.resume?.message)}
+          <Input id="apply-resume" className="sr-only" required type="file" accept=".pdf,.doc,.docx" aria-invalid={!!errors.resume} aria-describedby={errors.resume ? "apply-resume-error" : undefined} onFocus={() => { void handleApplyFieldFocus("resume"); }} onChange={(event) => { const file = event.target.files?.[0]; if (file) { setResumeFile(file); setValue("resume", file, { shouldValidate: true }); } else { setResumeFile(null); resetField("resume"); } }} />
+          {message(errors.resume?.message, "apply-resume-error")}
        </div>
-      {serverError && <p role="alert" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
+      {serverError && <p role="alert" aria-live="assertive" className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button type="submit" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <><LoaderCircle className="animate-spin" />Submitting…</> : <>Submit application<Send /></>}</Button>
     </form>
   );

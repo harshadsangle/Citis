@@ -312,13 +312,13 @@ export class UpdateLearningResourceDto {
   @Length(2, 180)
   title?: string;
 
-  @IsOptional()
-  @ValidateIf((_object, value) => value !== "")
+  @ValidateIf((_object, value) => value !== undefined && value !== "")
+  @IsString()
   @IsUrl({ require_tld: false })
   @MaxLength(2048)
   url?: string;
 
-  @IsOptional()
+  @ValidateIf((_object, value) => value !== undefined)
   @IsString()
   @MaxLength(2048)
   filePath?: string;
