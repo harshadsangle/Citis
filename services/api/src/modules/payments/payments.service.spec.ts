@@ -356,6 +356,120 @@ test("invalid signatures cannot activate an enrollment", async () => {
   assert.equal(fetchCalled, false);
 });
 
+test("payment.captured webhooks audit the first state transition only", async () => {
+  const payment: Record<string, any> = {
+    id: "payment-1",
+    tenant_id: "tenant-1",
+    course_id: "course-1",
+    student_id: "student-1",
+    amount_minor: "1000",
+    currency: "INR",
+    status: "ORDER_CREATED",
+    razorpay_order_id: "order-1",
+    razorpay_payment_id: null,
+    created_at: "2026-09-28T00:00:00.000Z",
+    captured_at: null,
+    refunded_at: null,
+  };
+  const audits: Array<Record<string, any>> = [];
+  let nextEventId = 1;
+  const service = serviceWith(async (text) => {
+    if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) {
+      return { rows: [{ tenant_id: "tenant-1", id: "payment-1" }] };
+    }
+    if (text.startsWith("INSERT INTO lms_payment_events")) {
+      return { rows: [{ id: `event-row-${nextEventId++}` }] };
+    }
+    if (text.startsWith("SELECT id, student_id FROM lms_payments")) {
+      return { rows: [{ id: "payment-1", student_id: "student-1" }] };
+    }
+    return { rows: [] };
+  }, async (work) => work({
+    query: async (text: string) => {
+      if (text.startsWith("SELECT * FROM lms_payments")) return { rows: [{ ...payment }] };
+      if (text.startsWith("SELECT id FROM lms_enrollments")) return { rows: [] };
+      if (text.startsWith("INSERT INTO lms_enrollments")) return { rows: [{ id: "enrollment-1" }] };
+      if (text.startsWith("UPDATE lms_payments")) {
+        payment.status = "CAPTURED";
+        payment.razorpay_payment_id = "pay-1";
+        return { rows: [] };
+      }
+      return { rows: [] };
+    },
+  }), { verifyWebhookSignature: () => true }, {
+    record: async (input) => { audits.push(input); },
+  });
+  const body = webhookBody("payment.captured", "payment", {
+    id: "pay-1",
+    order_id: "order-1",
+    amount: 1000,
+    currency: "INR",
+  });
+
+  await service.handleWebhook(body, "valid-signature", "provider-captured-1");
+  await service.handleWebhook(body, "valid-signature", "provider-captured-2");
+
+  assert.equal(audits.length, 1);
+  assert.equal(audits[0]?.module, "payments");
+  assert.equal(audits[0]?.resource, "payment");
+  assert.equal(audits[0]?.action, "CAPTURE");
+  assert.deepEqual(audits[0]?.previousValue, { status: "ORDER_CREATED" });
+  assert.equal(audits[0]?.newValue.status, "CAPTURED");
+  assert.deepEqual(audits[0]?.deviceContext, {
+    source: "razorpay_webhook",
+    eventType: "payment.captured",
+    providerEventId: "provider-captured-1",
+  });
+});
+
+test("payment.failed webhooks audit actual failures, not repeated or protected states", async () => {
+  let paymentStatus = "ORDER_CREATED";
+  let nextEventId = 1;
+  const audits: Array<Record<string, any>> = [];
+  const service = serviceWith(async (text) => {
+    if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) {
+      return { rows: [{ tenant_id: "tenant-1", id: "payment-1" }] };
+    }
+    if (text.startsWith("INSERT INTO lms_payment_events")) {
+      return { rows: [{ id: `event-row-${nextEventId++}` }] };
+    }
+    if (text.includes("UPDATE lms_payments AS payment")) {
+      const previousStatus = paymentStatus;
+      if (!["CAPTURED", "REFUNDED", "PARTIALLY_REFUNDED"].includes(paymentStatus)) {
+        paymentStatus = "FAILED";
+      }
+      return {
+        rows: [{
+          id: "payment-1",
+          tenant_id: "tenant-1",
+          status: paymentStatus,
+          previous_status: previousStatus,
+        }],
+      };
+    }
+    return { rows: [] };
+  }, async (work) => work({ query: async () => ({ rows: [] }) }), {
+    verifyWebhookSignature: () => true,
+  }, { record: async (input) => { audits.push(input); } });
+  const body = webhookBody("payment.failed", "payment", {
+    order_id: "order-1",
+    error_code: "PAYMENT_FAILED",
+    error_description: "Card declined.",
+  });
+
+  await service.handleWebhook(body, "valid-signature", "provider-failed-1");
+  await service.handleWebhook(body, "valid-signature", "provider-failed-2");
+  paymentStatus = "REFUNDED";
+  await service.handleWebhook(body, "valid-signature", "provider-failed-late");
+
+  assert.equal(audits.length, 1);
+  assert.equal(audits[0]?.resource, "payment");
+  assert.equal(audits[0]?.action, "FAIL");
+  assert.deepEqual(audits[0]?.previousValue, { status: "ORDER_CREATED" });
+  assert.equal(audits[0]?.newValue.status, "FAILED");
+  assert.equal(audits[0]?.deviceContext.eventType, "payment.failed");
+});
+
 test("a failed webhook handler can retry the same provider event successfully", async () => {
   const event = { id: "event-row-1", processing_status: "RECEIVED", processed_at: null as string | null };
   let eventExists = false;
@@ -489,6 +603,103 @@ test("a late refund.failed event preserves a processed refund and processed even
 
   assert.equal(refund.status, "PROCESSED");
   assert.match(failedUpdateSql, /AND status <> 'PROCESSED'/);
+});
+
+test("refund.processed webhooks audit actual processing transitions", async () => {
+  const refund: Record<string, any> = {
+    id: "refund-1",
+    tenant_id: "tenant-1",
+    payment_id: "payment-1",
+    initiated_by: "admin-1",
+    razorpay_refund_id: "provider-refund-1",
+    amount_minor: 500,
+    payment_amount: "1000",
+    course_id: "course-1",
+    student_id: "student-1",
+    status: "PENDING",
+  };
+  let eventInserted = false;
+  const audits: Array<Record<string, any>> = [];
+  const service = serviceWith(async (text) => {
+    if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_payment_events")) {
+      if (eventInserted) return { rows: [] };
+      eventInserted = true;
+      return { rows: [{ id: "event-row-1" }] };
+    }
+    return { rows: [] };
+  }, async (work) => work({
+    query: async (text: string) => {
+      if (text.startsWith("SELECT r.*")) return { rows: [{ ...refund }] };
+      if (text.startsWith("UPDATE lms_refunds SET razorpay_refund_id")) {
+        if (refund.status === "PROCESSED") return { rows: [] };
+        refund.status = "PROCESSED";
+        return { rows: [{ ...refund }] };
+      }
+      if (text.includes("SELECT COALESCE(sum(amount_minor)")) return { rows: [{ total: "500" }] };
+      if (text.startsWith("UPDATE lms_payments")) return { rows: [] };
+      if (text.startsWith("UPDATE lms_enrollments")) return { rows: [] };
+      throw new Error(`Unexpected transaction query: ${text}`);
+    },
+  }), { verifyWebhookSignature: () => true }, {
+    record: async (input) => { audits.push(input); },
+  });
+
+  await service.handleWebhook(webhookBody("refund.processed", "refund", {
+    id: "provider-refund-1",
+    amount: 500,
+    payment_id: "provider-payment-1",
+  }), "valid-signature", "provider-refund-processed-1");
+
+  assert.equal(refund.status, "PROCESSED");
+  assert.equal(audits.length, 1);
+  assert.equal(audits[0]?.resource, "refund");
+  assert.equal(audits[0]?.action, "PROCESS");
+  assert.deepEqual(audits[0]?.previousValue, { status: "PENDING" });
+  assert.equal(audits[0]?.newValue.status, "PROCESSED");
+  assert.equal(audits[0]?.deviceContext.eventType, "refund.processed");
+});
+
+test("refund.failed webhooks audit state changes but not repeated failures", async () => {
+  let refundStatus = "PENDING";
+  let nextEventId = 1;
+  const audits: Array<Record<string, any>> = [];
+  const service = serviceWith(async (text) => {
+    if (text.startsWith("SELECT tenant_id, id FROM lms_payments")) return { rows: [] };
+    if (text.startsWith("INSERT INTO lms_payment_events")) {
+      return { rows: [{ id: `event-row-${nextEventId++}` }] };
+    }
+    if (text.includes("UPDATE lms_refunds AS refund")) {
+      const previousStatus = refundStatus;
+      if (refundStatus !== "PROCESSED") refundStatus = "FAILED";
+      return {
+        rows: [{
+          id: "refund-1",
+          tenant_id: "tenant-1",
+          status: refundStatus,
+          previous_status: previousStatus,
+        }],
+      };
+    }
+    return { rows: [] };
+  }, async (work) => work({ query: async () => ({ rows: [] }) }), {
+    verifyWebhookSignature: () => true,
+  }, { record: async (input) => { audits.push(input); } });
+  const body = webhookBody("refund.failed", "refund", {
+    id: "provider-refund-1",
+    error_description: "Refund declined.",
+  });
+
+  await service.handleWebhook(body, "valid-signature", "provider-refund-failed-1");
+  await service.handleWebhook(body, "valid-signature", "provider-refund-failed-2");
+
+  assert.equal(refundStatus, "FAILED");
+  assert.equal(audits.length, 1);
+  assert.equal(audits[0]?.resource, "refund");
+  assert.equal(audits[0]?.action, "FAIL");
+  assert.deepEqual(audits[0]?.previousValue, { status: "PENDING" });
+  assert.equal(audits[0]?.newValue.status, "FAILED");
+  assert.equal(audits[0]?.deviceContext.eventType, "refund.failed");
 });
 
 for (const initialStatus of ["REFUNDED", "PARTIALLY_REFUNDED"] as const) {
