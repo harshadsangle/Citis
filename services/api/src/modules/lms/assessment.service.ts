@@ -11,7 +11,9 @@ import type {
   CreateAssessmentDto,
   CreateAssessmentQuestionDto,
   CreateAssessmentOptionDto,
+  CreateAssessmentMatchingPairDto,
   GradeAssessmentAttemptDto,
+  ImportQuestionBankQuestionDto,
   SaveAssessmentDraftDto,
   SubmitAssessmentAttemptDto,
   UpdateAssessmentDto,
@@ -21,11 +23,12 @@ import type {
 
 type Queryable = { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> };
 type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
-type QuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_TEXT" | "NUMERIC";
+type QuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_TEXT" | "NUMERIC" | "FILL_IN_BLANK" | "MATCHING" | "LONG_ANSWER";
 
 const assessmentTypes = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"];
-const questionTypes: QuestionType[] = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC"];
+const questionTypes: QuestionType[] = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC", "FILL_IN_BLANK", "MATCHING", "LONG_ANSWER"];
 const manuallyGradedAssessmentTypes = ["PROJECT", "VIVA", "PRACTICAL"];
+const difficultyLevels = ["EASY", "MEDIUM", "HARD"];
 
 function asString(value: unknown) {
   return typeof value === "string" ? value : "";
@@ -38,6 +41,15 @@ function normalizeAnswer(value: unknown): string | string[] {
 
 function sameValues(left: string[], right: string[]) {
   return left.length === right.length && left.every((value) => right.includes(value));
+}
+
+function shuffle<T>(items: T[]) {
+  const result = [...items];
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const other = Math.floor(Math.random() * (index + 1));
+    [result[index], result[other]] = [result[other], result[index]];
+  }
+  return result;
 }
 
 @Injectable()
@@ -223,20 +235,30 @@ export class AssessmentService {
     }
   }
 
-  private async validateAssessmentMarks(id: string, totalMarks: number | null | undefined, passingMarks: number | null | undefined, tenantId: string) {
-    const result = await this.db.query<{ total: string | null; count: string }>(
-      `SELECT COALESCE(SUM(marks), 0)::numeric AS total, count(*)::text AS count
+  private async validateAssessmentMarks(
+    id: string,
+    totalMarks: number | null | undefined,
+    passingMarks: number | null | undefined,
+    tenantId: string,
+    questionsToSelect?: number | null,
+  ) {
+    const result = await this.db.query<{ marks: string }>(
+      `SELECT marks::text AS marks
        FROM lms_assessment_questions
        WHERE tenant_id = $1 AND assessment_id = $2 AND status = 'ACTIVE'`,
       [tenantId, id],
     );
-    if (Number(result.rows[0]?.count ?? 0) === 0) return;
-    const questionTotal = Number(result.rows[0]?.total ?? 0);
-    if (totalMarks !== null && totalMarks !== undefined && Math.round(Number(totalMarks) * 100) !== Math.round(questionTotal * 100)) {
-      throw new BadRequestException("Total marks must equal the sum of active question marks.");
+    if (result.rows.length === 0) return;
+    if (questionsToSelect && questionsToSelect > result.rows.length) {
+      throw new BadRequestException("The question pool must contain at least the configured number of questions.");
     }
-    if (passingMarks !== null && passingMarks !== undefined && Number(passingMarks) > questionTotal) {
-      throw new BadRequestException("Passing marks cannot exceed the sum of active question marks.");
+    const marks = result.rows.map((row) => Number(row.marks)).sort((left, right) => right - left);
+    const maxScore = marks.slice(0, questionsToSelect ?? marks.length).reduce((sum, value) => sum + value, 0);
+    if (totalMarks !== null && totalMarks !== undefined && Math.round(Number(totalMarks) * 100) !== Math.round(maxScore * 100)) {
+      throw new BadRequestException("Total marks must equal the maximum score available from the active question pool.");
+    }
+    if (passingMarks !== null && passingMarks !== undefined && Number(passingMarks) > maxScore) {
+      throw new BadRequestException("Passing marks cannot exceed the maximum score available from the active question pool.");
     }
   }
 
@@ -330,7 +352,8 @@ export class AssessmentService {
     const result = await this.db.query<Record<string, unknown>>(
       `SELECT a.id, a.tenant_id, a.institution_id, a.campus_id, a.course_id, a.module_id, a.title,
               a.description, a.assessment_type, a.total_marks, a.passing_marks, a.duration_minutes,
-              a.attempt_limit, a.status, a.created_at, a.updated_at, c.title AS course_title,
+              a.attempt_limit, a.randomize_questions, a.randomize_options, a.questions_to_select,
+              a.results_published, a.status, a.created_at, a.updated_at, c.title AS course_title,
               cm.title AS module_title
        FROM lms_assessments a
        JOIN courses c ON c.id = a.course_id AND c.tenant_id = a.tenant_id
@@ -358,16 +381,20 @@ export class AssessmentService {
     await this.assertStaff(course, user);
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
-        `INSERT INTO lms_assessments
+          `INSERT INTO lms_assessments
            (tenant_id, institution_id, campus_id, course_id, module_id, title, description,
-            assessment_type, total_marks, passing_marks, duration_minutes, attempt_limit)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             assessment_type, total_marks, passing_marks, duration_minutes, attempt_limit,
+             randomize_questions, randomize_options, questions_to_select)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
          RETURNING *`,
         [
           user.tenantId, course.institution_id, course.campus_id ?? null, course.id, input.moduleId,
           input.title.trim(), input.description?.trim() || null, input.assessmentType,
           input.totalMarks ?? null, input.passingMarks ?? null, input.durationMinutes ?? null,
           input.attemptLimit ?? null,
+          input.randomizeQuestions ?? false,
+          input.randomizeOptions ?? false,
+          input.questionsToSelect ?? null,
         ],
       );
       const row = result.rows[0];
@@ -387,6 +414,9 @@ export class AssessmentService {
       input.totalMarks ?? (before.total_marks as number | null),
       input.passingMarks ?? (before.passing_marks as number | null),
       user.tenantId,
+      input.questionsToSelect !== undefined
+        ? input.questionsToSelect
+        : before.questions_to_select as number | null,
     );
     return this.run(async () => {
       const result = await this.db.query<Record<string, unknown>>(
@@ -394,11 +424,16 @@ export class AssessmentService {
          SET title = COALESCE($3, title), description = COALESCE($4, description),
              total_marks = COALESCE($5, total_marks), passing_marks = COALESCE($6, passing_marks),
              duration_minutes = COALESCE($7, duration_minutes), attempt_limit = COALESCE($8, attempt_limit),
+             randomize_questions = COALESCE($9, randomize_questions),
+             randomize_options = COALESCE($10, randomize_options),
+             questions_to_select = CASE WHEN $12::boolean THEN $11::int ELSE questions_to_select END,
              updated_at = now()
          WHERE id = $1 AND tenant_id = $2
          RETURNING *`,
         [id, user.tenantId, input.title?.trim() || null, input.description?.trim() || null,
-          input.totalMarks ?? null, input.passingMarks ?? null, input.durationMinutes ?? null, input.attemptLimit ?? null],
+          input.totalMarks ?? null, input.passingMarks ?? null, input.durationMinutes ?? null, input.attemptLimit ?? null,
+          input.randomizeQuestions ?? null, input.randomizeOptions ?? null,
+          input.questionsToSelect ?? null, input.questionsToSelect !== undefined],
       );
       const row = result.rows[0];
       await this.auditMutation(request, "assessment", "UPDATE", row, before);
@@ -427,6 +462,7 @@ export class AssessmentService {
         before.total_marks as number | null,
         before.passing_marks as number | null,
         user.tenantId,
+        before.questions_to_select as number | null,
       );
     }
     return this.run(async () => {
