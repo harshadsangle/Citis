@@ -141,9 +141,15 @@ test("certificate reads cannot cross learner scope", async () => {
   await assert.rejects(service.get("certificate-1", learner), NotFoundException);
 });
 
-test("only CITIS Admin can approve an eligible certificate and issuance is audited", async () => {
-  let row = certificateRow({ status: "ELIGIBLE_FOR_REVIEW", learner_id: "learner-1" });
+test("only CITIS Admin can approve and then issue an eligible certificate as separate audited transitions", async () => {
+  let row: Record<string, unknown> = certificateRow({
+    status: "ELIGIBLE_FOR_REVIEW",
+    learner_id: "learner-1",
+    issue_date: null,
+    issued_at: null,
+  });
   const actions: string[] = [];
+  const updates: string[] = [];
   const db = {
     query: async (text: string) => {
       if (text.includes("CASE WHEN NOT EXISTS")) {
@@ -159,7 +165,12 @@ test("only CITIS Admin can approve an eligible certificate and issuance is audit
         }] };
       }
       if (text.startsWith("UPDATE lms_certificates")) {
-        row = { ...row, status: "ISSUED", issue_date: "2026-09-01T00:00:00.000Z" };
+        updates.push(text);
+        if (text.includes("approved_by")) {
+          row = { ...row, status: "APPROVED", approved_by: "admin-1", approved_at: "2026-09-01T00:00:00.000Z" };
+        } else {
+          row = { ...row, status: "ISSUED", issue_date: "2026-09-01T00:00:00.000Z", issued_at: "2026-09-01T00:00:00.000Z" };
+        }
         return { rows: [{ id: "certificate-1" }] };
       }
       return { rows: [row] };
@@ -170,7 +181,23 @@ test("only CITIS Admin can approve an eligible certificate and issuance is audit
 
   const result = await service.approve("certificate-1", { notes: "Reviewed completion evidence." }, adminRequest);
 
-  assert.equal(result.status, "ISSUED");
+  assert.equal(result.status, "APPROVED");
+  assert.equal(result.issue_date, null);
+  assert.equal(row.issued_at, null);
+  assert.equal(updates.length, 1);
+  assert.match(updates[0], /SET status = 'APPROVED'/);
+  assert.match(updates[0], /WHERE id = \$1 AND tenant_id = \$2 AND status = 'ELIGIBLE_FOR_REVIEW'/);
+  assert.doesNotMatch(updates[0], /issue_date|issued_at/);
+  assert.deepEqual(actions, ["APPROVE"]);
+
+  const issued = await service.issue("certificate-1", adminRequest);
+
+  assert.equal(issued.status, "ISSUED");
+  assert.ok(issued.issue_date);
+  assert.ok(row.issued_at);
+  assert.equal(updates.length, 2);
+  assert.match(updates[1], /SET status = 'ISSUED'/);
+  assert.match(updates[1], /WHERE id = \$1 AND tenant_id = \$2 AND status = 'APPROVED'/);
   assert.deepEqual(actions, ["APPROVE", "ISSUE"]);
 });
 

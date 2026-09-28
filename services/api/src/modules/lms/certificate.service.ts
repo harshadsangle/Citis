@@ -360,23 +360,21 @@ export class CertificateService {
     const user = request.context.user!;
     this.assertAdmin(user);
     const row = await this.certificateRow(id, user);
-    if (!["ELIGIBLE_FOR_REVIEW", "APPROVED"].includes(String(row.status))) {
+    if (row.status !== "ELIGIBLE_FOR_REVIEW") {
       throw new ConflictException("Only eligible certificates can be approved.");
     }
     const eligibility = await this.eligibilityRow(this.db, user.tenantId, String(row.enrollment_id));
     if (!eligibility?.eligible) throw new ConflictException("The course is no longer eligible for certification.");
     const result = await this.db.query<Record<string, unknown>>(
       `UPDATE lms_certificates
-       SET status = 'ISSUED', approved_by = $3, approved_at = COALESCE(approved_at, now()),
-           review_notes = $4, completion_date = COALESCE(completion_date, $5),
-           issue_date = COALESCE(issue_date, now()), issued_at = COALESCE(issued_at, now()), updated_at = now()
-       WHERE id = $1 AND tenant_id = $2 AND status IN ('ELIGIBLE_FOR_REVIEW', 'APPROVED')
+       SET status = 'APPROVED', approved_by = $3, approved_at = COALESCE(approved_at, now()),
+           review_notes = $4, completion_date = COALESCE(completion_date, $5), updated_at = now()
+       WHERE id = $1 AND tenant_id = $2 AND status = 'ELIGIBLE_FOR_REVIEW'
        RETURNING id`,
       [id, user.tenantId, user.id, input.notes?.trim() || null, eligibility.completed_at ?? new Date()],
     );
     if (!result.rows[0]) throw new ConflictException("Certificate approval could not be completed.");
     await this.auditCertificateAction(row, request, "APPROVE", { notes: input.notes?.trim() || null });
-    await this.auditCertificateAction(row, request, "ISSUE", { certificate_id: id });
     return this.get(id, user);
   }
 
