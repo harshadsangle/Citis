@@ -24,4 +24,8 @@ export class AcademicStructureController {
  @Patch("departments/:id") @RequirePermission("lms.department.update") async updateDepartment(@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(await this.service.update("departments",id,d,r),r);}
  @Patch("semesters/:id") @RequirePermission("lms.semester.update") async updateSemester(@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(await this.service.update("semesters",id,d,r),r);}
  @Patch("course-offerings/:id") @RequirePermission("lms.course_offering.update") async updateOffering(@Param("id")id:string,@Body()d:UpdateAcademicDto,@Req()r:ContextRequest){return successResponse(await this.service.update("course-offerings",id,d,r),r);}
+ @Post("faculties/:id/archive") @RequirePermission("lms.faculty.archive") async archiveFaculty(@Param("id")id:string,@Req()r:ContextRequest){return successResponse(await this.service.update("faculties",id,{status:"ARCHIVED"},r),r);}
+ @Post("departments/:id/archive") @RequirePermission("lms.department.archive") async archiveDepartment(@Param("id")id:string,@Req()r:ContextRequest){return successResponse(await this.service.update("departments",id,{status:"ARCHIVED"},r),r);}
+ @Post("semesters/:id/archive") @RequirePermission("lms.semester.archive") async archiveSemester(@Param("id")id:string,@Req()r:ContextRequest){return successResponse(await this.service.update("semesters",id,{status:"ARCHIVED"},r),r);}
+ @Post("course-offerings/:id/archive") @RequirePermission("lms.course_offering.archive") async archiveOffering(@Param("id")id:string,@Req()r:ContextRequest){return successResponse(await this.service.update("course-offerings",id,{status:"ARCHIVED"},r),r);}
 }
