@@ -3332,7 +3332,7 @@ export class LmsService {
   async changeStatus(id: string, kind: "programme" | "course" | "course_module" | "lesson" | "learning_resource", status: LmsStatus, request: ContextRequest) {
     if (kind === "course") this.assertCourseAdministrator(request.context.user!);
     const table = kind === "programme" ? "programmes" : kind === "course" ? "courses" : kind === "course_module" ? "course_modules" : kind === "lesson" ? "lessons" : "learning_resources";
-    const before = await this.getChild(id, table, request.context.user!);
+    const before = await this.getChild(id, table, request.context.user!) as Record<string, unknown>;
     if (status === "DRAFT") {
       if (kind === "course" || kind === "programme") {
         throw new BadRequestException("Only course content items can be unpublished to draft.");
