@@ -81,6 +81,10 @@ export class CreateProgrammeDto {
   @IsString()
   @MaxLength(2000)
   description?: string;
+
+  @IsOptional()
+  @IsUUID()
+  departmentId?: string;
 }
 
 export class UpdateProgrammeDto {

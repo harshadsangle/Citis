@@ -513,10 +513,10 @@ export class LmsService {
     const campusId = await this.campusFor(user, input.institutionId, input.campusId);
     return this.run(async () => {
       const result = await this.db.query(
-        `INSERT INTO programmes (tenant_id, institution_id, campus_id, name, code, description, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
-         RETURNING id, tenant_id, institution_id, campus_id, name, code, description, status, created_at, updated_at`,
-        [user.tenantId, input.institutionId, campusId, input.name.trim(), input.code.trim().toUpperCase(), input.description?.trim() || null, user.id],
+         `INSERT INTO programmes (tenant_id, institution_id, campus_id, department_id, name, code, description, created_by, updated_by)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)
+          RETURNING id, tenant_id, institution_id, campus_id, department_id, name, code, description, status, created_at, updated_at`,
+        [user.tenantId, input.institutionId, campusId, input.departmentId ?? null, input.name.trim(), input.code.trim().toUpperCase(), input.description?.trim() || null, user.id],
       );
       const row = result.rows[0];
       await this.auditMutation(request, "programme", "CREATE", row);

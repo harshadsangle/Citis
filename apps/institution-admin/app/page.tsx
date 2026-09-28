@@ -833,6 +833,7 @@ export default function InstitutionAdminPage() {
               <span className="nav-icon">{section.icon}</span>{section.shortLabel}
             </button>
           ))}
+           <Link className="nav-link" href="/academic-structure"><span className="nav-icon">S</span>Academic structure</Link>
              <button
               className={`nav-link ${instructorMode ? "active" : ""}`}
               type="button"
