@@ -932,23 +932,23 @@ export default function TeacherPortalPage() {
     const needsUrl = ["VIDEO", "LINK", "INTERACTIVE"].includes(resourceEditor.resourceType);
     const hasUpload = Boolean(resourceEditor.file);
     if (title.length < 2) {
-      setError("Add a resource title.");
+      reportFieldError("teacher-resource-title", "Add a resource title.");
       return;
     }
     if (!Number.isInteger(sequence) || sequence < 1) {
-      setError("Resource sequence must be a positive whole number.");
+      reportFieldError("teacher-resource-sequence", "Resource sequence must be a positive whole number.");
       return;
     }
     if (duration !== undefined && (!Number.isInteger(duration) || duration < 0 || duration > 100000)) {
-      setError("Resource duration must be a whole number between 0 and 100,000 minutes.");
+      reportFieldError("teacher-resource-duration", "Resource duration must be a whole number between 0 and 100,000 minutes.");
       return;
     }
     if (needsUrl && !resourceEditor.url.trim() && !(resourceEditor.resourceType === "VIDEO" && hasUpload)) {
-      setError(`${statusLabel(resourceEditor.resourceType)} resources require a URL.`);
+      reportFieldError("teacher-resource-url", `${statusLabel(resourceEditor.resourceType)} resources require a URL.`);
       return;
     }
     if (hasUpload && !["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "SCORM"].includes(resourceEditor.resourceType)) {
-      setError("Managed files are supported for video, PDF, document, presentation, and SCORM resources.");
+      reportFieldError("teacher-resource-file", "Managed files are supported for video, PDF, document, presentation, and SCORM resources.");
       return;
     }
     setBusyAction(`save-resource:${resourceEditor.id || "new"}`);
@@ -1054,19 +1054,19 @@ export default function TeacherPortalPage() {
     const instructions = assignmentEditor.instructions.trim();
     const maxMarks = Number(assignmentEditor.maxMarks);
     if (!title || title.length < 2) {
-      setError("Add an assignment title.");
+      reportFieldError("teacher-assignment-title", "Add an assignment title.");
       return;
     }
     if (!assignmentEditor.id && !assignmentEditor.moduleId) {
-      setError("Select a course module for this assignment.");
+      reportFieldError("teacher-assignment-module", "Select a course module for this assignment.");
       return;
     }
     if (!instructions || instructions.length < 2) {
-      setError("Add instructions for the learner.");
+      reportFieldError("teacher-assignment-instructions", "Add instructions for the learner.");
       return;
     }
     if (!Number.isFinite(maxMarks) || maxMarks < 0.01 || maxMarks > 100000) {
-      setError("Enter maximum marks between 0.01 and 100,000.");
+      reportFieldError("teacher-assignment-marks", "Enter maximum marks between 0.01 and 100,000.");
       return;
     }
     setBusyAction(`save-assignment:${assignmentEditor.id || "new"}`);
@@ -1183,27 +1183,27 @@ export default function TeacherPortalPage() {
     const attemptLimit = assessmentEditor.attemptLimit.trim() ? Number(assessmentEditor.attemptLimit) : undefined;
     const validNumber = (value: number | undefined) => value === undefined || Number.isFinite(value);
     if (!title || title.length < 2) {
-      setError("Add an assessment title.");
+      reportFieldError("teacher-assessment-title", "Add an assessment title.");
       return;
     }
     if (!assessmentEditor.id && !assessmentEditor.moduleId) {
-      setError("Select a course module for this assessment.");
+      reportFieldError("teacher-assessment-module", "Select a course module for this assessment.");
       return;
     }
     if (!validNumber(totalMarks) || (totalMarks !== undefined && (totalMarks < 0 || totalMarks > 100000))) {
-      setError("Enter total marks between 0 and 100,000.");
+      reportFieldError("teacher-assessment-total-marks", "Enter total marks between 0 and 100,000.");
       return;
     }
     if (!validNumber(passingMarks) || (passingMarks !== undefined && (passingMarks < 0 || passingMarks > (totalMarks ?? 100000)))) {
-      setError("Passing marks cannot exceed total marks.");
+      reportFieldError("teacher-assessment-passing-marks", "Passing marks cannot exceed total marks.");
       return;
     }
     if (!validNumber(durationMinutes) || (durationMinutes !== undefined && (!Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440))) {
-      setError("Duration must be a whole number of minutes between 1 and 1,440.");
+      reportFieldError("teacher-assessment-duration", "Duration must be a whole number of minutes between 1 and 1,440.");
       return;
     }
     if (!validNumber(attemptLimit) || (attemptLimit !== undefined && (!Number.isInteger(attemptLimit) || attemptLimit < 1 || attemptLimit > 100))) {
-      setError("Attempt limit must be a whole number between 1 and 100.");
+      reportFieldError("teacher-assessment-attempt-limit", "Attempt limit must be a whole number between 1 and 100.");
       return;
     }
     setBusyAction(`save-assessment:${assessmentEditor.id || "new"}`);
