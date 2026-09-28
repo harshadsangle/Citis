@@ -261,7 +261,7 @@ Leak of paid/proprietary content across courses.
 ## 6. SCORM files served as executable content from API origin
 
 **Severity:** Critical (XSS / session risk)  
-**Status:** IMPLEMENTED  
+**Status:** PARTIAL
 
 ### What it means
 
@@ -712,7 +712,7 @@ User-initiated payments had audit rows; webhook-driven state changes did not.
 ## 27. Form validation errors not consistently accessible
 
 **Severity:** Medium  
-**Status:** PARTIAL  
+**Status:** IMPLEMENTED
 
 ### What it means
 
