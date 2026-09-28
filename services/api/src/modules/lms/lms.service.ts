@@ -351,7 +351,16 @@ export class LmsService {
         if (assessment.questionsToSelect !== undefined && assessment.questionsToSelect !== null) {
           number(assessment.questionsToSelect, "Assessment question selection", 1, 500, true);
         }
+        if (assessment.randomizeQuestions !== undefined && typeof assessment.randomizeQuestions !== "boolean") {
+          throw new BadRequestException("Question randomization must be a boolean.");
+        }
+        if (assessment.randomizeOptions !== undefined && typeof assessment.randomizeOptions !== "boolean") {
+          throw new BadRequestException("Answer-option randomization must be a boolean.");
+        }
         if (!Array.isArray(assessment.questions)) throw new BadRequestException("Each assessment must include a questions array.");
+        if (assessment.questionsToSelect && assessment.questionsToSelect > assessment.questions.length) {
+          throw new BadRequestException("The assessment question pool must contain at least the configured number of questions.");
+        }
         if (assessment.questions.length > 0) requirePermission("lms.assessment_question.create");
         for (const question of assessment.questions) {
           text(question.prompt, "Question prompt", 2, 2_000);
@@ -360,6 +369,14 @@ export class LmsService {
           }
           number(question.marks, "Question marks", 0.01, 100_000);
           number(question.negativeMarks ?? 0, "Question negative marks", 0, question.marks);
+          if (question.subject !== undefined) text(question.subject, "Question subject", 1, 120);
+          if (question.topic !== undefined) text(question.topic, "Question topic", 1, 120);
+          if (question.difficulty !== undefined && !["EASY", "MEDIUM", "HARD"].includes(question.difficulty.toUpperCase())) {
+            throw new BadRequestException("Unsupported question difficulty.");
+          }
+          if (question.matchingPairs !== undefined && !Array.isArray(question.matchingPairs)) {
+            throw new BadRequestException("Matching pairs must be an array.");
+          }
           if (!Array.isArray(question.options)) throw new BadRequestException("Each question needs an options array.");
           if (question.questionType === "LONG_ANSWER") {
             if (question.options.length || (question.matchingPairs?.length ?? 0)) {

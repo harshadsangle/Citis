@@ -1626,6 +1626,11 @@ export default function TeacherPortalPage() {
         return;
       }
     }
+    if (questionEditor.saveToBank &&
+        (!questionEditor.subject.trim() || !questionEditor.topic.trim() || !["EASY", "MEDIUM", "HARD"].includes(questionEditor.difficulty))) {
+      reportFieldError("teacher-question-subject", "Add a subject, topic, and difficulty before saving to the institution bank.");
+      return;
+    }
     const choiceType = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE"].includes(questionEditor.questionType);
     const answerType = ["SHORT_TEXT", "NUMERIC", "FILL_IN_BLANK"].includes(questionEditor.questionType);
     if (questionEditor.questionType === "LONG_ANSWER" && options.length) {
@@ -2126,7 +2131,7 @@ export default function TeacherPortalPage() {
                      {expanded && <div className="assessment-details">
                        <div className="assessment-detail-columns">
                          <div className="question-bank">
-                            <div className="subsection-heading"><div><p className="eyebrow">Assessment questions</p><h3>{questions.length} question{questions.length === 1 ? "" : "s"}</h3></div>{assessment.status === "DRAFT" && <div className="question-bank-actions"><button className="secondary-button small-button" type="button" onClick={() => void loadAssessmentQuestionBank(assessment)}>{questionBankAssessmentId === assessment.id ? "Close question bank" : "Browse question bank"}</button><button className="secondary-button small-button" type="button" onClick={() => openQuestionEditor(assessment)}>+ Add question</button></div>}</div>
+                            <div className="subsection-heading"><div><p className="eyebrow">Assessment questions</p><h3>{questions.length} question{questions.length === 1 ? "" : "s"}</h3></div>{assessment.status === "DRAFT" && <div className="question-bank-actions"><button className="secondary-button small-button" type="button" onClick={() => { if (questionBankAssessmentId === assessment.id) setQuestionBankAssessmentId(""); else void loadAssessmentQuestionBank(assessment); }}>{questionBankAssessmentId === assessment.id ? "Close question bank" : "Browse question bank"}</button><button className="secondary-button small-button" type="button" onClick={() => openQuestionEditor(assessment)}>+ Add question</button></div>}</div>
                             {questionBankAssessmentId === assessment.id && <div className="question-bank-imports">
                               <div className="question-bank-import-heading"><strong>Institution question bank</strong><span>Imported questions are copied into this assessment.</span></div>
                               {questionBankLoading === assessment.id && <div className="nested-state loading-inline"><span className="mini-spinner" />Loading available questions…</div>}
@@ -2144,7 +2149,7 @@ export default function TeacherPortalPage() {
                                 <label>Marks<input {...fieldProps("teacher-question-marks")} type="number" value={questionEditor.marks} onChange={(event) => { clearFieldError("teacher-question-marks"); setQuestionEditor((current) => current && { ...current, marks: event.target.value }); }} min="0.01" max="100000" step="0.01" required /></label>
                                 <label>Negative marks<input {...fieldProps("teacher-question-negative-marks")} type="number" value={questionEditor.negativeMarks} onChange={(event) => { clearFieldError("teacher-question-negative-marks"); setQuestionEditor((current) => current && { ...current, negativeMarks: event.target.value }); }} min="0" max={questionEditor.marks || "100000"} step="0.01" /></label>
                                 <label>Sequence<input {...fieldProps("teacher-question-sequence")} type="number" value={questionEditor.sequence} onChange={(event) => { clearFieldError("teacher-question-sequence"); setQuestionEditor((current) => current && { ...current, sequence: event.target.value }); }} min="1" step="1" required /></label>
-                                <label>Subject <span className="optional-label">(question bank)</span><input value={questionEditor.subject} onChange={(event) => setQuestionEditor((current) => current && { ...current, subject: event.target.value })} maxLength={120} /></label>
+                                <label>Subject <span className="optional-label">(question bank)</span><input {...fieldProps("teacher-question-subject")} value={questionEditor.subject} onChange={(event) => { clearFieldError("teacher-question-subject"); setQuestionEditor((current) => current && { ...current, subject: event.target.value }); }} maxLength={120} /></label>
                                 <label>Topic <span className="optional-label">(question bank)</span><input value={questionEditor.topic} onChange={(event) => setQuestionEditor((current) => current && { ...current, topic: event.target.value })} maxLength={120} /></label>
                                 <label>Difficulty<select value={questionEditor.difficulty} onChange={(event) => setQuestionEditor((current) => current && { ...current, difficulty: event.target.value })}><option value="EASY">Easy</option><option value="MEDIUM">Medium</option><option value="HARD">Hard</option></select></label>
                               </div>
