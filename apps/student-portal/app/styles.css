@@ -1953,10 +1953,10 @@ body { color: #342b33; background: #fff; }
   color: #fff !important;
   background: linear-gradient(135deg, #4f0341, #3c0232) !important;
 }
-.student-shell .portal-hero-card :is(strong, small, span, a, a span),
+.student-shell .portal-hero-card :is(h1, h2, h3, h4, h5, h6, p, strong, small, span, a),
 .student-shell .course-detail-hero :is(h2, p, span, strong, a),
 .student-shell .course-card-art :is(span, strong),
-.student-shell .lesson-resource-footer :is(strong, span) { color: #fff !important; }
+.student-shell .lesson-resource-footer :is(h1, h2, h3, p, strong, span) { color: #fff !important; }
 .student-shell .portal-hero-card-icon,
 .student-shell .portal-hero-card > span:not(.portal-hero-card-icon) { color: rgb(255 255 255 / .8) !important; }
 .student-shell :is(.profile-avatar, .profile-menu-icon, .catalogue-stat-icon,
