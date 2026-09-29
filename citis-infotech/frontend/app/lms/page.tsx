@@ -97,8 +97,8 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
           </div>
         </section>
 
-        <LmsCourseCatalogue categories={courseCategories} provider={provider} providerQuery={providerQuery} />
         <ProfessionalProgramsCatalogue compact />
+        <LmsCourseCatalogue categories={courseCategories} provider={provider} providerQuery={providerQuery} />
       </main>
     </>
   );
