@@ -196,6 +196,9 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
 }
 
 export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal; provider?: LmsCourseProvider }) {
+  const credentialPrefix = `citis-${portal}-login`;
+  const emailInputId = `${credentialPrefix}-email`;
+  const passwordInputId = `${credentialPrefix}-password`;
   const [show, setShow] = useState(false);
   const [serverError, setServerError] = useState("");
   const [mfaChallenge, setMfaChallenge] = useState<{ challengeToken: string; channel: "EMAIL" | "SMS"; expiresInSeconds: number } | null>(null);
@@ -203,7 +206,12 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
   const [mfaSubmitting, setMfaSubmitting] = useState(false);
   const loginInFlightRef = useRef(false);
   const submissionIdRef = useRef(0);
-  const { register, handleSubmit, control, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
+  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
+  useEffect(() => {
+    reset({ email: "", password: "", remember: false });
+    setShow(false);
+    setServerError("");
+  }, [portal, reset]);
   const onSubmit = async (values: LoginInput) => {
     if (loginInFlightRef.current) return;
     loginInFlightRef.current = true;
@@ -303,9 +311,9 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
     );
   }
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
-      <div><Label htmlFor="login-email" className="auth-field-label">Email address</Label><div className="auth-field-wrap mt-2"><Mail className="auth-field-icon" aria-hidden="true" /><Input id="login-email" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pl-11" type="email" autoComplete="email" placeholder="you@institution.edu" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "login-email-error" : undefined} {...register("email")} /></div>{message(errors.email?.message, "login-email-error")}</div>
-      <div><div className="flex items-center justify-between"><Label htmlFor="login-password" className="auth-field-label">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="auth-forgot-link text-xs font-semibold">Forgot password?</Link></div><div className="auth-field-wrap mt-2"><EyeOff className="auth-field-icon" aria-hidden="true" /><Input id="login-password" type={show ? "text" : "password"} autoComplete="current-password" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pr-12 pl-11" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "login-password-error" : undefined} {...register("password")} /><button type="button" onClick={() => setShow(!show)} className="auth-password-toggle absolute top-1/2 right-2.5 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message, "login-password-error")}</div>
+    <form name={`${credentialPrefix}-form`} autoComplete="off" onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
+      <div><Label htmlFor={emailInputId} className="auth-field-label">Email address</Label><div className="auth-field-wrap mt-2"><Mail className="auth-field-icon" aria-hidden="true" /><Controller name="email" control={control} render={({ field }) => <Input {...field} id={emailInputId} name={`${credentialPrefix}-email`} className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pl-11" type="email" autoComplete="off" placeholder="you@institution.edu" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "login-email-error" : undefined} />}/></div>{message(errors.email?.message, "login-email-error")}</div>
+      <div><div className="flex items-center justify-between"><Label htmlFor={passwordInputId} className="auth-field-label">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="auth-forgot-link text-xs font-semibold">Forgot password?</Link></div><div className="auth-field-wrap mt-2"><EyeOff className="auth-field-icon" aria-hidden="true" /><Controller name="password" control={control} render={({ field }) => <Input {...field} id={passwordInputId} name={`${credentialPrefix}-password`} type={show ? "text" : "password"} autoComplete="off" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pr-12 pl-11" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "login-password-error" : undefined} />}/><button type="button" onClick={() => setShow(!show)} className="auth-password-toggle absolute top-1/2 right-2.5 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message, "login-password-error")}</div>
       <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="auth-remember-label font-normal">Keep me signed in</Label></div>} />
       {serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button className="auth-submit-button h-12 w-full rounded-xl text-sm" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : <>Sign in <ArrowRight className="size-4" /></>}</Button>

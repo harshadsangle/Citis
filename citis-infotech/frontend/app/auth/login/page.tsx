@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <span className="auth-portal-icon"><ShieldCheck className="size-4" /></span>
             <span><strong>{portalOption.eyebrow}</strong><small>{portalOption.description}</small></span>
           </div>
-          <div className="mt-7"><LoginForm portal={portal} provider={provider} /></div>
+          <div className="mt-7"><LoginForm key={portal} portal={portal} provider={provider} /></div>
           <p className="auth-support-copy mt-7 text-center text-sm">Need access? <Link href="/contact" className="font-semibold">Contact your programme team</Link></p>
         </div>
       </div>

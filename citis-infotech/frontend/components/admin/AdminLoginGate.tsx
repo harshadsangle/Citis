@@ -10,7 +10,7 @@ import { loginErrorMessage } from "@/lib/auth-error";
 import { authService } from "@/services/api";
 
 export function AdminLoginGate({ onSuccess }: { onSuccess: (user: AdminUser) => void }) {
-  const [email, setEmail] = useState("admin@example.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,7 +43,7 @@ export function AdminLoginGate({ onSuccess }: { onSuccess: (user: AdminUser) => 
 
   return (
     <div className="grid min-h-screen place-items-center bg-slate-50 px-4 dark:bg-slate-950">
-      <form onSubmit={onSubmit} className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-lg">
+      <form name="citis-admin-content-login" autoComplete="off" onSubmit={onSubmit} className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-lg">
         <div className="mb-6 flex items-center gap-3">
           <span className="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
             <LockKeyhole className="size-5" />
@@ -58,7 +58,9 @@ export function AdminLoginGate({ onSuccess }: { onSuccess: (user: AdminUser) => 
             <Label htmlFor="admin-email">Email</Label>
             <Input
               id="admin-email"
+              name="citis-admin-content-email"
               type="email"
+              autoComplete="off"
               className="mt-2"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -69,7 +71,9 @@ export function AdminLoginGate({ onSuccess }: { onSuccess: (user: AdminUser) => 
             <Label htmlFor="admin-password">Password</Label>
             <Input
               id="admin-password"
+              name="citis-admin-content-password"
               type="password"
+              autoComplete="off"
               className="mt-2"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
