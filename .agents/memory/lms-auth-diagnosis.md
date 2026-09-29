@@ -21,8 +21,8 @@ The demo learner password is an environment secret consumed by the seed and regr
 
 **How to apply:** Configure `DEMO_LEARNER_PASSWORD` through workspace secrets before seeding or running the learner auth regression; keep authentication itself server-authoritative.
 
-In the local Replit browser, the public login can fail with “Failed to fetch” before any `/auth/login` request reaches the API because the development API origin is outside the page's CSP `connect-src`. A temporary CDP CSP bypass allowed the ordinary login/session flow to proceed for portal checks, but that does not make unmodified sign-in pass.
+In the Replit development preview, a cross-origin `NEXT_PUBLIC_API_URL` can send browser login requests to a shared API host whose CORS policy does not allow the preview origin. The browser then reports “Failed to fetch” before `/auth/login` reaches the API; the same-origin `/api/v1` Next rewrite reaches the local API successfully.
 
-**Why:** This failure happens before credential validation, so changing passwords or reseeding accounts would be the wrong first response.
+**Why:** This failure happens during the cross-origin preflight, before credential validation or session-cookie issuance, so changing passwords, sessions, or database data is the wrong response.
 
-**How to apply:** Check browser console and network activity before changing auth data; if a temporary `Page.setBypassCSP` is used for local testing, report baseline sign-in as blocked and keep the bypass isolated.
+**How to apply:** For browser requests in development, use the same-origin `/api/v1` proxy; keep the configured absolute API origin for server-side and production requests. Check the preflight response and login cookie before changing auth data.
