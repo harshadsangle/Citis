@@ -1887,3 +1887,165 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
     flex-direction: column;
   }
 }
+
+/* LMS learner theme: Tyrian Purple and white, scoped to learner and checkout UI. */
+:root {
+  color: #342b33;
+  background: #fff;
+  accent-color: #4f0341;
+}
+
+body { color: #342b33; background: #fff; }
+.student-shell {
+  color: #342b33 !important;
+  background:
+    radial-gradient(circle at 7% 1%, rgb(79 3 65 / .07), transparent 25%),
+    radial-gradient(circle at 94% 9%, rgb(79 3 65 / .04), transparent 23%),
+    linear-gradient(180deg, #fff 0%, #faf8fa 100%) !important;
+}
+.student-shell :is(h1, h2, h3, h4, h5, h6),
+.student-shell :is(.portal-brand-citis, .portal-brand-infot, .portal-hero h1 em,
+  .portal-eyebrow, .catalogue-eyebrow, .course-detail-eyebrow, .course-detail-label,
+  .portal-empty-icon, .catalogue-stat-icon, .search-icon, .catalogue-results-line strong,
+  .course-progress-label strong, .course-module-number, .course-module-progress,
+  .course-detail-close, .course-bullet-list li > span, .course-detail-context,
+  .course-lesson-status, .learning-back-button, .learning-header-progress-topline strong,
+  .learning-roadmap-progress strong, .learning-module.is-current .learning-module-number,
+  .learning-lesson-item.is-completed, .learning-lesson-item.is-current .learning-lesson-marker,
+  .lesson-article-kicker, .lesson-article-kicker::before, .lesson-navigation button span,
+  .assessment-history-icon, .assessment-list-icon, .assessment-history-context,
+  .assessment-history-result strong, .assessment-status-card strong,
+  .assessment-progress-heading strong, .assessment-progress-heading > span,
+  .assessment-question-number, .assessment-question-topline span:last-child,
+  .assessment-option input, .assessment-result-kicker, .assessment-result-score strong,
+  .assessment-review-mark strong, .assessment-list-meta strong, .certificate-kicker,
+  .assignment-context, .assignment-card-meta strong, .assignment-detail-meta strong,
+  .course-complete-badge, .resource-empty-mark, .purchase-brand-mark,
+  .purchase-secure-label, .purchase-eyebrow, .purchase-steps .is-current,
+  .purchase-steps .is-complete, .purchase-course-points i, .purchase-form-links button,
+  .purchase-success-icon) {
+  color: #4f0341 !important;
+}
+.student-shell section,
+.student-shell article,
+.student-shell .portal-state-card,
+.student-shell .catalogue-total,
+.student-shell .catalogue-search,
+.student-shell .catalogue-sort select,
+.student-shell .catalogue-course-card,
+.student-shell .course-detail-section,
+.student-shell .course-module,
+.student-shell .learning-roadmap,
+.student-shell .lesson-article,
+.student-shell .assessment-history-card,
+.student-shell .assessment-list-card,
+.student-shell .assessment-question-card {
+  border-color: #e4d9e2 !important;
+}
+.student-shell .portal-hero-card,
+.student-shell .course-detail-hero,
+.student-shell .course-card-art,
+.student-shell .course-card-art-career-pathway,
+.student-shell .course-card-art-specializations,
+.student-shell .course-card-art-certificate-programs,
+.student-shell .course-card-art-global-certifications,
+.student-shell .lesson-resource-footer {
+  color: #fff !important;
+  background: linear-gradient(135deg, #4f0341, #3c0232) !important;
+}
+.student-shell .portal-hero-card :is(strong, small, span, a, a span),
+.student-shell .course-detail-hero :is(h2, p, span, strong, a),
+.student-shell .course-card-art :is(span, strong),
+.student-shell .lesson-resource-footer :is(strong, span) { color: #fff !important; }
+.student-shell .portal-hero-card-icon,
+.student-shell .portal-hero-card > span:not(.portal-hero-card-icon) { color: rgb(255 255 255 / .8) !important; }
+.student-shell :is(.profile-avatar, .profile-menu-icon, .catalogue-stat-icon,
+  .enrolled-course-thumbnail, .course-module-number, .learning-module-number,
+  .assessment-history-icon, .assessment-list-icon, .assessment-question-number,
+  .course-learning-points > div > span, .detail-curriculum-number,
+  .course-complete-badge, .resource-empty-mark, .purchase-brand-mark,
+  .purchase-course-points i, .purchase-success-icon) {
+  color: #4f0341 !important;
+  background: #f4edf3 !important;
+}
+.student-shell :is(.profile-trigger:hover, .profile-menu-item:hover:not(:disabled),
+  .learner-nav a:hover, .course-details-button:hover, .assessment-secondary-button:hover:not(:disabled),
+  .learning-lesson-item:hover:not(:disabled), .lesson-navigation button:hover:not(:disabled),
+  .assessment-question-map button:hover:not(:disabled), .assessment-option:hover,
+  .course-module summary:hover, .detail-curriculum-list summary:hover,
+  .catalogue-filter-row button span, .course-role-list span) {
+  background-color: #f4edf3 !important;
+}
+.student-shell :is(.course-primary-button, .course-detail-continue, .assessment-primary-button,
+  .certificate-download-button, .assignment-submit-button, .catalogue-empty button,
+  .catalogue-filter-row button.is-active, .learner-nav a.is-active,
+  .assessment-question-map button.is-current, .assessment-option.is-selected .assessment-option-control) {
+  color: #fff !important;
+  border-color: #4f0341 !important;
+  background: #4f0341 !important;
+}
+.student-shell :is(.course-primary-button:hover, .course-detail-continue:hover,
+  .assessment-primary-button:hover:not(:disabled), .certificate-download-button:hover:not(:disabled),
+  .assignment-submit-button:hover:not(:disabled), .catalogue-empty button:hover) {
+  color: #fff !important;
+  border-color: #3c0232 !important;
+  background: #3c0232 !important;
+}
+.student-shell :is(.catalogue-category, .category-specializations, .category-certificate-programs,
+  .category-global-certifications, .course-state-in_progress, .course-state-completed,
+  .assessment-notice, .assessment-question-number, .assessment-option.is-selected,
+  .assessment-option.is-selected .assessment-option-control, .assessment-question-map button.is-answered:not(.is-current),
+  .assessment-result-hero, .assessment-result-icon, .course-certification-section,
+  .course-learning-points > div > span, .lesson-completion-card.is-completed,
+  .lesson-completion-card.is-completed .lesson-completion-icon, .course-complete-banner,
+  .course-detail-summary-progress strong, .learning-roadmap-progress,
+  .learning-module.is-current, .learning-module.is-current .learning-module-number) {
+  border-color: #e4d9e2 !important;
+  color: #4f0341 !important;
+  background-color: #f4edf3 !important;
+}
+.student-shell :is(.progress-track span, .assessment-progress-track div,
+  .learning-roadmap::before, .course-detail-summary .progress-track span) {
+  background: #4f0341 !important;
+}
+.student-shell :is(a, .catalogue-results-line button, .course-details-button,
+  .learning-back-button, .assessment-back-button, .assessment-secondary-button,
+  .course-detail-continue) { color: #4f0341 !important; }
+.student-shell :is(button, a, summary, input, textarea, select):focus-visible {
+  outline-color: rgb(79 3 65 / .55) !important;
+}
+.student-shell :is(input, textarea, select, .catalogue-search, .catalogue-sort select,
+  .assessment-text-answer input) { border-color: #d8c8d5 !important; }
+.student-shell :is(input:focus, textarea:focus, select:focus, .catalogue-search:focus-within,
+  .assessment-text-answer input:focus) {
+  border-color: #4f0341 !important;
+  box-shadow: 0 0 0 3px rgb(79 3 65 / .12) !important;
+}
+
+.purchase-page {
+  color: #342b33;
+  background:
+    radial-gradient(circle at 84% 7%, rgb(79 3 65 / .06), transparent 28rem),
+    radial-gradient(circle at 4% 34%, rgb(79 3 65 / .04), transparent 30rem),
+    #fff;
+}
+.purchase-page :is(h1, h2, .purchase-brand, .purchase-secure-label, .purchase-eyebrow,
+  .purchase-steps .is-current, .purchase-steps .is-complete, .purchase-course-points i,
+  .purchase-form-links button, .purchase-success-icon) { color: #4f0341; }
+.purchase-page .purchase-primary,
+.purchase-page .purchase-steps .is-current i {
+  color: #fff;
+  border-color: #4f0341;
+  background: #4f0341;
+}
+.purchase-page .purchase-primary:hover:not(:disabled) { background: #3c0232; }
+.purchase-page :is(.purchase-brand-mark, .purchase-course-points i, .purchase-success-icon,
+  .purchase-steps .is-complete i) { color: #4f0341; background: #f4edf3; }
+.purchase-page :is(.purchase-tabs, .purchase-choice-row, .purchase-status, .purchase-summary) { background: #faf8fa; }
+.purchase-page :is(input, select, textarea):focus {
+  border-color: #4f0341;
+  box-shadow: 0 0 0 3px rgb(79 3 65 / .12);
+}
+.purchase-page :is(button, a, input, select, textarea):focus-visible {
+  outline-color: rgb(79 3 65 / .55);
+}
