@@ -1199,19 +1199,19 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 
 /* Premium spectrum: warm surfaces with restrained section accents. */
 :root {
-  --lms-ink: #17324a;
-  --lms-muted: #657b8d;
-  --lms-warm-white: #fffdfa;
-  --lms-canvas: #f7f8fb;
-  --lms-orange: #f19a68;
-  --lms-orange-deep: #dc7746;
-  --lms-coral: #e98e83;
-  --lms-sky: #80c6e5;
-  --lms-teal: #61b3aa;
-  --lms-mint: #a9dec9;
-  --lms-lavender: #c9c4eb;
-  --lms-rose: #e8b8c8;
-  --lms-amber: #f1ca7d;
+  --lms-ink: #4f0341;
+  --lms-muted: #6e6670;
+  --lms-warm-white: #ffffff;
+  --lms-canvas: #faf8fa;
+  --lms-orange: #4f0341;
+  --lms-orange-deep: #3c0232;
+  --lms-coral: #4f0341;
+  --lms-sky: #4f0341;
+  --lms-teal: #4f0341;
+  --lms-mint: #f4edf3;
+  --lms-lavender: #f4edf3;
+  --lms-rose: #f4edf3;
+  --lms-amber: #f4edf3;
 }
 
 body {
@@ -1547,4 +1547,151 @@ h1 { color: var(--lms-ink); }
 @media (max-width: 620px) {
   .institution-import-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .institution-import-result-heading { flex-direction: column; }
+}
+
+/* Institution LMS theme overrides. Layout, states, and interaction styles stay unchanged. */
+body { color: #342b33; background: #fff; }
+.admin-shell {
+  color: #342b33;
+  background:
+    radial-gradient(circle at 92% 3%, rgb(79 3 65 / .055), transparent 21rem),
+    radial-gradient(circle at 17% 23%, rgb(79 3 65 / .035), transparent 26rem),
+    #faf8fa;
+}
+.sidebar {
+  color: #fff;
+  background: linear-gradient(165deg, #4f0341, #3c0232 58%, #4f0341);
+}
+.brand-mark,
+.avatar,
+.sidebar-footer .avatar {
+  color: #4f0341;
+  background: #fff;
+  box-shadow: 0 7px 18px rgb(255 255 255 / .14);
+}
+.nav-link.active {
+  background: rgb(255 255 255 / .14);
+  box-shadow: inset 3px 0 #fff;
+}
+.nav-icon,
+.nav-link.active .nav-icon,
+.nav-link.active { color: #fff; }
+.topbar { border-bottom-color: #e4d9e2; background: rgb(255 255 255 / .94); }
+.online-dot,
+.notification-dot { background: #4f0341; }
+.profile-avatar { background: #f4edf3; }
+.eyebrow,
+.crumb:hover,
+.crumb.current,
+.record-title:hover,
+.row-actions button:hover,
+.row-action-link:hover { color: #4f0341; }
+.primary-button,
+.institution-create-button,
+.relationship-controls .primary-button {
+  color: #fff;
+  border-color: #4f0341;
+  background: #4f0341;
+  box-shadow: 0 7px 16px rgb(79 3 65 / .14);
+}
+.primary-button:hover,
+.institution-create-button:hover { color: #fff; background: #3c0232; }
+.secondary-button { color: #4f0341; border-color: #d8c8d5; background: #fff; }
+.secondary-button:hover { color: #4f0341; border-color: #4f0341; background: #faf8fa; }
+.course-view-tabs,
+.insights-switcher,
+.report-tabs { border-color: #e4d9e2; background: #faf8fa; }
+.course-view-tabs button,
+.insights-switcher button,
+.report-tabs button { color: #6e6670; }
+.course-view-tabs button.active,
+.insights-switcher button.active,
+.report-tabs button.active {
+  color: #4f0341;
+  background: #fff;
+}
+.content-panel,
+.relationship-panel,
+.modal,
+.course-builder,
+.builder-panel,
+.content-panel,
+.insight-toolbar,
+.insight-filters,
+.report-filter-grid,
+.insight-list-panel,
+.certificate-detail-panel,
+.reports-workspace,
+.builder-form-grid,
+.builder-module-card {
+  border-color: #e4d9e2;
+  background-color: #fff;
+}
+.record-row:hover,
+.relationship-row:hover,
+.builder-lesson-row.selected,
+.builder-node-row:hover { background: #faf8fa; }
+.record-title,
+.panel-toolbar h2,
+.modal h2,
+.builder-header h2,
+.builder-panel-heading h3,
+.builder-counts strong,
+.builder-success h3 { color: #4f0341; }
+.record-row:nth-child(n) .record-avatar,
+.state-symbol,
+.state-symbol.soft,
+.relationship-count,
+.queue-badge,
+.builder-steps button.active span,
+.builder-steps button.complete span,
+.builder-generated-code,
+.builder-note,
+.builder-inline-form,
+.builder-node-number,
+.builder-child-mark,
+.builder-success-icon,
+.builder-counts,
+.course-allocation-option:has(input:checked) {
+  color: #4f0341;
+  border-color: #e4d9e2;
+  background: #f4edf3;
+}
+.builder-steps button.active,
+.builder-steps button.complete,
+.builder-link,
+.builder-danger { color: #4f0341; }
+.builder-steps button.active { background: #f4edf3; }
+.builder-steps button.active span,
+.builder-steps button.complete span,
+.builder-success-icon { color: #fff; background: #4f0341; }
+.builder-form-grid input:focus,
+.builder-form-grid textarea:focus,
+.builder-inline-form input:focus,
+.builder-inline-form textarea:focus,
+.builder-inline-form select:focus,
+.builder-activity-card input:focus,
+.builder-activity-card textarea:focus,
+.builder-activity-card select:focus,
+.builder-picker-grid select:focus,
+.modal input:focus,
+.modal textarea:focus,
+.modal select:focus,
+.relationship-controls input:focus,
+.relationship-controls select:focus {
+  border-color: #4f0341;
+  box-shadow: 0 0 0 3px rgb(79 3 65 / .12);
+}
+.builder-check input,
+.course-allocation-option input { accent-color: #4f0341; }
+.builder-footer { background: #fff; }
+.institution-import-counts span { color: #4f0341; background: #f4edf3; }
+.institution-import-counts strong,
+.institution-import-clean { color: #4f0341; }
+.admin-shell button:focus-visible,
+.admin-shell a:focus-visible,
+.admin-shell input:focus-visible,
+.admin-shell select:focus-visible,
+.admin-shell textarea:focus-visible {
+  outline-color: rgb(79 3 65 / .65);
 }
