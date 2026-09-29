@@ -26,3 +26,9 @@ In the Replit development preview, a cross-origin `NEXT_PUBLIC_API_URL` can send
 **Why:** This failure happens during the cross-origin preflight, before credential validation or session-cookie issuance, so changing passwords, sessions, or database data is the wrong response.
 
 **How to apply:** For browser requests in development, use the same-origin `/api/v1` proxy; keep the configured absolute API origin for server-side and production requests. Check the preflight response and login cookie before changing auth data.
+
+For browser-based login reproduction, wait until React has attached the form submit handler before submitting. A pre-hydration submit falls back to native GET and can put credentials into the URL; discard that browser profile and sanitize any captured URLs.
+
+**Why:** The server-rendered login form has no explicit method, so submitting before hydration does not invoke the client login handler.
+
+**How to apply:** Verify hydration before entering credentials, then capture only sanitized URLs and never print form values or request bodies.
