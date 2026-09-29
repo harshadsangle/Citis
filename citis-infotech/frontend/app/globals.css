@@ -1511,3 +1511,176 @@ blockquote {
 @media (prefers-reduced-motion: reduce) {
   .lms-hero-copy, .lms-hero-visual, .lms-discovery-card, .lms-float-card { animation: none; }
 }
+
+/* LMS-only Tyrian Purple and white palette. The shared CITIS site tokens above
+   remain unchanged so marketing pages and the global navigation keep their theme. */
+.lms-page {
+  --lms-brand: #4f0341;
+  background: #fff;
+}
+
+.lms-page .lms-hero,
+.lms-page .lms-hero-grid {
+  background-color: #4f0341;
+  background-image:
+    radial-gradient(circle at 74% 38%, rgb(255 255 255 / .12), transparent 22rem),
+    radial-gradient(circle at 94% 9%, rgb(255 255 255 / .08), transparent 18rem),
+    linear-gradient(115deg, #4f0341, #3c0232 56%, #4f0341);
+}
+
+.lms-page .lms-hero-grid::after { background: linear-gradient(90deg, #4f0341 0%, transparent 56%); }
+.lms-page .lms-kicker { color: rgb(255 255 255 / .78); }
+.lms-page .lms-hero h1 span,
+.lms-page .lms-hero-proof strong { color: #fff; }
+.lms-page .lms-primary-cta {
+  color: #4f0341;
+  background: #fff;
+}
+.lms-page .lms-primary-cta:hover { color: #4f0341; background: #f4edf3; }
+.lms-page .lms-secondary-cta { border-color: rgb(255 255 255 / .36); color: #fff; }
+.lms-page .lms-secondary-cta:hover { border-color: #fff; background: rgb(255 255 255 / .14); }
+.lms-page .lms-avatar-stack span,
+.lms-page .lms-avatar-stack span:nth-child(2),
+.lms-page .lms-avatar-stack span:nth-child(3) {
+  border-color: #4f0341;
+  color: #4f0341;
+  background: #fff;
+}
+.lms-page .lms-hero-orbit { border-color: rgb(255 255 255 / .2); }
+.lms-page .lms-hero-orbit-one::after,
+.lms-page .lms-hero-orbit-two::after {
+  background: #fff;
+  box-shadow: 0 0 0 .5rem rgb(255 255 255 / .12), 0 0 1.5rem rgb(255 255 255 / .55);
+}
+.lms-page .lms-hero-dashboard {
+  border-color: rgb(255 255 255 / .28);
+  background: linear-gradient(150deg, rgb(255 255 255 / .17), rgb(255 255 255 / .05));
+}
+.lms-page .lms-live-dot,
+.lms-page .lms-live-dot::before,
+.lms-page .lms-progress-track span,
+.lms-page .lms-dashboard-chips svg,
+.lms-page .lms-float-card svg,
+.lms-page .lms-float-number,
+.lms-page .lms-mini-mark {
+  color: #fff;
+  background-color: #fff;
+}
+.lms-page .lms-live-dot { background: transparent; }
+.lms-page .lms-progress-track span { background: #fff; }
+.lms-page .lms-mini-mark { color: #4f0341; }
+.lms-page .lms-dashboard-title em,
+.lms-page .lms-float-card strong { color: #fff; }
+.lms-page .lms-stat-strip,
+.lms-page .lms-catalogue { background: #fff; }
+.lms-page .lms-portal-section { background: #faf8fa; }
+.lms-page .lms-stat-grid strong,
+.lms-page .lms-section-heading h2,
+.lms-page .lms-catalogue-heading h2,
+.lms-page .lms-portal-card h3,
+.lms-page .lms-portal-link,
+.lms-page .lms-portal-footnote a,
+.lms-page .lms-catalogue-total strong,
+.lms-page .lms-search-field button:hover,
+.lms-page .lms-clear-filter,
+.lms-page .lms-catalogue-status > span:first-child,
+.lms-page .lms-provider-heading h3,
+.lms-page .lms-card-title,
+.lms-page .lms-detail-pill,
+.lms-page .lms-detail-facts > div > span,
+.lms-page .lms-detail-heading,
+.lms-page .lms-objective > strong,
+.lms-page .lms-detail-cta,
+.lms-page .lms-empty-state > span {
+  color: #4f0341;
+}
+.lms-page .lms-kicker-line { background: #4f0341; }
+.lms-page .lms-portal-card,
+.lms-page .lms-portal-card-2,
+.lms-page .lms-portal-card-3,
+.lms-page .lms-provider-section,
+.lms-page .lms-discovery-card,
+.lms-page .lms-objective {
+  border-color: #e4d9e2;
+  background: #fff;
+}
+.lms-page .lms-portal-card:hover,
+.lms-page .lms-discovery-card:hover,
+.lms-page .lms-discovery-card[open] { border-color: #4f0341; }
+.lms-page .lms-portal-icon,
+.lms-page .lms-portal-card-2 .lms-portal-icon,
+.lms-page .lms-portal-card-3 .lms-portal-icon,
+.lms-page .lms-empty-state button {
+  color: #fff;
+  background: #4f0341;
+}
+.lms-page .lms-portal-card-2,
+.lms-page .lms-portal-card-3 { background: #faf8fa; }
+.lms-page .lms-catalogue-total,
+.lms-page .lms-catalogue-toolbar,
+.lms-page .lms-discovery-card-detail,
+.lms-page .lms-empty-state {
+  border-color: #e4d9e2;
+  background: #faf8fa;
+}
+.lms-page .lms-catalogue::before { background: radial-gradient(circle, rgb(79 3 65 / .08), transparent 67%); }
+.lms-page .lms-search-field button:hover,
+.lms-page .lms-clear-filter:hover { background: #f4edf3; }
+.lms-page .lms-provider-section {
+  --provider-line: #4f0341 !important;
+  --provider-text: #4f0341 !important;
+  --provider-tint: #f4edf3 !important;
+}
+.lms-page .lms-card-art,
+.lms-page .lms-card-open,
+.lms-page .lms-detail-pill,
+.lms-page .lms-detail-facts > div > span,
+.lms-page .lms-empty-state > span {
+  color: #4f0341;
+  background: #f4edf3;
+}
+.lms-page .lms-discovery-card[open] .lms-card-open { color: #fff; background: #4f0341; }
+.lms-page .lms-detail-pill-orange { color: #4f0341; background: #f4edf3; }
+.lms-page .lms-detail-cta:hover,
+.lms-page .lms-portal-link:hover { color: #4f0341; }
+
+.auth-shell {
+  background:
+    radial-gradient(circle at 8% 8%, rgb(79 3 65 / .09), transparent 25rem),
+    radial-gradient(circle at 92% 86%, rgb(79 3 65 / .06), transparent 28rem),
+    #faf8fa;
+}
+.auth-shell::before { border-color: rgb(79 3 65 / .1); }
+.auth-orbit,
+.auth-orbit-two { color: #4f0341; background: #4f0341; box-shadow: 0 0 0 8px rgb(79 3 65 / .1), 0 0 22px rgb(79 3 65 / .18); }
+.auth-card,
+.auth-panel { border-color: #e4d9e2; box-shadow: 0 30px 80px rgb(79 3 65 / .1), 0 4px 12px rgb(79 3 65 / .04); }
+.auth-role-chip,
+.auth-portal-note { border-color: #e4d9e2; color: #4f0341; background: #f7f2f6; }
+.auth-portal-icon { color: #4f0341; }
+.auth-kicker,
+.auth-back-link,
+.auth-forgot-link,
+.auth-register-copy a,
+.auth-support-copy a { color: #4f0341; }
+.auth-back-link:hover,
+.auth-forgot-link:hover,
+.auth-register-copy a:hover,
+.auth-support-copy a:hover { color: #3c0232; }
+.auth-brand-panel {
+  background-image:
+    radial-gradient(circle at 84% 16%, rgb(255 255 255 / .13), transparent 25%),
+    linear-gradient(145deg, #4f0341, #3c0232 65%, #4f0341);
+}
+.auth-brand-panel .text-orange-300 { color: #fff !important; }
+.auth-input:focus { border-color: #4f0341 !important; box-shadow: 0 0 0 4px rgb(79 3 65 / .12), 0 8px 20px rgb(79 3 65 / .05) !important; }
+.auth-input:focus ~ .auth-password-toggle,
+.auth-password-toggle:hover { color: #4f0341; }
+.auth-submit-button,
+.auth-form button[type="submit"] {
+  color: #fff !important;
+  background: #4f0341 !important;
+  box-shadow: 0 14px 28px rgb(79 3 65 / .18);
+}
+.auth-submit-button:hover:not(:disabled),
+.auth-form button[type="submit"]:hover:not(:disabled) { color: #fff; background: #3c0232 !important; }
