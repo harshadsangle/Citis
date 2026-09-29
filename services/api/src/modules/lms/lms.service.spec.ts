@@ -1066,6 +1066,40 @@ test("unfiltered hierarchy lists do not expose instructor or learner course cont
   assert.equal(queryCount, 0);
 });
 
+test("learners only receive published hierarchy content for an active enrollment", async () => {
+  const learner: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "STUDENT", name: "Student" }],
+    studentType: "DIRECT_STUDENT",
+  };
+  const listQueries: string[] = [];
+  const { service } = serviceWith(async (text) => {
+    if (text.includes("FROM courses c") && text.includes("JOIN programmes p")) {
+      return { rows: [{ institution_id: "institution-1", campus_id: null, status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("SELECT u.course_id, c.institution_id")) {
+      return { rows: [{ course_id: "course-1", institution_id: "institution-1", campus_id: null, course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM lms_enrollments e")) return { rows: [{ allowed: 1 }] };
+    if (text.includes("FROM lms_course_units u")) {
+      listQueries.push(text);
+      return { rows: [{ id: "unit-1", course_id: "course-1", title: "Published unit", scope_institution_id: "institution-1", scope_campus_id: null }] };
+    }
+    if (text.includes("FROM lms_course_chapters ch")) {
+      listQueries.push(text);
+      return { rows: [{ id: "chapter-1", unit_id: "unit-1", course_id: "course-1", title: "Published chapter", scope_institution_id: "institution-1", scope_campus_id: null }] };
+    }
+    return { rows: [] };
+  });
+
+  const units = await service.listCourseUnits(learner, "course-1");
+  const chapters = await service.listCourseChapters(learner, "unit-1");
+  assert.equal(units.length, 1);
+  assert.equal(chapters.length, 1);
+  assert.match(listQueries[0], /u\.status = 'PUBLISHED'/);
+  assert.match(listQueries[1], /ch\.status = 'PUBLISHED' AND u\.status = 'PUBLISHED'/);
+});
+
 test("unfiltered hierarchy lists respect institution scope and omit internal scope fields", async () => {
   const { service } = serviceWith(async (text) => {
     if (text.includes("FROM lms_course_units u")) {
