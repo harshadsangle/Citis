@@ -8,7 +8,7 @@ import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./common/errors.filter";
 import { registerRootHealthEndpoint } from "./common/health-route";
 import { requestContextMiddleware } from "./common/request-context";
-import { isOriginAllowed, normalizeOrigin } from "./common/cors-origin";
+import { expandWebOrigins, isOriginAllowed, normalizeOrigin } from "./common/cors-origin";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -31,10 +31,7 @@ async function bootstrap() {
     }
     next();
   });
-  const allowedOrigins = (process.env.WEB_ORIGIN || "")
-    .split(",")
-    .map(normalizeOrigin)
-    .filter(Boolean);
+  const allowedOrigins = expandWebOrigins((process.env.WEB_ORIGIN || "").split(","));
   if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
     throw new Error("WEB_ORIGIN must be configured in production.");
   }

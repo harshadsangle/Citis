@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const API_BASE = process.env.LMS_API_ORIGIN || "http://127.0.0.1:4000/api/v1";
+const API_BASE = (
+  process.env.LMS_API_ORIGIN?.trim()
+  || (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "http://127.0.0.1:4000/api/v1")
+).replace(/\/$/, "");
 const ADMIN_ROLES = ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
 const AUTH_ME_TIMEOUT_MS = 3000;
 

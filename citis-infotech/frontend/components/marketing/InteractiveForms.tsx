@@ -195,13 +195,14 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   );
 }
 
+function isInstitutionAdminLoginHost(hostname: string) {
+  return hostname === "lms.citisinfotech.in" || hostname === "admin.citisinfotech.in";
+}
+
 function redirectToPortal(portal: LmsPortal, portalOrigin: string, provider?: LmsCourseProvider) {
-  const hostname = window.location.hostname;
   const destinationOrigin =
-    portal === "admin" && hostname === "admin.citisinfotech.in"
+    portal === "admin" && isInstitutionAdminLoginHost(window.location.hostname)
       ? window.location.origin
-      : portal === "admin" && hostname === "lms.citisinfotech.in"
-        ? "https://admin.citisinfotech.in"
       : portalOrigin;
   const destination = new URL("/", destinationOrigin);
   if (provider) destination.searchParams.set("provider", provider);
