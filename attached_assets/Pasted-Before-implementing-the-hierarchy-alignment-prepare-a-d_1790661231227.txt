@@ -1,0 +1,81 @@
+Before implementing the hierarchy alignment, prepare a detailed SAFE MIGRATION PLAN only.
+
+Target hierarchy:
+
+Programme
+→ Course
+→ Module
+→ Unit
+→ Chapter
+→ Lesson
+→ Learning Resource
+
+Current repository hierarchy:
+
+Course
+→ Unit
+→ Chapter
+→ Module
+→ Lesson
+→ Learning Resource
+
+Do NOT modify any files, database, migrations, APIs, UI, or configuration yet.
+
+The most important requirement is DATA SAFETY.
+
+Inspect the existing database relationships and determine exactly how existing data would map from the current hierarchy to the target hierarchy.
+
+Specifically:
+
+1. Identify all existing Programme → Course relationships.
+2. Identify every Course → Unit relationship.
+3. Identify every Unit → Chapter relationship.
+4. Identify every Chapter → Module relationship.
+5. Identify every Module → Lesson relationship.
+6. Identify every Lesson → Resource relationship.
+7. Detect courses containing multiple units, chapters, modules, lessons, and resources.
+8. Identify any orphaned, invalid, duplicated, or ambiguous relationships.
+9. Determine whether every existing Module can be deterministically assigned to exactly one target Unit.
+10. Determine whether every existing Chapter can be deterministically retained under the target Module/Unit structure.
+11. Do NOT assume that IDs can simply be swapped or relabeled.
+12. Do NOT delete or recreate existing course/module/unit/chapter/lesson/resource records.
+
+Prepare:
+
+A. Current relationship map
+
+B. Target relationship map
+
+C. Existing-data migration mapping strategy
+
+D. Ambiguous cases that require a product decision
+
+E. Records that could be migrated automatically
+
+F. Records that cannot be safely migrated automatically
+
+G. Proposed forward-only migration approach
+
+H. Required API/service changes
+
+I. Required Admin Course Builder changes
+
+J. Required Instructor Portal changes
+
+K. Required Learner Portal changes
+
+L. Required tests
+
+M. Rollback/safety strategy
+
+N. Exact files that would change
+
+IMPORTANT:
+
+* Do not edit historical migration 034.
+* Do not run any migration.
+* Do not modify production or development database.
+* Do not change existing working authentication, RBAC, payments, certificates, progress security, or unrelated LMS functionality.
+* Do not implement until I explicitly approve the migration plan.
+
+At the end, clearly state whether the existing data can be migrated LOSSLESSLY and DETERMINISTICALLY, or whether any product decision is required first.
