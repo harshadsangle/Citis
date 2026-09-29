@@ -1,20 +1,16 @@
 /**
  * Use the direct production API origin so a stale host-only `www` session
  * cookie cannot shadow the shared `.citisinfotech.in` session cookie.
- * Browser development requests to the workspace's loopback API use the
- * same-origin Next rewrite; server-side requests can still use the local API
- * origin directly.
+ * Browser development requests use the same-origin Next rewrite to avoid
+ * cross-origin CORS failures, while server-side requests retain the configured
+ * API origin.
  */
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL?.trim() ||
   (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1");
-const normalizedApiUrl = API_URL.replace(/\/+$/, "").toLowerCase();
-const useLocalDevelopmentRewrite =
-  process.env.NODE_ENV === "development" &&
-  /^https?:\/\/(?:localhost|127\.0\.0\.1):4000\/api\/v1$/.test(normalizedApiUrl);
 
 function requestApiUrl() {
-  return typeof window !== "undefined" && useLocalDevelopmentRewrite ? "/api/v1" : API_URL;
+  return typeof window !== "undefined" && process.env.NODE_ENV === "development" ? "/api/v1" : API_URL;
 }
 
 export class ApiError extends Error {
