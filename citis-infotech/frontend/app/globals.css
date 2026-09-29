@@ -1706,6 +1706,7 @@ blockquote {
     radial-gradient(circle at 84% 16%, rgb(255 255 255 / .13), transparent 25%),
     linear-gradient(145deg, #4f0341, #3c0232 65%, #4f0341);
 }
+.auth-brand-panel :is(h1, h2, h3, h4, h5, h6) { color: #fff !important; }
 .auth-brand-panel .text-orange-300 { color: #fff !important; }
 .auth-input:focus { border-color: #4f0341 !important; box-shadow: 0 0 0 4px rgb(79 3 65 / .12), 0 8px 20px rgb(79 3 65 / .05) !important; }
 .auth-input:focus ~ .auth-password-toggle,
@@ -1718,3 +1719,34 @@ blockquote {
 }
 .auth-submit-button:hover:not(:disabled),
 .auth-form button[type="submit"]:hover:not(:disabled) { color: #fff; background: #3c0232 !important; }
+
+.auth-forgot-shell {
+  background:
+    radial-gradient(circle at 8% 8%, rgb(79 3 65 / .08), transparent 25rem),
+    radial-gradient(circle at 92% 86%, rgb(79 3 65 / .055), transparent 28rem),
+    #faf8fa;
+}
+.auth-forgot-shell > div:first-child {
+  background:
+    radial-gradient(circle at 8% 8%, rgb(79 3 65 / .08), transparent 25rem),
+    radial-gradient(circle at 92% 86%, rgb(79 3 65 / .055), transparent 28rem),
+    #faf8fa !important;
+}
+.auth-forgot-shell .surface {
+  border-color: #e4d9e2;
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(79 3 65 / .1);
+}
+.auth-forgot-shell :is(h1, h2, h3, h4, h5, h6, .text-primary),
+.auth-forgot-shell a { color: #4f0341 !important; }
+.auth-forgot-shell .bg-primary\/10 { background: #f4edf3 !important; }
+.auth-forgot-shell button[type="submit"] {
+  color: #fff !important;
+  background: #4f0341 !important;
+  box-shadow: 0 12px 24px rgb(79 3 65 / .18);
+}
+.auth-forgot-shell button[type="submit"]:hover:not(:disabled) { background: #3c0232 !important; }
+.auth-forgot-shell :is(input, textarea, select):focus {
+  border-color: #4f0341 !important;
+  box-shadow: 0 0 0 3px rgb(79 3 65 / .12) !important;
+}
