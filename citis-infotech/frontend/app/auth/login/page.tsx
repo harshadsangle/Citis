@@ -29,8 +29,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <CitisLogo href={null} className="text-[0.86rem] sm:text-[0.96rem]" />
             <span className="auth-role-chip"><Check className="size-3.5" />Secure workspace access</span>
           </div>
-          <Link href={provider ? `/lms?provider=${provider}` : "/lms"} className="auth-back-link mt-8 inline-flex items-center gap-2 text-sm font-semibold">
-            <ArrowLeft className="size-4" />Choose another portal
+          <Link href="/lms" className="auth-back-link mt-8 inline-flex items-center gap-2 text-sm font-semibold">
+            <ArrowLeft className="size-4" />Back
           </Link>
           <div className="mt-8">
             <p className="auth-kicker">{portalOption.label}</p>
