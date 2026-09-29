@@ -1683,6 +1683,8 @@ blockquote {
     #faf8fa;
 }
 .auth-shell::before { border-color: rgb(79 3 65 / .1); }
+.auth-shell :is(h1, h2, h3, h4, h5, h6) { color: #4f0341; }
+.auth-shell .auth-field-label { color: #4f0341; }
 .auth-orbit,
 .auth-orbit-two { color: #4f0341; background: #4f0341; box-shadow: 0 0 0 8px rgb(79 3 65 / .1), 0 0 22px rgb(79 3 65 / .18); }
 .auth-card,
