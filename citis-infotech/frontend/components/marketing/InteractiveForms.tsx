@@ -195,7 +195,13 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   );
 }
 
-export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal; provider?: LmsCourseProvider }) {
+function redirectToPortal(portalOrigin: string, provider?: LmsCourseProvider) {
+  const destination = new URL("/", portalOrigin);
+  if (provider) destination.searchParams.set("provider", provider);
+  window.location.assign(destination.toString());
+}
+
+export function LoginForm({ portal = "learner", provider, portalOrigin }: { portal?: LmsPortal; provider?: LmsCourseProvider; portalOrigin: string }) {
   const credentialPrefix = `citis-${portal}-login`;
   const emailInputId = `${credentialPrefix}-email`;
   const passwordInputId = `${credentialPrefix}-password`;
@@ -238,7 +244,7 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
           throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
         }
         stage = "redirect";
-        window.location.assign(`/lms?portal=${portal}${provider ? `&provider=${provider}` : ""}`);
+        redirectToPortal(portalOrigin, provider);
       } catch (error) {
         // Do not leave a valid session behind when role validation or the
         // follow-up session check fails.
@@ -268,7 +274,7 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
         const availableCopy = availablePortal ? ` This account belongs in the ${LMS_PORTALS[availablePortal].label}.` : "";
         throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
       }
-      window.location.assign(`/lms?portal=${portal}${provider ? `&provider=${provider}` : ""}`);
+      redirectToPortal(portalOrigin, provider);
     } catch (error) {
       await authService.logout().catch(() => undefined);
       setServerError(error instanceof Error ? error.message : "Verification failed. Please try again.");

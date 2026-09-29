@@ -72,8 +72,12 @@ async function requestOrigin(portal: LmsPortal) {
   return origin.origin;
 }
 
+export async function resolveLmsPortalOrigin(portal: LmsPortal): Promise<string> {
+  return configuredOrigin(portal) || (await requestOrigin(portal));
+}
+
 export async function redirectToLmsPortal(portal: LmsPortal, provider?: LmsCourseProvider, returnPath = "/") {
-  const origin = configuredOrigin(portal) || (await requestOrigin(portal));
+  const origin = await resolveLmsPortalOrigin(portal);
   if (!returnPath.startsWith("/") || returnPath.startsWith("//") || returnPath.includes("\\")) {
     throw new Error("LMS portal return paths must be same-origin absolute paths.");
   }
