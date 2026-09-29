@@ -206,7 +206,7 @@ export function LoginForm({ portal = "learner", provider }: { portal?: LmsPortal
   const [mfaSubmitting, setMfaSubmitting] = useState(false);
   const loginInFlightRef = useRef(false);
   const submissionIdRef = useRef(0);
-  const { register, handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
+  const { handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
   useEffect(() => {
     reset({ email: "", password: "", remember: false });
     setShow(false);
