@@ -1351,42 +1351,108 @@ export class LmsService {
   }
 
   async listCourseUnits(user: AuthenticatedUser, courseId?: string) {
+    const learnerOnly = this.isLearnerOnly(user);
+    let course: {
+      institution_id: string;
+      campus_id: string | null;
+      status: string;
+      programme_status: string;
+      institution_status: string;
+    } | undefined;
+    if (courseId) {
+      const courseResult = await this.db.query<{
+        institution_id: string;
+        campus_id: string | null;
+        status: string;
+        programme_status: string;
+        institution_status: string;
+      }>(
+        `SELECT c.institution_id, c.campus_id, c.status, p.status AS programme_status, i.status AS institution_status
+         FROM courses c
+         JOIN programmes p ON p.tenant_id = c.tenant_id AND p.id = c.programme_id
+         JOIN institutions i ON i.tenant_id = p.tenant_id AND i.id = p.institution_id
+         WHERE c.tenant_id = $1 AND c.id = $2`,
+        [user.tenantId, courseId],
+      );
+      course = courseResult.rows[0];
+      if (!course) throw new NotFoundException("Course not found in the current tenant.");
+      if (!this.isDirectStudentLearner(user)) assertScopeForRead(user, course.institution_id, course.campus_id);
+      await this.assertLearnerCourseAccess(user, courseId, course.institution_id, course.campus_id);
+      await this.assertAssignedTeacherRead(user, course.institution_id, courseId, course.campus_id);
+      if (learnerOnly && (course.status !== "PUBLISHED" || course.programme_status !== "PUBLISHED" || course.institution_status !== "ACTIVE")) {
+        throw new NotFoundException("The requested resource was not found.");
+      }
+    } else if (this.isInstructorOnly(user) || learnerOnly) {
+      return [];
+    }
+
     const values: unknown[] = [user.tenantId];
     const filter = courseId ? " AND u.course_id = $2" : "";
     if (courseId) values.push(courseId);
     const result = await this.db.query(
-      `SELECT u.* FROM lms_course_units u
+      `SELECT u.*, c.institution_id AS scope_institution_id, c.campus_id AS scope_campus_id
+       FROM lms_course_units u
        JOIN courses c ON c.tenant_id = u.tenant_id AND c.id = u.course_id
-       WHERE u.tenant_id = $1${filter} ORDER BY u.sequence ASC`,
+       WHERE u.tenant_id = $1${filter}${learnerOnly ? " AND u.status = 'PUBLISHED'" : ""} ORDER BY u.sequence ASC`,
       values,
     );
-    if (courseId) {
-      const course = await this.db.query<{ institution_id: string; campus_id: string | null }>(
-        "SELECT institution_id, campus_id FROM courses WHERE tenant_id = $1 AND id = $2", [user.tenantId, courseId],
-      );
-      if (!course.rows[0]) throw new NotFoundException("Course not found in the current tenant.");
-      assertScopeForRead(user, course.rows[0].institution_id, course.rows[0].campus_id);
-      await this.assertLearnerCourseAccess(user, courseId, course.rows[0].institution_id, course.rows[0].campus_id);
-      await this.assertAssignedTeacherRead(user, course.rows[0].institution_id, courseId, course.rows[0].campus_id);
-    }
-    return result.rows;
+    const visibleRows = courseId
+      ? result.rows
+      : filterScopedRows(user, result.rows, "scope_institution_id", "scope_campus_id");
+    return visibleRows.map(({ scope_institution_id: _institutionId, scope_campus_id: _campusId, ...unit }) => unit);
   }
 
   async listCourseChapters(user: AuthenticatedUser, unitId?: string) {
+    const learnerOnly = this.isLearnerOnly(user);
+    if (unitId) {
+      const parent = await this.db.query<{
+        course_id: string;
+        institution_id: string;
+        campus_id: string | null;
+        course_status: string;
+        programme_status: string;
+        institution_status: string;
+      }>(
+        `SELECT u.course_id, c.institution_id, c.campus_id, c.status AS course_status,
+                p.status AS programme_status, i.status AS institution_status
+         FROM lms_course_units u
+         JOIN courses c ON c.tenant_id = u.tenant_id AND c.id = u.course_id
+         JOIN programmes p ON p.tenant_id = c.tenant_id AND p.id = c.programme_id
+         JOIN institutions i ON i.tenant_id = p.tenant_id AND i.id = p.institution_id
+         WHERE u.tenant_id = $1 AND u.id = $2`,
+        [user.tenantId, unitId],
+      );
+      const course = parent.rows[0];
+      if (!course) throw new NotFoundException("Unit not found in the current tenant.");
+      if (!this.isDirectStudentLearner(user)) assertScopeForRead(user, course.institution_id, course.campus_id);
+      await this.assertLearnerCourseAccess(user, course.course_id, course.institution_id, course.campus_id);
+      await this.assertAssignedTeacherRead(user, course.institution_id, course.course_id, course.campus_id);
+      if (learnerOnly && (
+        course.course_status !== "PUBLISHED"
+        || course.programme_status !== "PUBLISHED"
+        || course.institution_status !== "ACTIVE"
+      )) {
+        throw new NotFoundException("The requested resource was not found.");
+      }
+    } else if (this.isInstructorOnly(user) || learnerOnly) {
+      return [];
+    }
+
     const values: unknown[] = [user.tenantId];
     const filter = unitId ? " AND ch.unit_id = $2" : "";
     if (unitId) values.push(unitId);
     const result = await this.db.query(
-      `SELECT ch.*, u.course_id FROM lms_course_chapters ch
+      `SELECT ch.*, u.course_id, c.institution_id AS scope_institution_id, c.campus_id AS scope_campus_id
+       FROM lms_course_chapters ch
        JOIN lms_course_units u ON u.tenant_id = ch.tenant_id AND u.id = ch.unit_id
-       WHERE ch.tenant_id = $1${filter} ORDER BY ch.sequence ASC`,
+       JOIN courses c ON c.tenant_id = u.tenant_id AND c.id = u.course_id
+       WHERE ch.tenant_id = $1${filter}${learnerOnly ? " AND ch.status = 'PUBLISHED' AND u.status = 'PUBLISHED'" : ""} ORDER BY ch.sequence ASC`,
       values,
     );
-    if (unitId && result.rows.length === 0) {
-      const parent = await this.db.query("SELECT id FROM lms_course_units WHERE tenant_id = $1 AND id = $2", values);
-      if (!parent.rows[0]) throw new NotFoundException("Unit not found in the current tenant.");
-    }
-    return result.rows;
+    const visibleRows = unitId
+      ? result.rows
+      : filterScopedRows(user, result.rows, "scope_institution_id", "scope_campus_id");
+    return visibleRows.map(({ scope_institution_id: _institutionId, scope_campus_id: _campusId, ...chapter }) => chapter);
   }
 
   async createCourseUnit(input: CreateCourseUnitDto, request: ContextRequest) {

@@ -1009,6 +1009,92 @@ test("hierarchy list filters bind each child to its requested parent", async () 
   assert.ok(resourceListQuery?.includes("JOIN lessons l ON l.id = x.lesson_id"));
 });
 
+test("hierarchy lists enforce instructor assignment before reading parent content", async () => {
+  const instructor: AuthenticatedUser = {
+    ...user,
+    email: "teacher@example.com",
+    roles: [{ code: "TEACHER", name: "Teacher" }],
+    scopes: [{ institutionId: "institution-1", campusId: null }],
+  };
+  let unitRowsFetched = false;
+  let chapterRowsFetched = false;
+  const { service } = serviceWith(async (text) => {
+    if (text.includes("FROM courses c") && text.includes("JOIN programmes p")) {
+      return { rows: [{ institution_id: "institution-1", campus_id: null, status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM lms_course_units u") && text.includes("JOIN programmes p")) {
+      return { rows: [{ course_id: "course-1", institution_id: "institution-1", campus_id: null, course_status: "PUBLISHED", programme_status: "PUBLISHED", institution_status: "ACTIVE" }] };
+    }
+    if (text.includes("FROM user_roles ur")) return { rows: [] };
+    if (text.includes("FROM lms_course_units u")) {
+      unitRowsFetched = true;
+      return { rows: [] };
+    }
+    if (text.includes("FROM lms_course_chapters ch")) {
+      chapterRowsFetched = true;
+      return { rows: [] };
+    }
+    return { rows: [] };
+  });
+
+  await assert.rejects(service.listCourseUnits(instructor, "course-1"), NotFoundException);
+  await assert.rejects(service.listCourseChapters(instructor, "unit-1"), NotFoundException);
+  assert.equal(unitRowsFetched, false);
+  assert.equal(chapterRowsFetched, false);
+});
+
+test("unfiltered hierarchy lists do not expose instructor or learner course content", async () => {
+  let queryCount = 0;
+  const { service } = serviceWith(async () => {
+    queryCount += 1;
+    return { rows: [] };
+  });
+  const instructor: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "INSTRUCTOR", name: "Instructor" }],
+  };
+  const learner: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "STUDENT", name: "Student" }],
+    studentType: "DIRECT_STUDENT",
+  };
+
+  assert.deepEqual(await service.listCourseUnits(instructor), []);
+  assert.deepEqual(await service.listCourseChapters(instructor), []);
+  assert.deepEqual(await service.listCourseUnits(learner), []);
+  assert.deepEqual(await service.listCourseChapters(learner), []);
+  assert.equal(queryCount, 0);
+});
+
+test("unfiltered hierarchy lists respect institution scope and omit internal scope fields", async () => {
+  const { service } = serviceWith(async (text) => {
+    if (text.includes("FROM lms_course_units u")) {
+      return {
+        rows: [
+          { id: "unit-visible", course_id: "course-1", title: "Visible", scope_institution_id: "institution-1", scope_campus_id: null },
+          { id: "unit-hidden", course_id: "course-2", title: "Hidden", scope_institution_id: "institution-2", scope_campus_id: null },
+        ],
+      };
+    }
+    if (text.includes("FROM lms_course_chapters ch")) {
+      return {
+        rows: [
+          { id: "chapter-visible", unit_id: "unit-1", course_id: "course-1", title: "Visible", scope_institution_id: "institution-1", scope_campus_id: null },
+          { id: "chapter-hidden", unit_id: "unit-2", course_id: "course-2", title: "Hidden", scope_institution_id: "institution-2", scope_campus_id: null },
+        ],
+      };
+    }
+    return { rows: [] };
+  });
+
+  assert.deepEqual(await service.listCourseUnits(user), [
+    { id: "unit-visible", course_id: "course-1", title: "Visible" },
+  ]);
+  assert.deepEqual(await service.listCourseChapters(user), [
+    { id: "chapter-visible", unit_id: "unit-1", course_id: "course-1", title: "Visible" },
+  ]);
+});
+
 test("only assigned teachers can create nested course content", async () => {
   const teacher: AuthenticatedUser = {
     ...user,
