@@ -196,9 +196,12 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
 }
 
 function redirectToPortal(portal: LmsPortal, portalOrigin: string, provider?: LmsCourseProvider) {
+  const hostname = window.location.hostname;
   const destinationOrigin =
-    portal === "admin" && window.location.hostname === "admin.citisinfotech.in"
+    portal === "admin" && hostname === "admin.citisinfotech.in"
       ? window.location.origin
+      : portal === "admin" && hostname === "lms.citisinfotech.in"
+        ? "https://admin.citisinfotech.in"
       : portalOrigin;
   const destination = new URL("/", destinationOrigin);
   if (provider) destination.searchParams.set("provider", provider);
