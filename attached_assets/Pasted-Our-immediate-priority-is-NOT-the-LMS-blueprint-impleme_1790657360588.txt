@@ -1,0 +1,93 @@
+Our immediate priority is NOT the LMS blueprint implementation.
+
+The main goal right now is to make the production login flow fully reliable:
+
+MAIN SITE
+→ Login
+→ Role detection
+→ Correct dashboard
+
+Required final behavior:
+
+1. CITIS Admin
+   → login successfully
+   → `/auth/me` returns the correct admin role
+   → redirect to Admin Dashboard
+
+2. Instructor
+   → login successfully
+   → `/auth/me` returns the correct instructor role
+   → redirect to Instructor Dashboard
+
+3. Learner
+   → login successfully
+   → `/auth/me` returns the correct learner role
+   → redirect to Learner Dashboard
+
+Treat these as the highest priority.
+
+Investigate and fix ONLY issues that can prevent this flow from working.
+
+Verify:
+
+* Login API
+* session cookie
+* `/auth/me`
+* role detection
+* redirect logic
+* portal routing
+* same-origin `/api/v1` behavior
+* browser Network/Console errors
+* learner `/progress` only if it prevents the learner dashboard from loading
+
+Do NOT change:
+
+* authentication architecture
+* MFA design
+* RBAC rules
+* tenant isolation
+* database schema
+* migrations
+* payments
+* certificates
+* LMS content hierarchy
+* assessments
+* unrelated UI/features
+
+Do not weaken any existing security or authorization checks.
+
+IMPORTANT:
+The current Replit preview already showed:
+
+* Admin login 200
+* Instructor login 200
+* Learner login 200
+* `/auth/me` 200 for all three
+
+So do not rewrite working authentication code unnecessarily. Find only the remaining issue that could prevent the respective dashboard from opening.
+
+After fixing, test the ACTUAL browser flow for all three roles:
+
+Admin:
+login → Admin Dashboard loads
+
+Instructor:
+login → Instructor Dashboard loads
+
+Learner:
+login → Learner Dashboard loads
+
+No "Failed to fetch", login error, redirect loop, unauthorized error, or dashboard-blocking 500 should remain.
+
+Run focused tests, TypeScript checks, and `git diff --check`.
+
+Do NOT push or deploy.
+
+Report exactly:
+
+* root cause
+* files changed
+* Admin result
+* Instructor result
+* Learner result
+* remaining unrelated issues, if any
