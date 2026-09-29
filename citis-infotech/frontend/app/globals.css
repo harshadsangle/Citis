@@ -1643,6 +1643,38 @@ blockquote {
 .lms-page .lms-detail-pill-orange { color: #4f0341; background: #f4edf3; }
 .lms-page .lms-detail-cta:hover,
 .lms-page .lms-portal-link:hover { color: #4f0341; }
+.lms-page .text-accent { color: #4f0341 !important; }
+.lms-page .lms-hero-lede,
+.lms-page .lms-hero-proof,
+.lms-page .lms-dashboard-topline,
+.lms-page .lms-dashboard-progress,
+.lms-page .lms-dashboard-footer { color: rgb(255 255 255 / .74); }
+.lms-page .lms-dashboard-progress strong,
+.lms-page .lms-dashboard-title em,
+.lms-page .lms-float-card strong { color: #fff; }
+.lms-page .lms-dashboard-chips svg,
+.lms-page .lms-float-card svg,
+.lms-page .lms-float-number { color: #fff; background: transparent; }
+.lms-page .lms-mini-mark { color: #4f0341; background: #fff; }
+.lms-page .lms-stat-grid span,
+.lms-page .lms-section-heading > p,
+.lms-page .lms-portal-description,
+.lms-page .lms-portal-footnote,
+.lms-page .lms-catalogue-heading > div > p:last-child,
+.lms-page .lms-catalogue-total,
+.lms-page .lms-catalogue-status,
+.lms-page .lms-provider-heading p,
+.lms-page .lms-provider-count span,
+.lms-page .lms-card-meta,
+.lms-page .lms-detail-intro p,
+.lms-page .lms-detail-columns p,
+.lms-page .lms-detail-facts small,
+.lms-page .lms-detail-facts strong,
+.lms-page .lms-objective small,
+.lms-page .lms-empty-state p { color: #706870; }
+.lms-page .lms-portal-card > p,
+.lms-page .lms-detail-check { color: #4f0341; }
+.lms-page :focus-visible { outline-color: #4f0341; }
 
 .auth-shell {
   background:
