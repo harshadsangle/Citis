@@ -15,8 +15,16 @@ export function firstNameForGreeting(name: string) {
   return name.trim().split(/\s+/)[0] || "Instructor";
 }
 
+const IST_HOUR_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
+  hour: "2-digit",
+  hourCycle: "h23",
+});
+
 export function timeGreeting(date: Date) {
-  const hour = date.getHours();
+  const hour = Number(
+    IST_HOUR_FORMATTER.formatToParts(date).find((part) => part.type === "hour")?.value,
+  );
   if (hour >= 5 && hour < 12) return "Good Morning";
   if (hour >= 12 && hour < 17) return "Good Afternoon";
   return "Good Evening";
