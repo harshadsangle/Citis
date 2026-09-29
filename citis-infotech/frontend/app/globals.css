@@ -1740,12 +1740,12 @@ blockquote {
 .auth-forgot-shell :is(h1, h2, h3, h4, h5, h6, .text-primary),
 .auth-forgot-shell a { color: #4f0341 !important; }
 .auth-forgot-shell .bg-primary\/10 { background: #f4edf3 !important; }
-.auth-forgot-shell button[type="submit"] {
+.auth-forgot-shell button {
   color: #fff !important;
   background: #4f0341 !important;
   box-shadow: 0 12px 24px rgb(79 3 65 / .18);
 }
-.auth-forgot-shell button[type="submit"]:hover:not(:disabled) { background: #3c0232 !important; }
+.auth-forgot-shell button:hover:not(:disabled) { background: #3c0232 !important; }
 .auth-forgot-shell :is(input, textarea, select):focus {
   border-color: #4f0341 !important;
   box-shadow: 0 0 0 3px rgb(79 3 65 / .12) !important;
