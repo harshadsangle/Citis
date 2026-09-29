@@ -890,7 +890,7 @@ export default function InstitutionAdminPage() {
             >
               ♢{Boolean(pendingAccountRequestCount) && <span className="notification-dot" />}
             </button>
-            <a className="help-link" href="/auth/login">Need help?</a>
+            <Link className="help-link" href="/auth/login">Need help?</Link>
             <details
               ref={profileMenuRef}
               className="profile-menu"
@@ -1008,7 +1008,7 @@ export default function InstitutionAdminPage() {
             {error && (
               <div className="state-box error-box">
                 <div className="state-symbol">!</div>
-                <div><strong>We couldn’t load this workspace</strong><p>{error}</p><a href="/auth/login">Sign in to continue</a></div>
+                <div><strong>We couldn’t load this workspace</strong><p>{error}</p><Link href="/auth/login">Sign in to continue</Link></div>
               </div>
             )}
             {!error && loading && (
