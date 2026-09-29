@@ -24,6 +24,10 @@ import type {
 type Queryable = { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> };
 type AssessmentStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type QuestionType = "SINGLE_CHOICE" | "MULTIPLE_CHOICE" | "TRUE_FALSE" | "SHORT_TEXT" | "NUMERIC" | "FILL_IN_BLANK" | "MATCHING" | "LONG_ANSWER";
+type AssessmentQuestionSnapshot = Record<string, unknown> & {
+  marks: unknown;
+  options: Array<Record<string, unknown>>;
+};
 
 const assessmentTypes = ["PRACTICE_QUIZ", "FORMATIVE", "SUMMATIVE", "ASSIGNMENT", "PROJECT", "VIVA", "PRACTICAL"];
 const questionTypes: QuestionType[] = ["SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "SHORT_TEXT", "NUMERIC", "FILL_IN_BLANK", "MATCHING", "LONG_ANSWER"];
@@ -570,7 +574,7 @@ export class AssessmentService {
     return { ...question, institution_id: question.assessment_institution_id ?? question.institution_id, campus_id: question.assessment_campus_id ?? question.campus_id };
   }
 
-  private async questionRows(executor: Queryable, assessmentId: string, user: AuthenticatedUser, includeCorrect: boolean) {
+  private async questionRows(executor: Queryable, assessmentId: string, user: AuthenticatedUser, includeCorrect: boolean): Promise<AssessmentQuestionSnapshot[]> {
     const correctColumn = includeCorrect ? ", o.is_correct" : "";
     const result = await executor.query(
       `SELECT q.id, q.tenant_id, q.institution_id, q.campus_id, q.course_id, q.module_id,
@@ -584,7 +588,7 @@ export class AssessmentService {
        ORDER BY q.sequence ASC, q.id ASC, o.sequence ASC, o.id ASC`,
       [user.tenantId, assessmentId],
     );
-    const questions = new Map<string, Record<string, unknown>>();
+    const questions = new Map<string, AssessmentQuestionSnapshot>();
     for (const row of result.rows) {
       let question = questions.get(String(row.id));
       if (!question) {
@@ -632,7 +636,7 @@ export class AssessmentService {
     });
   }
 
-  private prepareAttemptQuestions(assessment: Record<string, unknown>, questions: Array<Record<string, unknown>>) {
+  private prepareAttemptQuestions(assessment: Record<string, unknown>, questions: AssessmentQuestionSnapshot[]): AssessmentQuestionSnapshot[] {
     const selectionCount = assessment.questions_to_select === null || assessment.questions_to_select === undefined
       ? questions.length
       : Number(assessment.questions_to_select);
@@ -646,6 +650,7 @@ export class AssessmentService {
       const pairs = Array.isArray(question.matching_pairs) ? question.matching_pairs as Array<Record<string, unknown>> : [];
       return {
         ...question,
+        marks: question.marks,
         options: assessment.randomize_options ? shuffle(options) : options,
         ...(question.question_type === "MATCHING" ? {
           matching_options: assessment.randomize_options
@@ -741,7 +746,7 @@ export class AssessmentService {
     if (!subject || !topic || !difficultyLevels.includes(String(difficulty))) {
       throw new BadRequestException("Saving to the question bank needs a subject, topic, and difficulty.");
     }
-    const result = await executor.query<Record<string, unknown>>(
+    const result = await executor.query(
       `INSERT INTO lms_question_bank_questions
          (tenant_id, institution_id, campus_id, subject, topic, difficulty, question_type,
           prompt, marks, negative_marks, options, matching_pairs, created_by)
