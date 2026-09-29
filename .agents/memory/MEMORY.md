@@ -43,3 +43,4 @@
 - [Merge checkpoint state](merge-checkpoint-state.md) — recheck HEAD, MERGE_HEAD, and refs after workspace handoffs; an in-progress conflict state may be cleared.
 - [SCORM sandbox asset credentials](scorm-sandbox-authenticated-assets.md) — CSP sandbox without allow-same-origin can suppress cookies on protected SCORM subresource requests.
 - [LMS production deployment](lms-production-deployment.md) — GitHub main does not release the public LMS; verify after the manual server deploy.
+- [External production probes](external-production-probes.md) — use sanitized curl when workspace fetch tools block a public custom domain.
