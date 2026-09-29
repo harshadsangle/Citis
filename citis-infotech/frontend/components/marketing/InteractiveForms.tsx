@@ -195,8 +195,12 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   );
 }
 
-function redirectToPortal(portalOrigin: string, provider?: LmsCourseProvider) {
-  const destination = new URL("/", portalOrigin);
+function redirectToPortal(portal: LmsPortal, portalOrigin: string, provider?: LmsCourseProvider) {
+  const destinationOrigin =
+    portal === "admin" && window.location.hostname === "admin.citisinfotech.in"
+      ? window.location.origin
+      : portalOrigin;
+  const destination = new URL("/", destinationOrigin);
   if (provider) destination.searchParams.set("provider", provider);
   window.location.assign(destination.toString());
 }
@@ -244,7 +248,7 @@ export function LoginForm({ portal = "learner", provider, portalOrigin }: { port
           throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
         }
         stage = "redirect";
-        redirectToPortal(portalOrigin, provider);
+        redirectToPortal(portal, portalOrigin, provider);
       } catch (error) {
         // Do not leave a valid session behind when role validation or the
         // follow-up session check fails.
@@ -274,7 +278,7 @@ export function LoginForm({ portal = "learner", provider, portalOrigin }: { port
         const availableCopy = availablePortal ? ` This account belongs in the ${LMS_PORTALS[availablePortal].label}.` : "";
         throw new Error(`This account does not have access to the ${LMS_PORTALS[portal].label}.${availableCopy}`);
       }
-      redirectToPortal(portalOrigin, provider);
+      redirectToPortal(portal, portalOrigin, provider);
     } catch (error) {
       await authService.logout().catch(() => undefined);
       setServerError(error instanceof Error ? error.message : "Verification failed. Please try again.");
