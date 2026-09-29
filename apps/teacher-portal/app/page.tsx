@@ -2781,6 +2781,84 @@ export default function TeacherPortalPage() {
            @media (max-width: 780px) {
              .nav-item { font-size: 14px; line-height: 1.35; }
            }
+          /* LMS teacher workspace theme: primary purple, white surfaces, neutral separators. */
+          :root { color: #342b33; background: #fff; }
+          .portal-shell {
+            color: #342b33;
+            background:
+              radial-gradient(circle at 8% 0%, rgb(79 3 65 / .06), transparent 25%),
+              radial-gradient(circle at 96% 8%, rgb(79 3 65 / .04), transparent 23%),
+              #faf8fa;
+          }
+          .sidebar { color: #fff; background: linear-gradient(165deg, #4f0341, #3c0232 62%, #4f0341); }
+          .brand-mark { color: #4f0341; background: #fff; box-shadow: 0 7px 18px rgb(255 255 255 / .14); }
+          .sidebar-label { color: rgb(255 255 255 / .68); }
+          .nav-item { color: rgb(255 255 255 / .82); }
+          .nav-item:hover, .nav-item.active { color: #fff; background: rgb(255 255 255 / .14); }
+          .nav-item.active { box-shadow: inset 3px 0 #fff; }
+          .nav-icon, .nav-item.active .nav-icon { color: #fff; }
+          .nav-item b { color: #4f0341; background: #fff; }
+          .sidebar-foot .avatar { color: #4f0341; background: #fff; }
+          .topbar { background: #fff; border-bottom-color: #e4d9e2; }
+          .eyebrow, h1, .panel-heading h2, .metric-card strong, .record-title,
+          .course-main strong, .heading-identity strong { color: #4f0341; }
+          .primary-button {
+            color: #fff;
+            border-color: #4f0341;
+            background: #4f0341;
+            box-shadow: 0 9px 20px rgb(79 3 65 / .16);
+          }
+          .primary-button:hover:not(:disabled) { color: #fff; background: #3c0232; }
+          .secondary-button { color: #4f0341; border-color: #d8c8d5; background: #fff; }
+          .secondary-button:hover:not(:disabled) { color: #4f0341; border-color: #4f0341; }
+          .metric-card, .panel, .module-card, .assignment-card, .assessment-card, .submission-card {
+            border-color: #e4d9e2;
+            background-color: #fff;
+          }
+          .metric-card.accent, .metric-card.warm { border-color: #e4d9e2; background: #faf8fa; }
+          .metric-card.accent strong, .metric-card.warm strong,
+          .metric-card .green-text, .metric-card .amber-text { color: #4f0341; }
+          .metric-card-icon, .metric-card-icon.learners, .metric-card.accent .metric-card-icon,
+          .metric-card.warm .metric-card-icon, .course-mark, .action-icon.content,
+          .state-icon, .question-number, .heading-avatar {
+            color: #4f0341;
+            background: #f4edf3;
+          }
+          .course-row.selected, .course-row:hover, .action-row:hover:not(:disabled),
+          tbody tr:hover { background: #faf8fa; }
+          .course-row.selected { box-shadow: inset 3px 0 #4f0341; }
+          .progress-fill { background: #4f0341; }
+          .status-pill.published, .status-pill.completed, .status-pill.graded,
+          .status-pill.draft, .status-pill.pending { color: #4f0341; background: #f4edf3; border-color: #e4d9e2; }
+          .course-side em, .course-side em.needs-review, .heading-quick-action > span,
+          .question-number, .option-row em, .correct-toggle.selected, .attempt-result > strong,
+          .awarded-mark { color: #4f0341; }
+          .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus,
+          .grade-bar input:focus, .attempt-grade-form textarea:focus,
+          .option-edit-row input:focus {
+            border-color: #4f0341;
+            box-shadow: 0 0 0 3px rgb(79 3 65 / .12);
+          }
+          .course-view-tabs button.active,
+          .builder-steps button.active,
+          .builder-steps button.complete,
+          .count-badge,
+          .warm-badge,
+          .course-detail-summary,
+          .question-number,
+          .option-marker.correct,
+          .correct-toggle.selected,
+          .outcome-badge.passed {
+            color: #4f0341;
+            background: #f4edf3;
+          }
+          .alert.success { color: #4f0341; border-color: #e4d9e2; background: #f4edf3; }
+          .help-link, .record-title:hover, .row-actions button:hover,
+          .row-action-link:hover { color: #4f0341; }
+          button:focus-visible, a:focus-visible, input:focus-visible,
+          select:focus-visible, textarea:focus-visible, summary:focus-visible {
+            outline-color: rgb(79 3 65 / .65) !important;
+          }
       `}</style>
     </main>
   );
