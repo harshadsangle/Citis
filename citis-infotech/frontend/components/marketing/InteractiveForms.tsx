@@ -297,7 +297,7 @@ export function LoginForm({ portal = "learner", provider, portalOrigin }: { port
   };
   if (mfaChallenge) {
     return (
-      <form onSubmit={verifyMfa} className="auth-form space-y-5" noValidate>
+      <form method="post" onSubmit={verifyMfa} className="auth-form space-y-5" noValidate>
         <div>
           <Label htmlFor="login-mfa-code">Verification code</Label>
           <p className="mt-1.5 text-sm text-muted-foreground">
@@ -330,7 +330,7 @@ export function LoginForm({ portal = "learner", provider, portalOrigin }: { port
     );
   }
   return (
-    <form name={`${credentialPrefix}-form`} autoComplete="off" onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
+    <form method="post" name={`${credentialPrefix}-form`} autoComplete="off" onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
       <div><Label htmlFor={emailInputId} className="auth-field-label">Email address</Label><div className="auth-field-wrap mt-2"><Mail className="auth-field-icon" aria-hidden="true" /><Controller name="email" control={control} render={({ field }) => <Input {...field} id={emailInputId} name={`${credentialPrefix}-email`} className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pl-11" type="email" autoComplete="off" placeholder="you@institution.edu" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "login-email-error" : undefined} />}/></div>{message(errors.email?.message, "login-email-error")}</div>
       <div><div className="flex items-center justify-between"><Label htmlFor={passwordInputId} className="auth-field-label">Password</Label><Link href={`/auth/forgot-password?portal=${portal}`} className="auth-forgot-link text-xs font-semibold">Forgot password?</Link></div><div className="auth-field-wrap mt-2"><EyeOff className="auth-field-icon" aria-hidden="true" /><Controller name="password" control={control} render={({ field }) => <Input {...field} id={passwordInputId} name={`${credentialPrefix}-password`} type={show ? "text" : "password"} autoComplete="off" className="auth-input min-h-12 rounded-xl bg-background/70 px-4 pr-12 pl-11" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "login-password-error" : undefined} />}/><button type="button" onClick={() => setShow(!show)} className="auth-password-toggle absolute top-1/2 right-2.5 grid size-9 -translate-y-1/2 place-items-center rounded-lg text-muted-foreground transition" aria-label={show ? "Hide password" : "Show password"}>{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button></div>{message(errors.password?.message, "login-password-error")}</div>
       <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="auth-remember-label font-normal">Keep me signed in</Label></div>} />
@@ -406,7 +406,7 @@ export function RegisterForm({ portal = "learner" }: { portal?: LmsPortal }) {
     );
   }
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="auth-form space-y-5" noValidate>
       <div className="grid gap-5 sm:grid-cols-2">
        <div><Label htmlFor="register-first-name">First name</Label><Input id="register-first-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="given-name" aria-invalid={Boolean(errors.firstName)} aria-describedby={errors.firstName ? "register-first-name-error" : undefined} {...register("firstName")} />{message(errors.firstName?.message, "register-first-name-error")}</div>
        <div><Label htmlFor="register-last-name">Last name</Label><Input id="register-last-name" className="mt-2 min-h-12 rounded-xl bg-background/70 px-4" autoComplete="family-name" aria-invalid={Boolean(errors.lastName)} aria-describedby={errors.lastName ? "register-last-name-error" : undefined} {...register("lastName")} />{message(errors.lastName?.message, "register-last-name-error")}</div>
@@ -435,7 +435,7 @@ export function ForgotPasswordForm() {
     }
   };
   if (done) return <FormSuccess title="Check your inbox" copy="If an account exists for that email, we sent a secure password reset link." />;
-  return <form onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "forgot-email-error" : undefined} {...register("email")} />{message(errors.email?.message, "forgot-email-error")}</div>{serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}<Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
+  return <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-5"><div><Label htmlFor="forgot-email">Account email</Label><Input id="forgot-email" className="mt-2" type="email" autoComplete="email" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "forgot-email-error" : undefined} {...register("email")} />{message(errors.email?.message, "forgot-email-error")}</div>{serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}<Button className="w-full" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : "Send reset link"}</Button></form>;
 }
 
 export function ResetPasswordForm() {
@@ -467,7 +467,7 @@ export function ResetPasswordForm() {
   };
   if (done) return <FormSuccess title="Password updated" copy="Your password has been reset. You can now sign in with your new credentials." />;
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div>
         <Label htmlFor="new-password">New password</Label>
         <Input id="new-password" className="mt-2" type="password" autoComplete="new-password" aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "new-password-error" : "new-password-help"} {...register("password")} />

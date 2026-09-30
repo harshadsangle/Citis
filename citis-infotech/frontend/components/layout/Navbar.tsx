@@ -67,7 +67,13 @@ function LoginMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-controls="public-login-menu"
-        onClick={onToggle}
+        onClick={(event) => {
+          // A mouse has already opened the menu on hover, so toggling here
+          // would close it the moment the user clicks "Login".
+          const { pointerType } = event.nativeEvent as PointerEvent;
+          if (pointerType === "mouse") onOpenChange(true);
+          else onToggle();
+        }}
         className={cn(
           "inline-flex h-9 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:h-10 sm:px-3.5 sm:text-sm",
           open
