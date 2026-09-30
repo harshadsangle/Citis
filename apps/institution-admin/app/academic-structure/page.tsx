@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { LmsBackButton } from "../../components/LmsBackButton";
 
 // Same-origin /api/v1, proxied by next.config.ts rewrites. See the note in
 // app/page.tsx: calling the API host directly triggers a CORS preflight that
@@ -273,6 +274,7 @@ export default function AcademicStructurePage() {
 
   return (
     <main style={styles.page}>
+      <LmsBackButton />
       <h1 style={{ marginBottom: 6 }}>Academic structure</h1>
       <p style={{ color: "#536176", marginTop: 0 }}>
         Manage institution-scoped faculties, departments, semesters, programmes, and course offerings.

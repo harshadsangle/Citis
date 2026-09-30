@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowLeft, Check, ShieldCheck } from "lucide-react";
+import { Check, ShieldCheck } from "lucide-react";
 import { CitisLogo } from "@/components/layout/CitisLogo";
 import { LoginForm } from "@/components/marketing/InteractiveForms";
 import { LMS_PORTALS, normalizeLmsPortal } from "@/lib/lms-roles";
 import { generatePageMetadata } from "@/lib/seo";
 import { normalizeLmsCourseProvider } from "@/lib/lms-catalog";
 import { resolveLmsPortalOrigin } from "@/lib/lms-portal";
+import { LmsBackButton } from "@/components/shared/LmsBackButton";
 
 export const metadata = generatePageMetadata({ title: "Sign In", path: "/auth/login", description: "Sign in to your CITIS InfoTech learning account.", noIndex: true });
 
@@ -29,9 +30,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <CitisLogo href={null} className="text-[0.86rem] sm:text-[0.96rem]" />
             <span className="auth-role-chip"><Check className="size-3.5" />Secure workspace access</span>
           </div>
-          <Link href="/lms" className="auth-back-link mt-8 inline-flex items-center gap-2 text-sm font-semibold">
-            <ArrowLeft className="size-4" />Back
-          </Link>
+          <LmsBackButton className="auth-back-link mt-8" />
           <div className="mt-8">
             <p className="auth-kicker">{portalOption.label}</p>
             <h1 className="mt-3 font-heading text-4xl font-semibold tracking-tight sm:text-[2.65rem]">Welcome back</h1>

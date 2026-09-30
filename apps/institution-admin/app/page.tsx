@@ -10,6 +10,7 @@ import AdminAccessView, { type AccountRequest, type AdminAccessMode } from "./Ad
 import CourseBuilder from "./CourseBuilder";
 import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
+import { LmsBackButton } from "../components/LmsBackButton";
 
 type Kind = "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
@@ -883,6 +884,7 @@ export default function InstitutionAdminPage() {
 
       <section className="workspace">
         <header className="topbar">
+          <LmsBackButton />
           <div className="mobile-brand"><span className="brand-mark">C</span><strong>CITIS</strong></div>
           <div className="topbar-actions">
             <span className="environment-pill"><span className="online-dot" /> Connected workspace</span>

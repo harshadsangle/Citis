@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
+import { LmsBackButton } from "../components/LmsBackButton";
 
 async function fetchDashboardList<T>(path: string): Promise<T[]> {
   const response = await fetch(path, { credentials: "include" });
@@ -1760,6 +1761,7 @@ export default function StudentPortalPage() {
     <main className="student-shell">
       <div className="student-container">
         <div className="portal-topbar">
+          <LmsBackButton />
           <div className="portal-brand"><span className="portal-brand-mark" aria-hidden="true">C</span><span><span className="portal-brand-citis">CITIS</span><span className="portal-brand-infot">InfoTech</span></span><span className="portal-brand-divider" /><span className="portal-brand-label">Learning portal</span></div>
           <div className="portal-actions">
             <span className="portal-session">Student space</span>

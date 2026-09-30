@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { displayName, firstNameForGreeting, timeGreeting, type InstructorIdentity } from "./greeting";
+import { LmsBackButton } from "../components/LmsBackButton";
 
 type Principal = InstructorIdentity & {
   roles?: Array<{ code: string; name?: string }>;
@@ -1829,6 +1830,7 @@ export default function TeacherPortalPage() {
 
         <section className="workspace">
           <header className="topbar">
+            <LmsBackButton />
             <div className="mobile-brand"><div className="brand-mark">C</div><strong>CITIS Teaching</strong></div>
             <div className="topbar-right">
               <span className="live-label"><i />Secure workspace</span>
