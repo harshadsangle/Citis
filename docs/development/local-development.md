@@ -19,6 +19,62 @@ The root launcher starts:
 Stopping the root command stops the child services as well. No individual
 workspace directory is required.
 
+## Linux / macOS local setup
+
+Install Node.js 24+ and PostgreSQL 16, then from the repository root:
+
+```bash
+npm ci
+npm ci --prefix citis-infotech/frontend
+```
+
+Create a repository-root `.env.local` (it is git-ignored) with at least:
+
+```text
+DATABASE_URL=postgres://postgres@127.0.0.1:5432/citis
+DEMO_ADMIN_PASSWORD=...
+DEMO_INSTRUCTOR_PASSWORD=...
+DEMO_LEARNER_PASSWORD=...
+```
+
+The API reads `services/api/.env.local` first on Linux, so copy the same file
+there too. Then load it into the shell, set up the database and start the stack:
+
+```bash
+cp .env.local services/api/.env.local
+set -a; . ./.env.local; set +a
+npm run db:setup-local
+npm run dev
+```
+
+### When port 4000 is already in use
+
+The Linux launcher honours `API_PORT` (default `4000`) and passes the matching
+`LMS_API_ORIGIN` to every portal and the public site:
+
+```bash
+API_PORT=4600 npm run dev
+```
+
+## Tests
+
+| Command | What it runs | Needs the stack running |
+| --- | --- | --- |
+| `npm run test:foundation` | API unit and database tests | No (needs `DATABASE_URL`) |
+| `npm run test:learner-auth` | Live learner sign-in regression | Yes |
+| `node --import tsx --test apps/portal-middleware.spec.ts` | Portal role guards | No |
+| `node --test apps/teacher-portal/tests/greeting.test.mjs` | Teacher portal greeting | No |
+
+`test:learner-auth` targets `http://127.0.0.1:4000/api/v1` by default; set
+`LMS_AUTH_REGRESSION_API_ORIGIN` when the API runs on another port.
+
+## Package registry
+
+Lockfiles must reference `https://registry.npmjs.org/`. Replit rewrites them
+to its internal package firewall, which is unreachable elsewhere; run
+`node scripts/prepare-vercel-install.mjs` before committing lockfile changes
+made on Replit.
+
 ## Windows local PostgreSQL
 
 The smallest safe Windows setup keeps the existing PostgreSQL LMS/API intact

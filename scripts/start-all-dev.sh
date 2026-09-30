@@ -20,6 +20,11 @@ for app_dir in \
   rm -rf -- "$app_dir/.next"
 done
 
+# The API port defaults to 4000. Set API_PORT when 4000 is already taken; every
+# portal and the public site then reach the API through LMS_API_ORIGIN.
+API_PORT="${API_PORT:-4000}"
+export LMS_API_ORIGIN="${LMS_API_ORIGIN:-http://127.0.0.1:${API_PORT}/api/v1}"
+
 pids=()
 start_service() {
   setsid -- "$@" &
@@ -55,12 +60,12 @@ trap cleanup EXIT INT TERM
 
 # Invoke the API entrypoint directly so its process stays rooted at the
 # repository directory instead of inheriting the workspace package directory.
-start_service env PORT=4000 AUTH_EXPOSE_DEV_TOKENS=true npm exec -- ts-node --transpile-only --project services/api/tsconfig.json services/api/src/main.ts
+start_service env PORT="$API_PORT" AUTH_EXPOSE_DEV_TOKENS=true npm exec -- ts-node --transpile-only --project services/api/tsconfig.json services/api/src/main.ts
 
 # Portals call /api/v1/auth/me from middleware during their first request. Wait
 # for the API listener before launching them so startup is deterministic on
 # Replit/Linux as well as on Windows.
-wait_for_http "http://127.0.0.1:4000/" 30
+wait_for_http "http://127.0.0.1:${API_PORT}/" 30
 
 start_service npm run dev --prefix apps/institution-admin
 start_service npm run dev --prefix apps/student-portal
