@@ -313,7 +313,8 @@ test("refund index migration allows multiple processed refunds but keeps one pen
 });
 
 test("academic structure migration is registered and keeps parent relationships tenant-scoped", () => {
-  assert.equal(MIGRATION_VERSIONS.at(-2), "033_academic_structure");
+  assert.ok(MIGRATION_VERSIONS.includes("033_academic_structure"));
+  assert.ok(MIGRATION_VERSIONS.indexOf("033_academic_structure") > MIGRATION_VERSIONS.indexOf("032_lms_refund_partial_index"));
   assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_faculties/);
   assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_departments/);
   assert.match(academicStructureMigration, /CREATE TABLE IF NOT EXISTS academic_semesters/);

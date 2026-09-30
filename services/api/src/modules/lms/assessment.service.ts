@@ -1395,7 +1395,7 @@ export class AssessmentService {
       ? supplied.trim() === ""
       : Array.isArray(supplied) ? supplied.length === 0 : false;
     const penalty = isBlank ? 0 : Math.min(Number(question.negative_marks ?? 0), Number(question.marks));
-    return { correct, awardedMarks: correct ? Number(question.marks) : -penalty };
+    return { correct, awardedMarks: correct ? Number(question.marks) : 0 - penalty };
   }
 
   async submitAttempt(id: string, input: SubmitAssessmentAttemptDto, request: ContextRequest) {
