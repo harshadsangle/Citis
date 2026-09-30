@@ -1,0 +1,3 @@
+{
+  "/lms/purchase/[courseSlug]/page": "app/lms/purchase/[courseSlug]/page.js"
+}

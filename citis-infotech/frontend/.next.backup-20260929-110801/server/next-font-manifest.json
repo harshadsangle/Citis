@@ -1,0 +1,205 @@
+{
+  "app": {
+    "[project]/app/_not-found/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/advisory-board/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/associations/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/gallery/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/management-team/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/media/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/quality-policy/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/about/vision-mission/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/analytics/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/blogs/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/careers/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/case-studies/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/clients/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/cms/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/media/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/messages/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/newsletter/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/partners/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/products/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/admin/testimonials/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/auth/forgot-password/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/auth/login/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/auth/register/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/auth/reset-password/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/auth/verify-email/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/careers/[slug]/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/careers/apply/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/careers/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/certificate-verification/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/contact/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/centre-of-excellence/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/global-certifications/[slug]/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/global-certifications/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/placements/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/professional-programs/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/school/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/university/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/engagements/vocational/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/events/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/faculty/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/future-academy/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/highlights/blogs/[slug]/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/highlights/blogs/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/highlights/case-studies/[slug]/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/highlights/case-studies/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/highlights/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/lms/login/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/lms/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/lms/purchase/[courseSlug]/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/offline/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/partner/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/privacy/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/products/ai-future-academy/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/products/appwizz-academy/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/products/moxiemind/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/products/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/products/science-lab/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/refund-policy/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/resources/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/search/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/success-stories/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ],
+    "[project]/app/terms/page": [
+      "static/media/a343f882a40d2cc9-s.p.71e1367e.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

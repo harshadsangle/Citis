@@ -1,0 +1,7 @@
+User-Agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /api/
+
+Host: https://www.citisinfotech.in
+Sitemap: https://www.citisinfotech.in/sitemap.xml

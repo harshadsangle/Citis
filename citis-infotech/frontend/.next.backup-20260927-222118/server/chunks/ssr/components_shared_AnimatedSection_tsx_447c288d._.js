@@ -1,0 +1,3 @@
+module.exports=[58189,a=>{"use strict";a.s(["AnimatedSection",()=>f]);var b=a.i(87924),c=a.i(46271),d=a.i(4540),e=a.i(97895);function f({children:a,className:f,delay:g=0,amount:h=.18,...i}){return(0,b.jsx)(c.motion.div,{initial:"hidden",whileInView:"visible",viewport:{once:!0,amount:h},variants:{...d.fadeUpVariants,visible:{...d.fadeUpVariants.visible,transition:{duration:.65,delay:g,ease:[.22,1,.36,1]}}},className:(0,e.cn)(f),...i,children:a})}}];
+
+//# sourceMappingURL=components_shared_AnimatedSection_tsx_447c288d._.js.map
