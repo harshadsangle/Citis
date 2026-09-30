@@ -50,9 +50,13 @@ type CourseInstitutionAllocation = {
 
 type TrailNode = { kind: Kind; id: string; label: string };
 type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: number } } };
+// Stay same-origin. next.config.ts rewrites /api/v1 to the API via
+// LMS_API_ORIGIN, so requests keep the session cookie and never hit a CORS
+// preflight. Calling api.citisinfotech.in directly made every fetch fail with
+// "Failed to fetch" because the production WEB_ORIGIN allowlist does not
+// include this portal's host. Matches student-portal and teacher-portal.
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
-  || (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1")
+  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api/v1"
 ).replace(/\/$/, "");
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 

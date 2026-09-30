@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 
-const base = (process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
-  || (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1")).replace(/\/$/, "");
+// Same-origin /api/v1, proxied by next.config.ts rewrites. See the note in
+// app/page.tsx: calling the API host directly triggers a CORS preflight that
+// the production WEB_ORIGIN allowlist rejects for this portal.
+const base = (process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api/v1").replace(/\/$/, "");
 
 type Row = {
   id: string;
