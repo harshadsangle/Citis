@@ -195,13 +195,19 @@ export function JobApplicationForm({ jobId, jobTitle }: { jobId: string; jobTitl
   );
 }
 
+const ADMIN_PORTAL_ORIGIN = "https://admin.citisinfotech.in";
+
 function redirectToPortal(portal: LmsPortal, portalOrigin: string, provider?: LmsCourseProvider) {
   const hostname = window.location.hostname;
+  // The admin destination must be host-independent in production. The previous
+  // lms-only branch left every other host falling through to
+  // NEXT_PUBLIC_INSTITUTION_PORTAL_URL, so signing in at
+  // www.citisinfotech.in/auth/login?portal=admin sent admins to the LMS.
+  // Outside production portalOrigin still resolves to the local or Replit
+  // admin port, so development is unchanged.
   const destinationOrigin =
-    portal === "admin" && hostname === "admin.citisinfotech.in"
-      ? window.location.origin
-      : portal === "admin" && hostname === "lms.citisinfotech.in"
-        ? "https://admin.citisinfotech.in"
+    portal === "admin" && process.env.NODE_ENV === "production"
+      ? hostname === "admin.citisinfotech.in" ? window.location.origin : ADMIN_PORTAL_ORIGIN
       : portalOrigin;
   const destination = new URL("/", destinationOrigin);
   if (provider) destination.searchParams.set("provider", provider);
