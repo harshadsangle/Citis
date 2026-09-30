@@ -19,6 +19,9 @@ import type {
   UpdateCourseUnitDto,
   CreateCourseChapterDto,
   UpdateCourseChapterDto,
+  CreateLiveClassDto,
+  UpdateLiveClassDto,
+  LiveClassListQueryDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
@@ -1517,6 +1520,300 @@ export class LmsService {
       );
       if (!result.rows[0]) throw new NotFoundException("Chapter not found.");
       await this.auditMutation(request, "chapter", "UPDATE", result.rows[0], before);
+      return result.rows[0];
+    });
+  }
+
+  /**
+   * Swaps the order of two sibling units or two sibling chapters.
+   *
+   * Both tables carry a UNIQUE (tenant, parent, sequence) constraint, so a naive
+   * two-call swap fails on the first write with a 23505 conflict. This parks both
+   * rows in a high, collision-free sequence window inside one transaction, then
+   * writes the final values, so the swap is atomic and can never half-apply.
+   */
+  async reorderHierarchyNode(id: string, swapWithId: string, kind: "unit" | "chapter", request: ContextRequest) {
+    const user = request.context.user!;
+    if (id === swapWithId) throw new BadRequestException("Choose a different item to swap with.");
+    const current = await this.hierarchyRow(id, kind, user);
+    const target = await this.hierarchyRow(swapWithId, kind, user);
+    const parentColumn = kind === "unit" ? "course_id" : "unit_id";
+    const parentId = kind === "unit" ? String(current.course_id) : String(current.unit_id);
+    const targetParentId = kind === "unit" ? String(target.course_id) : String(target.unit_id);
+    if (parentId !== targetParentId) {
+      throw new BadRequestException(`Both ${kind === "unit" ? "units" : "chapters"} must belong to the same ${kind === "unit" ? "course" : "unit"}.`);
+    }
+    await this.assertAssignedTeacherManage(user, String(current.course_id));
+
+    const table = kind === "unit" ? "lms_course_units" : "lms_course_chapters";
+    return this.run(() => this.db.transaction(async (client) => {
+      const locked = await client.query<{ id: string; sequence: number }>(
+        `SELECT id, sequence FROM ${table}
+         WHERE tenant_id = $1 AND ${parentColumn} = $2 AND id = ANY($3::uuid[])
+         FOR UPDATE`,
+        [user.tenantId, parentId, [id, swapWithId]],
+      );
+      if (locked.rows.length !== 2) throw new NotFoundException(`${kind === "unit" ? "Unit" : "Chapter"} not found.`);
+      const byId = new Map(locked.rows.map((row) => [row.id, row.sequence]));
+      const first = byId.get(id)!;
+      const second = byId.get(swapWithId)!;
+
+      await client.query(
+        `UPDATE ${table} SET sequence = sequence + 1000000
+         WHERE tenant_id = $1 AND ${parentColumn} = $2 AND id = ANY($3::uuid[])`,
+        [user.tenantId, parentId, [id, swapWithId]],
+      );
+      const swapped = await client.query(
+        `UPDATE ${table} SET sequence = CASE id WHEN $4 THEN $5 ELSE $6 END, updated_by = $7, updated_at = now()
+         WHERE tenant_id = $1 AND ${parentColumn} = $2 AND id = ANY($3::uuid[])
+         RETURNING *`,
+        [user.tenantId, parentId, [id, swapWithId], id, second, first, user.id],
+      );
+      const result = swapped.rows.find((row) => (row as { id: string }).id === id) ?? swapped.rows[0];
+      await this.auditMutation(request, kind, "REORDER", result as unknown as Record<string, unknown>, { sequence: first });
+      return result;
+    }));
+  }
+
+  async listLiveClasses(user: AuthenticatedUser, page: number, pageSize: number, offset: number, query: LiveClassListQueryDto) {
+    const values: unknown[] = [user.tenantId];
+    const clauses = ["lc.tenant_id = $1"];
+    if (query.courseId) {
+      values.push(query.courseId);
+      clauses.push(`lc.course_id = $${values.length}`);
+    }
+    if (query.status) {
+      values.push(query.status);
+      clauses.push(`lc.status = $${values.length}`);
+    }
+    if (query.scope === "upcoming") {
+      clauses.push(`(lc.scheduled_date + lc.start_time) >= date_trunc('day', now() AT TIME ZONE 'UTC')`);
+    } else if (query.scope === "past") {
+      clauses.push(`(lc.scheduled_date + lc.start_time) < date_trunc('day', now() AT TIME ZONE 'UTC')`);
+    }
+    if (this.isLearnerOnly(user)) {
+      values.push(user.id);
+      clauses.push(
+        "lc.status IN ('SCHEDULED', 'COMPLETED')",
+        "c.status = 'PUBLISHED'",
+        "p.status = 'PUBLISHED'",
+        "i.status = 'ACTIVE'",
+        `EXISTS (
+          SELECT 1 FROM lms_enrollments e
+          WHERE e.tenant_id = lc.tenant_id
+            AND e.course_id = lc.course_id
+            AND e.learner_id = $${values.length}
+            AND e.status = 'ACTIVE'
+        )`,
+        `(EXISTS (
+          SELECT 1 FROM lms_student_profiles sp
+          JOIN lms_course_institution_allocations ca
+            ON ca.tenant_id = lc.tenant_id AND ca.course_id = lc.course_id
+           AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+          JOIN institutions allocated_i
+            ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+           AND allocated_i.status = 'ACTIVE'
+          WHERE sp.tenant_id = lc.tenant_id AND sp.user_id = $${values.length}
+            AND sp.status = 'ACTIVE' AND sp.student_type = 'COLLEGE_STUDENT'
+        ) OR EXISTS (
+          SELECT 1 FROM lms_student_profiles sp
+          WHERE sp.tenant_id = lc.tenant_id AND sp.user_id = $${values.length}
+            AND sp.status = 'ACTIVE' AND sp.student_type = 'DIRECT_STUDENT'
+        ))`,
+      );
+    } else if (this.isInstructorOnly(user)) {
+      values.push(user.id);
+      clauses.push(`(
+        EXISTS (
+          SELECT 1 FROM lms_instructor_assignments ia
+          WHERE ia.tenant_id = lc.tenant_id
+            AND ia.institution_id = c.institution_id
+            AND ia.course_id = lc.course_id
+            AND ia.campus_id IS NOT DISTINCT FROM c.campus_id
+            AND ia.instructor_id = $${values.length}
+            AND ia.status = 'ACTIVE'
+        )
+        OR (
+          c.status = 'PUBLISHED'
+          AND EXISTS (
+            SELECT 1 FROM lms_instructor_colleges ic
+            WHERE ic.tenant_id = lc.tenant_id
+              AND ic.institution_id = c.institution_id
+              AND ic.instructor_id = $${values.length}
+              AND ic.status = 'ACTIVE'
+          )
+        )
+      )`);
+    }
+    const pageParam = values.length + 1;
+    values.push(pageSize, offset);
+    const from = `FROM lms_live_classes lc
+          JOIN courses c ON c.tenant_id = lc.tenant_id AND c.id = lc.course_id
+          JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+          JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
+          WHERE ${clauses.join(" AND ")}`;
+    const [rows, total] = await Promise.all([
+      this.db.query(
+        `SELECT lc.id, lc.tenant_id, lc.course_id, lc.module_id, lc.unit_id, lc.chapter_id, lc.title, lc.description,
+                lc.scheduled_date, lc.start_time, lc.duration_minutes, lc.provider, lc.meeting_url, lc.recording_url,
+                lc.status, lc.created_at, lc.updated_at,
+                c.title AS course_title, c.code AS course_code,
+                c.institution_id AS scope_institution_id, c.campus_id AS scope_campus_id
+         ${from}
+         ORDER BY lc.scheduled_date ASC, lc.start_time ASC
+         LIMIT $${pageParam} OFFSET $${pageParam + 1}`,
+        values,
+      ),
+      this.db.query<{ count: string }>(`SELECT count(*)::text AS count ${from}`, values.slice(0, -2)),
+    ]);
+    const visible = filterScopedRows(user, rows.rows as Array<Record<string, unknown>>, "scope_institution_id", "scope_campus_id");
+    return { data: visible, meta: paginationMeta(page, pageSize, visible.length) };
+  }
+
+  private async liveClassCourseScope(courseId: string, user: AuthenticatedUser) {
+    const result = await this.db.query<{
+      institution_id: string;
+      campus_id: string | null;
+      course_status: string;
+      programme_status: string;
+      institution_status: string;
+    }>(
+      `SELECT c.institution_id, c.campus_id, c.status AS course_status,
+              p.status AS programme_status, i.status AS institution_status
+       FROM courses c
+       JOIN programmes p ON p.tenant_id = c.tenant_id AND p.id = c.programme_id
+       JOIN institutions i ON i.tenant_id = p.tenant_id AND i.id = p.institution_id
+       WHERE c.tenant_id = $1 AND c.id = $2`,
+      [user.tenantId, courseId],
+    );
+    const course = result.rows[0];
+    if (!course) throw new NotFoundException("Course not found in the current tenant.");
+    return course;
+  }
+
+  async createLiveClass(input: CreateLiveClassDto, request: ContextRequest) {
+    const user = request.context.user!;
+    this.assertCourseAdministrator(user);
+    const course = await this.liveClassCourseScope(input.courseId, user);
+    assertScope(user, course.institution_id, course.campus_id);
+    return this.run(async () => {
+      const result = await this.db.query(
+        `INSERT INTO lms_live_classes
+           (tenant_id, course_id, module_id, unit_id, chapter_id, title, description, scheduled_date, start_time,
+            duration_minutes, provider, meeting_url, recording_url, created_by, updated_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$14)
+         RETURNING *`,
+        [
+          user.tenantId,
+          input.courseId,
+          input.moduleId ?? null,
+          input.unitId ?? null,
+          input.chapterId ?? null,
+          input.title.trim(),
+          input.description?.trim() || null,
+          input.scheduledDate,
+          input.startTime,
+          input.durationMinutes,
+          input.provider,
+          input.meetingUrl.trim(),
+          input.recordingUrl?.trim() || null,
+          user.id,
+        ],
+      );
+      const row = { ...result.rows[0], institution_id: course.institution_id, campus_id: course.campus_id };
+      await this.auditMutation(request, "live_class", "CREATE", row as unknown as Record<string, unknown>);
+      return result.rows[0];
+    });
+  }
+
+  async updateLiveClass(id: string, input: UpdateLiveClassDto, request: ContextRequest) {
+    const user = request.context.user!;
+    this.assertCourseAdministrator(user);
+    const before = await this.liveClassRow(id, user, true);
+    return this.run(async () => {
+      const result = await this.db.query(
+        `UPDATE lms_live_classes SET
+           title = COALESCE($3, title),
+           description = COALESCE($4, description),
+           scheduled_date = COALESCE($5, scheduled_date),
+           start_time = COALESCE($6, start_time),
+           duration_minutes = COALESCE($7, duration_minutes),
+           provider = COALESCE($8, provider),
+           meeting_url = COALESCE($9, meeting_url),
+           recording_url = CASE WHEN $10::boolean THEN $11 ELSE recording_url END,
+           module_id  = CASE WHEN $12::boolean THEN $13::uuid ELSE module_id END,
+           unit_id    = CASE WHEN $14::boolean THEN $15::uuid ELSE unit_id END,
+           chapter_id = CASE WHEN $16::boolean THEN $17::uuid ELSE chapter_id END,
+           updated_by = $2, updated_at = now()
+         WHERE id = $1 AND tenant_id = $18
+         RETURNING *`,
+        [
+          id,
+          user.id,
+          input.title?.trim() ?? null,
+          input.description?.trim() ?? null,
+          input.scheduledDate ?? null,
+          input.startTime ?? null,
+          input.durationMinutes ?? null,
+          input.provider ?? null,
+          input.meetingUrl?.trim() ?? null,
+          input.recordingUrl !== undefined,
+          input.recordingUrl?.trim() || null,
+          input.moduleId !== undefined,
+          input.moduleId ?? null,
+          input.unitId !== undefined,
+          input.unitId ?? null,
+          input.chapterId !== undefined,
+          input.chapterId ?? null,
+          user.tenantId,
+        ],
+      );
+      if (!result.rows[0]) throw new NotFoundException("Live class not found.");
+      await this.auditMutation(request, "live_class", "UPDATE", result.rows[0], before);
+      return result.rows[0];
+    });
+  }
+
+  private async liveClassRow(id: string, user: AuthenticatedUser, requireAdministrator: boolean) {
+    const result = await this.db.query<Record<string, unknown>>(
+      `SELECT lc.*, c.institution_id, c.campus_id, c.title AS course_title, c.code AS course_code,
+              c.status AS course_status, p.status AS programme_status, i.status AS institution_status
+       FROM lms_live_classes lc
+       JOIN courses c ON c.tenant_id = lc.tenant_id AND c.id = lc.course_id
+       JOIN programmes p ON p.tenant_id = c.tenant_id AND p.id = c.programme_id
+       JOIN institutions i ON i.tenant_id = p.tenant_id AND i.id = p.institution_id
+       WHERE lc.id = $1 AND lc.tenant_id = $2`,
+      [id, user.tenantId],
+    );
+    const row = result.rows[0];
+    if (!row) throw new NotFoundException("Live class not found.");
+    if (requireAdministrator) {
+      this.assertCourseAdministrator(user);
+      assertScope(user, String(row.institution_id), row.campus_id as string | null | undefined);
+    } else {
+      if (!this.isDirectStudentLearner(user)) {
+        assertScopeForRead(user, String(row.institution_id), row.campus_id as string | null | undefined);
+      }
+      await this.assertLearnerCourseAccess(user, String(row.course_id), String(row.institution_id), row.campus_id as string | null | undefined);
+      await this.assertAssignedTeacherRead(user, String(row.institution_id), String(row.course_id), row.campus_id as string | null | undefined);
+    }
+    return row;
+  }
+
+  async setLiveClassStatus(id: string, status: string, request: ContextRequest) {
+    const user = request.context.user!;
+    const before = await this.liveClassRow(id, user, true);
+    if (before.status === "ARCHIVED") {
+      throw new BadRequestException("An archived live class cannot change status.");
+    }
+    return this.run(async () => {
+      const result = await this.db.query(
+        `UPDATE lms_live_classes SET status = $3, updated_by = $2, updated_at = now()
+         WHERE id = $1 AND tenant_id = $4 RETURNING *`,
+        [id, user.id, status, user.tenantId],
+      );
+      if (!result.rows[0]) throw new NotFoundException("Live class not found.");
+      await this.auditMutation(request, "live_class", status === "ARCHIVED" ? "ARCHIVE" : "UPDATE", result.rows[0], before);
       return result.rows[0];
     });
   }

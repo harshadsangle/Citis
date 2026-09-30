@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
+import LiveClassesView from "./LiveClassesView";
 
 async function fetchDashboardList<T>(path: string): Promise<T[]> {
   const response = await fetch(path, { credentials: "include" });
@@ -1806,6 +1807,7 @@ export default function StudentPortalPage() {
           <a className="is-active" href="#my-learning"><span aria-hidden="true">◈</span>My Learning</a>
           <a href="#assessments"><span aria-hidden="true">✓</span>Assessments</a>
           <a href="#assignments"><span aria-hidden="true">▤</span>Assignments</a>
+          <a href="#live-classes"><span aria-hidden="true">◉</span>Live classes</a>
           <a href="#certificates"><span aria-hidden="true">✦</span>Certificates</a>
         </nav>
         <header className="portal-hero">
@@ -1875,6 +1877,7 @@ export default function StudentPortalPage() {
             )}
           </section>
         )}
+        {!loading && !error && <LiveClassesView />}
         {!loading && !error && (
           <section className="certificates-section" id="certificates">
             <div className="portal-section-heading">

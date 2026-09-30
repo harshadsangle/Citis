@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import CourseRelationships from "./CourseRelationships";
+import CourseStructureManager from "./CourseStructureManager";
+import LiveClassManager from "./LiveClassManager";
 import AssignmentManager from "./AssignmentManager";
 import AssessmentManager from "./AssessmentManager";
 import AdminInsights from "./AdminInsights";
@@ -50,9 +52,10 @@ type CourseInstitutionAllocation = {
 
 type TrailNode = { kind: Kind; id: string; label: string };
 type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: number } } };
+// Browser calls stay same-origin so the session cookie is first-party and the
+// Next.js rewrite in next.config.ts proxies /api/v1 to LMS_API_ORIGIN.
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
-  || (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1")
+  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api/v1"
 ).replace(/\/$/, "");
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 
@@ -147,6 +150,16 @@ const instructorCopy = {
   title: "Instructors",
   description: "Create teaching accounts, assign institutional scope, and keep access current.",
 };
+const structureCopy = {
+  kicker: "Course structure",
+  title: "Units & chapters",
+  description: "Group each course into units and chapters, then publish them when the content is ready.",
+};
+const liveClassCopy = {
+  kicker: "Live classes",
+  title: "Live classes",
+  description: "Schedule live sessions for a course and share the Zoom, Meet, Teams, or Webex link.",
+};
 const adminAccessCopy: Record<AdminAccessMode, { kicker: string; title: string; description: string }> = {
   learners: {
     kicker: "People & access",
@@ -233,6 +246,8 @@ export default function InstitutionAdminPage() {
   const profileMenuRef = useRef<HTMLDetailsElement>(null);
   const [activeKind, setActiveKind] = useState<Kind>("courses");
   const [relationshipMode, setRelationshipMode] = useState<RelationshipMode | null>(null);
+  const [structureCourse, setStructureCourse] = useState<{ id: string; label: string } | null>(null);
+  const [liveClassMode, setLiveClassMode] = useState(false);
   const [insightMode, setInsightMode] = useState<InsightMode | null>(null);
   const [instructorMode, setInstructorMode] = useState(false);
   const [adminAccessMode, setAdminAccessMode] = useState<AdminAccessMode | null>(null);
@@ -306,7 +321,7 @@ export default function InstitutionAdminPage() {
     };
   }, []);
 
-  const currentSection = adminAccessMode ? adminAccessCopy[adminAccessMode] : instructorMode ? instructorCopy : insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : sectionCopy[activeKind];
+  const currentSection = adminAccessMode ? adminAccessCopy[adminAccessMode] : instructorMode ? instructorCopy : insightMode ? insightCopy[insightMode] : relationshipMode ? relationshipCopy[relationshipMode] : structureCourse ? structureCopy : liveClassMode ? liveClassCopy : sectionCopy[activeKind];
   const selectedParent = trail[trail.length - 1];
   const activeParentId = activeKind === "courses"
     ? ""
@@ -327,7 +342,7 @@ export default function InstitutionAdminPage() {
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      if (relationshipMode || insightMode || instructorMode || adminAccessMode) {
+      if (relationshipMode || insightMode || instructorMode || adminAccessMode || structureCourse || liveClassMode) {
         setRecords([]);
         setLoading(false);
         return;
@@ -367,7 +382,7 @@ export default function InstitutionAdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeKind, canLoad, courseView, ids, provider, refreshToken, relationshipMode, insightMode, instructorMode, adminAccessMode]);
+  }, [activeKind, canLoad, courseView, ids, provider, refreshToken, relationshipMode, insightMode, instructorMode, adminAccessMode, structureCourse, liveClassMode]);
 
   useEffect(() => {
     if (!toast) return;
@@ -408,6 +423,8 @@ export default function InstitutionAdminPage() {
     setInstructorMode(false);
     setInsightMode(null);
     setRelationshipMode(null);
+    setStructureCourse(null);
+    setLiveClassMode(false);
     setActiveKind(kind);
     setCourseView("ALL");
     if (kind === "courses") {
@@ -421,6 +438,18 @@ export default function InstitutionAdminPage() {
     setInstructorMode(false);
     setInsightMode(mode);
     setRelationshipMode(null);
+    setStructureCourse(null);
+    setLiveClassMode(false);
+    setError("");
+  }
+
+  function showLiveClasses() {
+    setAdminAccessMode(null);
+    setInstructorMode(false);
+    setInsightMode(null);
+    setRelationshipMode(null);
+    setStructureCourse(null);
+    setLiveClassMode(true);
     setError("");
   }
 
@@ -429,6 +458,8 @@ export default function InstitutionAdminPage() {
     setInstructorMode(true);
     setInsightMode(null);
     setRelationshipMode(null);
+    setStructureCourse(null);
+    setLiveClassMode(false);
     setError("");
   }
 
@@ -437,6 +468,8 @@ export default function InstitutionAdminPage() {
     setInstructorMode(false);
     setInsightMode(null);
     setRelationshipMode(null);
+    setStructureCourse(null);
+    setLiveClassMode(false);
     setError("");
   }
 
@@ -631,6 +664,18 @@ export default function InstitutionAdminPage() {
     setIds((current) => ({ ...current, courseId, moduleId: "", lessonId: "" }));
     setTrail((current) => [...current.slice(0, 1), courseNode]);
     setRelationshipMode(mode);
+  }
+
+  function openCourseStructure(courseId: string, courseLabel: string) {
+    setAdminAccessMode(null);
+    setInstructorMode(false);
+    setInsightMode(null);
+    setRelationshipMode(null);
+    setLiveClassMode(false);
+    const courseNode = { kind: "courses" as Kind, id: courseId, label: courseLabel };
+    setIds((current) => ({ ...current, courseId, moduleId: "", lessonId: "" }));
+    setTrail((current) => [...current.slice(0, 1), courseNode]);
+    setStructureCourse({ id: courseId, label: courseLabel });
   }
 
   function openCourseRelationship(mode: "assignments" | "assessments") {
@@ -833,6 +878,7 @@ export default function InstitutionAdminPage() {
               <span className="nav-icon">{section.icon}</span>{section.shortLabel}
             </button>
           ))}
+          <button className={`nav-link ${liveClassMode ? "active" : ""}`} type="button" onClick={showLiveClasses}><span className="nav-icon">◉</span> Live classes</button>
            <Link className="nav-link" href="/academic-structure"><span className="nav-icon">S</span>Academic structure</Link>
              <button
               className={`nav-link ${instructorMode ? "active" : ""}`}
@@ -954,7 +1000,7 @@ export default function InstitutionAdminPage() {
               <h1>{currentSection.title}</h1>
               <p>{currentSection.description}</p>
            </div>
-                {!adminAccessMode && <button className="primary-button" type="button" onClick={instructorMode ? undefined : openCreate} disabled={Boolean(instructorMode || relationshipMode || insightMode) || (activeKind !== "courses" && !activeParentId)}>
+                {!adminAccessMode && <button className="primary-button" type="button" onClick={instructorMode ? undefined : openCreate} disabled={Boolean(instructorMode || relationshipMode || insightMode || structureCourse || liveClassMode) || (activeKind !== "courses" && !activeParentId)}>
                 <span>+</span> {instructorMode ? "Add instructor" : activeKind === "courses" ? "Create Course" : `New ${labelFor(activeKind).slice(0, -1)}`}
              </button>}
           </div>
@@ -989,6 +1035,10 @@ export default function InstitutionAdminPage() {
                 : relationshipMode === "assessments"
                   ? <AssessmentManager apiBase={API_BASE} courseId={ids.courseId} courseLabel={trail.at(-1)?.label || "Selected course"} />
                : <CourseRelationships apiBase={API_BASE} courseId={ids.courseId} courseLabel={trail.at(-1)?.label || "Selected course"} mode={relationshipMode} />
+            ) : structureCourse ? (
+               <CourseStructureManager apiBase={API_BASE} courseId={structureCourse.id} courseLabel={structureCourse.label} />
+           ) : liveClassMode ? (
+               <LiveClassManager apiBase={API_BASE} />
            ) : <section className="content-panel">
             <div className="panel-toolbar">
               <div>
@@ -1033,13 +1083,13 @@ export default function InstitutionAdminPage() {
                     </div>
                      <div className="record-detail">{record.rejection_reason ? <><strong>Rejection reason:</strong> {record.rejection_reason}</> : record.resource_type ? `${record.resource_type.toLowerCase()}${record.duration ? ` · ${record.duration} min` : ""}${record.managed_file_name ? ` · ${record.managed_file_name}` : ""}` : record.description || "No description added"}</div>
                     <div className="updated-detail">Recently edited</div>
-                         <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button>{record.status === "INSTRUCTOR_PENDING" && <><button type="button" onClick={() => void publishPendingCourse(record)} disabled={publishingCourseId !== "" || loadingPublishInstitutions || administratorPublishAccess === "checking"}>{loadingPublishInstitutions && publishCourseTarget?.id === record.id ? "Loading institutions…" : publishingCourseId === record.id ? "Publishing…" : "Publish"}</button><button type="button" onClick={() => openCourseReject(record)} disabled={rejectingCourseId !== "" || publishingCourseId !== ""}>{rejectingCourseId === record.id ? "Rejecting…" : "Reject"}</button></>}{record.status === "PUBLISHED" && administratorPublishAccess === "admin" && <button type="button" onClick={() => void openCourseAllocationEditor(record)} disabled={loadingCourseAllocations || savingCourseAllocations}>{loadingCourseAllocations && allocationCourseTarget?.id === record.id ? "Loading…" : "Allocations"}</button>}</>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
+                         <div className="row-actions"><button type="button" onClick={() => openEdit(record)}>Edit</button>{activeKind === "courses" && <><button type="button" onClick={() => openRelationship("enrollments", record.id, titleFor(record))}>Learners</button><button type="button" onClick={() => openRelationship("instructors", record.id, titleFor(record))}>Instructors</button><button type="button" onClick={() => openCourseStructure(record.id, titleFor(record))}>Structure</button>{record.status === "INSTRUCTOR_PENDING" && <><button type="button" onClick={() => void publishPendingCourse(record)} disabled={publishingCourseId !== "" || loadingPublishInstitutions || administratorPublishAccess === "checking"}>{loadingPublishInstitutions && publishCourseTarget?.id === record.id ? "Loading institutions…" : publishingCourseId === record.id ? "Publishing…" : "Publish"}</button><button type="button" onClick={() => openCourseReject(record)} disabled={rejectingCourseId !== "" || publishingCourseId !== ""}>{rejectingCourseId === record.id ? "Rejecting…" : "Reject"}</button></>}{record.status === "PUBLISHED" && administratorPublishAccess === "admin" && <button type="button" onClick={() => void openCourseAllocationEditor(record)} disabled={loadingCourseAllocations || savingCourseAllocations}>{loadingCourseAllocations && allocationCourseTarget?.id === record.id ? "Loading…" : "Allocations"}</button>}</>}{record.resource_type && record.managed_file_id && ["PDF", "DOCUMENT", "PRESENTATION"].includes(record.resource_type) && <a className="row-action-link" href={`${API_BASE}/learning-resources/${record.id}/file`} target="_blank" rel="noreferrer">Open file</a>}{record.resource_type === "SCORM" && record.managed_file_id && <button type="button" onClick={() => launchScorm(record)}>Launch</button>}</div>
                   </article>
                 ))}
               </div>
             )}
            </section>}
-            <p className="scope-note"><span>✓</span> {adminAccessMode ? "Records are limited to institutions and campuses in your authenticated scope." : relationshipMode ? "All relationships are institution-scoped and recorded in the audit trail." : "All content is isolated to your authenticated tenant and recorded in the audit trail."}</p>
+            <p className="scope-note"><span>✓</span> {adminAccessMode ? "Records are limited to institutions and campuses in your authenticated scope." : relationshipMode ? "All relationships are institution-scoped and recorded in the audit trail." : structureCourse ? "Units and chapters are isolated to this course in your authenticated tenant and recorded in the audit trail." : liveClassMode ? "Live classes are scoped to the courses and institutions in your authenticated access, and every change is recorded in the audit trail." : "All content is isolated to your authenticated tenant and recorded in the audit trail."}</p>
         </div>
       </section>
 

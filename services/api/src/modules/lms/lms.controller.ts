@@ -23,6 +23,11 @@ import {
   UpdateCourseUnitDto,
   CreateCourseChapterDto,
   UpdateCourseChapterDto,
+  CreateLiveClassDto,
+  UpdateLiveClassDto,
+  LiveClassListQueryDto,
+  LiveClassStatusDto,
+  ReorderHierarchyDto,
   CreateLearningResourceDto,
   CreateLessonDto,
   CreateProgrammeDto,
@@ -602,6 +607,50 @@ export class LmsController {
   @RequirePermission("lms.chapter.archive")
   async archiveCourseChapter(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.lms.changeStatus(id, "chapter", "ARCHIVED", request), request);
+  }
+
+  @Post("course-units/reorder")
+  @RequirePermission("lms.unit.update")
+  async reorderCourseUnits(@Body() input: ReorderHierarchyDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.reorderHierarchyNode(input.id, input.swapWithId, "unit", request), request);
+  }
+
+  @Post("course-chapters/reorder")
+  @RequirePermission("lms.chapter.update")
+  async reorderCourseChapters(@Body() input: ReorderHierarchyDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.reorderHierarchyNode(input.id, input.swapWithId, "chapter", request), request);
+  }
+
+  @Get("live-classes")
+  @RequirePermission("lms.live_class.view")
+  async liveClasses(@Req() request: ContextRequest, @Query() query: LiveClassListQueryDto) {
+    const page = paginationFrom(request);
+    const result = await this.lms.listLiveClasses(request.context.user!, page.page, page.pageSize, page.offset, query);
+    return paginatedResponse(result.data, result.meta, request);
+  }
+
+  @Post("live-classes")
+  @RequirePermission("lms.live_class.create")
+  async createLiveClass(@Body() input: CreateLiveClassDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.createLiveClass(input, request), request);
+  }
+
+  @Patch("live-classes/:id")
+  @RequirePermission("lms.live_class.update")
+  async updateLiveClass(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: UpdateLiveClassDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.updateLiveClass(id, input, request), request);
+  }
+
+  @Post("live-classes/:id/status")
+  @RequirePermission("lms.live_class.update")
+  async setLiveClassStatus(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Body() input: LiveClassStatusDto, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.setLiveClassStatus(id, input.status, request), request);
+  }
+
+  @Post("live-classes/:id/archive")
+  @RequirePermission("lms.live_class.archive")
+  async archiveLiveClass(@Param("id", new ParseUUIDPipe({ version: "4" })) id: string, @Req() request: ContextRequest) {
+    return successResponse(await this.lms.setLiveClassStatus(id, "ARCHIVED", request), request);
   }
 
   @Post("course-modules")

@@ -98,6 +98,155 @@ export class UpdateCourseChapterDto {
   @IsOptional() @IsInt() @Min(1) sequence?: number;
 }
 
+export const LMS_LIVE_CLASS_PROVIDERS = ["ZOOM", "GOOGLE_MEET", "MICROSOFT_TEAMS", "WEBEX"] as const;
+export const LMS_LIVE_CLASS_STATUSES = ["SCHEDULED", "CANCELLED", "COMPLETED", "ARCHIVED"] as const;
+const LIVE_CLASS_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export class LiveClassListQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  pageSize?: number;
+
+  @IsOptional()
+  @IsUUID()
+  courseId?: string;
+
+  @IsOptional()
+  @IsIn(LMS_LIVE_CLASS_STATUSES)
+  status?: string;
+
+  // "mine" narrows the list to the caller's own enrolments or instructor
+  // assignments. "upcoming" hides classes that already started.
+  @IsOptional()
+  @IsIn(["mine", "upcoming", "past"])
+  scope?: string;
+}
+
+export class CreateLiveClassDto {
+  @IsUUID()
+  courseId!: string;
+
+  @IsOptional()
+  @IsUUID()
+  moduleId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  unitId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  chapterId?: string | null;
+
+  @IsString()
+  @Length(2, 180)
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+
+  @IsDateString({ strict: true })
+  scheduledDate!: string;
+
+  @Matches(LIVE_CLASS_TIME, { message: "startTime must use 24-hour HH:MM format." })
+  startTime!: string;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(1440)
+  durationMinutes!: number;
+
+  @IsIn(LMS_LIVE_CLASS_PROVIDERS)
+  provider!: string;
+
+  @IsUrl({ require_tld: false })
+  @MaxLength(2048)
+  meetingUrl!: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @MaxLength(2048)
+  recordingUrl?: string;
+}
+
+export class UpdateLiveClassDto {
+  @IsOptional()
+  @IsUUID()
+  moduleId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  unitId?: string | null;
+
+  @IsOptional()
+  @IsUUID()
+  chapterId?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @Length(2, 180)
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+
+  @IsOptional()
+  @IsDateString({ strict: true })
+  scheduledDate?: string;
+
+  @IsOptional()
+  @Matches(LIVE_CLASS_TIME, { message: "startTime must use 24-hour HH:MM format." })
+  startTime?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(1440)
+  durationMinutes?: number;
+
+  @IsOptional()
+  @IsIn(LMS_LIVE_CLASS_PROVIDERS)
+  provider?: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @MaxLength(2048)
+  meetingUrl?: string;
+
+  @IsOptional()
+  @IsUrl({ require_tld: false })
+  @MaxLength(2048)
+  recordingUrl?: string | null;
+}
+
+export class LiveClassStatusDto {
+  @IsIn(["SCHEDULED", "CANCELLED", "COMPLETED", "ARCHIVED"])
+  status!: string;
+}
+
+export class ReorderHierarchyDto {
+  @IsUUID()
+  id!: string;
+
+  @IsUUID()
+  swapWithId!: string;
+}
+
 export class CreateProgrammeDto {
   @IsUUID()
   institutionId!: string;
