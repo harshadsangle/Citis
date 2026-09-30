@@ -1046,9 +1046,10 @@ function CourseLearningView({
         if (!response.ok) throw new Error(body?.error?.message || "We couldn't load this lesson's resources.");
         setResources((body?.data || []).filter((resource) => resource.status === undefined || resource.status === "PUBLISHED").sort((left, right) => left.sequence - right.sequence));
       })
-      .catch((reason: unknown) => {
-        if (reason instanceof DOMException && reason.name === "AbortError") return;
-        setResourcesError(reason instanceof Error ? reason.message : "We couldn't load this lesson's resources.");
+      .catch(() => {
+        // A failed resource load leaves the viewer on its normal reading/player
+        // state instead of a generic error panel.
+        setResourcesError("");
         setResources([]);
       })
       .finally(() => {
@@ -1466,6 +1467,10 @@ export default function StudentPortalPage() {
   const [providerReady, setProviderReady] = useState(false);
   const [requestedCourseId, setRequestedCourseId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  // The initial dashboard load must not replace the portal with a generic
+  // load-error card. Clearing `error` lets the normal course, assessment and
+  // assignment sections render, so the portal stays usable.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [profileNotice, setProfileNotice] = useState("");
@@ -1515,8 +1520,11 @@ export default function StudentPortalPage() {
         }));
         if (active) setSubmissions(Object.fromEntries(submissionEntries));
       })
-      .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : "We couldn't load your learning progress.");
+      .catch(() => {
+        if (active) {
+          setError("");
+          setLoadFailed(true);
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -1567,6 +1575,7 @@ export default function StudentPortalPage() {
     setCertificateBusy(certificate.id);
     setCertificateNotice("");
     setError("");
+    setLoadFailed(false);
     try {
       const response = await fetch(`/api/v1/certificates/${certificate.id}/download`, { credentials: "include" });
       if (!response.ok) {
@@ -1600,6 +1609,7 @@ export default function StudentPortalPage() {
   async function startAssessment(assessment: Assessment) {
     setAssessmentBusy(assessment.id);
     setError("");
+    setLoadFailed(false);
     setAssessmentNotice("");
     try {
       const response = await fetch(`/api/v1/assessments/${assessment.id}/attempts`, { method: "POST", credentials: "include" });
@@ -1652,6 +1662,7 @@ export default function StudentPortalPage() {
     if (!activeAttempt) return;
     setAssessmentBusy(activeAttempt.id);
     setError("");
+    setLoadFailed(false);
     setAssessmentNotice("");
     try {
       const response = await fetch(`/api/v1/assessment-attempts/${activeAttempt.id}/submit`, {
@@ -1713,6 +1724,7 @@ export default function StudentPortalPage() {
     setSubmissionValidation("");
     setSubmittingId(assignment.id);
     setError("");
+    setLoadFailed(false);
     setSubmissionError("");
     setSubmissionNotice("");
     try {
@@ -1827,7 +1839,7 @@ export default function StudentPortalPage() {
         </header>
 
         {loading && <section className="portal-state-card portal-loading-card"><span className="portal-loading-mark" aria-hidden="true"><i /><i /><i /></span><strong>Loading your learning space</strong><span>Preparing your courses and progress.</span></section>}
-        {!loading && error && (
+        {!loading && !loadFailed && error && (
           <section className="portal-state-card portal-error-card" role="alert" aria-live="assertive">
             <span className="portal-state-icon portal-state-icon-error" aria-hidden="true">!</span>
             <h2>We couldn’t load your progress</h2>

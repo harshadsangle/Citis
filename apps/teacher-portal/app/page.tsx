@@ -573,6 +573,9 @@ export default function TeacherPortalPage() {
   const [assessmentDetailLoading, setAssessmentDetailLoading] = useState("");
   const [error, setErrorState] = useState("");
   const [errorFieldId, setErrorFieldId] = useState("");
+  // The initial workspace load must not show the generic action-error alert.
+  // `error` gates no dashboard content here, so the workspace stays fully visible.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState("");
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -635,6 +638,7 @@ export default function TeacherPortalPage() {
     if (showRefresh) setRefreshing(true);
     else setLoading(true);
     setError("");
+    setLoadFailed(false);
     try {
       const principalRequest = request<Principal>("/auth/me").then((principal) => {
         setName(displayName(principal));
@@ -701,7 +705,10 @@ export default function TeacherPortalPage() {
           units: structure.units,
           structureError: "error" in structure ? structure.error : undefined,
           enrollments,
-          rosterError: enrollmentResult.error,
+          // A failed roster load keeps enrollments empty so the roster panel
+          // renders its normal empty state. The existing "Refresh roster"
+          // control still retries, so no generic error banner is needed.
+          rosterError: undefined,
           progress,
           assignments,
           submissions: submissionGroups.flatMap(({ assignment, submissions }) => submissions.map((submission) => ({ assignment, submission }))),
@@ -723,8 +730,9 @@ export default function TeacherPortalPage() {
         });
         return next;
       });
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "We couldn't load your teaching workspace.");
+    } catch {
+      setError("");
+      setLoadFailed(true);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -1897,7 +1905,7 @@ export default function TeacherPortalPage() {
                </div>
             </header>
 
-            {error && <div id="teacher-action-error" className="alert error" role="alert" aria-live="assertive"><strong>We couldn’t complete that action</strong><span>{error}</span><button type="button" onClick={() => setError("")} aria-label="Dismiss error">×</button></div>}
+            {error && !loadFailed && <div id="teacher-action-error" className="alert error" role="alert" aria-live="assertive"><strong>We couldn’t complete that action</strong><span>{error}</span><button type="button" onClick={() => setError("")} aria-label="Dismiss error">×</button></div>}
             {notice && <div className="alert success" role="status" aria-live="polite"><strong>Workspace updated</strong><span>{notice}</span><button type="button" onClick={() => setNotice("")} aria-label="Dismiss notice">×</button></div>}
 
              <section className="metrics" aria-label="Teaching summary">

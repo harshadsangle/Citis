@@ -336,7 +336,7 @@ export function LoginForm({ portal = "learner", provider, portalOrigin }: { port
       <Controller name="remember" control={control} render={({ field }) => <div className="flex min-h-10 items-center gap-2"><Checkbox id="remember" checked={field.value} onCheckedChange={field.onChange} /><Label htmlFor="remember" className="auth-remember-label font-normal">Keep me signed in</Label></div>} />
       {serverError && <p role="alert" aria-live="assertive" className="rounded-xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">{serverError}</p>}
       <Button className="auth-submit-button h-12 w-full rounded-xl text-sm" variant="accent" size="lg" disabled={isSubmitting}>{isSubmitting ? <LoaderCircle className="animate-spin" /> : <>Sign in <ArrowRight className="size-4" /></>}</Button>
-      {portal === "learner" && (
+      {portal !== "admin" && (
       <p className="auth-register-copy text-center text-sm">New to CITIS? <Link href={`/auth/register?portal=${portal}`} className="font-semibold">Create new account</Link></p>
       )}
     </form>
