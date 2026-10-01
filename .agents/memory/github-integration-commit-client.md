@@ -15,8 +15,8 @@ When matching a connection from the Integrations view, compare its `connection:<
 
 **How to apply:** Keep the connection identifier inside the impure API call; log only non-credential metadata when debugging connection selection.
 
-When transferring local Git blob content through `shellExec`, split base64 output into chunks smaller than about 60 KB, even when requesting a larger output limit. Larger outputs may be silently truncated.
+When transferring local Git blob content through `shellExec`, split base64 output into chunks smaller than about 60 KB, even when requesting a larger output limit. Larger outputs may be silently truncated without setting the returned `truncated` flag.
 
 **Why:** A local blob's encoded output was truncated below its expected length despite a higher requested limit, which would corrupt a GitHub upload.
 
-**How to apply:** Slice the base64 stream with `tail -c +N | head -c K`, reassemble it, and check its expected encoded length before uploading and verifying the returned blob SHA.
+**How to apply:** Slice the base64 stream with `tail -c +N | head -c K`, reassemble it, check the encoded length, and locally verify the Git blob SHA before uploading; then verify GitHub's returned SHA too.
