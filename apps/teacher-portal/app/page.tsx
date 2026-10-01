@@ -8,6 +8,28 @@ type Principal = InstructorIdentity & {
   roles?: Array<{ code: string; name?: string }>;
 };
 
+type LiveClass = {
+  id: string;
+  course_id: string;
+  course_title?: string;
+  title: string;
+  description?: string | null;
+  scheduled_date: string;
+  start_time: string;
+  duration_minutes: number;
+  provider: string;
+  meeting_url: string;
+  recording_url?: string | null;
+  status: string;
+};
+
+const LIVE_PROVIDER_LABEL: Record<string, string> = {
+  ZOOM: "Zoom",
+  GOOGLE_MEET: "Google Meet",
+  MICROSOFT_TEAMS: "Microsoft Teams",
+  WEBEX: "Webex",
+};
+
 type Course = {
   id: string;
   title: string;
@@ -417,6 +439,16 @@ function formatDate(value?: string | null, withTime = false) {
   }).format(new Date(value));
 }
 
+function formatTime(value?: string | null) {
+  if (!value) return "";
+  const [hour, minute] = value.split(":");
+  const parsed = Number(hour);
+  if (!Number.isFinite(parsed)) return value;
+  const suffix = parsed >= 12 ? "PM" : "AM";
+  const display = parsed % 12 === 0 ? 12 : parsed % 12;
+  return `${display}:${minute} ${suffix}`;
+}
+
 function formatDateTimeLocal(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
@@ -546,6 +578,8 @@ export default function TeacherPortalPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyAction, setBusyAction] = useState("");
+  const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
+  const [liveClassesError, setLiveClassesError] = useState("");
   const [moduleEditor, setModuleEditor] = useState<ModuleEditor | null>(null);
   const [moduleArchiveCandidate, setModuleArchiveCandidate] = useState<CourseModule | null>(null);
   const [unitEditor, setUnitEditor] = useState<{ id?: string; title: string; sequence: string } | null>(null);
@@ -654,6 +688,14 @@ export default function TeacherPortalPage() {
         course.status !== "REJECTED"
         && (!instructorSession || course.is_explicitly_assigned === true)
       ));
+      // Live classes are already scoped server-side to this instructor's
+      // assigned institutions and courses, so the portal only renders them.
+      const liveClassResult = await list<LiveClass>("/live-classes?page=1&pageSize=100")
+        .then((data) => ({ data, error: "" }))
+        .catch((reason: unknown) => ({ data: [] as LiveClass[], error: errorMessage(reason, "Live classes could not be loaded.") }));
+      setLiveClasses(liveClassResult.data);
+      setLiveClassesError(liveClassResult.error);
+
       const details = await Promise.all(visibleCourses.map(async (course): Promise<CourseData> => {
         const [enrollmentResult, assignments, assessmentResult, structure] = await Promise.all([
           (course.status === "PUBLISHED" ? list<Enrollment>(`/courses/${encodeURIComponent(course.id)}/enrollments?status=ACTIVE`) : Promise.resolve([]))
@@ -732,16 +774,21 @@ export default function TeacherPortalPage() {
 
   async function logout() {
     setLoggingOut(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 5000);
+
     try {
       await fetch("/api/v1/auth/logout", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: controller.signal,
       });
     } catch {
       // Continue to the LMS homepage even if the network is already down.
     } finally {
+      window.clearTimeout(timeout);
       window.location.assign(lmsHomepageUrl());
     }
   }
@@ -1820,6 +1867,7 @@ export default function TeacherPortalPage() {
             <a className="nav-item" href="#learners"><span className="nav-icon">♙</span>Learners & progress</a>
              <a className="nav-item" href="#assessments"><span className="nav-icon">◇</span>Assessments <b>{pendingAssessmentAttempts.length}</b></a>
             <a className="nav-item" href="#submissions"><span className="nav-icon">✓</span>Submissions <b>{pendingSubmissions.length}</b></a>
+        <a className="nav-item" href="#live-classes"><span className="nav-icon">◉</span>Live classes <b>{liveClasses.length}</b></a>
           </nav>
           <div className="sidebar-foot">
             <div className="avatar">{name.slice(0, 1).toUpperCase()}</div>
@@ -2186,6 +2234,23 @@ export default function TeacherPortalPage() {
                 })}
               </div>}
             </section>
+
+            <section className="panel live-classes-panel" id="live-classes">
+              <div className="panel-heading detail-heading"><div><p className="eyebrow">Live classes</p><h2>Scheduled sessions</h2><p className="panel-copy">Live sessions scheduled for the courses and institutions you are assigned to. Scheduling is handled by the institution administrator.</p></div><span className="count-badge">{liveClasses.length}</span></div>
+              {liveClassesError && <div className="inline-alert error">{liveClassesError}</div>}
+              {!liveClassesError && liveClasses.length === 0 && <div className="state"><div className="state-icon">◉</div><div><strong>No live classes scheduled</strong><p>Sessions your administrator schedules for your courses will appear here with the joining link.</p></div></div>}
+              {!liveClassesError && liveClasses.length > 0 && <div className="live-class-list">
+                {liveClasses.map((item) => <article className="live-class-card" key={item.id}>
+                  <div className="live-class-heading"><div className="learner-cell"><span className="learner-avatar" aria-hidden="true">◉</span><span><strong>{item.title}</strong><small>{item.course_title || "Course"}</small></span></div><span className="status-pill">{item.status.charAt(0) + item.status.slice(1).toLowerCase()}</span></div>
+                  <div className="live-class-body">
+                    <p className="live-class-when">{formatDate(item.scheduled_date)} · {formatTime(item.start_time)} · {item.duration_minutes} min · {LIVE_PROVIDER_LABEL[item.provider] || item.provider}</p>
+                    {item.description && <p>{item.description}</p>}
+                    <a className="text-button strong" href={item.meeting_url} target="_blank" rel="noreferrer">Join class ↗</a>
+                    {item.recording_url && <a className="text-button" href={item.recording_url} target="_blank" rel="noreferrer">Recording ↗</a>}
+                  </div>
+                </article>)}
+              </div>}
+            </section>
           </div>
         </section>
       </div>
@@ -2453,6 +2518,12 @@ export default function TeacherPortalPage() {
          .graded-summary span { white-space: pre-wrap; }
         .submission-list { display: grid; gap: 14px; padding: 17px 24px 24px; }
         .submission-card { overflow: hidden; border: 1px solid #e4ebf3; border-radius: 9px; background: #fcfeff; }
+        .live-classes-panel { margin-top: 24px; scroll-margin-top: 88px; }
+        .live-class-list { display: grid; gap: 12px; padding: 20px 24px 24px; }
+        .live-class-card { border: 1px solid #e4ebf3; border-radius: 9px; background: #fcfeff; padding: 16px 18px; }
+        .live-class-heading { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+        .live-class-body { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; color: #71859a; font-size: 10px; }
+        .live-class-when { font-weight: 750; color: #4d6986; }
         .submission-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 17px; border-bottom: 1px solid #edf1f6; }
         .submission-course { text-align: right; }
         .submission-course strong, .submission-course small { display: block; }
