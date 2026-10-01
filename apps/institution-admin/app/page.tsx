@@ -10,6 +10,7 @@ import AdminAccessView, { type AccountRequest, type AdminAccessMode } from "./Ad
 import CourseBuilder from "./CourseBuilder";
 import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
+import { LmsBackButton } from "../components/LmsBackButton";
 
 type Kind = "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
@@ -50,9 +51,17 @@ type CourseInstitutionAllocation = {
 
 type TrailNode = { kind: Kind; id: string; label: string };
 type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: number } } };
+// Stay same-origin. next.config.ts rewrites /api/v1 to the API via
+// LMS_API_ORIGIN, so requests keep the session cookie and never hit a CORS
+// preflight. Calling api.citisinfotech.in directly made every fetch fail with
+// "Failed to fetch" because the production WEB_ORIGIN allowlist does not
+// include this portal's host. Matches student-portal and teacher-portal.
+
+// Bound how long sign-out waits for /auth/logout before redirecting anyway.
+const LOGOUT_TIMEOUT_MS = 5000;
+
 const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
-  || (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1")
+  process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api/v1"
 ).replace(/\/$/, "");
 const resourceTypes: ResourceType[] = ["VIDEO", "PDF", "DOCUMENT", "PRESENTATION", "LINK", "SCORM", "INTERACTIVE"];
 
@@ -442,16 +451,21 @@ export default function InstitutionAdminPage() {
 
   async function logout() {
     setLoggingOut(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), LOGOUT_TIMEOUT_MS);
     try {
       await fetch("/api/v1/auth/logout", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: controller.signal,
       });
     } catch {
-      // Continue to the LMS homepage even if the network is already down.
+      // Continue to the LMS homepage even if the network is already down or
+      // the request timed out, so sign-out can never hang.
     } finally {
+      window.clearTimeout(timeout);
       window.location.assign(lmsHomepageUrl());
     }
   }
@@ -879,6 +893,7 @@ export default function InstitutionAdminPage() {
 
       <section className="workspace">
         <header className="topbar">
+          <LmsBackButton />
           <div className="mobile-brand"><span className="brand-mark">C</span><strong>CITIS</strong></div>
           <div className="topbar-actions">
             <span className="environment-pill"><span className="online-dot" /> Connected workspace</span>

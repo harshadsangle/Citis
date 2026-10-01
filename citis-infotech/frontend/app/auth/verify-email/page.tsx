@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { VerifyEmailClient } from "./VerifyEmailClient";
 import { generatePageMetadata } from "@/lib/seo";
+import { LmsBackButton } from "@/components/shared/LmsBackButton";
 
 export const metadata = generatePageMetadata({
   title: "Verify Email",
@@ -14,6 +15,7 @@ export default function VerifyEmailPage() {
     <section className="relative isolate flex min-h-[calc(100vh-var(--header-height))] items-center overflow-hidden py-16">
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(135deg,#f8fafc,#eaf4ff_65%,#fff7ed)] dark:bg-[linear-gradient(135deg,#0f172a,#10233e_65%,#26170c)]" />
       <div className="container-site">
+        <LmsBackButton className="mb-6" />
         <Suspense
           fallback={
             <div className="surface mx-auto max-w-lg rounded-3xl p-7 text-sm text-muted-foreground sm:p-10">

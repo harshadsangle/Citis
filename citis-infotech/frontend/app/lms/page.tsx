@@ -13,6 +13,7 @@ import { normalizeLmsPortal } from "@/lib/lms-roles";
 import { LMS_COURSE_CATEGORIES, normalizeLmsCourseProvider } from "@/lib/lms-catalog";
 import { ProfessionalProgramsCatalogue } from "@/components/marketing/ProfessionalProgramsCatalogue";
 import { LmsCourseCatalogue } from "@/components/marketing/LmsCourseCatalogue";
+import { LmsBackButton } from "@/components/shared/LmsBackButton";
 
 export const metadata = generatePageMetadata({
   title: "Learning Portal",
@@ -44,6 +45,7 @@ export default async function LmsEntryPage({ searchParams }: LmsEntryPageProps) 
           <div className="container-site">
             <div className="lms-hero-layout">
               <div className="lms-hero-copy">
+                <LmsBackButton className="mb-6" />
                 <p className="lms-kicker"><Sparkles className="size-4" />CITIS Skills Excellence Centre</p>
                 <h1>Learn skills that move <span>your future forward.</span></h1>
                 <p className="lms-hero-lede">
