@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import { LmsBackButton } from "../../components/LmsBackButton";
 
-const base = (process.env.NEXT_PUBLIC_API_BASE_URL?.trim()
-  || (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1")).replace(/\/$/, "");
+// Same-origin /api/v1, proxied by next.config.ts rewrites. See the note in
+// app/page.tsx: calling the API host directly triggers a CORS preflight that
+// the production WEB_ORIGIN allowlist rejects for this portal.
+const base = (process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api/v1").replace(/\/$/, "");
 
 type Row = {
   id: string;
@@ -63,6 +66,9 @@ export default function AcademicStructurePage() {
   const [section, setSection] = useState("");
   const [editingId, setEditingId] = useState("");
   const [error, setError] = useState("");
+  // Initial data loading must not surface the generic "Request failed." banner.
+  // Save, update and validation failures keep using `error` so they still show.
+  const [loadFailed, setLoadFailed] = useState(false);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
   const listRequestId = useRef(0);
@@ -77,9 +83,10 @@ export default function AcademicStructurePage() {
     try {
       const result = await request<ListResponse>(kind === "programmes" ? `/programmes${query}` : `/academic/${kind}${query}`);
       if (requestId === listRequestId.current) setRows(result.data || []);
-    } catch (caught) {
+    } catch {
       if (requestId === listRequestId.current) {
-        setError(caught instanceof Error ? caught.message : "Unable to load academic records.");
+        setError("");
+        setLoadFailed(true);
       }
     }
   }
@@ -91,11 +98,15 @@ export default function AcademicStructurePage() {
         setInstitutions(choices);
         if (choices[0]) setInstitutionId(choices[0].id);
       })
-      .catch((caught) => setError(caught instanceof Error ? caught.message : "Unable to load institutions in your scope."));
+      .catch(() => {
+        setError("");
+        setLoadFailed(true);
+      });
   }, []);
 
   useEffect(() => {
     setError("");
+    setLoadFailed(false);
     setNotice("");
     setEditingId("");
     setName("");
@@ -127,16 +138,22 @@ export default function AcademicStructurePage() {
         try {
           const result = await request<ListResponse>(`/academic/faculties${query}`);
           if (current) setFaculties(result.data || []);
-        } catch (caught) {
-          if (current) setError(caught instanceof Error ? caught.message : "Unable to load faculties.");
+        } catch {
+          if (current) {
+            setError("");
+            setLoadFailed(true);
+          }
         }
       }
       if (kind === "programmes") {
         try {
           const result = await request<ListResponse>(`/academic/departments${query}`);
           if (current) setDepartments(result.data || []);
-        } catch (caught) {
-          if (current) setError(caught instanceof Error ? caught.message : "Unable to load departments.");
+        } catch {
+          if (current) {
+            setError("");
+            setLoadFailed(true);
+          }
         }
       }
       if (kind === "course-offerings") {
@@ -147,12 +164,14 @@ export default function AcademicStructurePage() {
         if (semesterResult.status === "fulfilled") {
           if (current) setSemesters((semesterResult.value.data || []).filter((item) => item.status !== "ARCHIVED"));
         } else if (current) {
-          setError(semesterResult.reason instanceof Error ? semesterResult.reason.message : "Unable to load semesters.");
+          setError("");
+          setLoadFailed(true);
         }
         if (courseResult.status === "fulfilled") {
           if (current) setCourses(courseResult.value.data || []);
         } else if (current) {
-          setError(courseResult.reason instanceof Error ? courseResult.reason.message : "Unable to load courses.");
+          setError("");
+          setLoadFailed(true);
         }
       }
     };
@@ -176,6 +195,7 @@ export default function AcademicStructurePage() {
 
   function beginEdit(row: Row) {
     setError("");
+    setLoadFailed(false);
     setNotice("");
     setEditingId(row.id);
     setName(row.name || "");
@@ -194,6 +214,7 @@ export default function AcademicStructurePage() {
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setLoadFailed(false);
     setNotice("");
     if (!institutionId) {
       setError("Select an institution first.");
@@ -239,6 +260,7 @@ export default function AcademicStructurePage() {
 
   async function changeStatus(row: Row, action: "archive" | "restore" | "publish") {
     setError("");
+    setLoadFailed(false);
     setNotice("");
     setBusy(true);
     try {
@@ -271,6 +293,7 @@ export default function AcademicStructurePage() {
 
   return (
     <main style={styles.page}>
+      <LmsBackButton />
       <h1 style={{ marginBottom: 6 }}>Academic structure</h1>
       <p style={{ color: "#536176", marginTop: 0 }}>
         Manage institution-scoped faculties, departments, semesters, programmes, and course offerings.
@@ -299,7 +322,7 @@ export default function AcademicStructurePage() {
         </nav>
       </section>
 
-      {error && <p role="alert" style={{ color: "#a32626", background: "#fff1f0", padding: 12, borderRadius: 8 }}>{error}</p>}
+      {error && !loadFailed && <p role="alert" style={{ color: "#a32626", background: "#fff1f0", padding: 12, borderRadius: 8 }}>{error}</p>}
       {notice && <p role="status" style={{ color: "#146c43", background: "#ecf8f1", padding: 12, borderRadius: 8 }}>{notice}</p>}
 
       <section style={styles.card}>

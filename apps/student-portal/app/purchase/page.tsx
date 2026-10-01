@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DirectStudentPurchase } from "./DirectStudentPurchase";
+import { LmsBackButton } from "../../components/LmsBackButton";
 
 export const metadata: Metadata = {
   title: "Direct student course purchase",
@@ -13,9 +14,12 @@ type PurchasePageProps = {
 export default async function PurchasePage({ searchParams }: PurchasePageProps) {
   const params = await searchParams;
   return (
-    <DirectStudentPurchase
-      courseSlug={params?.courseSlug || ""}
-      courseTitle={params?.courseTitle || ""}
-    />
+    <>
+      <LmsBackButton />
+      <DirectStudentPurchase
+        courseSlug={params?.courseSlug || ""}
+        courseTitle={params?.courseTitle || ""}
+      />
+    </>
   );
 }

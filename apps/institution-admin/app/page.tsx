@@ -12,6 +12,7 @@ import AdminAccessView, { type AccountRequest, type AdminAccessMode } from "./Ad
 import CourseBuilder from "./CourseBuilder";
 import InstructorManager from "./InstructorManager";
 import { lmsHomepageUrl } from "./lms-homepage";
+import { LmsBackButton } from "../components/LmsBackButton";
 
 type Kind = "courses" | "course-modules" | "lessons" | "learning-resources";
 type RelationshipMode = "enrollments" | "instructors" | "assignments" | "assessments";
@@ -52,8 +53,11 @@ type CourseInstitutionAllocation = {
 
 type TrailNode = { kind: Kind; id: string; label: string };
 type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: number } } };
-// Browser calls stay same-origin so the session cookie is first-party and the
-// Next.js rewrite in next.config.ts proxies /api/v1 to LMS_API_ORIGIN.
+// Stay same-origin. next.config.ts rewrites /api/v1 to the API via
+// LMS_API_ORIGIN, so requests keep the session cookie and never hit a CORS
+// preflight. Calling api.citisinfotech.in directly made every fetch fail with
+// "Failed to fetch" because the production WEB_ORIGIN allowlist does not
+// include this portal's host. Matches student-portal and teacher-portal.
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api/v1"
 ).replace(/\/$/, "");
@@ -930,6 +934,7 @@ export default function InstitutionAdminPage() {
 
       <section className="workspace">
         <header className="topbar">
+          <LmsBackButton />
           <div className="mobile-brand"><span className="brand-mark">C</span><strong>CITIS</strong></div>
           <div className="topbar-actions">
             <span className="environment-pill"><span className="online-dot" /> Connected workspace</span>

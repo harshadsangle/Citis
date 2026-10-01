@@ -3,6 +3,7 @@ import { ArrowLeft, GraduationCap, ShieldCheck } from "lucide-react";
 import { RegisterForm } from "@/components/marketing/InteractiveForms";
 import { generatePageMetadata } from "@/lib/seo";
 import { LMS_PORTALS, normalizeLmsPortal } from "@/lib/lms-roles";
+import { LmsBackButton } from "@/components/shared/LmsBackButton";
 
 export const metadata = generatePageMetadata({
   title: "Create New Account",
@@ -29,7 +30,10 @@ export default async function RegisterPage({ searchParams }: RegisterPageProps) 
         </div>
         <div className="auth-panel surface flex items-center rounded-[1.75rem] p-6 sm:p-10">
           <div className="mx-auto w-full max-w-md">
-            <Link href={`/auth/login?portal=${portal}`} className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary"><ArrowLeft className="size-4" />Back to sign in</Link>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <LmsBackButton />
+              <Link href={`/auth/login?portal=${portal}`} className="inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary"><ArrowLeft className="size-4" />Back to sign in</Link>
+            </div>
             <p className="mt-9 text-xs font-bold tracking-[0.14em] text-primary uppercase">{portalOption.label}</p>
             <h1 className="mt-3 font-heading text-4xl font-semibold tracking-tight">Create new account</h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">Create an account for the {portal} portal. Email verification keeps your account secure.</p>
