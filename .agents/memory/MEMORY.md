@@ -39,7 +39,7 @@
 - [Next public environment lookup](next-public-environment-lookup.md) — reference NEXT_PUBLIC variables statically so Next can inline them during Vercel builds.
 - [Scoped admin capability routes](scoped-admin-capability-routes.md) — institution admins need scoped LMS-capability routes for directory option data because platform-prefixed permissions are intentionally blocked.
 - [External production database access](external-production-database.md) — production auth uses external Neon; Replit’s frozen managed database cannot identify or replace that endpoint.
-- [Course institution allocations](course-institution-allocations.md) — allocations control institution eligibility without changing canonical course scope or enrollment identity.
+- [Course institution allocations](course-institution-allocations.md) — active allocations idempotently enroll active CSV college learners without changing canonical course scope or direct-student enrollment.
 - [Merge checkpoint state](merge-checkpoint-state.md) — recheck HEAD, MERGE_HEAD, and refs after workspace handoffs; an in-progress conflict state may be cleared.
 - [SCORM sandbox asset credentials](scorm-sandbox-authenticated-assets.md) — CSP sandbox without allow-same-origin can suppress cookies on protected SCORM subresource requests.
 - [LMS production deployment](lms-production-deployment.md) — GitHub main does not release the public LMS; verify after the manual server deploy.
