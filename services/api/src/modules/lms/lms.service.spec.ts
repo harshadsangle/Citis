@@ -1402,6 +1402,80 @@ test("publishing a course enrolls active CSV learners from its allocated institu
   assert.ok(audits.some((audit) => audit.resource === "enrollment" && audit.action === "CREATE"));
 });
 
+test("importing an active CSV student enrolls only that learner in courses allocated to the selected institution", async () => {
+  const platformAdmin: AuthenticatedUser = {
+    ...user,
+    roles: [{ code: "CITIS_ADMIN", name: "CITIS Admin" }],
+    scopes: [],
+  };
+  const adminRequest = { context: { ...request.context, user: platformAdmin } } as unknown as ContextRequest;
+  const inserted: Record<string, unknown>[] = [];
+  let targetedImportQuery = "";
+  const executor = {
+    query: async (text: string, values: unknown[] = []) => {
+      if (text.startsWith("SELECT c.*")) {
+        assert.deepEqual(values, [user.tenantId, "institution-2"]);
+        return {
+          rows: [{
+            id: "course-1",
+            tenant_id: user.tenantId,
+            institution_id: "institution-1",
+            campus_id: null,
+            status: "PUBLISHED",
+          }],
+        };
+      }
+      if (text.includes("FROM lms_student_import_rows imported_row")) {
+        targetedImportQuery = text;
+        assert.deepEqual(values, [user.tenantId, "course-1", "institution-1", null, "csv-learner-1"]);
+        return { rows: [{ learner_id: "csv-learner-1" }] };
+      }
+      if (text.startsWith("SELECT id, tenant_id, institution_id") && text.includes("FROM lms_enrollments")) {
+        return { rows: [] };
+      }
+      if (text.startsWith("SELECT u.id, u.tenant_id")) {
+        return {
+          rows: [{
+            id: "csv-learner-1",
+            student_type: "COLLEGE_STUDENT",
+            institution_id: "institution-2",
+          }],
+        };
+      }
+      if (text.startsWith("SELECT 1 FROM lms_course_institution_allocations")) return { rows: [{ allowed: 1 }] };
+      if (text.startsWith("INSERT INTO lms_enrollments")) {
+        const row = {
+          id: "enrollment-import",
+          tenant_id: user.tenantId,
+          institution_id: "institution-1",
+          campus_id: null,
+          course_id: "course-1",
+          learner_id: "csv-learner-1",
+          status: "ACTIVE",
+          assignment_source: "ADMIN",
+        };
+        inserted.push(row);
+        return { rows: [row] };
+      }
+      return { rows: [] };
+    },
+  };
+  const { service, audits } = serviceWith(async () => ({ rows: [] }));
+
+  const enrollments = await service.enrollImportedCsvStudentInAllocatedCourses(
+    executor as never,
+    "institution-2",
+    "csv-learner-1",
+    adminRequest,
+  );
+  await service.auditCreatedCsvEnrollments(adminRequest, enrollments);
+
+  assert.equal(inserted.length, 1);
+  assert.equal(inserted[0].learner_id, "csv-learner-1");
+  assert.match(targetedImportQuery, /imported_row\.user_id = \$5/);
+  assert.ok(audits.some((audit) => audit.resource === "enrollment" && audit.action === "CREATE"));
+});
+
 test("reapplying published allocations does not duplicate active CSV learner enrollments", async () => {
   const platformAdmin: AuthenticatedUser = {
     ...user,

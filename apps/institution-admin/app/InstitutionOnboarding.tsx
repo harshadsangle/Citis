@@ -185,7 +185,7 @@ export default function InstitutionOnboarding({
       return;
     }
     const confirmed = window.confirm(
-      `Import students for ${institution.name}? Existing College User IDs in this institution will be updated, including their password and active status.`,
+      `Import students for ${institution.name}? Existing College User IDs here will be updated. Students at another institution move only when a supplied email or phone matches their account unambiguously. The CSV password and active status will replace existing values.`,
     );
     if (!confirmed) return;
 

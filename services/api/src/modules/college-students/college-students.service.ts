@@ -436,9 +436,9 @@ export class CollegeStudentsService {
               request,
             )
             : [];
+          await client.query(`RELEASE SAVEPOINT college_student_row`);
           createdEnrollments.push(...rowEnrollments);
           counts[imported.status === "IMPORTED" ? "imported" : "updated"] += 1;
-          await client.query(`RELEASE SAVEPOINT college_student_row`);
         } catch (error) {
           await client.query(`ROLLBACK TO SAVEPOINT college_student_row`);
           await client.query(`RELEASE SAVEPOINT college_student_row`);
