@@ -1,7 +1,6 @@
 import { IsIn, IsOptional, IsString, IsUUID, MaxLength, MinLength } from "class-validator";
 
 export class CollegeStudentImportDto {
-  @IsOptional()
   @IsUUID()
   institutionId?: string;
 }
