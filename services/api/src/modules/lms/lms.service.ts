@@ -46,6 +46,7 @@ type LmsResourceType = "VIDEO" | "PDF" | "DOCUMENT" | "PRESENTATION" | "LINK" | 
 type LmsTable = "programmes" | "courses" | "course_modules" | "lessons" | "learning_resources" | "lms_course_units" | "lms_course_chapters";
 type ProgressState = "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 type LmsCourseProvider = "adobe" | "autodesk" | "cisco" | "comptia" | "ic3" | "intuit" | "microsoft" | "unity";
+type LmsQueryExecutor = Pick<DatabaseService, "query">;
 
 const RESOURCE_TYPES_WITH_URL: LmsResourceType[] = ["VIDEO", "LINK", "INTERACTIVE"];
 const RESOURCE_TYPES_WITH_FILE_OR_URL: LmsResourceType[] = ["PDF", "DOCUMENT", "PRESENTATION"];
@@ -1178,7 +1179,7 @@ export class LmsService {
     this.assertCourseAdministrator(user);
     const before = await this.getCourse(id, user);
     if (before.status !== "INSTRUCTOR_PENDING") throw new ConflictException("Only a course pending instructor review can be published.");
-    const publish = async (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> }) => {
+    const publish = async (client: LmsQueryExecutor) => {
       if (input.institutionIds !== undefined) {
         const ids = [...new Set(input.institutionIds)];
         if (ids.length === 0) throw new BadRequestException("Select at least one active institution to publish this course.");
@@ -1204,7 +1205,7 @@ export class LmsService {
           );
         }
       }
-      return client.query(
+      const published = await client.query(
       `UPDATE courses
        SET status = 'PUBLISHED', published_by = $2, published_at = now(),
            rejection_reason = NULL, rejected_by = NULL, rejected_at = NULL,
@@ -1212,13 +1213,19 @@ export class LmsService {
        WHERE id = $1 AND tenant_id = $3 AND status = 'INSTRUCTOR_PENDING'
        RETURNING *`,
        [id, user.id, user.tenantId]);
+      if (!published.rows[0]) throw new ConflictException("The course review state changed before publication.");
+      const enrolled = await this.enrollAllocatedCsvStudents(client, published.rows[0], request);
+      return { course: published.rows[0], enrolled };
     };
-    const result = typeof this.db.transaction === "function"
+    const outcome = typeof this.db.transaction === "function"
       ? await this.db.transaction(publish)
       : await publish(this.db);
-    if (!result.rows[0]) throw new ConflictException("The course review state changed before publication.");
-    await this.auditMutation(request, "course", "PUBLISH", result.rows[0], before);
-    return result.rows[0];
+    if (!outcome.course) throw new ConflictException("The course review state changed before publication.");
+    for (const enrollment of outcome.enrolled) {
+      await this.auditMutation(request, "enrollment", "CREATE", enrollment);
+    }
+    await this.auditMutation(request, "course", "PUBLISH", outcome.course, before);
+    return outcome.course;
   }
 
   async listCourseInstitutionAllocations(id: string, user: AuthenticatedUser) {
@@ -1252,9 +1259,7 @@ export class LmsService {
     }
     const institutionIds = [...new Set(input.institutionIds)];
 
-    const replace = async (
-      client: { query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }> },
-    ) => {
+    const replace = async (client: LmsQueryExecutor) => {
       const lockedCourse = await client.query(
         `SELECT status FROM courses WHERE tenant_id = $1 AND id = $2 FOR UPDATE`,
         [user.tenantId, id],
@@ -1310,12 +1315,16 @@ export class LmsService {
          ORDER BY i.name, i.id`,
         [user.tenantId, id],
       );
-      return { before: allocationsBefore.rows, after: allocationsAfter.rows };
+      const enrolled = await this.enrollAllocatedCsvStudents(client, before, request);
+      return { before: allocationsBefore.rows, after: allocationsAfter.rows, enrolled };
     };
 
     const outcome = typeof this.db.transaction === "function"
       ? await this.db.transaction(replace)
       : await replace(this.db);
+    for (const enrollment of outcome.enrolled) {
+      await this.auditMutation(request, "enrollment", "CREATE", enrollment);
+    }
     await this.auditMutation(
       request,
       "course",
