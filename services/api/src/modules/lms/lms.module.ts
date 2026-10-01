@@ -12,5 +12,6 @@ import { ReportService } from "./report.service";
 @Module({
   controllers: [LmsController, CertificateController, PublicCertificateController, ReportController],
   providers: [LmsService, ResourceStorageService, AssessmentService, CertificateService, LmsContentRateLimiter, ReportService],
+  exports: [LmsService],
 })
 export class LmsModule {}

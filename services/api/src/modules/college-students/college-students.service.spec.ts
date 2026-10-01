@@ -24,13 +24,18 @@ const request = {
   },
 } as unknown as ContextRequest;
 
+const lmsEnrollmentStub = {
+  enrollImportedCsvStudentInAllocatedCourses: async () => [],
+  auditCreatedCsvEnrollments: async () => undefined,
+};
+
 test("CSV import keeps valid rows, reports duplicates and invalid rows, and never returns passwords", async () => {
   const auditEvents: Array<Record<string, unknown>> = [];
   const client = {
     query: async (text: string) => {
       if (text.startsWith("INSERT INTO lms_student_imports")) return { rows: [{ id: "import-1" }] };
-      if (text.startsWith("SELECT id FROM institutions")) return { rows: [{ id: "institution-1" }] };
-      if (text.startsWith("SELECT user_id, student_type")) return { rows: [] };
+      if (text.startsWith("SELECT id, name FROM institutions")) return { rows: [{ id: "institution-1", name: "North College" }] };
+      if (text.startsWith("SELECT sp.user_id")) return { rows: [] };
       if (text.startsWith("SELECT id FROM users")) return { rows: [] };
       if (text.startsWith("INSERT INTO users")) return { rows: [{ id: "student-1" }] };
       if (text.startsWith("SELECT id FROM roles")) return { rows: [{ id: "student-role" }] };
@@ -49,7 +54,11 @@ test("CSV import keeps valid rows, reports duplicates and invalid rows, and neve
       return { rows: [] };
     },
   };
-  const service = new CollegeStudentsService(db as never, { record: async (event: Record<string, unknown>) => auditEvents.push(event) } as never);
+  const service = new CollegeStudentsService(
+    db as never,
+    { record: async (event: Record<string, unknown>) => auditEvents.push(event) } as never,
+    lmsEnrollmentStub as never,
+  );
   const csv = [
     "College/University,College User ID,Student Name,Email,Phone,Password,Status",
     "North College,NC-001,Asha Sharma,asha@example.com,,StrongPass1!,Active",
@@ -57,7 +66,11 @@ test("CSV import keeps valid rows, reports duplicates and invalid rows, and neve
     "North College,NC-002,Invalid Student,,,weak,Active",
   ].join("\n");
 
-  const result = await service.importCsv({ originalname: "students.csv", mimetype: "text/csv", size: Buffer.byteLength(csv), buffer: Buffer.from(csv) }, request) as Record<string, any>;
+  const result = await service.importCsv(
+    { originalname: "students.csv", mimetype: "text/csv", size: Buffer.byteLength(csv), buffer: Buffer.from(csv) },
+    request,
+    "institution-1",
+  ) as Record<string, any>;
   assert.equal(result.status, "PARTIAL");
   assert.equal(result.imported_count, 1);
   assert.equal(result.duplicate_count, 1);
@@ -69,13 +82,13 @@ test("CSV import keeps valid rows, reports duplicates and invalid rows, and neve
 test("instructors cannot invoke the college student import API", async () => {
   const instructor = { ...admin, roles: [{ code: "INSTRUCTOR", name: "Instructor" }] };
   const instructorRequest = { context: { ...request.context, user: instructor } } as unknown as ContextRequest;
-  const service = new CollegeStudentsService({} as never, {} as never);
+  const service = new CollegeStudentsService({} as never, {} as never, lmsEnrollmentStub as never);
   await assert.rejects(service.importCsv(undefined, instructorRequest), ForbiddenException);
 });
 
 test("college student imports return a bad request for an unclosed quoted field", async () => {
   const csv = 'College User ID,Student Name\nNC-001,"Asha Sharma';
-  const service = new CollegeStudentsService({} as never, {} as never);
+  const service = new CollegeStudentsService({} as never, {} as never, lmsEnrollmentStub as never);
 
   await assert.rejects(
     service.importCsv({
@@ -83,7 +96,7 @@ test("college student imports return a bad request for an unclosed quoted field"
       mimetype: "text/csv",
       size: Buffer.byteLength(csv),
       buffer: Buffer.from(csv),
-    }, request),
+    }, request, "institution-1"),
     (error: unknown) => error instanceof BadRequestException
       && error.getStatus() === 400
       && /unclosed quoted field/i.test(error.message),
@@ -99,7 +112,8 @@ test("an institution-scoped CSV import links rows by institution ID without requ
         return { rows: [{ id: "institution-1", name: "New College" }] };
       }
       if (text.startsWith("INSERT INTO lms_student_imports")) return { rows: [{ id: "import-2" }] };
-      if (text.startsWith("SELECT user_id, student_type")) return { rows: [] };
+      if (text.startsWith("SELECT sp.user_id")) return { rows: [] };
+      if (text.startsWith("SELECT id FROM users")) return { rows: [] };
       if (text.startsWith("INSERT INTO users")) return { rows: [{ id: "student-2" }] };
       if (text.startsWith("SELECT id FROM roles")) return { rows: [{ id: "student-role" }] };
       return { rows: [] };
@@ -117,7 +131,11 @@ test("an institution-scoped CSV import links rows by institution ID without requ
       return { rows: [] };
     },
   };
-  const service = new CollegeStudentsService(db as never, { record: async () => undefined } as never);
+  const service = new CollegeStudentsService(
+    db as never,
+    { record: async () => undefined } as never,
+    lmsEnrollmentStub as never,
+  );
   const csv = [
     "College User ID,Student Name,Email,Phone,Password,Status",
     "NC-100,Asha Sharma,asha@example.com,,StrongPass1!,Active",
