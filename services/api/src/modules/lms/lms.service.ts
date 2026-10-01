@@ -2257,14 +2257,85 @@ export class LmsService {
     if (!result.rows[0]) throw new NotFoundException("The requested resource was not found.");
   }
 
-  private async assertCourseAllocated(courseId: string, institutionId: string, user: AuthenticatedUser) {
-    const result = await this.db.query(
+  private async assertCourseAllocated(
+    courseId: string,
+    institutionId: string,
+    user: AuthenticatedUser,
+    executor: LmsQueryExecutor = this.db,
+  ) {
+    const result = await executor.query(
       `SELECT 1 FROM lms_course_institution_allocations ca
        JOIN institutions i ON i.tenant_id = ca.tenant_id AND i.id = ca.institution_id AND i.status = 'ACTIVE'
        WHERE ca.tenant_id = $1 AND ca.course_id = $2 AND ca.institution_id = $3 AND ca.status = 'ACTIVE'`,
       [user.tenantId, courseId, institutionId],
     );
     if (!result.rows[0]) throw new BadRequestException("This course is not allocated to its institution.");
+  }
+
+  private async enrollAllocatedCsvStudents(
+    executor: LmsQueryExecutor,
+    course: Record<string, unknown>,
+    request: ContextRequest,
+  ) {
+    const user = request.context.user!;
+    const courseId = String(course.id);
+    const eligible = await executor.query<{ learner_id: string }>(
+      `SELECT DISTINCT imported_row.user_id AS learner_id
+       FROM lms_student_import_rows imported_row
+       JOIN users u
+         ON u.tenant_id = imported_row.tenant_id AND u.id = imported_row.user_id
+       JOIN lms_student_profiles sp
+         ON sp.tenant_id = u.tenant_id AND sp.user_id = u.id
+        AND sp.student_type = 'COLLEGE_STUDENT' AND sp.status = 'ACTIVE'
+        AND sp.institution_id = imported_row.institution_id
+       JOIN user_roles ur
+         ON ur.tenant_id = u.tenant_id AND ur.user_id = u.id
+        AND ur.institution_id IS NOT DISTINCT FROM sp.institution_id
+       JOIN roles r
+         ON r.tenant_id = ur.tenant_id AND r.id = ur.role_id
+        AND r.code = 'STUDENT' AND r.status = 'ACTIVE'
+       JOIN lms_course_institution_allocations ca
+         ON ca.tenant_id = imported_row.tenant_id
+        AND ca.course_id = $2
+        AND ca.institution_id = imported_row.institution_id
+        AND ca.status = 'ACTIVE'
+       JOIN institutions allocated_i
+         ON allocated_i.tenant_id = ca.tenant_id
+        AND allocated_i.id = ca.institution_id
+        AND allocated_i.status = 'ACTIVE'
+       WHERE imported_row.tenant_id = $1
+         AND imported_row.status IN ('IMPORTED', 'UPDATED')
+         AND imported_row.user_id IS NOT NULL
+         AND imported_row.institution_id IS NOT NULL
+         AND u.status = 'ACTIVE'
+         AND (
+           sp.institution_id <> $3
+           OR ur.campus_id IS NULL
+           OR $4::uuid IS NULL
+           OR ur.campus_id = $4
+         )
+         AND NOT EXISTS (
+           SELECT 1 FROM lms_enrollments existing
+           WHERE existing.tenant_id = $1
+             AND existing.course_id = $2
+             AND existing.learner_id = imported_row.user_id
+             AND existing.status = 'ACTIVE'
+         )
+       ORDER BY imported_row.user_id`,
+      [user.tenantId, courseId, course.institution_id, course.campus_id ?? null],
+    );
+    const enrolled: Record<string, unknown>[] = [];
+    for (const candidate of eligible.rows) {
+      const result = await this.runRelationship(() => this.createLearnerEnrollment(
+        course,
+        candidate.learner_id,
+        request,
+        executor,
+        true,
+      ));
+      if (result.created) enrolled.push(result.row);
+    }
+    return enrolled;
   }
 
   private async assertAssignedTeacherRead(user: AuthenticatedUser, institutionId: string, courseId: string, campusId?: string | null) {
@@ -2412,7 +2483,15 @@ export class LmsService {
     return status || "ACTIVE";
   }
 
-  private async eligiblePerson(user: AuthenticatedUser, institutionId: string, campusId: string | null, personId: string, roleCode: "STUDENT" | "TEACHER", courseId: string) {
+  private async eligiblePerson(
+    user: AuthenticatedUser,
+    institutionId: string,
+    campusId: string | null,
+    personId: string,
+    roleCode: "STUDENT" | "TEACHER",
+    courseId: string,
+    executor: LmsQueryExecutor = this.db,
+  ) {
     const allocatedInstitution = `EXISTS (
       SELECT 1 FROM lms_course_institution_allocations ca
       JOIN institutions allocated_i
@@ -2429,7 +2508,7 @@ export class LmsService {
     const campusScope = roleCode === "STUDENT"
       ? "AND (sp.student_type = 'DIRECT_STUDENT' OR sp.institution_id <> $3 OR ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)"
       : "AND (ur.campus_id IS NULL OR $4::uuid IS NULL OR ur.campus_id = $4)";
-    const result = await this.db.query<Record<string, unknown>>(
+    const result = await executor.query<Record<string, unknown>>(
       `SELECT u.id, u.tenant_id, u.first_name, u.last_name, u.email, u.mobile
               ${roleCode === "STUDENT" ? ", sp.student_type, sp.institution_id" : ""}
        FROM users u
@@ -2732,26 +2811,71 @@ export class LmsService {
     }
   }
 
+  private async createLearnerEnrollment(
+    course: Record<string, unknown>,
+    learnerId: string,
+    request: ContextRequest,
+    executor: LmsQueryExecutor,
+    idempotent: boolean,
+  ) {
+    const user = request.context.user!;
+    const courseId = String(course.id);
+    const institutionId = String(course.institution_id);
+    const campusId = (course.campus_id as string | null | undefined) ?? null;
+    const findActiveEnrollment = async () => {
+      const result = await executor.query<Record<string, unknown>>(
+        `SELECT id, tenant_id, institution_id, campus_id, course_id, learner_id, status,
+                enrolled_by, enrolled_at, assignment_source, assigned_by, assigned_at,
+                progress_percent, completed_at, removed_at, created_at, updated_at
+         FROM lms_enrollments
+         WHERE tenant_id = $1 AND course_id = $2 AND learner_id = $3 AND status = 'ACTIVE'
+         ORDER BY enrolled_at DESC, id DESC
+         LIMIT 1`,
+        [user.tenantId, courseId, learnerId],
+      );
+      return result.rows[0];
+    };
+    if (idempotent) {
+      const existing = await findActiveEnrollment();
+      if (existing) return { row: existing, created: false };
+    }
+    const learner = await this.eligiblePerson(
+      user,
+      institutionId,
+      campusId,
+      learnerId,
+      "STUDENT",
+      courseId,
+      executor,
+    );
+    if (learner.student_type === "COLLEGE_STUDENT") {
+      await this.assertCourseAllocated(courseId, String(learner.institution_id), user, executor);
+    }
+    const result = await executor.query<Record<string, unknown>>(
+      `INSERT INTO lms_enrollments
+          (tenant_id, institution_id, campus_id, course_id, learner_id, enrolled_by, assignment_source, assigned_by, assigned_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'ADMIN', $6, now())
+       ${idempotent ? "ON CONFLICT DO NOTHING" : ""}
+       RETURNING id, tenant_id, institution_id, campus_id, course_id, learner_id, status,
+                 enrolled_by, enrolled_at, assignment_source, assigned_by, assigned_at,
+                 progress_percent, completed_at, removed_at, created_at, updated_at`,
+      [user.tenantId, course.institution_id, course.campus_id ?? null, courseId, learnerId, user.id],
+    );
+    if (!result.rows[0] && idempotent) {
+      const existing = await findActiveEnrollment();
+      if (existing) return { row: existing, created: false };
+    }
+    if (!result.rows[0]) throw new ConflictException("The learner already has an active enrollment for this course.");
+    return { row: result.rows[0], created: true };
+  }
+
   async enrollLearner(courseId: string, input: EnrollLearnerDto, request: ContextRequest) {
     const user = request.context.user!;
     const course = await this.relationshipCourse(courseId, user);
-    const learner = await this.eligiblePerson(user, String(course.institution_id), course.campus_id as string | null, input.learnerId, "STUDENT", String(course.id));
-    if (learner.student_type === "COLLEGE_STUDENT") {
-      await this.assertCourseAllocated(String(course.id), String(learner.institution_id), user);
-    }
     return this.runRelationship(async () => {
-      const result = await this.db.query<Record<string, unknown>>(
-        `INSERT INTO lms_enrollments
-          (tenant_id, institution_id, campus_id, course_id, learner_id, enrolled_by, assignment_source, assigned_by, assigned_at)
-          VALUES ($1, $2, $3, $4, $5, $6, 'ADMIN', $6, now())
-          RETURNING id, tenant_id, institution_id, campus_id, course_id, learner_id, status,
-                    enrolled_by, enrolled_at, assignment_source, assigned_by, assigned_at,
-                    progress_percent, completed_at, removed_at, created_at, updated_at`,
-        [user.tenantId, course.institution_id, course.campus_id ?? null, course.id, input.learnerId, user.id],
-      );
-      const row = result.rows[0];
-      await this.auditMutation(request, "enrollment", "CREATE", row);
-      return row;
+      const result = await this.createLearnerEnrollment(course, input.learnerId, request, this.db, false);
+      await this.auditMutation(request, "enrollment", "CREATE", result.row);
+      return result.row;
     });
   }
 
