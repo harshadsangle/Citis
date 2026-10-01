@@ -56,6 +56,10 @@ type ApiList<T> = { success: true; data: T[]; meta: { pagination: { total: numbe
 // preflight. Calling api.citisinfotech.in directly made every fetch fail with
 // "Failed to fetch" because the production WEB_ORIGIN allowlist does not
 // include this portal's host. Matches student-portal and teacher-portal.
+
+// Bound how long sign-out waits for /auth/logout before redirecting anyway.
+const LOGOUT_TIMEOUT_MS = 5000;
+
 const API_BASE = (
   process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "/api/v1"
 ).replace(/\/$/, "");
@@ -447,16 +451,21 @@ export default function InstitutionAdminPage() {
 
   async function logout() {
     setLoggingOut(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), LOGOUT_TIMEOUT_MS);
     try {
       await fetch("/api/v1/auth/logout", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: controller.signal,
       });
     } catch {
-      // Continue to the LMS homepage even if the network is already down.
+      // Continue to the LMS homepage even if the network is already down or
+      // the request timed out, so sign-out can never hang.
     } finally {
+      window.clearTimeout(timeout);
       window.location.assign(lmsHomepageUrl());
     }
   }

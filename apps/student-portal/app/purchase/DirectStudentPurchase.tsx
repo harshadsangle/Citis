@@ -648,8 +648,8 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
                       <label className="purchase-field"><span>Last name</span><input value={lastName} onChange={(event) => setLastName(event.target.value)} autoComplete="family-name" maxLength={100} /></label>
                     </div>
                     <div className="purchase-choice-row" role="group" aria-label="Choose verification method">
-                      <button type="button" className={registrationChannel === "email" ? "is-active" : ""} onClick={() => setRegistrationChannel("email")}>Email OTP</button>
-                      <button type="button" className={registrationChannel === "mobile" ? "is-active" : ""} onClick={() => setRegistrationChannel("mobile")}>Mobile OTP</button>
+                      <button type="button" className={registrationChannel === "email" ? "is-active" : ""} onClick={() => { setRegistrationChannel("email"); setRegisterContact(""); setAuthError(""); }}>Email OTP</button>
+                      <button type="button" className={registrationChannel === "mobile" ? "is-active" : ""} onClick={() => { setRegistrationChannel("mobile"); setRegisterContact(""); setAuthError(""); }}>Mobile OTP</button>
                     </div>
                     <label className="purchase-field">
                       <span>{registrationChannel === "email" ? "Email address" : "Mobile number"}</span>

@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { LmsBackButton } from "../components/LmsBackButton";
 
+// Bound how long sign-out waits for /auth/logout before redirecting anyway.
+const LOGOUT_TIMEOUT_MS = 5000;
+
 async function fetchDashboardList<T>(path: string): Promise<T[]> {
   const response = await fetch(path, { credentials: "include" });
   const body = await response.json().catch(() => null) as { data?: T[]; error?: { message?: string } } | null;
@@ -1536,16 +1539,21 @@ export default function StudentPortalPage() {
 
   async function logout() {
     setLoggingOut(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), LOGOUT_TIMEOUT_MS);
     try {
       await fetch("/api/v1/auth/logout", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: controller.signal,
       });
     } catch {
-      // Continue to the LMS homepage even if the network is already down.
+      // Continue to the LMS homepage even if the network is already down or
+      // the request timed out, so sign-out can never hang.
     } finally {
+      window.clearTimeout(timeout);
       window.location.assign(lmsHomepageUrl());
     }
   }

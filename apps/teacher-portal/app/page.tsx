@@ -5,6 +5,9 @@ import { lmsHomepageUrl } from "./lms-homepage";
 import { displayName, firstNameForGreeting, timeGreeting, type InstructorIdentity } from "./greeting";
 import { LmsBackButton } from "../components/LmsBackButton";
 
+// Bound how long sign-out waits for /auth/logout before redirecting anyway.
+const LOGOUT_TIMEOUT_MS = 5000;
+
 type Principal = InstructorIdentity & {
   roles?: Array<{ code: string; name?: string }>;
 };
@@ -741,16 +744,21 @@ export default function TeacherPortalPage() {
 
   async function logout() {
     setLoggingOut(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), LOGOUT_TIMEOUT_MS);
     try {
       await fetch("/api/v1/auth/logout", {
         method: "POST",
         credentials: "include",
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: controller.signal,
       });
     } catch {
-      // Continue to the LMS homepage even if the network is already down.
+      // Continue to the LMS homepage even if the network is already down or
+      // the request timed out, so sign-out can never hang.
     } finally {
+      window.clearTimeout(timeout);
       window.location.assign(lmsHomepageUrl());
     }
   }
