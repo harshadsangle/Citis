@@ -2272,13 +2272,51 @@ export class LmsService {
     if (!result.rows[0]) throw new BadRequestException("This course is not allocated to its institution.");
   }
 
+  async enrollImportedCsvStudentInAllocatedCourses(
+    executor: LmsQueryExecutor,
+    institutionId: string,
+    learnerId: string,
+    request: ContextRequest,
+  ) {
+    const user = request.context.user!;
+    const courses = await executor.query<Record<string, unknown>>(
+      `SELECT c.*
+       FROM courses c
+       JOIN lms_course_institution_allocations ca
+         ON ca.tenant_id = c.tenant_id AND ca.course_id = c.id
+        AND ca.institution_id = $2 AND ca.status = 'ACTIVE'
+       JOIN institutions allocated_i
+         ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+        AND allocated_i.status = 'ACTIVE'
+       WHERE c.tenant_id = $1 AND c.status = 'PUBLISHED'
+       ORDER BY c.id`,
+      [user.tenantId, institutionId],
+    );
+    const enrolled: Record<string, unknown>[] = [];
+    for (const course of courses.rows) {
+      enrolled.push(...await this.enrollAllocatedCsvStudents(executor, course, request, learnerId));
+    }
+    return enrolled;
+  }
+
+  async auditCreatedCsvEnrollments(
+    request: ContextRequest,
+    enrollments: Record<string, unknown>[],
+  ) {
+    for (const enrollment of enrollments) {
+      await this.auditMutation(request, "enrollment", "CREATE", enrollment);
+    }
+  }
+
   private async enrollAllocatedCsvStudents(
     executor: LmsQueryExecutor,
     course: Record<string, unknown>,
     request: ContextRequest,
+    learnerId?: string,
   ) {
     const user = request.context.user!;
     const courseId = String(course.id);
+    const learnerFilter = learnerId ? "AND imported_row.user_id = $5" : "";
     const eligible = await executor.query<{ learner_id: string }>(
       `SELECT DISTINCT imported_row.user_id AS learner_id
        FROM lms_student_import_rows imported_row
@@ -2307,6 +2345,7 @@ export class LmsService {
          AND imported_row.status IN ('IMPORTED', 'UPDATED')
          AND imported_row.user_id IS NOT NULL
          AND imported_row.institution_id IS NOT NULL
+         ${learnerFilter}
          AND u.status = 'ACTIVE'
          AND (
            sp.institution_id <> $3
@@ -2322,7 +2361,9 @@ export class LmsService {
              AND existing.status = 'ACTIVE'
          )
        ORDER BY imported_row.user_id`,
-      [user.tenantId, courseId, course.institution_id, course.campus_id ?? null],
+      learnerId
+        ? [user.tenantId, courseId, course.institution_id, course.campus_id ?? null, learnerId]
+        : [user.tenantId, courseId, course.institution_id, course.campus_id ?? null],
     );
     const enrolled: Record<string, unknown>[] = [];
     for (const candidate of eligible.rows) {

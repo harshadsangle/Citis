@@ -12,6 +12,7 @@ import type { AuthenticatedUser, ContextRequest } from "../../common/request-con
 import { paginationMeta } from "../../common/pagination";
 import { DatabaseService } from "../../database/database.service";
 import { hashPassword, STRONG_PASSWORD_PATTERN } from "../auth/password-security";
+import { LmsService } from "../lms/lms.service";
 import type { LmsUpload } from "../lms/resource-storage.service";
 import { normalizedHeader, parseCsv, type CsvRecord } from "./college-students.csv";
 import type { CollegeStudentListQueryDto } from "./college-students.dto";
@@ -38,6 +39,15 @@ interface ParsedStudent {
   mobile: string | null;
   password: string;
   status: "ACTIVE" | "INACTIVE";
+}
+
+interface ExistingCollegeStudent {
+  user_id: string;
+  student_type: string;
+  institution_id: string;
+  college_user_id: string;
+  email: string | null;
+  mobile: string | null;
 }
 
 type StudentColumnIndexes = {
@@ -72,6 +82,7 @@ export class CollegeStudentsService {
   constructor(
     private readonly db: DatabaseService,
     private readonly audit: AuditService,
+    private readonly lms: LmsService,
   ) {}
 
   private assertCitisAdmin(user: AuthenticatedUser) {
@@ -154,66 +165,96 @@ export class CollegeStudentsService {
     importId: string,
     rowNumber: number,
     data: ParsedStudent,
-    selectedInstitutionId?: string,
+    institutionId: string,
   ): Promise<{ status: "IMPORTED" | "UPDATED"; userId: string; institutionId: string }> {
-    let institutionId = selectedInstitutionId;
-    if (!institutionId) {
-      const institution = await client.query<{ id: string }>(
-        `SELECT id FROM institutions
-         WHERE tenant_id = $1 AND status <> 'ARCHIVED' AND lower(name) = lower($2)
-         LIMIT 2`,
-        [tenantId, data.collegeName],
-      );
-      if (institution.rows.length !== 1) {
-        throw new Error(institution.rows.length ? "College/University name is ambiguous." : "College/University was not found.");
-      }
-      institutionId = institution.rows[0].id;
-    }
-    const existingProfile = await client.query<{ user_id: string; student_type: string }>(
-      `SELECT user_id, student_type
-       FROM lms_student_profiles
-       WHERE tenant_id = $1 AND institution_id = $2
-         AND student_type = 'COLLEGE_STUDENT'
-         AND lower(college_user_id) = lower($3)
-       FOR UPDATE`,
+    const existingProfile = await client.query<ExistingCollegeStudent>(
+      `SELECT sp.user_id, sp.student_type, sp.institution_id, sp.college_user_id,
+              u.email, u.mobile
+       FROM lms_student_profiles sp
+       JOIN users u ON u.tenant_id = sp.tenant_id AND u.id = sp.user_id
+       WHERE sp.tenant_id = $1 AND sp.institution_id = $2
+         AND sp.student_type = 'COLLEGE_STUDENT'
+         AND lower(sp.college_user_id) = lower($3)
+       FOR UPDATE OF sp, u`,
       [tenantId, institutionId, data.collegeUserId],
     );
+    let existing = existingProfile.rows[0];
+    if (!existing) {
+      const [sameIdCandidates, contactCandidates] = await Promise.all([
+        client.query<ExistingCollegeStudent>(
+          `SELECT sp.user_id, sp.student_type, sp.institution_id, sp.college_user_id,
+                  u.email, u.mobile
+           FROM lms_student_profiles sp
+           JOIN users u ON u.tenant_id = sp.tenant_id AND u.id = sp.user_id
+           WHERE sp.tenant_id = $1 AND sp.institution_id <> $2
+             AND sp.student_type = 'COLLEGE_STUDENT'
+             AND lower(sp.college_user_id) = lower($3)
+           FOR UPDATE OF sp, u`,
+          [tenantId, institutionId, data.collegeUserId],
+        ),
+        data.email || data.mobile
+          ? client.query<ExistingCollegeStudent>(
+            `SELECT sp.user_id, sp.student_type, sp.institution_id, sp.college_user_id,
+                    u.email, u.mobile
+             FROM lms_student_profiles sp
+             JOIN users u ON u.tenant_id = sp.tenant_id AND u.id = sp.user_id
+             WHERE sp.tenant_id = $1 AND sp.student_type = 'COLLEGE_STUDENT'
+               AND (($2::text IS NOT NULL AND lower(u.email) = lower($2))
+                 OR ($3::text IS NOT NULL AND u.mobile = $3))
+             ORDER BY sp.institution_id, sp.user_id
+             FOR UPDATE OF sp, u`,
+            [tenantId, data.email, data.mobile],
+          )
+          : Promise.resolve({ rows: [] as ExistingCollegeStudent[] }),
+      ]);
+
+      if (sameIdCandidates.rows.length > 1) {
+        throw new ConflictException("This College User ID is linked to multiple institutions; resolve the duplicate before importing it.");
+      }
+      if (contactCandidates.rows.length > 1) {
+        throw new ConflictException("The email or phone matches multiple college student accounts; the institution transfer is ambiguous.");
+      }
+      const sameIdCandidate = sameIdCandidates.rows[0];
+      const contactCandidate = contactCandidates.rows[0];
+      if (sameIdCandidate && !contactCandidate) {
+        throw new ConflictException("This College User ID belongs to another institution. Include the student's current email or phone to confirm a safe transfer.");
+      }
+      if (sameIdCandidate && contactCandidate && sameIdCandidate.user_id !== contactCandidate.user_id) {
+        throw new ConflictException("The College User ID and contact details identify different student accounts.");
+      }
+      existing = sameIdCandidate ?? contactCandidate;
+    }
+
     let userId: string;
     let status: "IMPORTED" | "UPDATED" = "IMPORTED";
 
-    if (existingProfile.rows[0]) {
-      if (existingProfile.rows[0].student_type !== "COLLEGE_STUDENT") {
+    if (existing) {
+      if (existing.student_type !== "COLLEGE_STUDENT") {
         throw new Error("The existing account is not a college student.");
       }
-      userId = existingProfile.rows[0].user_id;
+      userId = existing.user_id;
       status = "UPDATED";
+      await this.assertContactAvailable(client, tenantId, data, userId);
       const passwordHash = await hashPassword(data.password);
       const { firstName, lastName } = splitName(data.studentName);
       await client.query(
         `UPDATE users
-         SET first_name = $1, last_name = $2, email = $3, mobile = $4,
-             password_hash = $5, status = $6, updated_at = now()
+         SET first_name = $1, last_name = $2, email = COALESCE($3, email),
+             mobile = COALESCE($4, mobile), password_hash = $5, status = $6, updated_at = now()
          WHERE tenant_id = $7 AND id = $8`,
         [firstName, lastName, data.email, data.mobile, passwordHash, data.status === "ACTIVE" ? "ACTIVE" : "DISABLED", tenantId, userId],
       );
       await client.query(
         `UPDATE lms_student_profiles
-         SET status = $1, college_user_id = $2, updated_at = now()
-         WHERE tenant_id = $3 AND user_id = $4`,
-        [data.status, data.collegeUserId, tenantId, userId],
+         SET institution_id = $1, status = $2, college_user_id = $3, updated_at = now()
+         WHERE tenant_id = $4 AND user_id = $5 AND student_type = 'COLLEGE_STUDENT'`,
+        [institutionId, data.status, data.collegeUserId, tenantId, userId],
       );
-    } else {
-      if (data.email || data.mobile) {
-        const contact = await client.query<{ id: string }>(
-          `SELECT id FROM users
-           WHERE tenant_id = $1
-             AND (($2::text IS NOT NULL AND lower(email) = lower($2))
-               OR ($3::text IS NOT NULL AND mobile = $3))
-           LIMIT 1`,
-          [tenantId, data.email, data.mobile],
-        );
-        if (contact.rows[0]) throw new ConflictException("Email or phone already belongs to another account.");
+      if (existing.institution_id !== institutionId) {
+        await this.moveCollegeStudentRoleScope(client, tenantId, userId, institutionId);
       }
+    } else {
+      await this.assertContactAvailable(client, tenantId, data, null);
       const passwordHash = await hashPassword(data.password);
       const { firstName, lastName } = splitName(data.studentName);
       const user = await client.query<{ id: string }>(
@@ -251,9 +292,63 @@ export class CollegeStudentsService {
     return { status, userId, institutionId };
   }
 
+  private async assertContactAvailable(
+    client: PoolClient,
+    tenantId: string,
+    data: ParsedStudent,
+    userId: string | null,
+  ) {
+    if (!data.email && !data.mobile) return;
+    const contact = await client.query<{ id: string }>(
+      `SELECT id FROM users
+       WHERE tenant_id = $1 AND ($4::uuid IS NULL OR id <> $4)
+         AND (($2::text IS NOT NULL AND lower(email) = lower($2))
+           OR ($3::text IS NOT NULL AND mobile = $3))
+       LIMIT 1`,
+      [tenantId, data.email, data.mobile, userId],
+    );
+    if (contact.rows[0]) throw new ConflictException("Email or phone already belongs to another account.");
+  }
+
+  private async moveCollegeStudentRoleScope(
+    client: PoolClient,
+    tenantId: string,
+    userId: string,
+    institutionId: string,
+  ) {
+    const role = await client.query<{ id: string }>(
+      "SELECT id FROM roles WHERE tenant_id = $1 AND code = $2 AND status = 'ACTIVE' LIMIT 1",
+      [tenantId, COLLEGE_STUDENT_ROLE],
+    );
+    if (!role.rows[0]) throw new Error("The student role is not configured for this tenant.");
+
+    // Keep only this student's selected-institution STUDENT scope; leave every other role untouched.
+    await client.query(
+      `DELETE FROM user_roles ur
+       USING roles r
+       WHERE ur.tenant_id = $1 AND ur.user_id = $2
+         AND r.tenant_id = ur.tenant_id AND r.id = ur.role_id AND r.code = $3
+         AND (ur.institution_id IS DISTINCT FROM $4 OR ur.campus_id IS NOT NULL)`,
+      [tenantId, userId, COLLEGE_STUDENT_ROLE, institutionId],
+    );
+    await client.query(
+      `INSERT INTO user_roles (tenant_id, user_id, role_id, institution_id, campus_id)
+       SELECT $1, $2, $3, $4, NULL
+       WHERE NOT EXISTS (
+         SELECT 1 FROM user_roles existing
+         WHERE existing.tenant_id = $1 AND existing.user_id = $2
+           AND existing.role_id = $3 AND existing.institution_id = $4
+           AND existing.campus_id IS NULL
+       )
+       ON CONFLICT DO NOTHING`,
+      [tenantId, userId, role.rows[0].id, institutionId],
+    );
+  }
+
   async importCsv(file: LmsUpload | undefined, request: ContextRequest, institutionId?: string) {
     const user = request.context.user!;
     this.assertCitisAdmin(user);
+    if (!institutionId) throw new BadRequestException("Select an institution before importing the CSV.");
     if (!file?.buffer?.length) throw new BadRequestException("A CSV file is required.");
     if (file.size > MAX_IMPORT_BYTES) throw new BadRequestException("CSV file exceeds the 5 MB limit.");
     if (file.originalname && !file.originalname.toLowerCase().endsWith(".csv")) {
@@ -268,23 +363,22 @@ export class CollegeStudentsService {
         error instanceof Error ? error.message : "CSV could not be parsed.",
       );
     }
-    const indexes = this.headerIndexes(parsed.headers, Boolean(institutionId));
+    const indexes = this.headerIndexes(parsed.headers, true);
     if (parsed.records.length > MAX_IMPORT_ROWS) throw new BadRequestException(`CSV cannot contain more than ${MAX_IMPORT_ROWS} rows.`);
     const counts: ImportCounts = { totalRows: parsed.records.length, imported: 0, updated: 0, duplicates: 0, invalid: 0, failed: 0 };
 
+    const createdEnrollments: Record<string, unknown>[] = [];
     const result = await this.db.transaction(async (client) => {
-      const selectedInstitution = institutionId
-        ? await client.query<{ id: string; name: string }>(
-          `SELECT id, name FROM institutions
-           WHERE tenant_id = $1 AND id = $2 AND status <> 'ARCHIVED'
-           LIMIT 1`,
-          [user.tenantId, institutionId],
-        )
-        : null;
-      if (institutionId && !selectedInstitution?.rows[0]) {
+      const selectedInstitution = await client.query<{ id: string; name: string }>(
+        `SELECT id, name FROM institutions
+         WHERE tenant_id = $1 AND id = $2 AND status <> 'ARCHIVED'
+         LIMIT 1`,
+        [user.tenantId, institutionId],
+      );
+      if (!selectedInstitution.rows[0]) {
         throw new BadRequestException("The selected institution is not available in this tenant.");
       }
-      const targetInstitution = selectedInstitution?.rows[0];
+      const targetInstitution = selectedInstitution.rows[0];
       const run = await client.query<{ id: string }>(
         `INSERT INTO lms_student_imports (tenant_id, uploaded_by, original_filename, total_rows)
          VALUES ($1, $2, $3, $4) RETURNING id`,
@@ -327,14 +421,23 @@ export class CollegeStudentsService {
 
         await client.query(`SAVEPOINT college_student_row`);
         try {
-          const imported = await this.insertRow(client, user.tenantId, importId, record.rowNumber, data, targetInstitution?.id);
-          counts[imported.status === "IMPORTED" ? "imported" : "updated"] += 1;
+          const imported = await this.insertRow(client, user.tenantId, importId, record.rowNumber, data, targetInstitution.id);
           await client.query(
             `INSERT INTO lms_student_import_rows
               (tenant_id, import_id, row_number, college_name, college_user_id, institution_id, user_id, status)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
             [user.tenantId, importId, record.rowNumber, data.collegeName, data.collegeUserId, imported.institutionId, imported.userId, imported.status],
           );
+          const rowEnrollments = data.status === "ACTIVE"
+            ? await this.lms.enrollImportedCsvStudentInAllocatedCourses(
+              client,
+              imported.institutionId,
+              imported.userId,
+              request,
+            )
+            : [];
+          createdEnrollments.push(...rowEnrollments);
+          counts[imported.status === "IMPORTED" ? "imported" : "updated"] += 1;
           await client.query(`RELEASE SAVEPOINT college_student_row`);
         } catch (error) {
           await client.query(`ROLLBACK TO SAVEPOINT college_student_row`);
@@ -366,6 +469,7 @@ export class CollegeStudentsService {
       return { importId, status };
     });
 
+    await this.lms.auditCreatedCsvEnrollments(request, createdEnrollments);
     await this.audit.record({
       tenantId: user.tenantId,
       actorUserId: user.id,
