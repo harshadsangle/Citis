@@ -151,22 +151,13 @@ function noOpLimiter() {
 
 test("direct registration accepts email-only contact and never returns the OTP", async () => {
   let delivered: { channel: string; destination: string; code: string } | undefined;
-  const queries: string[] = [];
-  const db = {
-    query: async (text: string) => {
-      queries.push(text);
-      if (text.includes("SELECT id FROM tenants")) return { rows: [{ id: "tenant-1" }] };
-      if (text.includes("SELECT 1 FROM users")) return { rows: [] };
-      if (text.includes("INSERT INTO auth_challenges")) return { rows: [{ id: "challenge-1" }] };
-      return { rows: [] };
-    },
-  };
+  const fakeDatabase = createRegistrationTestDatabase();
   const delivery = {
     deliver: async (input: { channel: string; destination: string; code: string }) => {
       delivered = input;
     },
   };
-  const service = new AuthService(db as never, noOpLimiter() as never, delivery as never);
+  const service = new AuthService(fakeDatabase.db as never, noOpLimiter() as never, delivery as never);
 
   const response = await service.registerDirectStudent({
     email: "Student@Example.com",
@@ -180,20 +171,47 @@ test("direct registration accepts email-only contact and never returns the OTP",
   assert.equal(delivered?.destination, "student@example.com");
   assert.match(delivered?.code ?? "", /^\d{6}$/);
   assert.equal(JSON.stringify(response).includes(delivered?.code ?? "never"), false);
-  assert.equal(queries.some((query) => query.includes("registration_password_hash")), true);
+  assert.equal(fakeDatabase.challenges[0].codeHash, otpHash(delivered!.code));
+  assert.notEqual(fakeDatabase.challenges[0].codeHash, delivered?.code);
+  assert.equal(fakeDatabase.challenges[0].registrationPasswordHash !== null, true);
+  assert.equal(
+    fakeDatabase.statements.some((statement) => statement.text.includes("now() + interval '10 minutes'")),
+    true,
+  );
+});
+
+test("existing email contacts receive a code without saving submitted registration details", async () => {
+  let delivered: { destination: string; code: string } | undefined;
+  const fakeDatabase = createRegistrationTestDatabase(true);
+  const service = new AuthService(fakeDatabase.db as never, noOpLimiter() as never, {
+    deliver: async (input: { destination: string; code: string }) => {
+      delivered = input;
+    },
+  } as never);
+
+  const response = await service.registerDirectStudent({
+    email: "existing@example.com",
+    password: "StrongPass1!",
+    firstName: "Attempted",
+    lastName: "Registration",
+  }, metadata);
+
+  assert.deepEqual(response, { accepted: true, channel: "EMAIL", expiresInSeconds: 600 });
+  assert.equal(delivered?.destination, "existing@example.com");
+  assert.match(delivered?.code ?? "", /^\d{6}$/);
+  assert.equal(fakeDatabase.challenges[0].registrationFirstName, null);
+  assert.equal(fakeDatabase.challenges[0].registrationPasswordHash, null);
+  await assert.rejects(
+    service.verifyDirectStudentOtp({ email: "existing@example.com", code: delivered!.code }, metadata),
+    ConflictException,
+  );
+  assert.equal(fakeDatabase.sessionCount, 0);
 });
 
 test("direct registration accepts phone-only contact and rejects both or neither contact", async () => {
   let deliveredChannel = "";
-  const db = {
-    query: async (text: string) => {
-      if (text.includes("SELECT id FROM tenants")) return { rows: [{ id: "tenant-1" }] };
-      if (text.includes("SELECT 1 FROM users")) return { rows: [] };
-      if (text.includes("INSERT INTO auth_challenges")) return { rows: [{ id: "challenge-1" }] };
-      return { rows: [] };
-    },
-  };
-  const service = new AuthService(db as never, noOpLimiter() as never, {
+  const fakeDatabase = createRegistrationTestDatabase();
+  const service = new AuthService(fakeDatabase.db as never, noOpLimiter() as never, {
     deliver: async (input: { channel: string }) => {
       deliveredChannel = input.channel;
     },
