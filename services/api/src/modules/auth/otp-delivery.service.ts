@@ -19,25 +19,32 @@ type OtpDeliveryRuntime = {
 export class OtpDeliveryService {
   async deliver(input: OtpDeliveryInput, runtime: OtpDeliveryRuntime = {}) {
     if (input.channel === "EMAIL") {
-      const apiKey = process.env.RESEND_API_KEY;
-      const from = process.env.EMAIL_OTP_FROM;
+      const environment = runtime.environment ?? process.env;
+      const apiKey = environment.RESEND_API_KEY;
+      const from = environment.EMAIL_OTP_FROM;
       if (!apiKey || !from) {
-        return this.handleMissingConfiguration("Email OTP");
+        throw new ServiceUnavailableException("Email verification delivery is not configured.");
       }
 
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from,
-          to: [input.destination],
-          subject: "Your CITIS verification code",
-          text: `Your CITIS verification code is ${input.code}. It expires in 10 minutes. If you did not request this code, you can ignore this message.`,
-        }),
-      });
+      let response: Response;
+      try {
+        response = await (runtime.fetchImpl ?? fetch)("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from,
+            to: [input.destination],
+            subject: "Your CITIS verification code",
+            text: `Your CITIS verification code is ${input.code}. It expires in 10 minutes. If you did not request this code, you can ignore this message.`,
+          }),
+          signal: AbortSignal.timeout(10_000),
+        });
+      } catch {
+        throw new ServiceUnavailableException("Email verification delivery is temporarily unavailable.");
+      }
       if (!response.ok) {
         throw new ServiceUnavailableException("Email verification delivery is temporarily unavailable.");
       }
@@ -77,14 +84,5 @@ export class OtpDeliveryService {
     if (!response.ok) {
       throw new ServiceUnavailableException("SMS verification delivery is temporarily unavailable.");
     }
-  }
-
-  private handleMissingConfiguration(channel: string) {
-    if (process.env.NODE_ENV === "production") {
-      throw new ServiceUnavailableException(`${channel} delivery is not configured.`);
-    }
-    // Local development and automated tests can exercise the full challenge
-    // lifecycle without sending real messages. The code is never returned or
-    // logged; production always requires a configured provider.
   }
 }
