@@ -277,6 +277,27 @@ export function DirectStudentPurchase({ courseSlug, courseTitle }: { courseSlug:
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    const clearRestoredAuthState = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      setPendingContact("");
+      setOtpCode("");
+      setFirstName("");
+      setLastName("");
+      setRegisterContact("");
+      setRegisterPassword("");
+      setLoginEmail("");
+      setLoginPassword("");
+      setLoginMobile("");
+      setAuthBusy(false);
+      setAuthError("");
+      setAuthNotice("");
+      setOtpPurpose(null);
+    };
+    window.addEventListener("pageshow", clearRestoredAuthState);
+    return () => window.removeEventListener("pageshow", clearRestoredAuthState);
+  }, []);
+
   async function finishAuthentication() {
     setAuthError("");
     setAuthNotice("");

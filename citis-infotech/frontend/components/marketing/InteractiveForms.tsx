@@ -227,9 +227,23 @@ export function LoginForm({ portal = "learner", provider, portalOrigin }: { port
   const submissionIdRef = useRef(0);
   const { handleSubmit, control, reset, formState: { errors, isSubmitting } } = useForm<LoginInput>({ resolver: zodResolver(loginSchema), defaultValues: { email: "", password: "", remember: false } });
   useEffect(() => {
-    reset({ email: "", password: "", remember: false });
-    setShow(false);
-    setServerError("");
+    const clearLoginState = () => {
+      reset({ email: "", password: "", remember: false });
+      setShow(false);
+      setServerError("");
+      setMfaChallenge(null);
+      setMfaCode("");
+      setMfaSubmitting(false);
+      loginInFlightRef.current = false;
+      submissionIdRef.current += 1;
+    };
+    const clearRestoredLoginState = (event: PageTransitionEvent) => {
+      if (event.persisted) clearLoginState();
+    };
+
+    clearLoginState();
+    window.addEventListener("pageshow", clearRestoredLoginState);
+    return () => window.removeEventListener("pageshow", clearRestoredLoginState);
   }, [portal, reset]);
   const onSubmit = async (values: LoginInput) => {
     if (loginInFlightRef.current) return;
