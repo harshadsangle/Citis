@@ -289,7 +289,11 @@ test("email OTP registration, resend, and verification work through the Resend d
       service.verifyDirectStudentOtp({ email: "learner@example.com", code: sentEmails[0].code }, metadata),
       UnauthorizedException,
     );
-    assert.equal(fakeDatabase.challenges[1].consumed, false);
+    assert.equal(
+      fakeDatabase.challenges[1].consumed,
+      false,
+      fakeDatabase.statements.filter((statement) => statement.text.includes("UPDATE auth_challenges")).map((statement) => statement.text).join("\n"),
+    );
   }
 
   const session = await service.verifyDirectStudentOtp({
