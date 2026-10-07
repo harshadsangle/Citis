@@ -241,6 +241,67 @@ test("direct registration accepts phone-only contact and rejects both or neither
   );
 });
 
+test("email OTP registration, resend, and verification work through the Resend delivery path", async (t) => {
+  const fakeDatabase = createRegistrationTestDatabase();
+  const service = new AuthService(fakeDatabase.db as never, noOpLimiter() as never, new OtpDeliveryService());
+  const sentEmails: Array<{ destination: string; code: string }> = [];
+  const originalFetch = globalThis.fetch;
+  process.env.RESEND_API_KEY = "test-resend-key";
+  process.env.EMAIL_OTP_FROM = "CITIS <verification@example.com>";
+  globalThis.fetch = async (_input, init) => {
+    const message = JSON.parse(String(init?.body)) as { to: string[]; text: string };
+    const code = message.text.match(/\b(\d{6})\b/)?.[1];
+    assert.ok(code, "the outgoing email should contain a six-digit code");
+    sentEmails.push({ destination: message.to[0], code });
+    return new Response(null, { status: 202 });
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+    delete process.env.RESEND_API_KEY;
+    delete process.env.EMAIL_OTP_FROM;
+  });
+
+  const registration = await service.registerDirectStudent({
+    email: "learner@example.com",
+    password: "StrongPass1!",
+    firstName: "Learner",
+  }, metadata);
+  assert.deepEqual(registration, { accepted: true, channel: "EMAIL", expiresInSeconds: 600 });
+  assert.equal(JSON.stringify(registration).includes(sentEmails[0]?.code ?? "never"), false);
+  assert.equal(sentEmails[0]?.destination, "learner@example.com");
+  assert.equal(fakeDatabase.challenges[0].codeHash, otpHash(sentEmails[0].code));
+  assert.notEqual(fakeDatabase.challenges[0].codeHash, sentEmails[0].code);
+
+  const resend = await service.resendDirectStudentOtp({ email: "learner@example.com" }, metadata);
+  assert.deepEqual(resend, { accepted: true, channel: "EMAIL", expiresInSeconds: 600 });
+  assert.equal(JSON.stringify(resend).includes(sentEmails[1]?.code ?? "never"), false);
+  assert.equal(sentEmails.length, 2);
+  assert.equal(fakeDatabase.challenges[0].consumed, true);
+  assert.equal(fakeDatabase.challenges[1].consumed, false);
+  assert.equal(fakeDatabase.challenges[1].codeHash, otpHash(sentEmails[1].code));
+  assert.equal(
+    fakeDatabase.statements.some((statement) => statement.text.includes("FOR UPDATE")),
+    true,
+  );
+
+  if (sentEmails[0].code !== sentEmails[1].code) {
+    await assert.rejects(
+      service.verifyDirectStudentOtp({ email: "learner@example.com", code: sentEmails[0].code }, metadata),
+      UnauthorizedException,
+    );
+    assert.equal(fakeDatabase.challenges[1].consumed, false);
+  }
+
+  const session = await service.verifyDirectStudentOtp({
+    email: "learner@example.com",
+    code: sentEmails[1].code,
+  }, metadata);
+  assert.ok(session.token);
+  assert.equal(fakeDatabase.userExists, true);
+  assert.equal(fakeDatabase.sessionCount, 1);
+  assert.equal(fakeDatabase.challenges[1].consumed, true);
+});
+
 test("valid direct-student OTP creates an institutionless account and session", async () => {
   const statements: string[] = [];
   const db = {
