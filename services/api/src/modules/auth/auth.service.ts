@@ -1,5 +1,11 @@
-import { createHash, randomBytes, randomInt } from "node:crypto";
-import { BadRequestException, ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { createHash, createHmac, randomBytes, randomInt } from "node:crypto";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from "@nestjs/common";
 import { DatabaseService } from "../../database/database.service";
 import type { AuthenticatedUser } from "../../common/request-context";
 import type { AccessScope } from "../../common/access-scope";
@@ -38,6 +44,14 @@ const TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
+}
+
+function hashDirectStudentOtp(code: string) {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) {
+    throw new ServiceUnavailableException("Verification-code protection is not configured.");
+  }
+  return createHmac("sha256", secret).update(code).digest("hex");
 }
 
 function toPrincipal(row: {
@@ -738,7 +752,7 @@ export class AuthService {
       await this.otpDelivery.deliver({ channel, destination: contact, code, purpose: "REGISTER" });
     } catch (error) {
       await this.db.query(
-        "UPDATE auth_challenges SET consumed_at = now() WHERE id = $1 AND consumed_at IS NULL",
+        "UPDATE auth_challenges SET consumed_at = now(), registration_password_hash = NULL WHERE id = $1 AND consumed_at IS NULL",
         [challengeId],
       );
       throw error;
@@ -756,47 +770,57 @@ export class AuthService {
   ) {
     const contact = this.directStudentContact(input);
     const tenantId = await this.directStudentTenant(input.tenantSlug);
-    const limiter = this.directStudentRateLimit(metadata.ipAddress, contact.contact);
-    const existing = await this.db.query(
-      `SELECT 1 FROM users
-       WHERE tenant_id = $1 AND status <> 'ARCHIVED'
-         AND (($2::text IS NOT NULL AND lower(email) = lower($2))
-           OR ($3::text IS NOT NULL AND regexp_replace(coalesce(mobile, ''), '[^0-9+]', '', 'g') = $3))
-       LIMIT 1`,
-      [tenantId, contact.email, contact.mobile],
-    );
+    this.directStudentRateLimit(metadata.ipAddress, contact.contact);
+    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+    const codeHash = hashDirectStudentOtp(code);
+    const passwordHash = await hashPassword(input.password);
+    const challengeId = await this.db.transaction(async (client) => {
+      await client.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        [`direct-student-registration:${tenantId}:${contact.contact}`],
+      );
+      const existing = await client.query(
+        `SELECT 1 FROM users
+         WHERE tenant_id = $1 AND status <> 'ARCHIVED'
+           AND (($2::text IS NOT NULL AND lower(email) = lower($2))
+             OR ($3::text IS NOT NULL AND regexp_replace(coalesce(mobile, ''), '[^0-9+]', '', 'g') = $3))
+         LIMIT 1`,
+        [tenantId, contact.email, contact.mobile],
+      );
+
+      // Existing email contacts still receive a code because checkout shows the
+      // verification step. Existing mobile contacts keep the prior generic path.
+      if (existing.rows[0] && contact.channel !== "EMAIL") return null;
+
+      await client.query(
+        `UPDATE auth_challenges
+         SET consumed_at = now(), registration_password_hash = NULL
+         WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER' AND consumed_at IS NULL`,
+        [tenantId, contact.contact],
+      );
+      const challenge = await client.query<{ id: string }>(
+        `INSERT INTO auth_challenges
+          (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at,
+           registration_first_name, registration_last_name, registration_password_hash)
+         VALUES ($1, $2, $3, $4, 'REGISTER', $5, now() + interval '10 minutes', $6, $7, $8)
+         RETURNING id`,
+        [
+          tenantId,
+          contact.mobile,
+          contact.contact,
+          contact.channel,
+          codeHash,
+          existing.rows[0] ? null : input.firstName.trim(),
+          existing.rows[0] ? null : input.lastName?.trim() || "",
+          existing.rows[0] ? null : passwordHash,
+        ],
+      );
+      return challenge.rows[0]?.id ?? null;
+    });
 
     // Keep the response identical for existing and new contacts to prevent account enumeration.
-    if (existing.rows[0]) {
-      return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
-    }
-
-    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
-    const passwordHash = await hashPassword(input.password);
-    await this.db.query(
-      `UPDATE auth_challenges
-       SET consumed_at = now()
-       WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER' AND consumed_at IS NULL`,
-      [tenantId, contact.contact],
-    );
-    const challenge = await this.db.query<{ id: string }>(
-      `INSERT INTO auth_challenges
-        (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at,
-         registration_first_name, registration_last_name, registration_password_hash)
-       VALUES ($1, $2, $3, $4, 'REGISTER', $5, now() + interval '10 minutes', $6, $7, $8)
-       RETURNING id`,
-      [
-        tenantId,
-        contact.mobile,
-        contact.contact,
-        contact.channel,
-        hashToken(code),
-        input.firstName.trim(),
-        input.lastName?.trim() || "",
-        passwordHash,
-      ],
-    );
-    return this.deliverDirectStudentOtp(challenge.rows[0].id, contact.channel, contact.contact, code, metadata);
+    if (!challengeId) return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
+    return this.deliverDirectStudentOtp(challengeId, contact.channel, contact.contact, code, metadata);
   }
 
   async resendDirectStudentOtp(
@@ -806,45 +830,55 @@ export class AuthService {
     const contact = this.directStudentContact(input);
     const tenantId = await this.directStudentTenant(input.tenantSlug);
     this.directStudentRateLimit(metadata.ipAddress, contact.contact);
-    const pending = await this.db.query<{
-      id: string;
-      registration_first_name: string;
-      registration_last_name: string;
-      registration_password_hash: string;
-    }>(
-      `SELECT id, registration_first_name, registration_last_name, registration_password_hash
-       FROM auth_challenges
-       WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER'
-         AND consumed_at IS NULL AND expires_at > now()
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [tenantId, contact.contact],
-    );
-    if (!pending.rows[0]) return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
+    const replacement = await this.db.transaction(async (client) => {
+      await client.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        [`direct-student-registration:${tenantId}:${contact.contact}`],
+      );
+      const pending = await client.query<{
+        id: string;
+        registration_first_name: string | null;
+        registration_last_name: string | null;
+        registration_password_hash: string | null;
+      }>(
+        `SELECT id, registration_first_name, registration_last_name, registration_password_hash
+         FROM auth_challenges
+         WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER'
+           AND consumed_at IS NULL AND expires_at > now()
+         ORDER BY created_at DESC
+         LIMIT 1
+         FOR UPDATE`,
+        [tenantId, contact.contact],
+      );
+      if (!pending.rows[0]) return null;
 
-    const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
-    await this.db.query(
-      "UPDATE auth_challenges SET consumed_at = now() WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER' AND consumed_at IS NULL",
-      [tenantId, contact.contact],
-    );
-    const replacement = await this.db.query<{ id: string }>(
-      `INSERT INTO auth_challenges
-        (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at,
-         registration_first_name, registration_last_name, registration_password_hash)
-       VALUES ($1, $2, $3, $4, 'REGISTER', $5, now() + interval '10 minutes', $6, $7, $8)
-       RETURNING id`,
-      [
-        tenantId,
-        contact.mobile,
-        contact.contact,
-        contact.channel,
-        hashToken(code),
-        pending.rows[0].registration_first_name,
-        pending.rows[0].registration_last_name,
-        pending.rows[0].registration_password_hash,
-      ],
-    );
-    return this.deliverDirectStudentOtp(replacement.rows[0].id, contact.channel, contact.contact, code, metadata);
+      const code = randomInt(0, 1_000_000).toString().padStart(6, "0");
+      const codeHash = hashDirectStudentOtp(code);
+      await client.query(
+        "UPDATE auth_challenges SET consumed_at = now(), registration_password_hash = NULL WHERE tenant_id = $1 AND contact = $2 AND purpose = 'REGISTER' AND consumed_at IS NULL",
+        [tenantId, contact.contact],
+      );
+      const challenge = await client.query<{ id: string }>(
+        `INSERT INTO auth_challenges
+          (tenant_id, mobile, contact, channel, purpose, code_hash, expires_at,
+           registration_first_name, registration_last_name, registration_password_hash)
+         VALUES ($1, $2, $3, $4, 'REGISTER', $5, now() + interval '10 minutes', $6, $7, $8)
+         RETURNING id`,
+        [
+          tenantId,
+          contact.mobile,
+          contact.contact,
+          contact.channel,
+          codeHash,
+          pending.rows[0].registration_first_name,
+          pending.rows[0].registration_last_name,
+          pending.rows[0].registration_password_hash,
+        ],
+      );
+      return { id: challenge.rows[0]?.id, code };
+    });
+    if (!replacement?.id) return { accepted: true, channel: contact.channel, expiresInSeconds: 600 };
+    return this.deliverDirectStudentOtp(replacement.id, contact.channel, contact.contact, replacement.code, metadata);
   }
 
   async verifyDirectStudentOtp(
@@ -857,18 +891,18 @@ export class AuthService {
     const result = await this.db.transaction(async (client) => {
       const challenge = await client.query<{
         id: string;
-        registration_first_name: string;
-        registration_last_name: string;
-        registration_password_hash: string;
+        registration_first_name: string | null;
+        registration_last_name: string | null;
+        registration_password_hash: string | null;
       }>(
         `SELECT id, registration_first_name, registration_last_name, registration_password_hash
          FROM auth_challenges
          WHERE tenant_id = $1 AND contact = $2 AND channel = $3 AND purpose = 'REGISTER'
-           AND code_hash = $4 AND consumed_at IS NULL AND expires_at > now() AND attempts < 5
+           AND code_hash = ANY($4::text[]) AND consumed_at IS NULL AND expires_at > now() AND attempts < 5
          ORDER BY created_at DESC
          LIMIT 1
          FOR UPDATE`,
-        [tenantId, contact.contact, contact.channel, hashToken(input.code)],
+        [tenantId, contact.contact, contact.channel, [hashDirectStudentOtp(input.code), hashToken(input.code)]],
       );
       if (!challenge.rows[0]) {
         await client.query(
@@ -889,7 +923,11 @@ export class AuthService {
          LIMIT 1`,
         [tenantId, contact.email, contact.mobile],
       );
-      if (existing.rows[0]) {
+      if (
+        existing.rows[0] ||
+        !challenge.rows[0].registration_first_name ||
+        !challenge.rows[0].registration_password_hash
+      ) {
         await client.query("UPDATE auth_challenges SET consumed_at = now(), registration_password_hash = NULL WHERE id = $1", [challenge.rows[0].id]);
         return { duplicate: true as const };
       }
