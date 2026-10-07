@@ -86,7 +86,7 @@ function createRegistrationTestDatabase(initialUserExists = false) {
       });
       return { rows: [{ id }] };
     }
-    if (text.includes("UPDATE auth_challenges SET attempts = attempts + 1")) {
+    if (text.includes("SET attempts = attempts + 1")) {
       for (const challenge of challenges) {
         if (!challenge.consumed && challenge.contact === String(values[1])) challenge.attempts += 1;
       }
@@ -100,7 +100,11 @@ function createRegistrationTestDatabase(initialUserExists = false) {
       }
       return { rows: [] };
     }
-    if (text.includes("UPDATE auth_challenges") && text.includes("WHERE tenant_id = $1 AND contact = $2")) {
+    if (
+      text.includes("UPDATE auth_challenges") &&
+      text.includes("WHERE tenant_id = $1 AND contact = $2") &&
+      !text.includes("SET attempts = attempts + 1")
+    ) {
       for (const challenge of challenges) {
         if (
           challenge.tenantId === String(values[0]) &&
