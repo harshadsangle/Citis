@@ -115,7 +115,6 @@ export function resolveApiRuntimeConfiguration(environment: NodeJS.ProcessEnv = 
     throw new Error("STAGING_WEB_ORIGIN must not include a production portal origin.");
   }
 
-  const stagingDatabaseTarget = databaseTarget.getDatabaseTarget(databaseUrl);
   return {
     environment: citisEnvironment,
     allowedOrigins: stagingOrigins,
@@ -127,6 +126,10 @@ export function resolveApiRuntimeConfiguration(environment: NodeJS.ProcessEnv = 
 
 export function resolveDatabaseConnectionString(environment: NodeJS.ProcessEnv = process.env) {
   return databaseTarget.resolveDatabaseConnectionString(environment);
+}
+
+export function getDatabaseTarget(connectionString: string) {
+  return databaseTarget.getDatabaseTarget(connectionString);
 }
 
 export function getDemoSeedPassword(environmentKey: string, environment: NodeJS.ProcessEnv = process.env) {

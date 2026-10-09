@@ -28,6 +28,7 @@ import type {
 import type { CollegeStudentLoginDto } from "../college-students/college-students.dto";
 import { hashPassword, verifyPassword } from "./password-security";
 import { OtpDeliveryService, type OtpChannel, type OtpPurpose } from "./otp-delivery.service";
+import { getSessionSecret } from "../../config/runtime-config";
 
 const PLATFORM_TENANT_ID = "00000000-0000-0000-0000-000000000001";
 const SESSION_DAYS = 7;
@@ -48,7 +49,7 @@ function hashToken(token: string) {
 }
 
 function hashDirectStudentOtp(code: string) {
-  const secret = process.env.SESSION_SECRET;
+  const secret = getSessionSecret();
   if (!secret) {
     throw new ServiceUnavailableException("Verification-code protection is not configured.");
   }

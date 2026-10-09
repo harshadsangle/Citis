@@ -1,4 +1,5 @@
 import { Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
+import { getSessionSecret } from "../../config/runtime-config";
 
 export type OtpChannel = "EMAIL" | "SMS";
 export type OtpPurpose = "LOGIN" | "ENROLL" | "DISABLE" | "RESET" | "REGISTER";
@@ -114,7 +115,7 @@ export class OtpDeliveryService {
       const sensitiveValues = [
         emailBody,
         apiKey,
-        environment.SESSION_SECRET,
+        getSessionSecret(environment),
         input.code,
         input.destination,
         from,

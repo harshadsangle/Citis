@@ -8,9 +8,11 @@ import { AppModule } from "./app.module";
 import { ApiExceptionFilter } from "./common/errors.filter";
 import { registerRootHealthEndpoint } from "./common/health-route";
 import { requestContextMiddleware } from "./common/request-context";
-import { isOriginAllowed, normalizeOrigin } from "./common/cors-origin";
+import { isOriginAllowed } from "./common/cors-origin";
+import { resolveApiRuntimeConfiguration } from "./config/runtime-config";
 
 async function bootstrap() {
+  const runtimeConfig = resolveApiRuntimeConfiguration();
   const app = await NestFactory.create(AppModule, { rawBody: true });
   app.setGlobalPrefix("api/v1");
   app.getHttpAdapter().getInstance().set("trust proxy", 1);
@@ -31,13 +33,7 @@ async function bootstrap() {
     }
     next();
   });
-  const allowedOrigins = (process.env.WEB_ORIGIN || "")
-    .split(",")
-    .map(normalizeOrigin)
-    .filter(Boolean);
-  if (process.env.NODE_ENV === "production" && allowedOrigins.length === 0) {
-    throw new Error("WEB_ORIGIN must be configured in production.");
-  }
+  const allowedOrigins = runtimeConfig.allowedOrigins;
   const allowedOriginSet = new Set(allowedOrigins);
   app.enableCors({
     origin: allowedOrigins.length
@@ -52,7 +48,7 @@ async function bootstrap() {
       .setTitle("CITIS Education Platform API")
       .setDescription("Phase 0 multi-tenant foundation API for the CITIS Education Platform.")
       .setVersion("1.0")
-      .addCookieAuth("citis_session")
+      .addCookieAuth(runtimeConfig.sessionCookieName)
       .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);

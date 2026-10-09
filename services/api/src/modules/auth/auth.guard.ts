@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import type { ContextRequest } from "../../common/request-context";
 import { AuthService } from "./auth.service";
+import { getSessionCookieName } from "./session-cookie";
 
 function sessionToken(request: ContextRequest) {
   const authorization = request.header("authorization");
@@ -8,10 +9,14 @@ function sessionToken(request: ContextRequest) {
     const token = authorization.slice(7).trim();
     return token.length <= 256 ? token : "";
   }
-  const cookie = request.header("cookie")?.match(/(?:^|;\s*)citis_session=([^;]+)/);
+  const cookieName = getSessionCookieName();
+  const cookie = request.header("cookie")
+    ?.split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${cookieName}=`));
   if (!cookie) return "";
   try {
-    const token = decodeURIComponent(cookie[1]);
+    const token = decodeURIComponent(cookie.slice(cookieName.length + 1));
     return token.length <= 256 ? token : "";
   } catch {
     return "";
