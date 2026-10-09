@@ -42,6 +42,12 @@ export function resolveLmsApiOrigin(environment: NodeJS.ProcessEnv = process.env
   if (vercelEnvironment === "preview" && configured !== "staging") {
     throw new Error("Set CITIS_ENVIRONMENT=staging for Vercel Preview deployments.");
   }
+  if (
+    vercelEnvironment === "production" &&
+    (configured === "staging" || configured === "development")
+  ) {
+    throw new Error("Set CITIS_ENVIRONMENT=production for Vercel Production deployments.");
+  }
 
   if (
     configured !== "staging" &&
@@ -64,8 +70,11 @@ export function resolveLmsApiOrigin(environment: NodeJS.ProcessEnv = process.env
 
 export function resolvePublicFrontendApiConfiguration(environment: NodeJS.ProcessEnv = process.env) {
   const configured = configuredEnvironment(environment);
+  const vercelEnvironment = environment.VERCEL_ENV?.trim().toLowerCase();
   const deploymentEnvironment = configured
-    || (environment.NODE_ENV === "production" ? "production" : "development");
+    || (vercelEnvironment === "production" || environment.NODE_ENV === "production"
+      ? "production"
+      : "development");
 
   if (configured === "staging") {
     return {

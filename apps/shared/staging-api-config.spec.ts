@@ -72,10 +72,40 @@ test("public frontend Preview routes to the explicit staging API, not a generic 
   });
 });
 
+test("Vercel Production rejects staging mode before selecting its API origin", () => {
+  assert.throws(
+    () => resolvePublicFrontendApiConfiguration({
+      ...stagingEnvironment,
+      VERCEL_ENV: "production",
+      NODE_ENV: "production",
+    }),
+    /CITIS_ENVIRONMENT=production for Vercel Production/,
+  );
+});
+
+test("Vercel Production rejects development mode before selecting a local API origin", () => {
+  assert.throws(
+    () => resolvePublicFrontendApiConfiguration({
+      VERCEL_ENV: "production",
+      NODE_ENV: "production",
+      CITIS_ENVIRONMENT: "development",
+    }),
+    /CITIS_ENVIRONMENT=production for Vercel Production/,
+  );
+});
+
 test("public frontend production preserves its existing production API default", () => {
   assert.deepEqual(resolvePublicFrontendApiConfiguration({
     NODE_ENV: "production",
+    VERCEL_ENV: "production",
     CITIS_ENVIRONMENT: "production",
+  }), {
+    apiOrigin: "https://api.citisinfotech.in/api/v1",
+    environment: "production",
+  });
+  assert.deepEqual(resolvePublicFrontendApiConfiguration({
+    NODE_ENV: "development",
+    VERCEL_ENV: "production",
   }), {
     apiOrigin: "https://api.citisinfotech.in/api/v1",
     environment: "production",
