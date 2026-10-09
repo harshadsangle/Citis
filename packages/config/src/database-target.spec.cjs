@@ -98,3 +98,36 @@ test("staging integration test URLs are checked against production", () => {
     PRODUCTION_DATABASE_TARGET: productionTarget,
   }), /configured production database target/);
 });
+
+test("integration test URLs cannot match DATABASE_URL in development", () => {
+  assert.throws(() => resolveIntegrationTestDatabaseConnectionString({
+    NODE_ENV: "test",
+    CITIS_ENVIRONMENT: "development",
+    CITIS_DB_TEST_URL: productionUrl,
+    DATABASE_URL: productionUrl,
+  }), /CITIS_DB_TEST_URL and DATABASE_URL resolve to the same database target/);
+});
+
+test("integration test URL collisions are rejected before production tests are disabled", () => {
+  assert.throws(() => resolveIntegrationTestDatabaseConnectionString({
+    NODE_ENV: "production",
+    CITIS_ENVIRONMENT: "production",
+    CITIS_DB_TEST_URL: productionUrl,
+    DATABASE_URL: productionUrl,
+  }), /CITIS_DB_TEST_URL and DATABASE_URL resolve to the same database target/);
+});
+
+test("integration test URLs cannot match staging or the configured production fingerprint outside staging mode", () => {
+  assert.throws(() => resolveIntegrationTestDatabaseConnectionString({
+    NODE_ENV: "test",
+    CITIS_ENVIRONMENT: "development",
+    CITIS_DB_TEST_URL: stagingUrl,
+    STAGING_DATABASE_URL: stagingUrl,
+  }), /CITIS_DB_TEST_URL and STAGING_DATABASE_URL resolve to the same database target/);
+  assert.throws(() => resolveIntegrationTestDatabaseConnectionString({
+    NODE_ENV: "test",
+    CITIS_ENVIRONMENT: "development",
+    CITIS_DB_TEST_URL: productionUrl,
+    PRODUCTION_DATABASE_TARGET: productionTarget,
+  }), /configured production database target/);
+});

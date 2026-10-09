@@ -113,7 +113,7 @@ function resolveIntegrationTestDatabaseConnectionString(environment = process.en
   if (configuredEnvironment === "staging" || productionTargetUrl) {
     const requiredProductionTargetUrl = configuredEnvironment === "staging"
       ? requiredValue(environment, "PRODUCTION_DATABASE_TARGET")
-      : requiredProductionTargetUrlValue(productionTargetUrl);
+      : productionTargetUrl;
     const productionTarget = parseDatabaseTarget(requiredProductionTargetUrl, "PRODUCTION_DATABASE_TARGET", {
       credentialFree: true,
     });
