@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { displayName, firstNameForGreeting, timeGreeting, type InstructorIdentity } from "./greeting";
 import { LmsBackButton } from "../components/LmsBackButton";
+import StudentLoginActivityCalendar from "../../shared/login-activity-calendar/StudentLoginActivityCalendar";
 
 // Bound how long sign-out waits for /auth/logout before redirecting anyway.
 const LOGOUT_TIMEOUT_MS = 5000;
@@ -546,6 +547,7 @@ export default function TeacherPortalPage() {
   const [greeting, setGreeting] = useState("");
   const [courseData, setCourseData] = useState<CourseData[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [loginActivityStudentId, setLoginActivityStudentId] = useState("");
   const [gradeDrafts, setGradeDrafts] = useState<Record<string, { grade: string; feedback: string }>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -771,6 +773,9 @@ export default function TeacherPortalPage() {
   const pendingCourses = courseData.filter((item) => item.course.status === "INSTRUCTOR_PENDING");
   const activeCourses = courseData.filter((item) => item.course.status === "PUBLISHED");
   const selectedProgressErrors = selected?.progress.filter(({ error }) => Boolean(error)) || [];
+  const loginActivityEnrollment = selected?.progress.find(
+    ({ enrollment }) => enrollment.learner_id === loginActivityStudentId,
+  )?.enrollment;
   const pendingSubmissions = useMemo(
     () => courseData.flatMap((item) => item.submissions
       .filter(({ submission }) => submission.status === "SUBMITTED")
@@ -791,6 +796,7 @@ export default function TeacherPortalPage() {
 
   function selectCourse(courseId: string, scrollToSubmissions = false) {
     setSelectedCourseId(courseId);
+    setLoginActivityStudentId("");
     if (scrollToSubmissions) window.setTimeout(() => document.getElementById("submissions")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
   }
 
@@ -1988,9 +1994,22 @@ export default function TeacherPortalPage() {
                  <table>
                     <caption className="table-caption">{selected ? `Learner activity in ${selected.course.title}` : "Learner activity"}</caption>
                    <thead><tr><th>Learner</th><th>Completion</th><th>Lessons completed</th><th>Assessment progress</th><th>State</th></tr></thead>
-                   <tbody>{selected.progress.map(({ enrollment, progress, error: progressError }) => (
-                    <tr key={enrollment.id}>
-                      <td><div className="learner-cell"><span className="learner-avatar">{learnerName(enrollment).slice(0, 1).toUpperCase()}</span><span><strong>{learnerName(enrollment)}</strong><small>{enrollment.learner_email || "Active enrollment"}</small></span></div></td>
+                    <tbody>{selected.progress.map(({ enrollment, progress, error: progressError }) => (
+                     <tr key={enrollment.id}>
+                       <td>
+                         <div className="learner-cell"><span className="learner-avatar">{learnerName(enrollment).slice(0, 1).toUpperCase()}</span><span><strong>{learnerName(enrollment)}</strong><small>{enrollment.learner_email || "Active enrollment"}</small></span></div>
+                         <button
+                           className="text-button strong login-activity-toggle"
+                           type="button"
+                           aria-expanded={loginActivityStudentId === enrollment.learner_id}
+                           aria-controls={`teacher-login-activity-${enrollment.learner_id}`}
+                           onClick={() => setLoginActivityStudentId((current) => (
+                             current === enrollment.learner_id ? "" : enrollment.learner_id
+                           ))}
+                         >
+                           {loginActivityStudentId === enrollment.learner_id ? "Hide sign-in calendar" : "View sign-in calendar"}
+                         </button>
+                       </td>
                        <td className="progress-cell">{progress ? <><div><ProgressBar percentage={progress.percentage} /><strong>{progress.percentage}%</strong></div><small>Course completion</small></> : <span className="muted progress-error" title={progressError}>Progress unavailable</span>}</td>
                        <td>{progress ? <><strong className="table-value">{progress.lessons.completed}/{progress.lessons.total}</strong><small>completed</small></> : "—"}</td>
                        <td>{progress ? <><strong className="table-value">{progress.assessments.completed}/{progress.assessments.total}</strong><small>completed</small></> : "—"}</td>
@@ -1999,6 +2018,15 @@ export default function TeacherPortalPage() {
                   ))}</tbody>
                 </table>
               </div>}
+               {selected && loginActivityStudentId && loginActivityEnrollment && (
+                 <div className="teacher-login-activity" id={`teacher-login-activity-${loginActivityStudentId}`}>
+                   <StudentLoginActivityCalendar
+                     key={loginActivityStudentId}
+                     apiBase="/api/v1"
+                     studentId={loginActivityStudentId}
+                   />
+                 </div>
+               )}
             </section>
 
              <section className="panel content-panel" id="content">

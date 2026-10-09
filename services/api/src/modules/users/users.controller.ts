@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req, UseGuards } from "@nestjs/common";
 import type { ContextRequest } from "../../common/request-context";
 import { paginationFrom } from "../../common/pagination";
 import { paginatedResponse, successResponse } from "../../common/response";
 import { RequirePermission } from "../../guards/permission.decorator";
 import { PermissionGuard } from "../../guards/permission.guard";
 import { AuthGuard } from "../auth/auth.guard";
+import { StudentLoginActivityService } from "./student-login-activity.service";
 import {
   ApproveInstructorRequestDto,
   AssignRoleDto,
@@ -17,7 +18,19 @@ import { UsersService } from "./users.service";
 @Controller("users")
 @UseGuards(AuthGuard, PermissionGuard)
 export class UsersController {
-  constructor(private readonly users: UsersService) {}
+  constructor(
+    private readonly users: UsersService,
+    private readonly studentLoginActivity: StudentLoginActivityService,
+  ) {}
+
+  @Get("me/login-activity")
+  @RequirePermission("lms.student_profile.view")
+  async ownLoginActivity(@Req() request: ContextRequest, @Query("month") month?: string) {
+    return successResponse(
+      await this.studentLoginActivity.getActivity(request.context.user!, request.context.user!.id, month),
+      request,
+    );
+  }
 
   @Get()
   @RequirePermission("lms.instructor_assignment.view")
@@ -44,6 +57,19 @@ export class UsersController {
   @RequirePermission("lms.instructor_assignment.view")
   async get(@Param("id") id: string, @Req() request: ContextRequest) {
     return successResponse(await this.users.get(id, request.context.user!), request);
+  }
+
+  @Get(":id/login-activity")
+  @RequirePermission("lms.student_profile.view")
+  async loginActivity(
+    @Param("id", ParseUUIDPipe) id: string,
+    @Req() request: ContextRequest,
+    @Query("month") month?: string,
+  ) {
+    return successResponse(
+      await this.studentLoginActivity.getActivity(request.context.user!, id, month),
+      request,
+    );
   }
 
   @Post()

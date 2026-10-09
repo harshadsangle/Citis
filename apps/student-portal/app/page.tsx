@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { lmsHomepageUrl } from "./lms-homepage";
 import { LmsBackButton } from "../components/LmsBackButton";
+import StudentLoginActivityCalendar from "../../shared/login-activity-calendar/StudentLoginActivityCalendar";
 
 // Bound how long sign-out waits for /auth/logout before redirecting anyway.
 const LOGOUT_TIMEOUT_MS = 5000;
@@ -1826,6 +1827,7 @@ export default function StudentPortalPage() {
         {profileNotice && <div className="profile-notice" role="status"><span>{profileNotice}</span><button type="button" onClick={() => setProfileNotice("")} aria-label="Dismiss profile notice">×</button></div>}
         <nav className="learner-nav" aria-label="Learner navigation">
           <a className="is-active" href="#my-learning"><span aria-hidden="true">◈</span>My Learning</a>
+          <a href="#login-activity"><span aria-hidden="true">◷</span>Login activity</a>
           <a href="#assessments"><span aria-hidden="true">✓</span>Assessments</a>
           <a href="#assignments"><span aria-hidden="true">▤</span>Assignments</a>
           <a href="#certificates"><span aria-hidden="true">✦</span>Certificates</a>
@@ -1845,6 +1847,10 @@ export default function StudentPortalPage() {
             <a href="#my-learning">Open My Learning <span aria-hidden="true">→</span></a>
           </div>
         </header>
+
+        <section className="student-login-activity-section" id="login-activity">
+          <StudentLoginActivityCalendar apiBase="/api/v1" />
+        </section>
 
         {loading && <section className="portal-state-card portal-loading-card"><span className="portal-loading-mark" aria-hidden="true"><i /><i /><i /></span><strong>Loading your learning space</strong><span>Preparing your courses and progress.</span></section>}
         {!loading && !loadFailed && error && (

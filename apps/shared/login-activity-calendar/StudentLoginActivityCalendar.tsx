@@ -166,11 +166,14 @@ export default function StudentLoginActivityCalendar({
         if (!response.ok) {
           throw new Error(responseErrorMessage(body));
         }
-        if (!body || typeof body !== "object" || !("month" in body)) {
+        const payload = body && typeof body === "object" && "data" in body
+          ? (body as { data?: unknown }).data
+          : body;
+        if (!payload || typeof payload !== "object" || !("month" in payload)) {
           throw new Error("The sign-in history response was incomplete. Please try again.");
         }
         if (active) {
-          setActivity(body as StudentLoginActivity);
+          setActivity(payload as StudentLoginActivity);
           setSelectedDate(null);
         }
       } catch (loadError) {

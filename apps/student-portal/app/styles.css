@@ -2048,3 +2048,7 @@ body { color: #342b33; background: #fff; }
 .purchase-page :is(button, a, input, select, textarea):focus-visible {
   outline-color: rgb(79 3 65 / .55);
 }
+.student-login-activity-section {
+  margin-bottom: 26px;
+  scroll-margin-top: 88px;
+}

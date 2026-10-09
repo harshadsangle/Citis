@@ -1,7 +1,8 @@
 "use client";
 
-import { type FormEvent, useEffect, useState } from "react";
+import { Fragment, type FormEvent, useEffect, useState } from "react";
 import InstitutionOnboarding from "./InstitutionOnboarding";
+import StudentLoginActivityCalendar from "../../shared/login-activity-calendar/StudentLoginActivityCalendar";
 
 export type AdminAccessMode = "learners" | "institution-profile" | "campuses" | "roles" | "account-requests";
 
@@ -141,6 +142,7 @@ export default function AdminAccessView({
   onAccountRequestCountChange?: (count: number) => void;
 }) {
   const [learners, setLearners] = useState<Learner[]>([]);
+  const [loginActivityLearnerId, setLoginActivityLearnerId] = useState("");
   const [accountRequests, setAccountRequests] = useState<AccountRequest[]>([]);
   const [accountRequestTotal, setAccountRequestTotal] = useState(0);
   const [accountRequestPage, setAccountRequestPage] = useState(1);
@@ -174,6 +176,7 @@ export default function AdminAccessView({
 
   useEffect(() => {
     let cancelled = false;
+    setLoginActivityLearnerId("");
     setLoading(true);
     setError("");
 
@@ -482,12 +485,34 @@ export default function AdminAccessView({
         <div className="record-list">
           <div className="list-head"><span>Learner</span><span>Contact</span><span>Last sign-in</span><span>Status</span></div>
           {learners.map((learner) => (
-            <div className="record-row" key={learner.id}>
-              <div className="record-primary"><div className="record-avatar">{personName(learner).charAt(0).toUpperCase()}</div><div><strong className="record-title">{personName(learner)}</strong><span className="record-meta">{learner.email || "No email added"}</span></div></div>
-              <span className="record-detail">{learner.mobile || learner.email || "No contact detail"}</span>
-              <span className="record-detail">{dateLabel(learner.last_login_at)}</span>
-              <span className={`status-badge ${learner.status === "ACTIVE" ? "is-active" : "is-inactive"}`}>{learner.status || "Unknown"}</span>
-            </div>
+            <Fragment key={learner.id}>
+              <div className="record-row">
+                <div className="record-primary">
+                  <div className="record-avatar">{personName(learner).charAt(0).toUpperCase()}</div>
+                  <div>
+                    <strong className="record-title">{personName(learner)}</strong>
+                    <span className="record-meta">{learner.email || "No email added"}</span>
+                    <button
+                      className="row-action-link login-activity-toggle"
+                      type="button"
+                      aria-expanded={loginActivityLearnerId === learner.id}
+                      aria-controls={`admin-login-activity-${learner.id}`}
+                      onClick={() => setLoginActivityLearnerId((current) => current === learner.id ? "" : learner.id)}
+                    >
+                      {loginActivityLearnerId === learner.id ? "Hide sign-in calendar" : "View sign-in calendar"}
+                    </button>
+                  </div>
+                </div>
+                <span className="record-detail">{learner.mobile || learner.email || "No contact detail"}</span>
+                <span className="record-detail">{dateLabel(learner.last_login_at)}</span>
+                <span className={`status-badge ${learner.status === "ACTIVE" ? "is-active" : "is-inactive"}`}>{learner.status || "Unknown"}</span>
+              </div>
+              {loginActivityLearnerId === learner.id && (
+                <div className="login-activity-detail" id={`admin-login-activity-${learner.id}`}>
+                  <StudentLoginActivityCalendar key={learner.id} apiBase={apiBase} studentId={learner.id} />
+                </div>
+              )}
+            </Fragment>
           ))}
         </div>
       )}

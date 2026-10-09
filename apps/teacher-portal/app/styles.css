@@ -162,3 +162,15 @@ textarea:focus-visible {
     transition-duration: .01ms !important;
   }
 }
+.login-activity-toggle {
+  display: block;
+  margin: 5px 0 0 43px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+.teacher-login-activity {
+  margin-top: 18px;
+}
