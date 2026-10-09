@@ -1,16 +1,23 @@
 /**
- * Use the direct production API origin so a stale host-only `www` session
- * cookie cannot shadow the shared `.citisinfotech.in` session cookie.
- * Browser development requests use the same-origin Next rewrite to avoid
- * cross-origin CORS failures, while server-side requests retain the configured
- * API origin.
+ * Production uses its direct API origin so a stale host-only `www` session
+ * cookie cannot shadow the shared `.citisinfotech.in` session cookie. Browser
+ * development and staging requests use the same-origin Next rewrite.
  */
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL?.trim() ||
-  (process.env.NODE_ENV === "production" ? "https://api.citisinfotech.in/api/v1" : "/api/v1");
+import { resolveApiBaseUrl, resolveApiRequestBaseUrl } from "./api-url";
+
+const API_URL = resolveApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_URL,
+  process.env.NEXT_PUBLIC_CITIS_ENVIRONMENT,
+  process.env.NODE_ENV,
+);
 
 function requestApiUrl() {
-  return typeof window !== "undefined" && process.env.NODE_ENV === "development" ? "/api/v1" : API_URL;
+  return resolveApiRequestBaseUrl(
+    API_URL,
+    process.env.NEXT_PUBLIC_CITIS_ENVIRONMENT,
+    process.env.NODE_ENV,
+    typeof window !== "undefined",
+  );
 }
 
 export class ApiError extends Error {

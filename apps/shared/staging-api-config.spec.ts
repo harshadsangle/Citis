@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { resolveLmsApiOrigin } from "./staging-api-config";
+import {
+  resolveLmsApiOrigin,
+  resolvePublicFrontendApiConfiguration,
+} from "./staging-api-config";
 
 const stagingEnvironment = {
   CITIS_ENVIRONMENT: "staging",
@@ -48,5 +51,47 @@ test("staging API variables cannot be ignored under production mode", () => {
   assert.throws(
     () => resolveLmsApiOrigin({ ...stagingEnvironment, CITIS_ENVIRONMENT: "production" }),
     /Set CITIS_ENVIRONMENT=staging/,
+  );
+});
+
+test("Vercel Preview requires explicit staging mode", () => {
+  assert.throws(
+    () => resolveLmsApiOrigin({ VERCEL_ENV: "preview", NODE_ENV: "production" }),
+    /CITIS_ENVIRONMENT=staging for Vercel Preview/,
+  );
+});
+
+test("public frontend Preview routes to the explicit staging API, not a generic production URL", () => {
+  assert.deepEqual(resolvePublicFrontendApiConfiguration({
+    ...stagingEnvironment,
+    VERCEL_ENV: "preview",
+    NEXT_PUBLIC_API_URL: "https://api.citisinfotech.in/api/v1",
+  }), {
+    apiOrigin: "https://api-staging.example.test/api/v1",
+    environment: "staging",
+  });
+});
+
+test("public frontend production preserves its existing production API default", () => {
+  assert.deepEqual(resolvePublicFrontendApiConfiguration({
+    NODE_ENV: "production",
+    CITIS_ENVIRONMENT: "production",
+  }), {
+    apiOrigin: "https://api.citisinfotech.in/api/v1",
+    environment: "production",
+  });
+});
+
+test("public frontend staging fails instead of falling back when its API origin is missing", () => {
+  assert.throws(
+    () => resolvePublicFrontendApiConfiguration({
+      VERCEL_ENV: "preview",
+      NODE_ENV: "production",
+      CITIS_ENVIRONMENT: "staging",
+      LMS_API_ORIGIN: "https://api.citisinfotech.in/api/v1",
+      NEXT_PUBLIC_API_URL: "https://api.citisinfotech.in/api/v1",
+      PRODUCTION_API_ORIGIN: "https://api.citisinfotech.in/api/v1",
+    }),
+    /STAGING_API_ORIGIN is required/,
   );
 });

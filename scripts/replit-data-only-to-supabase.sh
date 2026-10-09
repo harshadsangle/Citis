@@ -2,10 +2,8 @@
 # Run in Replit Shell after pulling latest main. Leaves Replit DB untouched.
 set -euo pipefail
 
-if [[ "${CITIS_ENVIRONMENT:-}" == "staging" ]]; then
-  echo "This production data-transfer script is disabled in staging mode." >&2
-  exit 1
-fi
+source "${BASH_SOURCE[0]%/*}/citis-environment-guard.sh"
+validate_data_transfer_environment
 
 SOURCE_URL="${REPLIT_DATABASE_URL:-${DATABASE_URL:-}}"
 TARGET_URL="${SUPABASE_DATABASE_URL:-}"

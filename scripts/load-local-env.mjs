@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import dotenv from "dotenv";
+import { shouldLoadLocalEnvironment } from "./local-env-policy.mjs";
 
 export const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -18,9 +19,6 @@ export const localEnvironmentPath = candidates
   .filter((candidate) => candidate && existsSync(candidate))
   .find(Boolean) || null;
 
-const productionRuntime = process.env.NODE_ENV === "production" || process.env.REPLIT_DEPLOYMENT === "1";
-const stagingRuntime = process.env.CITIS_ENVIRONMENT?.trim().toLowerCase() === "staging";
-
-if (!productionRuntime && !stagingRuntime && localEnvironmentPath) {
+if (shouldLoadLocalEnvironment() && localEnvironmentPath) {
   dotenv.config({ path: localEnvironmentPath, override: true, quiet: true });
 }

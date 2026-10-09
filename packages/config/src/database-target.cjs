@@ -89,27 +89,43 @@ function resolveIntegrationTestDatabaseConnectionString(environment = process.en
   const effectiveEnvironment = configuredEnvironment
     || (environment.NODE_ENV === "production" ? "production" : "development");
 
-  if (effectiveEnvironment === "production" && configuredEnvironment !== "staging") return undefined;
   const testUrl = environment.CITIS_DB_TEST_URL?.trim();
   if (!testUrl) return undefined;
 
   const testTarget = parseDatabaseTarget(testUrl, "CITIS_DB_TEST_URL");
-  if (configuredEnvironment === "staging") {
-    const productionTargetUrl = requiredValue(environment, "PRODUCTION_DATABASE_TARGET");
-    const productionTarget = parseDatabaseTarget(productionTargetUrl, "PRODUCTION_DATABASE_TARGET", {
+  const genericDatabaseUrl = environment.DATABASE_URL?.trim();
+  if (genericDatabaseUrl) {
+    const genericTarget = parseDatabaseTarget(genericDatabaseUrl, "DATABASE_URL");
+    if (testTarget.identity === genericTarget.identity) {
+      throw new Error("CITIS_DB_TEST_URL and DATABASE_URL resolve to the same database target.");
+    }
+  }
+
+  const stagingDatabaseUrl = environment.STAGING_DATABASE_URL?.trim();
+  if (stagingDatabaseUrl) {
+    const stagingTarget = parseDatabaseTarget(stagingDatabaseUrl, "STAGING_DATABASE_URL");
+    if (testTarget.identity === stagingTarget.identity) {
+      throw new Error("CITIS_DB_TEST_URL and STAGING_DATABASE_URL resolve to the same database target.");
+    }
+  }
+
+  const productionTargetUrl = environment.PRODUCTION_DATABASE_TARGET?.trim();
+  if (configuredEnvironment === "staging" || productionTargetUrl) {
+    const requiredProductionTargetUrl = configuredEnvironment === "staging"
+      ? requiredValue(environment, "PRODUCTION_DATABASE_TARGET")
+      : requiredProductionTargetUrlValue(productionTargetUrl);
+    const productionTarget = parseDatabaseTarget(requiredProductionTargetUrl, "PRODUCTION_DATABASE_TARGET", {
       credentialFree: true,
     });
     if (testTarget.identity === productionTarget.identity) {
       throw new Error("CITIS_DB_TEST_URL resolves to the configured production database target.");
     }
+  }
 
-    const genericDatabaseUrl = environment.DATABASE_URL?.trim();
-    if (genericDatabaseUrl) {
-      const genericTarget = parseDatabaseTarget(genericDatabaseUrl, "DATABASE_URL");
-      if (testTarget.identity === genericTarget.identity) {
-        throw new Error("CITIS_DB_TEST_URL and DATABASE_URL resolve to the same database target.");
-      }
-    }
+  if (effectiveEnvironment === "production" && configuredEnvironment !== "staging") return undefined;
+
+  if (configuredEnvironment === "staging") {
+    requiredValue(environment, "STAGING_DATABASE_URL");
   }
   return testUrl;
 }

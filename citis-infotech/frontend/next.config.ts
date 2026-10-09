@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 import { resolve } from "node:path";
+import { resolvePublicFrontendApiConfiguration } from "../../apps/shared/staging-api-config";
 
 const apiHost = process.env.NEXT_PUBLIC_API_HOST ?? "localhost";
 const strapiHost = process.env.NEXT_PUBLIC_STRAPI_HOST ?? "localhost";
-const lmsApiOrigin = process.env.LMS_API_ORIGIN ?? "http://127.0.0.1:4000/api/v1";
+const { apiOrigin: lmsApiOrigin, environment: citisEnvironment } =
+  resolvePublicFrontendApiConfiguration(process.env);
 const developmentApiConnectSource =
   process.env.NODE_ENV === "development" ? " http://localhost:4000" : "";
 
@@ -11,6 +13,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  env: {
+    NEXT_PUBLIC_API_URL: lmsApiOrigin,
+    NEXT_PUBLIC_CITIS_ENVIRONMENT: citisEnvironment,
+  },
   // The public site is a nested app with its own install, while the repository
   // root also has React dependencies for the portal apps. Keep every client
   // hook consumer on this app's single React runtime in dev and production.
