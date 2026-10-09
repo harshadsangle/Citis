@@ -1,0 +1,60 @@
+Implement a **Student Login Activity Calendar** in the existing CITIS LMS.
+
+### 1. Calendar UI
+
+* Add a clean, premium, responsive monthly calendar to the appropriate student profile/details page in the Admin Portal.
+* Display the month and year with Previous Month and Next Month navigation.
+* Each calendar date must show:
+
+  * **Green circle/check:** Student successfully logged in on that date.
+  * **Red cross:** No successful login on a date when login attendance is expected.
+  * **Neutral/grey:** Future dates, holidays, or dates whose attendance status cannot be determined.
+* Highlight the current date.
+* Clicking a date should show the student's login details for that date, including login time and number of successful login sessions, when available.
+* Show a monthly summary: days logged in, total successful login sessions, and last login date/time.
+* Make the calendar work correctly on desktop and mobile.
+
+### 2. Student Login Tracking
+
+* Track successful authentication events for all applicable student login methods, including college students and direct students.
+* Use the server's timestamp converted to the configured institutional timezone for the calendar date.
+* Multiple successful logins on the same date should produce one calendar mark, while retaining individual session/event details where available.
+* Failed logins must not count as successful attendance.
+* Logout must not create a login event.
+* Use existing login history/session records if they reliably contain the required information. If not, implement the smallest secure, persistent database-backed solution and add a migration only if necessary.
+* Do not fabricate historical login records. Display historical data only when it actually exists.
+* Avoid recording passwords, OTP values, tokens, or other authentication secrets.
+
+### 3. Permissions
+
+* **CITIS Admin:** Can view login calendars for all students.
+* **Instructor:** Can view calendars only for students within their assigned institution and permitted scope.
+* **Student:** Can view only their own login calendar if a suitable student-facing page exists or can be added without disrupting existing navigation.
+* Enforce authorization on the API/server side, not just by hiding UI elements.
+
+### 4. Important Attendance Rules
+
+* This feature tracks **LMS login activity**, not physical or live-class attendance.
+* Do not automatically mark future dates as absent.
+* Do not treat every date without a login as an absence unless an existing institutional attendance policy explicitly defines expected login days. If no such policy exists, use a neutral “No login recorded” state rather than claiming the student was absent.
+* Respect existing institution, course, student, and role boundaries.
+
+### 5. Implementation Safety
+
+* First inspect the existing authentication flow, login history tables, API routes, permissions, Admin Portal student details page, and frontend design system.
+* Reuse existing records and components wherever possible.
+* Preserve all existing routes, APIs, authentication/session behavior, course content, student data, and role permissions.
+* Do not change the login/logout flow except for adding reliable login-event tracking where needed.
+* Do not add dummy/sample data or duplicate tracking records.
+* Add appropriate loading, empty, and error states.
+* Add tests for successful login tracking, duplicate same-day logins, timezone boundaries, authorization boundaries, and students with no history.
+
+### 6. Verification and Final Report
+
+* Run relevant tests, API build, and frontend TypeScript/lint checks.
+* Verify the calendar uses real persisted login history and works with existing college and direct student accounts.
+* Make changes live in the current Replit workspace/preview.
+* Do not push to GitHub or deploy to production unless explicitly instructed.
+* Report the exact files changed, whether a migration was required, tests/build results, and any remaining limitations.
+
+**Start by inspecting the existing implementation, then implement the feature with minimal, targeted changes.**
