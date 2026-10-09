@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { Client } from "pg";
+import databaseTarget from "../packages/config/src/database-target.cjs";
 import { repositoryRoot } from "./load-local-env.mjs";
 
 const version = "030_lms_course_approval_workflow";
@@ -61,9 +62,13 @@ export async function repairCourseApproval(client) {
 }
 
 async function main() {
-  if (process.env.NODE_ENV === "production") throw new Error("This repair is for local development only.");
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.CITIS_ENVIRONMENT?.trim().toLowerCase() !== "staging"
+  ) {
+    throw new Error("This repair is for local development or an explicitly configured staging database only.");
+  }
+  const client = new Client({ connectionString: databaseTarget.resolveDatabaseConnectionString() });
   await client.connect();
   try {
     console.log("Local database:", (await client.query(
