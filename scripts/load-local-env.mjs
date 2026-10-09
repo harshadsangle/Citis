@@ -18,6 +18,6 @@ export const localEnvironmentPath = candidates
   .filter((candidate) => candidate && existsSync(candidate))
   .find(Boolean) || null;
 
-if (localEnvironmentPath) {
+if (process.env.CITIS_ENVIRONMENT?.trim().toLowerCase() !== "staging" && localEnvironmentPath) {
   dotenv.config({ path: localEnvironmentPath, override: true, quiet: true });
 }

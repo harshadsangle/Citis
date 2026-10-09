@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import test from "node:test";
 import { Client } from "pg";
+import { resolveIntegrationTestDatabaseConnectionString } from "../config/runtime-config";
 import {
   MIGRATION_VERSIONS,
   resolveMigrationRoot,
   runMigrations,
 } from "./migrate";
+
+const testDatabaseUrl = resolveIntegrationTestDatabaseConnectionString();
 
 function newSchemaName() {
   return `tenant_parent_test_${randomUUID().replaceAll("-", "")}`;
@@ -14,7 +17,7 @@ function newSchemaName() {
 
 async function createSchema() {
   const schema = newSchemaName();
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: testDatabaseUrl! });
   await client.connect();
   await client.query(`CREATE SCHEMA "${schema}"`);
   await client.end();
@@ -22,14 +25,14 @@ async function createSchema() {
 }
 
 async function connectToSchema(schema: string) {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: testDatabaseUrl! });
   await client.connect();
   await client.query(`SET search_path TO "${schema}", public`);
   return client;
 }
 
 async function dropSchema(schema: string) {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: testDatabaseUrl! });
   await client.connect();
   await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   await client.end();
@@ -44,7 +47,7 @@ async function assertForeignKeyViolation(work: () => Promise<unknown>, constrain
   });
 }
 
-test("database rejects cross-tenant and wrong-parent LMS hierarchy rows", { skip: !process.env.DATABASE_URL }, async () => {
+test("database rejects cross-tenant and wrong-parent LMS hierarchy rows", { skip: !testDatabaseUrl }, async () => {
   const migrationRoot = await resolveMigrationRoot();
   const schema = await createSchema();
   const client = await connectToSchema(schema);

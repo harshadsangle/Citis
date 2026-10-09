@@ -2,10 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { Client } from "pg";
+import databaseTarget from "../packages/config/src/database-target.cjs";
 import { repairCourseApproval } from "./repair-course-approval-db.mjs";
 
-test("repair restores missing approval columns despite a stale migration record and preserves courses", async () => {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+const testDatabaseUrl = databaseTarget.resolveIntegrationTestDatabaseConnectionString();
+
+test("repair restores missing approval columns despite a stale migration record and preserves courses", {
+  skip: !testDatabaseUrl,
+}, async () => {
+  const client = new Client({ connectionString: testDatabaseUrl });
   await client.connect();
   const schema = `approval_repair_test_${randomUUID().replaceAll("-", "")}`;
   try {

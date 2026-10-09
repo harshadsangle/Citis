@@ -5,11 +5,14 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import test from "node:test";
 import { Client } from "pg";
+import { resolveIntegrationTestDatabaseConnectionString } from "../config/runtime-config";
 import {
   MIGRATION_VERSIONS,
   resolveMigrationRoot,
   runMigrations,
 } from "./migrate";
+
+const testDatabaseUrl = resolveIntegrationTestDatabaseConnectionString();
 
 function newSchemaName() {
   return `migration_test_${randomBytes(8).toString("hex")}`;
@@ -17,7 +20,7 @@ function newSchemaName() {
 
 async function createSchema() {
   const schema = newSchemaName();
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: testDatabaseUrl! });
   await client.connect();
   await client.query(`CREATE SCHEMA "${schema}"`);
   await client.end();
@@ -25,14 +28,14 @@ async function createSchema() {
 }
 
 async function connectToSchema(schema: string) {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: testDatabaseUrl! });
   await client.connect();
   await client.query(`SET search_path TO "${schema}", public`);
   return client;
 }
 
 async function dropSchema(schema: string) {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: testDatabaseUrl! });
   await client.connect();
   await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   await client.end();
@@ -49,7 +52,7 @@ async function withCleanSchema<T>(work: (client: Client, schema: string) => Prom
   }
 }
 
-test("migration runner applies every migration once on a clean database", { skip: !process.env.DATABASE_URL }, async () => {
+test("migration runner applies every migration once on a clean database", { skip: !testDatabaseUrl }, async () => {
   const migrationRoot = await resolveMigrationRoot();
   await withCleanSchema(async (client) => {
     const result = await runMigrations(client, migrationRoot, MIGRATION_VERSIONS, () => undefined);
@@ -68,7 +71,7 @@ test("migration runner applies every migration once on a clean database", { skip
   });
 });
 
-test("migration runner skips all already-applied migrations on a rerun", { skip: !process.env.DATABASE_URL }, async () => {
+test("migration runner skips all already-applied migrations on a rerun", { skip: !testDatabaseUrl }, async () => {
   const migrationRoot = await resolveMigrationRoot();
   await withCleanSchema(async (client) => {
     await runMigrations(client, migrationRoot, MIGRATION_VERSIONS, () => undefined);
@@ -80,7 +83,7 @@ test("migration runner skips all already-applied migrations on a rerun", { skip:
   });
 });
 
-test("concurrent migration runners are serialized by the database lock", { skip: !process.env.DATABASE_URL }, async () => {
+test("concurrent migration runners are serialized by the database lock", { skip: !testDatabaseUrl }, async () => {
   const migrationRoot = await resolveMigrationRoot();
   const schema = await createSchema();
   const clients = await Promise.all([connectToSchema(schema), connectToSchema(schema)]);
@@ -103,7 +106,7 @@ test("concurrent migration runners are serialized by the database lock", { skip:
   }
 });
 
-test("migration runner detects a changed checksum before applying migrations", { skip: !process.env.DATABASE_URL }, async () => {
+test("migration runner detects a changed checksum before applying migrations", { skip: !testDatabaseUrl }, async () => {
   const migrationRoot = await resolveMigrationRoot();
   await withCleanSchema(async (client) => {
     await runMigrations(client, migrationRoot, MIGRATION_VERSIONS, () => undefined);
@@ -119,7 +122,7 @@ test("migration runner detects a changed checksum before applying migrations", {
   });
 });
 
-test("failed migration rolls back its own changes while preserving earlier migrations", { skip: !process.env.DATABASE_URL }, async () => {
+test("failed migration rolls back its own changes while preserving earlier migrations", { skip: !testDatabaseUrl }, async () => {
   const schema = await createSchema();
   const migrationRoot = await mkdtemp(resolve(tmpdir(), "citis-migrations-"));
   const clients = await connectToSchema(schema);

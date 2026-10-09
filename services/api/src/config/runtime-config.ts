@@ -18,6 +18,7 @@ const requireFromRepositoryRoot = createRequire(resolve(__dirname, "../../../../
 const databaseTarget = requireFromRepositoryRoot("./packages/config/src/database-target.cjs") as {
   getDatabaseTarget(connectionString: string): { host: string; port: string; database: string };
   resolveDatabaseConnectionString(environment?: NodeJS.ProcessEnv): string;
+  resolveIntegrationTestDatabaseConnectionString(environment?: NodeJS.ProcessEnv): string | undefined;
 };
 
 export interface ApiRuntimeConfiguration {
@@ -130,6 +131,10 @@ export function resolveDatabaseConnectionString(environment: NodeJS.ProcessEnv =
 
 export function getDatabaseTarget(connectionString: string) {
   return databaseTarget.getDatabaseTarget(connectionString);
+}
+
+export function resolveIntegrationTestDatabaseConnectionString(environment: NodeJS.ProcessEnv = process.env) {
+  return databaseTarget.resolveIntegrationTestDatabaseConnectionString(environment);
 }
 
 export function getDemoSeedPassword(environmentKey: string, environment: NodeJS.ProcessEnv = process.env) {
