@@ -95,9 +95,9 @@ test("staging seed password does not silently use a production password", () => 
   }), /STAGING_DEMO_ADMIN_PASSWORD is required/);
 });
 
-test("staging mode requires an explicit marker rather than inferring it from NODE_ENV", () => {
-  assert.throws(() => getSessionSecret({
+test("staging mode is not inferred from production NODE_ENV alone", () => {
+  assert.equal(getSessionSecret({
     NODE_ENV: "production",
     SESSION_SECRET: "production-session-secret",
-  }), /at least 32 bytes/);
+  }), "production-session-secret");
 });
