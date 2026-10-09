@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { resolveLmsApiOrigin } from "../shared/staging-api-config";
 
-const API_BASE = process.env.LMS_API_ORIGIN || "http://127.0.0.1:4000/api/v1";
+const API_BASE = resolveLmsApiOrigin();
 const ADMIN_ROLES = ["CITIS_ADMIN", "CITIS_SUPER_ADMIN", "CITIS_PLATFORM_SUPPORT", "INSTITUTION_ADMINISTRATOR", "PRINCIPAL_DIRECTOR", "ACADEMIC_ADMINISTRATOR"];
 const AUTH_ME_TIMEOUT_MS = 3000;
 

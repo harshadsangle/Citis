@@ -1,10 +1,17 @@
 import pg from "pg";
 import * as bcrypt from "bcryptjs";
 import { loadLocalEnvironment } from "../config/load-env";
+import {
+  assertDemoSeedingAllowed,
+  getDemoSeedPassword,
+  resolveDatabaseConnectionString,
+} from "../config/runtime-config";
 
 loadLocalEnvironment();
+assertDemoSeedingAllowed();
 
 const { Pool } = pg;
+const databaseUrl = resolveDatabaseConnectionString();
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("Demo seed commands are disabled in production.");
@@ -16,19 +23,15 @@ const DEMO_INSTITUTION_NAME = "CITIS LMS Demo Institution";
 const DEMO_LEARNER_EMAIL = "learner.demo@citis.in";
 
 function requiredDemoLearnerPassword() {
-  const value = process.env.DEMO_LEARNER_PASSWORD;
+  const value = getDemoSeedPassword("DEMO_LEARNER_PASSWORD");
   if (!value) {
     throw new Error("DEMO_LEARNER_PASSWORD is required to seed the demo learner.");
   }
   return value;
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required to seed the demo learner.");
-}
-
 async function seedDemoLearner(password: string) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ connectionString: databaseUrl });
   const client = await pool.connect();
 
   try {

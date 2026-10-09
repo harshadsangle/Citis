@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
+import { resolveLmsApiOrigin } from "../shared/staging-api-config";
 
-const apiBase = process.env.LMS_API_ORIGIN || "http://127.0.0.1:4000/api/v1";
+const apiBase = resolveLmsApiOrigin();
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

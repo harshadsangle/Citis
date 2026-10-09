@@ -4,6 +4,10 @@ import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import path from "node:path";
 
+if (process.env.CITIS_ENVIRONMENT?.trim().toLowerCase() === "staging") {
+  throw new Error("The development runner cannot start in staging mode; use the staging API launcher and stage portal origins.");
+}
+
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicFrontendDir = path.join(rootDir, "citis-infotech", "frontend");
 const nextProjectDirs = [
