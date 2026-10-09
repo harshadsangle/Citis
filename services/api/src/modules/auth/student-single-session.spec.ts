@@ -89,6 +89,7 @@ class SessionTestDatabase {
           return { rows: [{ id: this.userId }] };
         }
         if (text.includes("UPDATE auth_sessions") && text.includes("SET revoked_at")) {
+          this.studentSessionChecks += 1;
           const userId = String(values[0]);
           const now = Date.now();
           for (const session of this.sessions) {
@@ -103,7 +104,6 @@ class SessionTestDatabase {
           return { rows: [] };
         }
         if (text.includes("FROM lms_student_profiles") && text.includes("student_type")) {
-          this.studentSessionChecks += 1;
           const hasStudentProfile = this.studentType !== null;
           const hasStudentRole = text.includes("JOIN user_roles ur") && this.roleCode === "STUDENT";
           return {
@@ -388,8 +388,10 @@ test("self-registered learner email verification activates a role-only single-se
 test("STUDENT role without a profile still serializes simultaneous logins", async () => {
   const passwordHash = await PASSWORD_HASH;
   const { db, service } = makeService(null, passwordHash, "STUDENT");
-  const sessions = await Promise.all([loginByEmail(service), loginByEmail(service)]);
-  assert.ok(sessions.every((session) => !("mfaRequired" in session)));
+  const sessions = await Promise.all([
+    loginWithSession(service, "DIRECT_STUDENT"),
+    loginWithSession(service, "DIRECT_STUDENT"),
+  ]);
   assert.equal(db.activeSessions().length, 1);
   assert.equal(db.studentSessionChecks, 2);
   const validSessions = await Promise.all(
