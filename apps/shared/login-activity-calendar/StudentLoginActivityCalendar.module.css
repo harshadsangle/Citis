@@ -1,12 +1,12 @@
 .calendar {
-  --activity-ink: #123b56;
-  --activity-muted: #71899a;
-  --activity-line: #d8e5e9;
-  --activity-surface: #fbfdfd;
-  --activity-soft: #f3f8f8;
-  --activity-teal: #267d76;
-  --activity-teal-soft: #e8f5f1;
-  --activity-orange: #bd6938;
+  --activity-ink: #342b33;
+  --activity-muted: #746c76;
+  --activity-line: #e4d9e2;
+  --activity-surface: #fff;
+  --activity-soft: #f8f6f8;
+  --activity-teal: #26745f;
+  --activity-teal-soft: #eaf5ef;
+  --activity-orange: #4f0341;
   color: var(--activity-ink);
   font-family: inherit;
   font-size: 14px;
@@ -17,9 +17,9 @@
 .panel {
   overflow: hidden;
   border: 1px solid var(--activity-line);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--activity-surface);
-  box-shadow: 0 14px 34px rgb(18 75 115 / 7%);
+  box-shadow: 0 8px 22px rgb(52 18 47 / 5%);
 }
 
 .heading {
@@ -67,10 +67,10 @@
   align-items: center;
   min-height: 22px;
   padding: 2px 8px;
-  border: 1px solid #d6e6e2;
+  border: 1px solid #e4d9e2;
   border-radius: 999px;
-  color: #39746d;
-  background: #f1f8f5;
+  color: #6e6670;
+  background: #f8f6f8;
   font-size: 10px;
   font-weight: 750;
 }
@@ -79,10 +79,10 @@
   flex: 0 0 auto;
   max-width: 260px;
   padding: 9px 11px;
-  border: 1px solid #e1eaec;
+  border: 1px solid #e4d9e2;
   border-radius: 10px;
-  color: #617b89;
-  background: #f7faf9;
+  color: #746c76;
+  background: #fbfafb;
   font-size: 10px;
   line-height: 1.45;
   text-align: right;
@@ -91,7 +91,7 @@
 .zone strong {
   display: block;
   margin-bottom: 2px;
-  color: #698491;
+  color: #746c76;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: .08em;
@@ -112,7 +112,7 @@
 .summaryItem {
   min-width: 0;
   padding: 12px 14px 13px;
-  background: #f8fbfa;
+  background: #f8f6f8;
 }
 
 .summaryLabel {
@@ -128,7 +128,7 @@
   display: block;
   overflow: hidden;
   margin-top: 4px;
-  color: #17435d;
+  color: #342b33;
   font-size: 18px;
   font-weight: 750;
   letter-spacing: -.035em;
@@ -166,7 +166,7 @@
 
 .monthTitle {
   margin: 0;
-  color: #19455f;
+  color: #342b33;
   font-size: 17px;
   font-weight: 750;
   letter-spacing: -.035em;
@@ -183,9 +183,9 @@
   height: 36px;
   place-items: center;
   padding: 0;
-  border: 1px solid #d4e2e6;
+  border: 1px solid #e4d9e2;
   border-radius: 9px;
-  color: #3f7180;
+  color: #665664;
   background: #fff;
   cursor: pointer;
   transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
@@ -193,8 +193,8 @@
 
 .monthButton:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: #a8c8c7;
-  background: #f1f8f6;
+  border-color: #cbb5c7;
+  background: #faf6f9;
 }
 
 .monthButton:disabled {
@@ -205,7 +205,7 @@
 .monthButton:focus-visible,
 .dayButton:focus-visible,
 .retryButton:focus-visible {
-  outline: 3px solid rgb(189 105 56 / 38%);
+  outline: 3px solid rgb(79 3 65 / 32%);
   outline-offset: 2px;
 }
 
@@ -235,11 +235,11 @@
 
 .weekdays {
   padding-bottom: 6px;
-  border-bottom: 1px solid #e7eef0;
+  border-bottom: 1px solid #eee8ed;
 }
 
 .weekday {
-  color: #8b9ea7;
+  color: #857b86;
   font-size: 9px;
   font-weight: 800;
   letter-spacing: .045em;
@@ -299,23 +299,23 @@
 }
 
 .dayButton.today:not(.selected) {
-  border-color: #db9a70;
-  box-shadow: inset 0 0 0 1px #db9a70;
-  color: #a5572d;
+  border-color: #b993b0;
+  box-shadow: inset 0 0 0 1px #b993b0;
+  color: #4f0341;
 }
 
 .dayButton.today.hasSessions:not(.selected) {
-  border-color: #db9a70;
-  color: #276f67;
+  border-color: #b993b0;
+  color: #26745f;
   background: #eff8f4;
 }
 
 .dayButton.selected,
 .dayButton.selected:hover {
-  border-color: #164b64;
+  border-color: #4f0341;
   color: #fff;
-  background: #164b64;
-  box-shadow: 0 3px 8px rgb(22 75 100 / 18%);
+  background: #4f0341;
+  box-shadow: 0 3px 8px rgb(79 3 65 / 16%);
 }
 
 .dayNumber {
@@ -346,8 +346,8 @@
   padding: 0 3px;
   transform: translateX(-50%);
   border-radius: 3px;
-  color: #a5572d;
-  background: #fffaf5;
+  color: #4f0341;
+  background: #f4edf3;
   font-size: 6px;
   font-weight: 850;
   letter-spacing: .03em;
@@ -357,7 +357,7 @@
 
 .dayButton.selected .todayLabel {
   color: #fff;
-  background: #164b64;
+  background: #4f0341;
 }
 
 .calendarFooter {
@@ -391,9 +391,9 @@
 .legendToday {
   width: 14px;
   height: 14px;
-  border: 1px solid #db9a70;
+  border: 1px solid #b993b0;
   border-radius: 5px;
-  background: #fffaf5;
+  background: #faf6f9;
 }
 
 .neutralNote {
