@@ -1,0 +1,431 @@
+:root {
+  --citis-ink: #342b33;
+  --citis-muted: #746c76;
+  --citis-accent: #4f0341;
+  --citis-accent-hover: #3c0232;
+  --citis-accent-soft: #f4edf3;
+  --citis-line: #e4d9e2;
+  --citis-canvas: #faf8fa;
+  --citis-surface: #ffffff;
+  --citis-success: #26745f;
+  --citis-success-soft: #eaf5ef;
+  --citis-warning: #8a6428;
+  --citis-warning-soft: #fbf3e5;
+  --citis-danger: #9c4f54;
+  --citis-danger-soft: #fff0f0;
+}
+
+.admin-shell,
+.portal-shell,
+.student-shell {
+  font-family: var(--font-lms), "Avenir Next", "Segoe UI", sans-serif;
+}
+
+.admin-shell,
+.portal-shell {
+  color: var(--citis-ink);
+  background: var(--citis-canvas);
+}
+
+.admin-shell .sidebar,
+.portal-shell .sidebar {
+  background: var(--citis-accent);
+}
+
+.admin-shell :is(.content-panel, .relationship-panel, .metric-card),
+.portal-shell :is(.panel, .metric-card, .module-card, .assignment-card, .assessment-card, .submission-card) {
+  border-color: var(--citis-line) !important;
+  border-radius: 13px;
+  background-color: var(--citis-surface);
+  box-shadow: 0 7px 22px rgb(52 18 47 / 5%) !important;
+}
+
+.admin-shell :is(.metric-card, .content-panel, .relationship-panel),
+.portal-shell :is(.metric-card, .panel) {
+  box-shadow: 0 7px 22px rgb(52 18 47 / 5%) !important;
+}
+
+.admin-shell .metric-card,
+.portal-shell .metric-card {
+  min-height: 98px;
+  padding: 15px 17px;
+}
+
+.admin-shell .primary-button,
+.portal-shell .primary-button {
+  color: #fff;
+  border-color: var(--citis-accent);
+  background: var(--citis-accent);
+  box-shadow: 0 3px 9px rgb(79 3 65 / 12%);
+}
+
+.admin-shell .primary-button:hover:not(:disabled),
+.portal-shell .primary-button:hover:not(:disabled) {
+  color: #fff;
+  border-color: var(--citis-accent-hover);
+  background: var(--citis-accent-hover);
+  box-shadow: none;
+  transform: translateY(-1px);
+}
+
+.admin-shell .secondary-button,
+.portal-shell .secondary-button {
+  color: var(--citis-accent);
+  border-color: var(--citis-line);
+  background: #fff;
+}
+
+.admin-shell .secondary-button:hover:not(:disabled),
+.portal-shell .secondary-button:hover:not(:disabled) {
+  color: var(--citis-accent);
+  border-color: var(--citis-accent);
+  background: var(--citis-accent-soft);
+}
+
+.admin-shell :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea
+),
+.portal-shell :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  select,
+  textarea
+) {
+  border-color: var(--citis-line);
+  border-radius: 9px;
+  color: var(--citis-ink);
+}
+
+.admin-shell :is(input, select, textarea):focus,
+.portal-shell :is(input, select, textarea):focus {
+  border-color: var(--citis-accent);
+  box-shadow: 0 0 0 3px rgb(79 3 65 / 12%);
+  outline: 0;
+}
+
+.admin-shell :is(button, a, input, select, textarea, summary):focus-visible,
+.portal-shell :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 3px solid rgb(79 3 65 / 45%);
+  outline-offset: 2px;
+}
+
+/* Admin record lists keep their existing compact grid and responsive card behavior. */
+.admin-shell :is(.list-head, .instructor-head, .relationship-list-heading) {
+  color: #777079;
+  border-bottom: 1px solid var(--citis-line);
+  background: #f8f6f8;
+  font-size: 11px;
+  letter-spacing: .055em;
+}
+
+.admin-shell :is(.record-row, .instructor-row, .relationship-row) {
+  border-top-color: #eee7ed;
+}
+
+.admin-shell :is(.record-row:hover, .instructor-row:hover, .relationship-row:hover) {
+  background: #fbf9fb;
+}
+
+.admin-shell .status-badge {
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.admin-shell :is(.status-badge.is-active, .status-badge.is-approved) {
+  color: var(--citis-success);
+  border-color: #cfe5d8;
+  background: var(--citis-success-soft);
+}
+
+.admin-shell :is(.status-badge.is-inactive, .status-badge.is-archived) {
+  color: #667078;
+  border-color: #e1e5e8;
+  background: #f1f3f4;
+}
+
+.admin-shell :is(.status-badge.is-pending, .status-badge.is-review) {
+  color: var(--citis-warning);
+  border-color: #eddfc5;
+  background: var(--citis-warning-soft);
+}
+
+.admin-shell :is(.status-badge.is-rejected, .status-badge.is-suspended, .status-badge.is-failed) {
+  color: var(--citis-danger);
+  border-color: #f0d5d5;
+  background: var(--citis-danger-soft);
+}
+
+.admin-shell .report-table-wrap,
+.portal-shell .table-wrap {
+  max-width: 100%;
+  border-color: var(--citis-line);
+  border-radius: 12px;
+  overscroll-behavior-x: contain;
+}
+
+.admin-shell .report-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.admin-shell .report-table th,
+.portal-shell .table-wrap th {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--citis-line);
+  color: #716a73;
+  background: #f8f6f8;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .045em;
+}
+
+.admin-shell .report-table td,
+.portal-shell .table-wrap td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #eee8ed;
+  color: #514a53;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.admin-shell .report-table tbody tr:last-child td,
+.portal-shell .table-wrap tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-shell .report-table tbody tr:hover,
+.portal-shell .table-wrap tbody tr:hover {
+  background: #fbf9fb;
+}
+
+.portal-shell .table-wrap table {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.portal-shell .table-wrap th {
+  border-top: 0;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.portal-shell .table-wrap td {
+  vertical-align: middle;
+}
+
+.portal-shell .table-wrap td strong {
+  color: var(--citis-ink);
+  font-size: 13px;
+}
+
+.portal-shell .table-wrap td small {
+  color: var(--citis-muted);
+  font-size: 11px;
+}
+
+.portal-shell .table-caption {
+  padding: 14px 16px 10px;
+  color: var(--citis-muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  caption-side: top;
+}
+
+.portal-shell :is(.status-pill.published, .status-pill.completed, .status-pill.graded, .status-pill.approved) {
+  color: var(--citis-success);
+  border-color: #cfe5d8;
+  background: var(--citis-success-soft);
+}
+
+.portal-shell :is(.status-pill.draft, .status-pill.pending, .status-pill.instructor_pending) {
+  color: var(--citis-warning);
+  border-color: #eddfc5;
+  background: var(--citis-warning-soft);
+}
+
+.portal-shell :is(.status-pill.rejected, .status-pill.suspended, .status-pill.failed, .status-pill.expired) {
+  color: var(--citis-danger);
+  border-color: #f0d5d5;
+  background: var(--citis-danger-soft);
+}
+
+.portal-shell .status-pill.in_progress {
+  color: var(--citis-accent);
+  border-color: var(--citis-line);
+  background: var(--citis-accent-soft);
+}
+
+.portal-shell :is(.status-pill.archived, .status-pill.not_started) {
+  color: #667078;
+  border-color: #e1e5e8;
+  background: #f1f3f4;
+}
+
+/* Keep the existing table headers accessible while presenting roster cells as cards on phones. */
+@media (max-width: 700px) {
+  .portal-shell .table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+
+  .portal-shell .table-wrap table,
+  .portal-shell .table-wrap tbody {
+    display: block;
+  }
+
+  .portal-shell .table-wrap thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .portal-shell .table-wrap tbody {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .portal-shell .table-wrap tbody tr {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--citis-line);
+    border-radius: 11px;
+    background: #fff;
+  }
+
+  .portal-shell .table-wrap tbody tr:hover {
+    background: #fff;
+  }
+
+  .portal-shell .table-wrap td {
+    display: grid;
+    grid-template-columns: minmax(105px, .72fr) minmax(0, 1.28fr);
+    align-items: start;
+    gap: 12px;
+    min-width: 0;
+    padding: 11px 12px;
+    border-bottom: 1px solid #eee8ed;
+    border-top: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .portal-shell .table-wrap td::before {
+    color: var(--citis-muted);
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+  }
+
+  .portal-shell .table-wrap td:last-child {
+    border-bottom: 0;
+  }
+
+  .portal-shell .table-caption {
+    padding: 14px 12px 0;
+  }
+
+  .portal-shell .learner-cell {
+    min-width: 0;
+  }
+
+  .admin-shell .report-table {
+    display: block;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-shell .report-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .admin-shell .report-table tbody {
+    display: grid;
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .admin-shell .report-table tbody tr {
+    display: block;
+    overflow: hidden;
+    border: 1px solid var(--citis-line);
+    border-radius: 11px;
+    background: #fff;
+  }
+
+  .admin-shell .report-table td {
+    display: grid;
+    grid-template-columns: minmax(110px, .8fr) minmax(0, 1.2fr);
+    gap: 12px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee8ed;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-shell .report-table td::before {
+    color: var(--citis-muted);
+    content: attr(data-label);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: .035em;
+    text-transform: uppercase;
+  }
+
+  .admin-shell .report-table td:last-child {
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .portal-shell .table-wrap td,
+  .admin-shell .report-table td {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+  }
+}
+
+.student-shell {
+  background: var(--citis-canvas) !important;
+}
+
+.student-shell :is(section, article) {
+  border-color: var(--citis-line) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 7px 22px rgb(52 18 47 / 5%) !important;
+}
+
+.student-shell :is(.portal-hero-card, .course-detail-hero, .course-card-art, .lesson-resource-footer) {
+  background: var(--citis-accent) !important;
+}
+
+.student-shell .portal-hero-card::after {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-shell *,
+  .portal-shell *,
+  .student-shell *,
+  .admin-shell *::before,
+  .portal-shell *::before,
+  .student-shell *::before {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}

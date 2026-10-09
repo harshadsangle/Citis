@@ -144,13 +144,15 @@
 
 .calendarLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, .72fr);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 23px;
   padding: 21px 25px 23px;
 }
 
 .calendarColumn {
   min-width: 0;
+  width: min(100%, 760px);
+  margin-inline: auto;
 }
 
 .monthBar {
@@ -399,12 +401,22 @@
   color: #8a9ba4;
 }
 
-.dayPanel {
+.sessionPanel {
   min-width: 0;
-  padding: 17px 17px 15px;
-  border: 1px solid #dce8e8;
-  border-radius: 13px;
-  background: linear-gradient(155deg, #f7fbfa, #f3f8f8);
+  overflow: hidden;
+  border: 1px solid var(--activity-line);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sessionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e7eef0;
+  background: #fbfcfc;
 }
 
 .dayPanelEyebrow {
@@ -419,7 +431,7 @@
 .dayPanelTitle {
   margin: 5px 0 0;
   color: #17445d;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 750;
   letter-spacing: -.03em;
   line-height: 1.3;
@@ -427,16 +439,18 @@
 
 .dayCount {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 6px;
-  margin-top: 15px;
-  padding-bottom: 13px;
-  border-bottom: 1px solid #dfe9e9;
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid #dce9e1;
+  border-radius: 8px;
+  background: #f3f8f4;
 }
 
 .dayCount strong {
   color: #267d76;
-  font-size: 26px;
+  font-size: 18px;
   font-weight: 750;
   letter-spacing: -.06em;
   line-height: 1;
@@ -444,55 +458,89 @@
 
 .dayCount span {
   color: #6e8792;
-  font-size: 11px;
+  font-size: 10px;
 }
 
-.timesHeading {
-  margin: 13px 0 7px;
-  color: #78909b;
+.sessionTableWrap {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.sessionTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  text-align: left;
+}
+
+.tableCaption {
+  padding: 12px 18px 8px;
+  color: #71899a;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: left;
+  caption-side: top;
+}
+
+.sessionTable th,
+.sessionTable td {
+  padding: 11px 18px;
+  border-bottom: 1px solid #edf1f1;
+  color: #496674;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.sessionTable th {
+  color: #7a8f98;
+  background: #f6f9f8;
   font-size: 9px;
   font-weight: 800;
-  letter-spacing: .09em;
+  letter-spacing: .07em;
   text-transform: uppercase;
 }
 
-.timeList {
-  display: grid;
-  gap: 6px;
-  max-height: 216px;
-  overflow-y: auto;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.sessionTable th:first-child,
+.sessionTable td:first-child {
+  width: 42%;
 }
 
-.timeItem {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-height: 34px;
-  padding: 6px 9px;
-  border: 1px solid #e4eceb;
-  border-radius: 8px;
-  color: #456875;
-  background: #fff;
+.sessionTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sessionTable tbody tr:hover {
+  background: #fbfdfc;
+}
+
+.sessionNumber {
+  color: #617983;
   font-size: 11px;
+  font-weight: 700;
+}
+
+.sessionTimestamp {
+  color: #234c5e;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
-.timeMark {
-  width: 6px;
-  height: 6px;
-  flex: 0 0 6px;
-  border-radius: 50%;
-  background: #55a58a;
+.sessionEmpty {
+  padding: 18px !important;
+  color: #80939b !important;
+  font-size: 11px !important;
+  text-align: center;
 }
 
-.noTimes {
-  margin: 13px 0 0;
-  color: #80939b;
-  font-size: 11px;
-  line-height: 1.55;
+.sessionFootnote {
+  margin: 0;
+  padding: 11px 18px 13px;
+  border-top: 1px solid #edf1f1;
+  color: #81939b;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .emptyMonth {
@@ -658,12 +706,26 @@
     padding: 18px;
   }
 
-  .dayPanel {
-    padding: 15px;
+  .sessionHeader {
+    align-items: flex-start;
+    padding: 14px;
   }
 
-  .timeList {
-    max-height: 180px;
+  .dayCount {
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .sessionTable th,
+  .sessionTable td {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .tableCaption,
+  .sessionFootnote {
+    padding-right: 14px;
+    padding-left: 14px;
   }
 }
 
@@ -684,6 +746,16 @@
 
   .calendarLayout {
     padding: 15px 12px;
+  }
+
+  .sessionHeader {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sessionTable th:first-child,
+  .sessionTable td:first-child {
+    width: 44%;
   }
 
   .weekday {

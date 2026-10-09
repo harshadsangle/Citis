@@ -375,45 +375,64 @@ export default function StudentLoginActivityCalendar({
                   </div>
                 </div>
 
-                <aside
-                  className={styles.dayPanel}
+                <section
+                  className={styles.sessionPanel}
                   aria-label="Selected date sign-in details"
                   aria-live="polite"
                   aria-atomic="true"
                 >
-                  {visibleDate ? (
-                    <>
-                      <p className={styles.dayPanelEyebrow}>Selected date</p>
-                      <h3 className={styles.dayPanelTitle}>{formatCalendarDate(visibleDate)}</h3>
-                      <div className={styles.dayCount}>
-                        <strong>{selectedSessions.length}</strong>
-                        <span>{selectedSessions.length === 1 ? "successful sign-in" : "successful sign-ins"}</span>
-                      </div>
-                      {selectedSessions.length > 0 ? (
-                        <>
-                          <p className={styles.timesHeading}>Login times</p>
-                          <ol className={styles.timeList}>
-                            {selectedSessions.map((session, index) => (
-                              <li className={styles.timeItem} key={`${session}-${index}`}>
-                                <span className={styles.timeMark} aria-hidden="true" />
-                                <span>{formatTime(session, activity.timeZone)}</span>
-                              </li>
-                            ))}
-                          </ol>
-                        </>
-                      ) : (
-                        <p className={styles.noTimes}>
-                          No successful sign-ins are recorded for this date. This is login history only, not an attendance status.
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <p className={styles.dayPanelEyebrow}>Daily details</p>
-                      <h3 className={styles.dayPanelTitle}>Choose a date</h3>
-                      <p className={styles.noTimes}>Select any date to review its successful sign-in count and login times.</p>
-                    </>
-                  )}
+                  <div className={styles.sessionHeader}>
+                    <div>
+                      <p className={styles.dayPanelEyebrow}>{visibleDate ? "Selected date" : "Daily details"}</p>
+                      <h3 className={styles.dayPanelTitle}>
+                        {visibleDate ? formatCalendarDate(visibleDate) : "Choose a date"}
+                      </h3>
+                    </div>
+                    <div className={styles.dayCount}>
+                      <strong>{selectedSessions.length}</strong>
+                      <span>{selectedSessions.length === 1 ? "successful sign-in" : "successful sign-ins"}</span>
+                    </div>
+                  </div>
+
+                  <div className={styles.sessionTableWrap}>
+                    <table className={styles.sessionTable}>
+                      <caption className={styles.tableCaption}>
+                        Successful login sessions · {activity.timeZone}
+                      </caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Session</th>
+                          <th scope="col">Login time</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedSessions.length > 0 ? selectedSessions.map((session, index) => (
+                          <tr key={`${session}-${index}`}>
+                            <td data-label="Session">
+                              <span className={styles.sessionNumber}>Session {index + 1}</span>
+                            </td>
+                            <td data-label="Login time">
+                              <time className={styles.sessionTimestamp} dateTime={session}>
+                                {formatTime(session, activity.timeZone)}
+                              </time>
+                            </td>
+                          </tr>
+                        )) : (
+                          <tr>
+                            <td className={styles.sessionEmpty} colSpan={2}>
+                              {visibleDate && visibleDate > activity.today
+                                ? "This date hasn’t occurred yet."
+                                : "No successful sign-ins were recorded for this date."}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <p className={styles.sessionFootnote}>
+                    This is account login history only; it does not indicate class attendance.
+                  </p>
 
                   {activity.summary.totalSuccessfulSessions === 0 && (
                     <div className={styles.emptyMonth} role="status">
@@ -421,7 +440,7 @@ export default function StudentLoginActivityCalendar({
                       <span>No successful sign-ins recorded for {monthLabel(activity.month)}.</span>
                     </div>
                   )}
-                </aside>
+                </section>
               </div>
             )}
           </>

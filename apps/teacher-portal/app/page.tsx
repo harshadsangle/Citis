@@ -1996,7 +1996,7 @@ export default function TeacherPortalPage() {
                    <thead><tr><th>Learner</th><th>Completion</th><th>Lessons completed</th><th>Assessment progress</th><th>State</th></tr></thead>
                     <tbody>{selected.progress.map(({ enrollment, progress, error: progressError }) => (
                      <tr key={enrollment.id}>
-                       <td>
+                        <td data-label="Learner">
                          <div className="learner-cell"><span className="learner-avatar">{learnerName(enrollment).slice(0, 1).toUpperCase()}</span><span><strong>{learnerName(enrollment)}</strong><small>{enrollment.learner_email || "Active enrollment"}</small></span></div>
                          <button
                            className="text-button strong login-activity-toggle"
@@ -2010,10 +2010,10 @@ export default function TeacherPortalPage() {
                            {loginActivityStudentId === enrollment.learner_id ? "Hide sign-in calendar" : "View sign-in calendar"}
                          </button>
                        </td>
-                       <td className="progress-cell">{progress ? <><div><ProgressBar percentage={progress.percentage} /><strong>{progress.percentage}%</strong></div><small>Course completion</small></> : <span className="muted progress-error" title={progressError}>Progress unavailable</span>}</td>
-                       <td>{progress ? <><strong className="table-value">{progress.lessons.completed}/{progress.lessons.total}</strong><small>completed</small></> : "—"}</td>
-                       <td>{progress ? <><strong className="table-value">{progress.assessments.completed}/{progress.assessments.total}</strong><small>completed</small></> : "—"}</td>
-                       <td>{progress ? <StatusPill status={progress.state} /> : <StatusPill status="NOT_STARTED" />}</td>
+                        <td className="progress-cell" data-label="Completion">{progress ? <><div><ProgressBar percentage={progress.percentage} /><strong>{progress.percentage}%</strong></div><small>Course completion</small></> : <span className="muted progress-error" title={progressError}>Progress unavailable</span>}</td>
+                        <td data-label="Lessons completed">{progress ? <><strong className="table-value">{progress.lessons.completed}/{progress.lessons.total}</strong><small>completed</small></> : "—"}</td>
+                        <td data-label="Assessment progress">{progress ? <><strong className="table-value">{progress.assessments.completed}/{progress.assessments.total}</strong><small>completed</small></> : "—"}</td>
+                        <td data-label="State">{progress ? <StatusPill status={progress.state} /> : <StatusPill status="NOT_STARTED" />}</td>
                     </tr>
                   ))}</tbody>
                 </table>
@@ -2905,6 +2905,39 @@ export default function TeacherPortalPage() {
           select:focus-visible, textarea:focus-visible, summary:focus-visible {
             outline-color: rgb(79 3 65 / .65) !important;
           }
+           /* Shared CITIS table and status treatment; keep list data readable on narrow screens. */
+           .portal-shell { background: #faf8fa !important; }
+           .sidebar { background: #4f0341; }
+           .metric-card, .panel, .module-card, .assignment-card, .assessment-card, .submission-card {
+             border-color: #e4d9e2 !important;
+             border-radius: 13px;
+             box-shadow: 0 7px 22px rgb(52 18 47 / 5%) !important;
+           }
+           .metric-card { min-height: 98px; padding: 15px 17px; }
+           .table-wrap { max-width: 100%; overflow-x: auto; border: 1px solid #e4d9e2; border-radius: 12px; overscroll-behavior-x: contain; }
+           .table-wrap table { width: 100%; min-width: 0; table-layout: fixed; }
+           .table-wrap th { padding: 12px 14px; border-bottom: 1px solid #e4d9e2; color: #716a73; background: #f8f6f8; font-size: 11px; }
+           .table-wrap td { padding: 13px 14px; border-bottom: 1px solid #eee8ed; color: #514a53; font-size: 13px; line-height: 1.45; }
+           .table-caption { padding: 14px 16px 10px; color: #746c76; font-size: 12px; }
+           .status-pill.published, .status-pill.completed, .status-pill.graded, .status-pill.approved { color: #26745f; background: #eaf5ef; border-color: #cfe5d8; }
+           .status-pill.draft, .status-pill.pending, .status-pill.instructor_pending { color: #8a6428; background: #fbf3e5; border-color: #eddfc5; }
+           .status-pill.rejected, .status-pill.suspended, .status-pill.failed, .status-pill.expired { color: #9c4f54; background: #fff0f0; border-color: #f0d5d5; }
+           .status-pill.archived, .status-pill.not_started { color: #667078; background: #f1f3f4; border-color: #e1e5e8; }
+           @media (max-width: 700px) {
+             .table-wrap { overflow: visible; border: 0; }
+             .table-wrap table, .table-wrap tbody { display: block; }
+             .table-wrap thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%); white-space: nowrap; }
+             .table-wrap tbody { display: grid; gap: 10px; padding: 12px; }
+             .table-wrap tbody tr { display: block; overflow: hidden; border: 1px solid #e4d9e2; border-radius: 11px; background: #fff; }
+             .table-wrap td { display: grid; grid-template-columns: minmax(105px, .72fr) minmax(0, 1.28fr); align-items: start; gap: 12px; min-width: 0; padding: 11px 12px; border: 0; border-bottom: 1px solid #eee8ed; overflow-wrap: anywhere; }
+             .table-wrap td::before { color: #746c76; content: attr(data-label); font-size: 10px; font-weight: 750; letter-spacing: .035em; text-transform: uppercase; }
+             .table-wrap td:last-child { border-bottom: 0; }
+             .table-caption { padding: 14px 12px 0; }
+             .learner-cell { min-width: 0; }
+           }
+           @media (max-width: 420px) {
+             .table-wrap td { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+           }
       `}</style>
     </main>
   );

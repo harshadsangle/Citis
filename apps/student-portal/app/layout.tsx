@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import "./styles.css";
+import "../../shared/lms-portal-design.css";
 
 const manrope = Manrope({
   variable: "--font-manrope",
