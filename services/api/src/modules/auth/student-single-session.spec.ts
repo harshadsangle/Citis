@@ -9,6 +9,7 @@ const PASSWORD_HASH = hashPassword(PASSWORD);
 const METADATA = { ipAddress: "127.0.0.1", userAgent: "single-session-test" };
 
 type StudentType = "COLLEGE_STUDENT" | "DIRECT_STUDENT" | null;
+type AccountRole = "STUDENT" | "CITIS_ADMIN" | "INSTRUCTOR" | null;
 type FakeSession = { id: string; userId: string; tokenHash: string; expiresAt: Date; revoked: boolean };
 
 class AsyncLock {
@@ -35,6 +36,7 @@ class SessionTestDatabase {
   constructor(
     private readonly studentType: StudentType,
     private readonly passwordHash: string,
+    private readonly roleCode: AccountRole = null,
   ) {}
 
   async query(text: string, values: unknown[] = []) {
@@ -64,7 +66,15 @@ class SessionTestDatabase {
           return { rows: [{ id: this.userId }] };
         }
         if (text.includes("FROM lms_student_profiles") && text.includes("student_type")) {
-          return { rows: this.studentType ? [{ student_type: this.studentType }] : [] };
+          const hasStudentProfile = this.studentType !== null;
+          const hasStudentRole = text.includes("JOIN user_roles ur") && this.roleCode === "STUDENT";
+          return {
+            rows: hasStudentProfile
+              ? [{ student_type: this.studentType }]
+              : hasStudentRole
+                ? [{ student_type: "STUDENT" }]
+                : [],
+          };
         }
         if (text.includes("FROM auth_sessions")) {
           this.studentSessionChecks += 1;
@@ -125,8 +135,8 @@ class SessionTestDatabase {
   }
 }
 
-function makeService(studentType: StudentType, passwordHash: string) {
-  const db = new SessionTestDatabase(studentType, passwordHash);
+function makeService(studentType: StudentType, passwordHash: string, roleCode: AccountRole = null) {
+  const db = new SessionTestDatabase(studentType, passwordHash, roleCode);
   return { db, service: new AuthService(
     db as never,
     { assertAllowed() {}, record() {}, clear() {} } as never,
@@ -137,7 +147,11 @@ function makeService(studentType: StudentType, passwordHash: string) {
 function login(service: AuthService, studentType: Exclude<StudentType, null>) {
   return studentType === "COLLEGE_STUDENT"
     ? service.collegeStudentLogin({ collegeUserId: "COL-001", password: PASSWORD }, METADATA)
-    : service.login({ email: "learner@example.test", password: PASSWORD }, METADATA);
+    : loginByEmail(service);
+}
+
+function loginByEmail(service: AuthService) {
+  return service.login({ email: "learner@example.test", password: PASSWORD }, METADATA);
 }
 
 async function loginWithSession(service: AuthService, studentType: Exclude<StudentType, null>) {
@@ -147,6 +161,7 @@ async function loginWithSession(service: AuthService, studentType: Exclude<Stude
 }
 
 const STUDENT_TYPES: Exclude<StudentType, null>[] = ["COLLEGE_STUDENT", "DIRECT_STUDENT"];
+const STAFF_ROLES: Exclude<AccountRole, "STUDENT" | null>[] = ["CITIS_ADMIN", "INSTRUCTOR"];
 
 for (const studentType of STUDENT_TYPES) {
   test(`${studentType} login blocks another device without revoking the current session`, async () => {
@@ -189,15 +204,46 @@ for (const studentType of STUDENT_TYPES) {
   });
 }
 
-test("Admin and Instructor-style accounts keep allowing concurrent sessions", async () => {
+test("STUDENT role without a profile blocks a second login until logout", async () => {
   const passwordHash = await PASSWORD_HASH;
-  const { db, service } = makeService(null, passwordHash);
-  const results = await Promise.all([
-    service.login({ email: "learner@example.test", password: PASSWORD }, METADATA),
-    service.login({ email: "learner@example.test", password: PASSWORD }, METADATA),
-  ]);
+  const { db, service } = makeService(null, passwordHash, "STUDENT");
+  const first = await loginByEmail(service);
+  if ("mfaRequired" in first) throw new Error("The test account should not require MFA.");
 
-  assert.equal(results.length, 2);
-  assert.equal(db.activeSessions().length, 2);
-  assert.equal(db.studentSessionChecks, 0);
+  await assert.rejects(
+    loginByEmail(service),
+    (error: unknown) =>
+      error instanceof ConflictException &&
+      error.getStatus() === 409 &&
+      error.message.includes("already signed in on another device"),
+  );
+  assert.deepEqual(db.activeSessions().map(({ id }) => id), ["session-1"]);
+
+  await service.logout(first.token);
+  assert.equal(db.activeSessions().length, 0);
 });
+
+test("STUDENT role without a profile still serializes simultaneous logins", async () => {
+  const passwordHash = await PASSWORD_HASH;
+  const { db, service } = makeService(null, passwordHash, "STUDENT");
+  const attempts = await Promise.allSettled([loginByEmail(service), loginByEmail(service)]);
+
+  assert.equal(attempts.filter((attempt) => attempt.status === "fulfilled").length, 1);
+  const rejected = attempts.find((attempt) => attempt.status === "rejected");
+  assert.ok(rejected && rejected.status === "rejected");
+  assert.ok(rejected.reason instanceof ConflictException);
+  assert.equal(db.activeSessions().length, 1);
+  assert.equal(db.studentSessionChecks, 2);
+});
+
+for (const roleCode of STAFF_ROLES) {
+  test(`${roleCode} accounts keep allowing concurrent sessions`, async () => {
+    const passwordHash = await PASSWORD_HASH;
+    const { db, service } = makeService(null, passwordHash, roleCode);
+    const results = await Promise.all([loginByEmail(service), loginByEmail(service)]);
+
+    assert.equal(results.length, 2);
+    assert.equal(db.activeSessions().length, 2);
+    assert.equal(db.studentSessionChecks, 0);
+  });
+}

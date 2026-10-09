@@ -640,15 +640,21 @@ export class AuthService {
     // releases this row lock.
     await client.query("SELECT id FROM users WHERE id = $1 FOR UPDATE", [userId]);
 
-    const studentProfile = await client.query<{ student_type: string }>(
+    const studentAccount = await client.query<{ student_type: string }>(
       `SELECT student_type
        FROM lms_student_profiles
        WHERE user_id = $1
          AND student_type IN ('COLLEGE_STUDENT', 'DIRECT_STUDENT')
+       UNION ALL
+       SELECT r.code AS student_type
+       FROM users u
+       JOIN user_roles ur ON ur.user_id = u.id AND ur.tenant_id = u.tenant_id
+       JOIN roles r ON r.id = ur.role_id AND r.tenant_id = ur.tenant_id
+       WHERE u.id = $1 AND r.code = 'STUDENT' AND r.status = 'ACTIVE'
        LIMIT 1`,
       [userId],
     );
-    if (studentProfile.rows.length > 0) {
+    if (studentAccount.rows.length > 0) {
       const activeSession = await client.query<{ id: string }>(
         `SELECT id
          FROM auth_sessions
