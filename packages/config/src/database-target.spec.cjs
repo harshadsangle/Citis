@@ -52,6 +52,15 @@ test("staging requires a credential-free production database fingerprint", () =>
   }), /without credentials/);
 });
 
+test("staging database variables cannot be present under another deployment mode", () => {
+  assert.throws(() => resolveDatabaseConnectionString({
+    CITIS_ENVIRONMENT: "production",
+    STAGING_DATABASE_URL: stagingUrl,
+    PRODUCTION_DATABASE_TARGET: productionTarget,
+    DATABASE_URL: productionUrl,
+  }), /Set CITIS_ENVIRONMENT=staging/);
+});
+
 test("non-staging mode keeps the existing DATABASE_URL behavior", () => {
   assert.equal(resolveDatabaseConnectionString({
     CITIS_ENVIRONMENT: "production",

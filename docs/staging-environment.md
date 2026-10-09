@@ -1,6 +1,6 @@
 # Staging environment
 
-Staging is opt-in through `CITIS_ENVIRONMENT=staging`. It uses explicit staging database, API, CORS, session, cookie, and demo-account settings. It does not fall back to `DATABASE_URL`, `LMS_API_ORIGIN`, `WEB_ORIGIN`, `SESSION_SECRET`, or the production demo passwords for those resources.
+Staging is opt-in through `CITIS_ENVIRONMENT=staging`. It uses explicit staging database, API, CORS, session, cookie, and demo-account settings. It does not fall back to `DATABASE_URL`, `LMS_API_ORIGIN`, `WEB_ORIGIN`, `SESSION_SECRET`, or the production demo passwords for those resources. If staging-only variables are present under another mode, startup fails rather than ignoring them. Scope all staging-only variables to the staging runtime and Preview frontend environment; production must not receive them.
 
 ## Configure a separate environment
 

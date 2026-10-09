@@ -43,3 +43,10 @@ test("stage-only API variables require an explicit staging marker", () => {
     /Set CITIS_ENVIRONMENT=staging/,
   );
 });
+
+test("staging API variables cannot be ignored under production mode", () => {
+  assert.throws(
+    () => resolveLmsApiOrigin({ ...stagingEnvironment, CITIS_ENVIRONMENT: "production" }),
+    /Set CITIS_ENVIRONMENT=staging/,
+  );
+});

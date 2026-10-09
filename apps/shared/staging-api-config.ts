@@ -33,6 +33,13 @@ export function resolveLmsApiOrigin(environment: NodeJS.ProcessEnv = process.env
     throw new Error("CITIS_ENVIRONMENT must be development, staging, or production.");
   }
 
+  if (
+    configuredEnvironment !== "staging" &&
+    (environment.STAGING_API_ORIGIN || environment.PRODUCTION_API_ORIGIN)
+  ) {
+    throw new Error("Set CITIS_ENVIRONMENT=staging when staging API origin variables are present.");
+  }
+
   if (configuredEnvironment === "staging") {
     const stagingOrigin = normalizedApiOrigin(environment.STAGING_API_ORIGIN, "STAGING_API_ORIGIN", true);
     const productionOrigin = normalizedApiOrigin(environment.PRODUCTION_API_ORIGIN, "PRODUCTION_API_ORIGIN", true);
@@ -40,10 +47,6 @@ export function resolveLmsApiOrigin(environment: NodeJS.ProcessEnv = process.env
       throw new Error("STAGING_API_ORIGIN must be different from PRODUCTION_API_ORIGIN.");
     }
     return stagingOrigin;
-  }
-
-  if (!configuredEnvironment && (environment.STAGING_API_ORIGIN || environment.PRODUCTION_API_ORIGIN)) {
-    throw new Error("Set CITIS_ENVIRONMENT=staging when using staging API origin variables.");
   }
 
   return normalizedApiOrigin(environment.LMS_API_ORIGIN || LOCAL_API_ORIGIN, "LMS_API_ORIGIN", false);

@@ -46,6 +46,12 @@ function resolveDatabaseConnectionString(environment = process.env) {
   if (configuredEnvironment && !DEPLOYMENT_ENVIRONMENTS.has(configuredEnvironment)) {
     throw new Error("CITIS_ENVIRONMENT must be development, staging, or production.");
   }
+  if (
+    configuredEnvironment !== "staging" &&
+    (environment.STAGING_DATABASE_URL || environment.PRODUCTION_DATABASE_TARGET)
+  ) {
+    throw new Error("Set CITIS_ENVIRONMENT=staging when staging database variables are present.");
+  }
 
   if (configuredEnvironment === "staging") {
     const stagingUrl = requiredValue(environment, "STAGING_DATABASE_URL");

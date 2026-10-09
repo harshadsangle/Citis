@@ -101,3 +101,13 @@ test("staging mode is not inferred from production NODE_ENV alone", () => {
     SESSION_SECRET: "production-session-secret",
   }), "production-session-secret");
 });
+
+test("staging-only API configuration cannot be ignored under production mode", () => {
+  assert.throws(() => resolveApiRuntimeConfiguration({
+    NODE_ENV: "production",
+    CITIS_ENVIRONMENT: "production",
+    STAGING_DATABASE_URL: stagingEnvironment.STAGING_DATABASE_URL,
+    PRODUCTION_DATABASE_TARGET: stagingEnvironment.PRODUCTION_DATABASE_TARGET,
+    SESSION_SECRET: "production-session-secret",
+  }), /CITIS_ENVIRONMENT=staging/);
+});

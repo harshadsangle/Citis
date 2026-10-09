@@ -31,6 +31,21 @@ export interface ApiRuntimeConfiguration {
 
 export function getCitisEnvironment(environment: NodeJS.ProcessEnv = process.env): CitisEnvironment {
   const configured = environment.CITIS_ENVIRONMENT?.trim().toLowerCase();
+  const hasStagingConfiguration = Boolean(
+    environment.STAGING_DATABASE_URL ||
+    environment.PRODUCTION_DATABASE_TARGET ||
+    environment.STAGING_SESSION_SECRET ||
+    environment.STAGING_WEB_ORIGIN ||
+    environment.PRODUCTION_WEB_ORIGIN ||
+    environment.STAGING_API_ORIGIN ||
+    environment.PRODUCTION_API_ORIGIN ||
+    environment.STAGING_DEMO_ADMIN_PASSWORD ||
+    environment.STAGING_DEMO_INSTRUCTOR_PASSWORD ||
+    environment.STAGING_DEMO_LEARNER_PASSWORD
+  );
+  if (hasStagingConfiguration && configured !== "staging") {
+    throw new Error("Set CITIS_ENVIRONMENT=staging when staging-only configuration is present.");
+  }
   if (configured) {
     if (configured === "development" || configured === "staging" || configured === "production") {
       return configured;
