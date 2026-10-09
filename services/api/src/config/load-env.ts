@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import dotenv from "dotenv";
+import { shouldLoadLocalEnvironment } from "./local-environment-policy";
 
 function localEnvironmentCandidates() {
   // Resolve these roots from the API source location first. This is stable
@@ -28,21 +29,7 @@ export function getLocalEnvironmentPath() {
 }
 
 export function loadLocalEnvironment() {
-  // Published deployments receive environment-specific values from the
-  // platform. Never replace them with development-only .env.local entries.
-  // REPLIT_DEPLOYMENT is the primary signal, but preserving a supplied
-  // DATABASE_URL outside Replit's development domain also protects runtimes
-  // where that indicator is unavailable to the child process.
-  if (
-    process.env.CITIS_ENVIRONMENT?.trim().toLowerCase() === "staging" ||
-    process.env.NODE_ENV === "production" ||
-    process.env.REPLIT_DEPLOYMENT === "1" ||
-    (process.platform !== "win32" &&
-      Boolean(process.env.DATABASE_URL) &&
-      !process.env.REPLIT_DEV_DOMAIN)
-  ) {
-    return;
-  }
+  if (!shouldLoadLocalEnvironment()) return;
 
   const localEnvPath = getLocalEnvironmentPath();
   if (!localEnvPath) return;
