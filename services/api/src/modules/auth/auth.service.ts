@@ -655,19 +655,12 @@ export class AuthService {
       [userId],
     );
     if (studentAccount.rows.length > 0) {
-      const activeSession = await client.query<{ id: string }>(
-        `SELECT id
-         FROM auth_sessions
-         WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()
-         LIMIT 1
-         FOR UPDATE`,
+      await client.query(
+        `UPDATE auth_sessions
+         SET revoked_at = now()
+         WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()`,
         [userId],
       );
-      if (activeSession.rows[0]) {
-        throw new ConflictException(
-          "An active session already exists for this student account. Sign out of all existing sessions before signing in here.",
-        );
-      }
     }
 
     const token = randomBytes(32).toString("base64url");
