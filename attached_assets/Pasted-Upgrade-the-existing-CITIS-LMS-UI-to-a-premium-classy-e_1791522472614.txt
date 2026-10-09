@@ -1,0 +1,76 @@
+Upgrade the existing CITIS LMS UI to a **premium, classy, enterprise-grade LMS experience**. The current interface should look polished, consistent, professional, and easy to navigate.
+
+### 1. Design Direction
+
+* Use a clean, premium light theme with CITIS branding.
+* Use consistent typography, spacing, alignment, border radius, subtle borders, and restrained shadows.
+* Follow the existing design system and established Manrope typography wherever already used.
+* Avoid excessive colors, oversized cards, unnecessary gradients, clutter, and childish UI.
+* Use a refined neutral palette with one consistent CITIS accent color.
+* Keep the UI responsive across desktop, tablet, and mobile.
+
+### 2. Make Data Tables the Main Priority
+
+Present information in well-designed tables wherever records are being managed or compared, including:
+
+* Students and institution-wise student lists
+* Login activity and login history
+* Student login activity calendar summaries
+* Courses and course allocations
+* Assignments, assessments, marks, and feedback
+* Certificates and approval status
+* Payments, refunds, and transaction history
+* Instructors and institution records
+
+Each table should have:
+
+* Clear column headings and consistent alignment
+* Appropriate row spacing and subtle horizontal separators
+* Search, filters, sorting, and pagination where useful
+* Consistent status badges for Active, Suspended, Pending, Approved, Rejected, and other existing statuses
+* Clean empty, loading, and error states
+* Row actions grouped neatly in an Actions menu where appropriate
+* Responsive behavior without horizontal overflow on smaller screens
+* Useful date/time formatting and readable numeric values
+
+Do not force tables into screens where cards, forms, or charts are more suitable. Use the right layout for each task.
+
+### 3. Student Login Activity Calendar
+
+* Keep the monthly calendar visually elegant and easy to scan.
+* Use consistent green indicators for recorded successful login days, neutral indicators for dates without confirmed status, and clear tooltips or details on click.
+* Place monthly statistics in a compact summary row.
+* Show detailed login sessions in a well-formatted table beneath the calendar.
+* Clearly distinguish login activity from actual class attendance.
+
+### 4. Dashboard Improvements
+
+* Use compact summary cards for important metrics.
+* Maintain consistent page titles, breadcrumbs, filters, and primary action placement.
+* Use charts only when they provide meaningful information.
+* Keep important tables and recent activity easy to find.
+* Make student progress and course information easy to scan without unnecessary decoration.
+
+### 5. Consistency Across Portals
+
+Apply the same visual language to the Admin, Instructor, and Student portals while preserving each role's existing capabilities and navigation.
+
+### 6. Strict Implementation Rules
+
+* First inspect the existing frontend and identify reusable table, form, badge, and layout components.
+* Reuse existing components and dependencies wherever possible.
+* Preserve all routes, APIs, authentication, role permissions, backend behavior, database records, course content, and existing workflows.
+* Do not add dummy data, duplicate components, or unnecessary dependencies.
+* Do not remove existing features or change business logic for visual reasons.
+* Avoid broad rewrites. Make targeted UI improvements and fix any existing overflow or alignment issues.
+
+### 7. Verification
+
+* Check the main Admin, Instructor, and Student pages.
+* Verify tables, filters, pagination, actions, loading states, and responsive layouts still work.
+* Run relevant frontend TypeScript and lint checks.
+* Make the changes visible in the current Replit preview.
+* Do not push to GitHub or deploy to production unless explicitly instructed.
+* Report which pages and components were updated and any remaining issues.
+
+**First inspect the existing UI, then implement the improvements using a consistent design system. Prioritize clean data tables, excellent spacing, readability, and a polished professional appearance over decorative effects.**
