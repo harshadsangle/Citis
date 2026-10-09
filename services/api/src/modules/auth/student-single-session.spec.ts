@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import test from "node:test";
 import { ConflictException } from "@nestjs/common";
 import { AuthService } from "./auth.service";
@@ -126,8 +125,8 @@ class SessionTestDatabase {
   }
 }
 
-function makeService(studentType: StudentType) {
-  const db = new SessionTestDatabase(studentType, "");
+function makeService(studentType: StudentType, passwordHash: string) {
+  const db = new SessionTestDatabase(studentType, passwordHash);
   return { db, service: new AuthService(
     db as never,
     { assertAllowed() {}, record() {}, clear() {} } as never,
@@ -146,9 +145,7 @@ const STUDENT_TYPES: Exclude<StudentType, null>[] = ["COLLEGE_STUDENT", "DIRECT_
 for (const studentType of STUDENT_TYPES) {
   test(`${studentType} login blocks another device without revoking the current session`, async () => {
     const passwordHash = await PASSWORD_HASH;
-    const { db, service } = makeService(studentType);
-    // The database fixture is constructed with the verified password hash.
-    Object.assign(db, {});
+    const { db, service } = makeService(studentType, passwordHash);
     const first = await login(service, studentType);
     assert.ok(first.token);
     const existingSessionIds = db.activeSessions().map(({ id }) => id);
@@ -173,7 +170,7 @@ for (const studentType of STUDENT_TYPES) {
 
   test(`${studentType} simultaneous logins create only one active session`, async () => {
     const passwordHash = await PASSWORD_HASH;
-    const { db, service } = makeService(studentType);
+    const { db, service } = makeService(studentType, passwordHash);
     const attempts = await Promise.allSettled([
       login(service, studentType),
       login(service, studentType),
@@ -185,13 +182,12 @@ for (const studentType of STUDENT_TYPES) {
     assert.ok(rejected.reason instanceof ConflictException);
     assert.equal(db.activeSessions().length, 1);
     assert.equal(db.studentSessionChecks, 2);
-    assert.equal(createHash("sha256").update(PASSWORD).digest("hex").length, 64);
   });
 }
 
 test("Admin and Instructor-style accounts keep allowing concurrent sessions", async () => {
   const passwordHash = await PASSWORD_HASH;
-  const { db, service } = makeService(null);
+  const { db, service } = makeService(null, passwordHash);
   const results = await Promise.all([
     service.login({ email: "learner@example.test", password: PASSWORD }, METADATA),
     service.login({ email: "learner@example.test", password: PASSWORD }, METADATA),
@@ -200,5 +196,4 @@ test("Admin and Instructor-style accounts keep allowing concurrent sessions", as
   assert.equal(results.length, 2);
   assert.equal(db.activeSessions().length, 2);
   assert.equal(db.studentSessionChecks, 0);
-  assert.equal(passwordHash.length > 0, true);
 });
