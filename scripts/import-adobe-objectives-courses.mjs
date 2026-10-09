@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import pg from "pg";
+import databaseTarget from "../packages/config/src/database-target.cjs";
 
 const { Pool } = pg;
 
@@ -357,7 +358,7 @@ const COURSE_DEFINITIONS = [
 ];
 
 function assertEnvironment() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
+  databaseTarget.resolveDatabaseConnectionString();
 }
 
 function storagePathFor(storageKey) {
@@ -602,7 +603,7 @@ async function importCourse(client, institution, programme, definition, actorId,
 
 async function main() {
   assertEnvironment();
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ connectionString: databaseTarget.resolveDatabaseConnectionString() });
   const counts = {
     programmesCreated: 0,
     coursesCreated: 0,

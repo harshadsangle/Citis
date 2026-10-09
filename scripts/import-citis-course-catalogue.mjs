@@ -3,6 +3,7 @@ import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import unzipper from "unzipper";
 import pg from "pg";
+import databaseTarget from "../packages/config/src/database-target.cjs";
 
 const { Pool } = pg;
 
@@ -31,7 +32,7 @@ const PROGRAMME_DEFINITIONS = [
 ];
 
 function assertEnvironment() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
+  databaseTarget.resolveDatabaseConnectionString();
 }
 
 function decodeXml(value) {
@@ -612,7 +613,7 @@ async function main() {
     demoEnrollmentsCreated: 0,
     demoEnrollmentsReactivated: 0,
   };
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ connectionString: databaseTarget.resolveDatabaseConnectionString() });
 
   try {
     const client = await pool.connect();

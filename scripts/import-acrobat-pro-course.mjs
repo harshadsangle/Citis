@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import pg from "pg";
+import databaseTarget from "../packages/config/src/database-target.cjs";
 
 const { Pool } = pg;
 
@@ -262,7 +263,7 @@ const modules = [
 ];
 
 function assertEnvironment() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
+  databaseTarget.resolveDatabaseConnectionString();
 }
 
 function storagePathFor(storageKey) {
@@ -501,7 +502,7 @@ async function main() {
   assertEnvironment();
   const sourcePath = process.env.ACROBAT_PDF_PATH || process.argv[2] || DEFAULT_PDF_PATH;
   const pdf = await loadSourcePdf(sourcePath);
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ connectionString: databaseTarget.resolveDatabaseConnectionString() });
   const createdStorageFiles = [];
   const counts = {
     programmesCreated: 0,

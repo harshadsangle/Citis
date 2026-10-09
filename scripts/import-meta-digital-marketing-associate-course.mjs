@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import pg from "pg";
+import databaseTarget from "../packages/config/src/database-target.cjs";
 import { managedFileExists, readManagedFile, removeManagedFile, writeManagedFile } from "./managed-file-storage.mjs";
 
 const { Pool } = pg;
@@ -115,8 +116,7 @@ async function addSourceResource(client, lesson, institution, actorId, pdf) {
 }
 
 async function main() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ connectionString: databaseTarget.resolveDatabaseConnectionString() });
   const buffer = await readFile(resolve(process.cwd(), SOURCE_PATH));
   const pdf = { buffer, filename: basename(SOURCE_PATH), byteSize: buffer.length, sha256: createHash("sha256").update(buffer).digest("hex") };
   const counts = { programmesCreated: 0, coursesCreated: 0, modulesCreated: 0, lessonsCreated: 0, resourcesCreated: 0 };

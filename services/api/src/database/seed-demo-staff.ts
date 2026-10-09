@@ -1,10 +1,17 @@
 import pg from "pg";
 import * as bcrypt from "bcryptjs";
 import { loadLocalEnvironment } from "../config/load-env";
+import {
+  assertDemoSeedingAllowed,
+  getDemoSeedPassword,
+  resolveDatabaseConnectionString,
+} from "../config/runtime-config";
 
 loadLocalEnvironment();
+assertDemoSeedingAllowed();
 
 const { Pool } = pg;
+const databaseUrl = resolveDatabaseConnectionString();
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("Demo seed commands are disabled in production.");
@@ -42,19 +49,15 @@ function getStaffTarget(): (typeof STAFF_TARGETS)[StaffTargetName] {
 }
 
 function requiredPassword(environmentKey: string) {
-  const value = process.env[environmentKey];
+  const value = getDemoSeedPassword(environmentKey);
   if (!value) {
     throw new Error(`${environmentKey} is required to seed this demo staff account.`);
   }
   return value;
 }
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required to seed the demo staff account.");
-}
-
 async function seedDemoStaff(target: (typeof STAFF_TARGETS)[StaffTargetName], password: string) {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ connectionString: databaseUrl });
   const client = await pool.connect();
 
   try {

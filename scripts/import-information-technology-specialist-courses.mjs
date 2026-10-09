@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import { basename, resolve } from "node:path";
 import pg from "pg";
+import databaseTarget from "../packages/config/src/database-target.cjs";
 import { managedFileExists, readManagedFile, removeManagedFile, writeManagedFile } from "./managed-file-storage.mjs";
 
 const { Pool } = pg;
@@ -77,7 +78,7 @@ async function extractModules(sourcePath) {
 }
 
 function assertEnvironment() {
-  if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is required.");
+  databaseTarget.resolveDatabaseConnectionString();
 }
 
 async function findOrCreateProgramme(client, institution, createdBy) {
@@ -229,7 +230,7 @@ async function importCourse(client, institution, programme, definition, actorId,
 
 async function main() {
   assertEnvironment();
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool({ connectionString: databaseTarget.resolveDatabaseConnectionString() });
   const counts = { programmesCreated: 0, coursesCreated: 0, modulesCreated: 0, lessonsCreated: 0, resourcesCreated: 0 };
   try {
     const client = await pool.connect();
