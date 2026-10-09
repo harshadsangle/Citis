@@ -142,6 +142,14 @@ test("mobile OTP verification consumes a challenge once within its tenant", asyn
     transaction: async (operation: (client: { query: (text: string, values?: unknown[]) => Promise<{ rows: unknown[] }> }) => unknown) =>
       operation({
         query: async (text: string) => {
+          if (text.includes("FROM lms_student_profiles") && text.includes("student_type")) {
+            return { rows: [{ student_type: "DIRECT_STUDENT" }] };
+          }
+          if (text.includes("FROM auth_sessions")) return { rows: [] };
+          if (text.includes("INSERT INTO auth_sessions")) {
+            sessionCount += 1;
+            return { rows: [] };
+          }
           if (text.includes("SELECT c.id, u.id AS user_id, c.code_hash, c.attempts")) {
             verificationSql = text;
             return {
@@ -215,6 +223,14 @@ test("concurrent mobile OTP verification consumes one tenant-scoped challenge ex
       let releaseLock: (() => void) | undefined;
       const client = {
         query: async (text: string, values?: unknown[]) => {
+          if (text.includes("FROM lms_student_profiles") && text.includes("student_type")) {
+            return { rows: [{ student_type: "DIRECT_STUDENT" }] };
+          }
+          if (text.includes("FROM auth_sessions")) return { rows: [] };
+          if (text.includes("INSERT INTO auth_sessions")) {
+            sessionCount += 1;
+            return { rows: [] };
+          }
           if (text.includes("SELECT c.id, u.id AS user_id, c.code_hash, c.attempts")) {
             verificationQueries.push({ text, values: values ?? [] });
             if (text.includes("FOR UPDATE OF c")) {
