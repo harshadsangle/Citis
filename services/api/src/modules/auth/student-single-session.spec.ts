@@ -223,6 +223,131 @@ test("STUDENT role without a profile blocks a second login until logout", async 
   assert.equal(db.activeSessions().length, 0);
 });
 
+test("self-registered learner email verification activates a role-only single-session account", async () => {
+  const statements: Array<{ text: string; values: unknown[] }> = [];
+  const activeSessionHashes = new Set<string>();
+  let accountCreated = false;
+  let emailVerified = false;
+  let studentRoleCreated = false;
+  let registeredPasswordHash = "";
+  const userId = "self-registered-learner";
+  const db = {
+    query: async (text: string, values: unknown[] = []) => {
+      statements.push({ text, values });
+      if (text.includes("SELECT id FROM tenants")) return { rows: [{ id: "tenant-1" }] };
+      if (text.includes("FROM users u") && text.includes("JOIN tenants t")) {
+        return {
+          rows: emailVerified
+            ? [{
+                id: userId,
+                tenant_id: "tenant-1",
+                email: "new-learner@example.test",
+                first_name: "New",
+                last_name: "Learner",
+                password_hash: registeredPasswordHash,
+                mobile: null,
+                mfa_enabled: false,
+                mfa_channel: null,
+                status: "ACTIVE",
+                tenant_slug: "citis-platform",
+              }]
+            : [],
+        };
+      }
+      if (text.includes("UPDATE auth_sessions SET revoked_at")) {
+        activeSessionHashes.delete(String(values[0]));
+      }
+      return { rows: [] };
+    },
+    transaction: async (work: (client: {
+      query: (text: string, values?: unknown[]) => Promise<{ rows: Array<Record<string, unknown>> }>;
+    }) => Promise<unknown>) => {
+      const client = {
+        query: async (text: string, values: unknown[] = []) => {
+          statements.push({ text, values });
+          if (text.includes("SELECT id FROM users WHERE tenant_id = $1 AND lower(email)")) {
+            return { rows: [] };
+          }
+          if (text.includes("INSERT INTO users")) {
+            accountCreated = true;
+            registeredPasswordHash = String(values[2]);
+            return { rows: [{ id: userId }] };
+          }
+          if (text.includes("SELECT id FROM roles")) {
+            return { rows: [{ id: "student-role" }] };
+          }
+          if (text.includes("INSERT INTO user_roles")) {
+            studentRoleCreated = true;
+          }
+          if (text.includes("SELECT v.id, v.user_id, r.code AS role_code")) {
+            return {
+              rows: accountCreated && studentRoleCreated
+                ? [{ id: "verification-1", user_id: userId, role_code: "STUDENT" }]
+                : [],
+            };
+          }
+          if (text.includes("UPDATE users") && text.includes("email_verified_at")) {
+            emailVerified = Boolean(values[0]);
+          }
+          if (text.includes("SELECT id FROM users WHERE id = $1 FOR UPDATE")) {
+            return { rows: emailVerified ? [{ id: userId }] : [] };
+          }
+          if (text.includes("FROM lms_student_profiles") && text.includes("student_type")) {
+            return { rows: studentRoleCreated ? [{ student_type: "STUDENT" }] : [] };
+          }
+          if (text.includes("FROM auth_sessions")) {
+            return { rows: activeSessionHashes.size ? [{ id: "active-session" }] : [] };
+          }
+          if (text.includes("INSERT INTO auth_sessions")) {
+            activeSessionHashes.add(String(values[1]));
+          }
+          return { rows: [] };
+        },
+      };
+      return work(client);
+    },
+  };
+  const service = new AuthService(
+    db as never,
+    { assertAllowed() {}, record() {}, clear() {} } as never,
+    { deliver: async () => undefined } as never,
+  );
+
+  const registration = await service.register({
+    role: "learner",
+    email: "new-learner@example.test",
+    password: PASSWORD,
+    firstName: "New",
+    lastName: "Learner",
+  }, METADATA);
+  assert.equal(registration.status, "PENDING");
+  const roleLookup = statements.find(({ text }) => text.includes("SELECT id FROM roles"));
+  assert.deepEqual(roleLookup?.values, ["tenant-1", "STUDENT"]);
+
+  const verification = await service.verifyEmail("a".repeat(43));
+  assert.deepEqual(verification, { verified: true, status: "ACTIVE", requiresApproval: false });
+  assert.equal(emailVerified, true);
+
+  const first = await service.login({
+    email: "new-learner@example.test",
+    password: PASSWORD,
+  }, METADATA);
+  if ("mfaRequired" in first) throw new Error("The test account should not require MFA.");
+  await assert.rejects(service.login({
+    email: "new-learner@example.test",
+    password: PASSWORD,
+  }, METADATA), ConflictException);
+  assert.equal(activeSessionHashes.size, 1);
+
+  await service.logout(first.token);
+  const afterLogout = await service.login({
+    email: "new-learner@example.test",
+    password: PASSWORD,
+  }, METADATA);
+  if ("mfaRequired" in afterLogout) throw new Error("The test account should not require MFA.");
+  assert.equal(activeSessionHashes.size, 1);
+});
+
 test("STUDENT role without a profile still serializes simultaneous logins", async () => {
   const passwordHash = await PASSWORD_HASH;
   const { db, service } = makeService(null, passwordHash, "STUDENT");

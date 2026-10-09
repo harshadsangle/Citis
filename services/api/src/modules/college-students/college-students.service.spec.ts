@@ -105,6 +105,7 @@ test("college student imports return a bad request for an unclosed quoted field"
 
 test("an institution-scoped CSV import links rows by institution ID without requiring a college-name column", async () => {
   const writes: Array<{ text: string; values?: unknown[] }> = [];
+  const enrollmentCalls: unknown[][] = [];
   const client = {
     query: async (text: string, values?: unknown[]) => {
       writes.push({ text, values });
@@ -134,7 +135,13 @@ test("an institution-scoped CSV import links rows by institution ID without requ
   const service = new CollegeStudentsService(
     db as never,
     { record: async () => undefined } as never,
-    lmsEnrollmentStub as never,
+    {
+      enrollImportedCsvStudentInAllocatedCourses: async (...args: unknown[]) => {
+        enrollmentCalls.push(args);
+        return [];
+      },
+      auditCreatedCsvEnrollments: async () => undefined,
+    } as never,
   );
   const csv = [
     "College User ID,Student Name,Email,Phone,Password,Status",
@@ -149,10 +156,17 @@ test("an institution-scoped CSV import links rows by institution ID without requ
 
   assert.equal(result.status, "COMPLETED");
   assert.equal(result.imported_count, 1);
+  const roleLookup = writes.find(({ text }) => text.startsWith("SELECT id FROM roles"));
   const roleAssignment = writes.find(({ text }) => text.startsWith("INSERT INTO user_roles"));
   const studentProfile = writes.find(({ text }) => text.startsWith("INSERT INTO lms_student_profiles"));
+  assert.deepEqual(roleLookup?.values, ["tenant-1", "STUDENT"]);
+  assert.deepEqual(roleAssignment?.values, ["tenant-1", "student-2", "student-role", "institution-1"]);
+  assert.deepEqual(studentProfile?.values, ["tenant-1", "student-2", "institution-1", "NC-100", "ACTIVE"]);
   assert.equal(roleAssignment?.values?.[3], "institution-1");
   assert.equal(studentProfile?.values?.[2], "institution-1");
+  assert.equal(enrollmentCalls.length, 1);
+  assert.equal(enrollmentCalls[0][1], "institution-1");
+  assert.equal(enrollmentCalls[0][2], "student-2");
 });
 
 test("CSV imports require the institution selected by the administrator", async () => {
