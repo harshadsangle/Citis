@@ -310,7 +310,7 @@ test("email OTP registration, resend, and verification work through the Resend d
   assert.equal(fakeDatabase.challenges[1].consumed, true);
 });
 
-test("a direct-student OTP account permits one session and can sign in again after logout", async () => {
+test("a direct-student OTP account takes over its existing session on sign-in", async () => {
   const statements: string[] = [];
   const activeSessionHashes = new Set<string>();
   let directStudentProfileCreated = false;
@@ -319,6 +319,23 @@ test("a direct-student OTP account permits one session and can sign in again aft
     query: async (text: string, values: unknown[] = []) => {
       statements.push(text);
       if (text.includes("SELECT id FROM tenants")) return { rows: [{ id: "tenant-1" }] };
+      if (text.includes("FROM auth_sessions s") && text.includes("WHERE s.token_hash = $1")) {
+        return {
+          rows: activeSessionHashes.has(String(values[0]))
+            ? [{
+                id: "user-1",
+                tenant_id: "tenant-1",
+                email: "student@example.com",
+                first_name: "Direct",
+                last_name: "Student",
+                student_type: "DIRECT_STUDENT",
+                roles: [{ code: "STUDENT", name: "Student" }],
+                permissions: [],
+                scopes: [],
+              }]
+            : [],
+        };
+      }
       if (text.includes("UPDATE auth_sessions SET revoked_at")) {
         activeSessionHashes.delete(String(values[0]));
       }
@@ -343,6 +360,10 @@ test("a direct-student OTP account permits one session and can sign in again aft
           if (text.includes("SELECT id FROM users WHERE id = $1 FOR UPDATE")) {
             return { rows: [{ id: "user-1" }] };
           }
+          if (text.includes("UPDATE auth_sessions") && text.includes("SET revoked_at")) {
+            activeSessionHashes.clear();
+            return { rows: [] };
+          }
           if (text.includes("SELECT id FROM roles")) return { rows: [{ id: "student-role" }] };
           if (text.includes("INSERT INTO users")) return { rows: [{ id: "user-1" }] };
           if (text.includes("INSERT INTO user_roles")) studentRoleCreated = true;
@@ -355,9 +376,6 @@ test("a direct-student OTP account permits one session and can sign in again aft
                   ? [{ student_type: "STUDENT" }]
                   : [],
             };
-          }
-          if (text.includes("FROM auth_sessions")) {
-            return { rows: activeSessionHashes.size ? [{ id: "active-session" }] : [] };
           }
           if (text.includes("INSERT INTO auth_sessions")) {
             activeSessionHashes.add(String(values[1]));
@@ -381,10 +399,12 @@ test("a direct-student OTP account permits one session and can sign in again aft
   assert.equal(statements.some((statement) => statement.includes("institution_id")), true);
   assert.equal(activeSessionHashes.size, 1);
 
-  await assert.rejects(service.startSession("user-1", metadata), ConflictException);
+  const replacement = await service.startSession("user-1", metadata);
   assert.equal(activeSessionHashes.size, 1);
+  assert.equal(await service.resolveSession(session.token), null);
+  assert.ok(await service.resolveSession(replacement.token));
 
-  await service.logout(session.token);
+  await service.logout(replacement.token);
   assert.equal(activeSessionHashes.size, 0);
   const afterLogout = await service.startSession("user-1", metadata);
   assert.ok(afterLogout.token);
