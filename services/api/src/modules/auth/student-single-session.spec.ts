@@ -140,14 +140,19 @@ function login(service: AuthService, studentType: Exclude<StudentType, null>) {
     : service.login({ email: "learner@example.test", password: PASSWORD }, METADATA);
 }
 
+async function loginWithSession(service: AuthService, studentType: Exclude<StudentType, null>) {
+  const result = await login(service, studentType);
+  if ("mfaRequired" in result) throw new Error("The test account should not require MFA.");
+  return result;
+}
+
 const STUDENT_TYPES: Exclude<StudentType, null>[] = ["COLLEGE_STUDENT", "DIRECT_STUDENT"];
 
 for (const studentType of STUDENT_TYPES) {
   test(`${studentType} login blocks another device without revoking the current session`, async () => {
     const passwordHash = await PASSWORD_HASH;
     const { db, service } = makeService(studentType, passwordHash);
-    const first = await login(service, studentType);
-    assert.ok(first.token);
+    const first = await loginWithSession(service, studentType);
     const existingSessionIds = db.activeSessions().map(({ id }) => id);
     assert.deepEqual(existingSessionIds, ["session-1"]);
 
@@ -163,8 +168,7 @@ for (const studentType of STUDENT_TYPES) {
     await service.logout(first.token);
     assert.equal(db.activeSessions().length, 0);
 
-    const afterLogout = await login(service, studentType);
-    assert.ok(afterLogout.token);
+    const afterLogout = await loginWithSession(service, studentType);
     assert.deepEqual(db.activeSessions().map(({ id }) => id), ["session-2"]);
   });
 
