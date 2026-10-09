@@ -9,6 +9,7 @@ import {
 import { DatabaseService } from "../../database/database.service";
 import type { AuthenticatedUser } from "../../common/request-context";
 import type { AccessScope } from "../../common/access-scope";
+import type { PoolClient } from "pg";
 import { AuthRateLimiter } from "./auth.rate-limit";
 import type {
   ForgotPasswordDto,
@@ -361,11 +362,14 @@ export class AuthService {
   }
 
   private async completeLogin(userId: string, tenantId: string, metadata: { ipAddress?: string; userAgent?: string }) {
-    await this.db.query("UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2", [
-      userId,
-      tenantId,
-    ]);
-    return this.startSession(userId, metadata);
+    return this.db.transaction(async (client) => {
+      const session = await this.createSession(client, userId, metadata);
+      await client.query(
+        "UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1 AND tenant_id = $2",
+        [userId, tenantId],
+      );
+      return session;
+    });
   }
 
   async mfaStatus(userId: string) {
@@ -623,9 +627,46 @@ export class AuthService {
   }
 
   async startSession(userId: string, metadata: { ipAddress?: string; userAgent?: string }) {
+    return this.db.transaction((client) => this.createSession(client, userId, metadata));
+  }
+
+  private async createSession(
+    client: PoolClient,
+    userId: string,
+    metadata: { ipAddress?: string; userAgent?: string },
+  ) {
+    // Serialize session creation for this account. The subsequent active-session
+    // query runs with a fresh READ COMMITTED snapshot after any competing login
+    // releases this row lock.
+    await client.query("SELECT id FROM users WHERE id = $1 FOR UPDATE", [userId]);
+
+    const studentProfile = await client.query<{ student_type: string }>(
+      `SELECT student_type
+       FROM lms_student_profiles
+       WHERE user_id = $1
+         AND student_type IN ('COLLEGE_STUDENT', 'DIRECT_STUDENT')
+       LIMIT 1`,
+      [userId],
+    );
+    if (studentProfile.rows.length > 0) {
+      const activeSession = await client.query<{ id: string }>(
+        `SELECT id
+         FROM auth_sessions
+         WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > now()
+         LIMIT 1
+         FOR UPDATE`,
+        [userId],
+      );
+      if (activeSession.rows[0]) {
+        throw new ConflictException(
+          "Your student account is already signed in on another device. Sign out there before signing in here.",
+        );
+      }
+    }
+
     const token = randomBytes(32).toString("base64url");
     const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
-    await this.db.query(
+    await client.query(
       `INSERT INTO auth_sessions (user_id, token_hash, expires_at, ip_address, user_agent)
        VALUES ($1, $2, $3, $4, $5)`,
       [userId, hashToken(token), expiresAt, metadata.ipAddress ?? null, metadata.userAgent ?? null],

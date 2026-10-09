@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { UnauthorizedException } from "@nestjs/common";
+import { ConflictException, UnauthorizedException } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import { hashPassword } from "./password-security";
 
@@ -8,11 +8,21 @@ const metadata = { ipAddress: "127.0.0.1", userAgent: "test" };
 
 function serviceWith(rows: Array<Record<string, unknown>>) {
   const queries: string[] = [];
-  const db = {
-    query: async (text: string) => {
+  const query = async (text: string) => {
       queries.push(text);
+      if (text.includes("lower(sp.college_user_id)")) return { rows };
+      if (text.includes("SELECT student_type FROM lms_student_profiles")) {
+        return { rows: [{ student_type: "COLLEGE_STUDENT" }] };
+      }
+      if (text.includes("FROM auth_sessions")) return { rows: [] };
+      if (text.includes("SELECT id FROM users WHERE id = $1 FOR UPDATE")) {
+        return { rows: [{ id: "student-1" }] };
+      }
       return { rows };
-    },
+    };
+  const db = {
+    query,
+    transaction: async (work: (client: { query: typeof query }) => Promise<unknown>) => work({ query }),
   };
   const limiter = {
     assertAllowed: () => undefined,
@@ -39,6 +49,7 @@ test("college login accepts a College User ID without email or phone", async () 
   assert.ok(session.token);
   assert.ok(session.expiresAt instanceof Date);
   assert.equal(queries.some((query) => query.includes("lower(sp.college_user_id)")), true);
+  assert.equal(queries.some((query) => query.includes("FROM auth_sessions")), true);
 });
 
 test("college login rejects wrong passwords and inactive or missing students", async () => {
