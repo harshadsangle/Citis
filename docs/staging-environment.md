@@ -5,7 +5,7 @@ Staging is opt-in through `CITIS_ENVIRONMENT=staging`. It uses explicit staging 
 ## Configure a separate environment
 
 1. Provision a staging PostgreSQL database. Do not reuse the production database.
-2. Configure a staging API runtime with the variables in `.env.staging.example`. Keep `STAGING_DATABASE_URL` and `STAGING_SESSION_SECRET` in the staging secret store only.
+2. Configure the staging API runtime manually with the staging-only variables described below. Store `STAGING_DATABASE_URL` and `STAGING_SESSION_SECRET` only in the staging runtime's secret settings; this repository does not include a staging environment file.
 3. Set `PRODUCTION_DATABASE_TARGET` to a credential-free PostgreSQL URL containing only the production host, port, and database name. The API compares this fingerprint to the staging database target at startup and refuses a match.
 4. Set `STAGING_WEB_ORIGIN` to the exact HTTPS origin(s) of the staging portals. Set `PRODUCTION_WEB_ORIGIN` to the current production portal origin(s) for comparison. The API rejects any overlap.
 5. Configure the portals' Vercel Preview environment with `CITIS_ENVIRONMENT=staging`, `STAGING_API_ORIGIN`, and `PRODUCTION_API_ORIGIN`. Keep these variables scoped to Preview, and use HTTPS API base URLs ending in `/api/v1`. Preview builds fail rather than use `LMS_API_ORIGIN` when the staging API URL is missing or matches production.

@@ -17,7 +17,7 @@
     "build:api": "npm run build --workspace @citis/api",
     "test:foundation": "npm run test --workspace @citis/api",
     "test:learner-auth": "npm run test:auth --workspace @citis/api",
-    "test:staging-config": "node --import tsx --test services/api/src/config/runtime-config.spec.ts services/api/src/config/local-environment-policy.spec.ts services/api/src/modules/auth/session-cookie.spec.ts apps/shared/staging-api-config.spec.ts citis-infotech/frontend/lib/api-url.spec.ts packages/config/src/database-target.spec.cjs scripts/load-local-env.test.mjs scripts/replit-data-only-to-supabase.test.mjs",
+    "test:staging-config": "node --import tsx --test services/api/src/config/runtime-config.spec.ts services/api/src/config/local-environment-policy.spec.ts services/api/src/modules/auth/session-cookie.spec.ts apps/shared/staging-api-config.spec.ts citis-infotech/frontend/lib/api-url.spec.ts packages/config/src/database-target.spec.cjs scripts/load-local-env.test.mjs scripts/replit-data-only-to-supabase.test.mjs scripts/course-approval-repair-policy.test.mjs",
     "db:init": "node scripts/init-lms-db.mjs",
     "db:repair-course-approval": "node scripts/repair-course-approval-db.mjs",
     "db:setup-local": "node scripts/setup-local-db.mjs",

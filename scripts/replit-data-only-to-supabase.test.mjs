@@ -19,6 +19,18 @@ function validateEnvironment(environment = {}) {
   );
 }
 
+test("data-transfer guard rejects an unset, empty, or whitespace-only environment", () => {
+  for (const environment of [
+    { NODE_ENV: "development" },
+    { CITIS_ENVIRONMENT: "", NODE_ENV: "development" },
+    { CITIS_ENVIRONMENT: " \t\n ", NODE_ENV: "development" },
+  ]) {
+    const result = validateEnvironment(environment);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /CITIS_ENVIRONMENT must be explicitly set/);
+  }
+});
+
 test("data-transfer guard rejects staging in normalized case and whitespace variants", () => {
   for (const value of ["Staging", "STAGING", " staging ", "\tStAgInG\n"]) {
     const result = validateEnvironment({ CITIS_ENVIRONMENT: value, NODE_ENV: "development" });
@@ -30,9 +42,10 @@ test("data-transfer guard rejects staging in normalized case and whitespace vari
 test("data-transfer guard rejects invalid and production modes before external commands", () => {
   for (const environment of [
     { CITIS_ENVIRONMENT: "preview", NODE_ENV: "development" },
-    { CITIS_ENVIRONMENT: "production", NODE_ENV: "development" },
+    { CITIS_ENVIRONMENT: " Production ", NODE_ENV: "development" },
     { CITIS_ENVIRONMENT: "development", NODE_ENV: "production" },
-    { NODE_ENV: "production" },
+    { CITIS_ENVIRONMENT: "development", NODE_ENV: " Production " },
+    { CITIS_ENVIRONMENT: "development", NODE_ENV: "development", REPLIT_DEPLOYMENT: " 1 " },
   ]) {
     const result = validateEnvironment(environment);
     assert.notEqual(result.status, 0);
@@ -42,6 +55,10 @@ test("data-transfer guard rejects invalid and production modes before external c
 test("data-transfer guard permits ordinary development mode", () => {
   assert.equal(validateEnvironment({
     CITIS_ENVIRONMENT: " Development ",
+    NODE_ENV: "development",
+  }).status, 0);
+  assert.equal(validateEnvironment({
+    CITIS_ENVIRONMENT: "DEVELOPMENT",
     NODE_ENV: "development",
   }).status, 0);
 });
