@@ -1,16 +1,13 @@
 import { loadLocalEnvironment } from "../config/load-env";
 import { Injectable, OnModuleDestroy } from "@nestjs/common";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
+import { getDatabaseTarget, resolveDatabaseConnectionString } from "../config/runtime-config";
 
 function safeDatabaseTarget(connectionString: string) {
   try {
-    const databaseUrl = new URL(connectionString);
-    return {
-      host: databaseUrl.hostname,
-      database: decodeURIComponent(databaseUrl.pathname.replace(/^\/+/, "")) || "(default)",
-    };
+    return getDatabaseTarget(connectionString);
   } catch {
-    return { host: "(unavailable)", database: "(unavailable)" };
+    return { host: "(unavailable)", port: "(unavailable)", database: "(unavailable)" };
   }
 }
 
@@ -37,14 +34,11 @@ export class DatabaseService implements OnModuleDestroy {
 
   constructor() {
     loadLocalEnvironment();
-    const connectionString = process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error("DATABASE_URL is required to create the database pool.");
-    }
+    const connectionString = resolveDatabaseConnectionString();
 
     assertLocalDatabaseTarget(connectionString);
     const target = safeDatabaseTarget(connectionString);
-    console.log(`CITIS API database target: host=${target.host} database=${target.database}`);
+    console.log(`CITIS API database target: host=${target.host} port=${target.port} database=${target.database}`);
 
     this.pool = new Pool({
       connectionString,

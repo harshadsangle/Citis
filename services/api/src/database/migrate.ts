@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { access, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Client } from "pg";
+import { resolveDatabaseConnectionString } from "../config/runtime-config";
 
 export const MIGRATION_VERSIONS = [
   "001_foundation",
@@ -183,7 +184,7 @@ export async function runMigrations(
 }
 
 async function main() {
-  const client = new Client({ connectionString: process.env.DATABASE_URL });
+  const client = new Client({ connectionString: resolveDatabaseConnectionString() });
   await client.connect();
   try {
     await runMigrations(client, await resolveMigrationRoot());

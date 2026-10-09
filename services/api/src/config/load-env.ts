@@ -34,6 +34,7 @@ export function loadLocalEnvironment() {
   // DATABASE_URL outside Replit's development domain also protects runtimes
   // where that indicator is unavailable to the child process.
   if (
+    process.env.CITIS_ENVIRONMENT === "staging" ||
     process.env.NODE_ENV === "production" ||
     process.env.REPLIT_DEPLOYMENT === "1" ||
     (process.platform !== "win32" &&
