@@ -1,0 +1,54 @@
+Integrate Razorpay Standard Checkout into the existing CITIS LMS Direct Student Checkout workflow.
+
+### 1. First inspect the existing implementation
+
+* Inspect current direct-student checkout, course eligibility, payment/order services, database models, API routes, webhook handling, and environment variables.
+* Reuse existing Razorpay/payment code if already present.
+* Identify why eligible courses are currently blocked with "Direct purchase is not available for this course."
+* Do not automatically enable direct purchases for every course. Preserve existing course eligibility and institution-only restrictions.
+
+### 2. Razorpay integration
+
+* Implement Razorpay Standard Checkout using server-side order creation.
+* Create a Razorpay order only after account verification and course eligibility checks succeed.
+* Calculate the amount on the server from the trusted course price and currency; never trust a client-submitted amount.
+* Pass the server-created Razorpay order ID to Checkout.
+* Verify the payment signature on the server using the Razorpay Key Secret.
+* Verify payment status before marking an order paid or unlocking a course.
+* Implement secure, idempotent webhook handling for confirmed payment events, including signature validation and duplicate-event protection.
+* Handle payment cancellation, failure, pending status, retries, and duplicate requests safely.
+* Store the Razorpay order ID, payment ID, amount, currency, status, and relevant timestamps using the existing payment data model wherever possible.
+
+### 3. Course access and certificates
+
+* Unlock the purchased course only after payment is confirmed by the server.
+* Do not unlock courses merely because Checkout returns a success callback.
+* Preserve institution-assigned student access and existing enrollment rules.
+* Do not issue certificates automatically; retain the existing completion and Admin approval workflow.
+
+### 4. Security and configuration
+
+* Use environment variables:
+  RAZORPAY_KEY_ID
+  RAZORPAY_KEY_SECRET
+  RAZORPAY_WEBHOOK_SECRET
+* Keep all secrets server-side; expose only the public Key ID where required by Checkout.
+* Never commit secrets or log sensitive payment data.
+* Support Razorpay Test Mode first. Do not enable live payments until end-to-end testing passes and the owner explicitly approves production configuration.
+
+### 5. UI
+
+* Keep the existing premium CITIS checkout design.
+* Show the course title, trusted price, payment status, and clear success/failure messages.
+* Prevent accidental duplicate orders and provide a safe retry option.
+* Make the checkout responsive.
+
+### 6. Verification and constraints
+
+* Add tests for order creation, eligibility checks, signature verification, webhook verification, duplicate events, failed payments, and course-access protection.
+* Run focused tests, API build, and relevant frontend checks.
+* Do not bypass OTP verification, alter authentication, change unrelated course settings, or add dummy payment records.
+* Do not push to GitHub or deploy to production without explicit approval.
+* First report the current payment implementation and any required configuration; then implement minimal, targeted changes and report test results.
+
+Start by inspecting the current codebase before changing files.
