@@ -22,6 +22,27 @@ type FetchOptions = RequestInit & {
   token?: string;
 };
 
+function apiErrorMessage(details: unknown, status: number) {
+  if (details && typeof details === "object") {
+    const body = details as { message?: unknown; error?: unknown };
+    const topLevelMessage = messageText(body.message);
+    if (topLevelMessage) return topLevelMessage;
+
+    if (body.error && typeof body.error === "object") {
+      const nestedMessage = messageText((body.error as { message?: unknown }).message);
+      if (nestedMessage) return nestedMessage;
+    }
+    if (typeof body.error === "string") return body.error;
+  }
+  return `Request failed with status ${status}`;
+}
+
+function messageText(value: unknown) {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) return value.map(String).join(", ");
+  return undefined;
+}
+
 function readCookie(name: string) {
   if (typeof document === "undefined") return "";
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
@@ -69,11 +90,7 @@ async function request<T>(baseUrl: string, path: string, options: FetchOptions =
     } catch {
       details = await response.text();
     }
-    throw new ApiError(
-      (details as { message?: string })?.message ?? `Request failed with status ${response.status}`,
-      response.status,
-      details,
-    );
+    throw new ApiError(apiErrorMessage(details, response.status), response.status, details);
   }
 
   if (response.status === 204) return undefined as T;
