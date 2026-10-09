@@ -11,7 +11,7 @@ function serviceWith(rows: Array<Record<string, unknown>>) {
   const query = async (text: string) => {
       queries.push(text);
       if (text.includes("lower(sp.college_user_id)")) return { rows };
-      if (text.includes("SELECT student_type FROM lms_student_profiles")) {
+      if (text.includes("FROM lms_student_profiles") && text.includes("student_type")) {
         return { rows: [{ student_type: "COLLEGE_STUDENT" }] };
       }
       if (text.includes("FROM auth_sessions")) return { rows: [] };

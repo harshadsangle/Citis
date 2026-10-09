@@ -63,7 +63,7 @@ class SessionTestDatabase {
           release = await this.userLock.acquire();
           return { rows: [{ id: this.userId }] };
         }
-        if (text.includes("SELECT student_type FROM lms_student_profiles")) {
+        if (text.includes("FROM lms_student_profiles") && text.includes("student_type")) {
           return { rows: this.studentType ? [{ student_type: this.studentType }] : [] };
         }
         if (text.includes("FROM auth_sessions")) {
