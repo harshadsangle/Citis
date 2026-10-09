@@ -176,7 +176,7 @@ for (const studentType of STUDENT_TYPES) {
       (error: unknown) =>
         error instanceof ConflictException &&
         error.getStatus() === 409 &&
-        error.message.includes("already signed in on another device"),
+        error.message === "An active session already exists for this student account. Sign out of all existing sessions before signing in here.",
     );
     assert.deepEqual(db.activeSessions().map(({ id }) => id), existingSessionIds);
 
@@ -215,7 +215,7 @@ test("STUDENT role without a profile blocks a second login until logout", async 
     (error: unknown) =>
       error instanceof ConflictException &&
       error.getStatus() === 409 &&
-      error.message.includes("already signed in on another device"),
+      error.message === "An active session already exists for this student account. Sign out of all existing sessions before signing in here.",
   );
   assert.deepEqual(db.activeSessions().map(({ id }) => id), ["session-1"]);
 

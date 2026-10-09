@@ -665,7 +665,7 @@ export class AuthService {
       );
       if (activeSession.rows[0]) {
         throw new ConflictException(
-          "Your student account is already signed in on another device. Sign out there before signing in here.",
+          "An active session already exists for this student account. Sign out of all existing sessions before signing in here.",
         );
       }
     }
