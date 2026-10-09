@@ -100,6 +100,7 @@ export class StudentLoginActivityService {
         `SELECT created_at
          FROM auth_sessions
          WHERE user_id = $1
+           AND created_at <= now()
            AND created_at >= (make_date($2::integer, $3::integer, 1)::timestamp AT TIME ZONE $4)
            AND created_at < ((make_date($2::integer, $3::integer, 1) + interval '1 month') AT TIME ZONE $4)
          ORDER BY created_at ASC`,
@@ -109,6 +110,7 @@ export class StudentLoginActivityService {
         `SELECT created_at
          FROM auth_sessions
          WHERE user_id = $1
+           AND created_at <= now()
          ORDER BY created_at DESC
          LIMIT 1`,
         [profile.user_id],

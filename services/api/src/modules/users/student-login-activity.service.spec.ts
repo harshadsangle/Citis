@@ -94,6 +94,7 @@ test("reads real auth session timestamps, keeps duplicate same-day sign-ins, and
   assert.match(monthlyQuery.sql, /AT TIME ZONE \$4/);
   assert.deepEqual(monthlyQuery.values, ["student-1", 2026, 10, "Asia/Kolkata"]);
   assert.match(monthlyQuery.sql, /SELECT created_at/);
+  assert.match(monthlyQuery.sql, /created_at <= now\(\)/);
   assert.doesNotMatch(monthlyQuery.sql, /token_hash|ip_address|user_agent|revoked_at/);
   assert.equal(JSON.stringify(result).includes("token_hash"), false);
 });

@@ -202,7 +202,9 @@ export default function StudentLoginActivityCalendar({
   const visibleDate = selectedDate && selectedDate.startsWith(`${visibleMonth}-`)
     ? selectedDate
     : activity?.today.startsWith(`${visibleMonth}-`) ? activity.today : null;
-  const selectedSessions = visibleDate ? daysByDate.get(visibleDate) ?? [] : [];
+  const selectedSessions = visibleDate && activity && visibleDate <= activity.today
+    ? daysByDate.get(visibleDate) ?? []
+    : [];
   const studentName = activity
     ? `${activity.student.firstName} ${activity.student.lastName}`.trim()
     : "";
@@ -326,7 +328,7 @@ export default function StudentLoginActivityCalendar({
                     ))}
                     {calendarDates.days.map((date) => {
                       const sessions = daysByDate.get(date) ?? [];
-                      const hasSessions = sessions.length > 0;
+                      const hasSessions = date <= activity.today && sessions.length > 0;
                       const isToday = date === activity.today;
                       const isSelected = date === visibleDate;
                       const labels = [
