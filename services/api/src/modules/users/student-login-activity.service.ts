@@ -8,7 +8,7 @@ const PLATFORM_DEFAULT_TIME_ZONE = "Asia/Kolkata";
 type StudentProfileRow = {
   user_id: string;
   tenant_id: string;
-  student_type: "COLLEGE_STUDENT" | "DIRECT_STUDENT";
+  student_type: "COLLEGE_STUDENT" | "DIRECT_STUDENT" | null;
   institution_id: string | null;
   first_name: string;
   last_name: string;
@@ -79,7 +79,19 @@ export class StudentLoginActivityService {
        LIMIT 1`,
       [studentUserId, isPlatformUser(actor) ? null : actor.tenantId],
     );
-    const profile = profileResult.rows[0];
+    const profile = profileResult.rows[0] ?? (
+      actor.id === studentUserId && roleCodes(actor).has("STUDENT")
+        ? {
+          user_id: actor.id,
+          tenant_id: actor.tenantId,
+          student_type: actor.studentType ?? null,
+          institution_id: null,
+          first_name: actor.firstName,
+          last_name: actor.lastName,
+          campus_time_zone: null,
+        }
+        : undefined
+    );
     if (!profile) throw new NotFoundException("The requested resource was not found.");
 
     await this.assertCanReadStudent(actor, profile);

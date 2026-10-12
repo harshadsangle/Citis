@@ -11,7 +11,7 @@ type StudentLoginActivity = {
   student: {
     firstName: string;
     lastName: string;
-    studentType: "COLLEGE_STUDENT" | "DIRECT_STUDENT";
+    studentType: "COLLEGE_STUDENT" | "DIRECT_STUDENT" | null;
   };
   days: Array<{
     date: string;
@@ -231,6 +231,20 @@ export default function StudentLoginActivityCalendar({
     setRetryCount((count) => count + 1);
   }
 
+  const errorState = studentId === undefined ? (
+    <div className={styles.errorState} role="status">
+      <p>Sign-in activity could not be loaded.</p>
+    </div>
+  ) : (
+    <div className={styles.errorState} role="alert">
+      <strong>Sign-in history is temporarily unavailable</strong>
+      <p>{error}</p>
+      <button className={styles.retryButton} type="button" onClick={retry}>
+        Retry
+      </button>
+    </div>
+  );
+
   return (
     <section className={styles.calendar} aria-labelledby="login-activity-title">
       <div className={styles.panel}>
@@ -244,7 +258,9 @@ export default function StudentLoginActivityCalendar({
                   <div className={styles.studentLine}>
                     <span>{studentName}</span>
                     <span className={styles.studentType}>
-                      {activity.student.studentType === "COLLEGE_STUDENT" ? "College student" : "Direct student"}
+                      {activity.student.studentType === "COLLEGE_STUDENT"
+                        ? "College student"
+                        : activity.student.studentType === "DIRECT_STUDENT" ? "Direct student" : "Student"}
                     </span>
                   </div>
                 )}
@@ -276,15 +292,7 @@ export default function StudentLoginActivityCalendar({
               </div>
             )}
 
-            {error ? (
-              <div className={styles.errorState} role="alert">
-                <strong>Sign-in history is temporarily unavailable</strong>
-                <p>{error}</p>
-                <button className={styles.retryButton} type="button" onClick={retry}>
-                  Retry
-                </button>
-              </div>
-            ) : loading ? (
+            {error ? errorState : loading ? (
               <LoadingSkeleton />
             ) : (
               <div className={styles.calendarLayout}>
@@ -446,13 +454,7 @@ export default function StudentLoginActivityCalendar({
           </>
         )}
         {!activity && loading && <LoadingSkeleton />}
-        {!activity && error && (
-          <div className={styles.errorState} role="alert">
-            <strong>Sign-in history is temporarily unavailable</strong>
-            <p>{error}</p>
-            <button className={styles.retryButton} type="button" onClick={retry}>Retry</button>
-          </div>
-        )}
+        {!activity && error && errorState}
       </div>
       <span className={styles.busyLabel} role="status" aria-live="polite">
         {loading && activity ? `Loading ${monthLabel(requestedMonth ?? activity.month)} sign-in history` : ""}

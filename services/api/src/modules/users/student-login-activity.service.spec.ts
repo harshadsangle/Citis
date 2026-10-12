@@ -118,6 +118,26 @@ test("allows a student to view only their own calendar and returns an empty mont
   assert.equal(result.month, "2026-09");
 });
 
+test("allows an authenticated student without a profile row to read only their own real session history", async () => {
+  const { service, calls } = createService({
+    profile: null,
+    sessions: [{ created_at: "2026-10-01T11:00:00.000Z" }],
+    latest: { created_at: "2026-10-01T11:00:00.000Z" },
+  });
+
+  const result = await service.getActivity(actor("student-1", ["STUDENT"]), "student-1", "2026-10");
+
+  assert.equal(result.student.firstName, "Test");
+  assert.equal(result.student.lastName, "User");
+  assert.equal(result.student.studentType, null);
+  assert.equal(result.summary.totalSuccessfulSessions, 1);
+  assert.equal(calls.some(({ sql }) => sql.includes("FROM auth_sessions")), true);
+  await assert.rejects(
+    service.getActivity(actor("student-1", ["STUDENT"]), "another-student", "2026-10"),
+    NotFoundException,
+  );
+});
+
 test("CITIS administrators can view college and direct students across tenant scope", async () => {
   const directProfile = { ...profile, student_type: "DIRECT_STUDENT" as const, institution_id: null, campus_time_zone: null };
   const { service, calls } = createService({ profile: directProfile });

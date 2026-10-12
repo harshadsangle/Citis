@@ -92,3 +92,55 @@ test("demo learner can sign in and use the authenticated portal bootstrap flow",
     assert.equal(body.success, true, `the learner bootstrap request /${path} must return a success response`);
   }
 });
+
+test("learner sign-in history uses the authenticated identity through the API and portal proxy", async (t) => {
+  let cookie = "";
+  t.after(async () => {
+    if (cookie) await apiRequest("/auth/logout", { method: "POST" }, cookie).catch(() => undefined);
+  });
+
+  const login = await apiRequest("/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: DEMO_LEARNER_EMAIL, password: DEMO_LEARNER_PASSWORD }),
+  });
+  assert.equal(login.status, 200);
+  cookie = sessionCookie(login);
+  assert.match(cookie, /^citis_session=.+$/);
+
+  const meResponse = await apiRequest("/auth/me", {}, cookie);
+  assert.equal(meResponse.status, 200);
+  const me = await json<{ id: string; firstName: string; lastName: string }>(meResponse);
+  assert.ok(me.data);
+
+  const portalPage = await fetch(`${STUDENT_PORTAL_ORIGIN}/`, {
+    headers: { Accept: "text/html", Cookie: cookie },
+    redirect: "manual",
+  });
+  assert.equal(portalPage.status, 200);
+  assert.match(await portalPage.text(), /Loading sign-in history/);
+
+  const activityResponse = await apiRequest("/users/me/login-activity", {}, cookie);
+  assert.equal(activityResponse.status, 200);
+  const activity = await json<{
+    student: { firstName: string; lastName: string };
+    summary: { totalSuccessfulSessions: number };
+    days: Array<{ sessions: string[] }>;
+  }>(activityResponse);
+  assert.equal(activity.success, true);
+  assert.equal(activity.data?.student.firstName, me.data?.firstName);
+  assert.equal(activity.data?.student.lastName, me.data?.lastName);
+  assert.ok(activity.data?.summary.totalSuccessfulSessions >= 0);
+  assert.equal(
+    activity.data?.summary.totalSuccessfulSessions,
+    activity.data?.days.reduce((total, day) => total + day.sessions.length, 0),
+  );
+
+  const portalResponse = await fetch(`${STUDENT_PORTAL_ORIGIN}/api/v1/users/me/login-activity`, {
+    headers: { Accept: "application/json", Cookie: cookie },
+  });
+  assert.equal(portalResponse.status, 200, "the portal proxy must forward the authenticated sign-in history request");
+  const portalActivity = await json<{ student: { firstName: string; lastName: string } }>(portalResponse);
+  assert.equal(portalActivity.data?.student.firstName, me.data?.firstName);
+  assert.equal(portalActivity.data?.student.lastName, me.data?.lastName);
+});
