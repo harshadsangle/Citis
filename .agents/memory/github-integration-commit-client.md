@@ -20,3 +20,9 @@ When transferring local Git blob content through `shellExec`, split base64 outpu
 **Why:** A local blob's encoded output was truncated below its expected length despite a higher requested limit, which would corrupt a GitHub upload.
 
 **How to apply:** Slice the base64 stream with `tail -c +N | head -c K`, reassemble it, check the encoded length, and locally verify the Git blob SHA before uploading; then verify GitHub's returned SHA too.
+
+When recreating an existing local commit through GitHub's Git Data API, include the terminating newline in the `message` passed to `git.createCommit`.
+
+**Why:** GitHub stored the message exactly as passed, so omitting the final newline produced a different commit SHA despite matching tree, parent, author, and committer.
+
+**How to apply:** Preserve the local commit message's final newline and compare the returned SHA with the local commit before updating the branch ref.
