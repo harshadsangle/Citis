@@ -102,8 +102,8 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .profile-notice { align-items: center; background: #eff8f7; border: 1px solid #cfe5e2; border-radius: 12px; color: #267d76; display: flex; font-size: 11px; gap: 12px; justify-content: space-between; margin-top: 14px; padding: 10px 13px; }
 .profile-notice button { background: transparent; border: 0; color: #267d76; font-size: 18px; line-height: 1; min-height: 24px; padding: 0 4px; }
 .student-shell .portal-hero {
-  align-items: stretch !important; display: grid !important; grid-template-columns: minmax(0, 1fr) 290px;
-  gap: 40px !important; margin: 0 0 38px !important; padding: 54px 0 10px;
+  align-items: stretch !important; display: grid !important; grid-template-columns: minmax(0, 1fr);
+  gap: 0 !important; margin: 0 0 38px !important; padding: 54px 0 10px;
 }
 .portal-hero-copy { max-width: 700px !important; }
 .portal-eyebrow, .catalogue-eyebrow, .course-detail-eyebrow, .course-detail-label {
@@ -116,16 +116,6 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 }
 .portal-hero h1 em { color: #267d76; font-style: normal; }
 .portal-hero-copy > p { color: #5f7890; font-size: 17px; line-height: 1.55; margin: 0; max-width: 620px; }
-.student-shell .portal-hero-card {
-  align-self: end; background: linear-gradient(145deg, #123f60 0%, #1b6577 100%) !important;
-  border: 0 !important; border-radius: 24px !important; box-shadow: 0 20px 40px rgb(18 63 96 / .18) !important;
-  color: #fff !important; display: flex; flex-direction: column; min-height: 190px; padding: 25px !important; position: relative; overflow: hidden;
-}
-.student-shell .portal-hero-card::after { border: 1px solid rgb(255 255 255 / .16); border-radius: 50%; content: ""; height: 170px; position: absolute; right: -70px; top: -72px; width: 170px; }
-.student-shell .portal-hero-card-icon { color: #f4b36f; font-size: 22px; margin-bottom: 22px; }
-.student-shell .portal-hero-card > span:not(.portal-hero-card-icon) { color: #b9d8d9; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
-.student-shell .portal-hero-card strong { color: #fff !important; font-size: 21px; letter-spacing: -.03em; line-height: 1.2; margin-top: 8px; }
-.student-shell .portal-hero-card small { color: #c4e0e0; font-size: 13px; margin-top: auto; }
 .portal-state-card {
   background: rgb(255 255 255 / .78) !important; border: 1px solid #d3e1e8 !important; border-radius: 22px !important;
   padding: 34px !important; text-align: center;
@@ -554,11 +544,6 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 }
 .learner-nav a:hover { background: #eef6f6; color: #123f60 !important; transform: translateY(-1px); }
 .learner-nav a.is-active { background: #123f60; color: #fff !important; }
-.student-shell .portal-hero-card > a {
-  align-items: center; color: #fff !important; display: flex; font-size: 12px; font-weight: 800; gap: 8px; margin-top: 18px;
-  text-decoration: none;
-}
-.student-shell .portal-hero-card > a span { color: #f4b36f; }
 .learner-nav ~ .portal-hero { margin-top: 0 !important; }
 #my-learning, #assessments, #assignments, #certificates, #assessment-history { scroll-margin-top: 88px; }
 
@@ -1034,8 +1019,7 @@ button:disabled { cursor: not-allowed; opacity: .52; }
   .profile-trigger { padding-right: 6px; }
   .profile-dropdown { right: 0; }
   .portal-brand-label { display: none; }
-  .portal-hero { display: flex !important; flex-direction: column; gap: 24px !important; padding-top: 35px; }
-  .portal-hero-card { align-self: stretch; min-height: 155px; }
+  .portal-hero { display: flex !important; flex-direction: column; gap: 0 !important; padding-top: 35px; }
   .portal-hero h1 { font-size: clamp(41px, 14vw, 62px) !important; }
   .portal-hero-proof { margin-top: 22px; }
   .continue-learning-panel { display: flex; flex-direction: column; gap: 17px; margin-bottom: 32px !important; padding: 18px !important; }
@@ -1148,7 +1132,6 @@ button:disabled { cursor: not-allowed; opacity: .52; }
 .course-detail-side-card > p, .course-detail-side-list b, .detail-curriculum-list summary small,
 .detail-curriculum-list details > div > span { font-size: 11px; }
 .portal-hero-copy > p { font-size: 20px; line-height: 1.65; }
-.portal-hero-card > span:not(.portal-hero-card-icon), .portal-hero-card small,
 .course-short-description, .course-detail-section p, .course-detail-intro, .course-bullet-list li,
 .catalogue-empty p, .learning-course-heading p, .assignment-description, .assignment-instructions,
 .submission-text, .submission-feedback, .assessment-history-feedback, .assessment-list-copy p,
@@ -1210,7 +1193,6 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
 .course-detail-side-card > p, .course-detail-side-list b, .detail-curriculum-list summary small,
 .detail-curriculum-list details > div > span { font-size: 13px; line-height: 1.5; }
 .portal-hero-copy > p { font-size: 20px; line-height: 1.65; }
-.portal-hero-card > span:not(.portal-hero-card-icon), .portal-hero-card small,
 .course-short-description, .course-detail-section p, .course-detail-intro, .course-bullet-list li,
 .catalogue-empty p, .learning-course-heading p, .assignment-description, .assignment-instructions,
 .submission-text, .submission-feedback, .assessment-history-feedback, .assessment-list-copy p,
@@ -1275,7 +1257,6 @@ button:not(.icon-button), input, select, textarea { font-size: 14px; line-height
   box-shadow: 0 14px 34px rgb(18 75 115 / .065) !important;
 }
 
-.student-shell .portal-hero-card,
 .student-shell .continue-learning-panel {
   box-shadow: 0 24px 48px rgb(18 63 96 / .18) !important;
 }
@@ -1942,7 +1923,6 @@ body { color: #342b33; background: #fff; }
 .student-shell .assessment-question-card {
   border-color: #e4d9e2 !important;
 }
-.student-shell .portal-hero-card,
 .student-shell .course-detail-hero,
 .student-shell .course-card-art,
 .student-shell .course-card-art-career-pathway,
@@ -1953,12 +1933,9 @@ body { color: #342b33; background: #fff; }
   color: #fff !important;
   background: linear-gradient(135deg, #4f0341, #3c0232) !important;
 }
-.student-shell .portal-hero-card :is(h1, h2, h3, h4, h5, h6, p, strong, small, span, a),
 .student-shell .course-detail-hero :is(h2, p, span, strong, a),
 .student-shell .course-card-art :is(span, strong),
 .student-shell .lesson-resource-footer :is(h1, h2, h3, p, strong, span) { color: #fff !important; }
-.student-shell .portal-hero-card-icon,
-.student-shell .portal-hero-card > span:not(.portal-hero-card-icon) { color: rgb(255 255 255 / .8) !important; }
 .student-shell :is(.profile-avatar, .profile-menu-icon, .catalogue-stat-icon,
   .enrolled-course-thumbnail, .course-module-number, .learning-module-number,
   .assessment-history-icon, .assessment-list-icon, .assessment-question-number,

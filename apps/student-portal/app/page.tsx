@@ -1851,13 +1851,6 @@ export default function StudentPortalPage() {
             <p>Explore your enrolled courses, follow the roadmap, and turn every completed lesson into career-ready confidence.</p>
             <div className="portal-hero-proof"><span className="portal-hero-proof-mark" aria-hidden="true">✓</span><span><strong>Your progress, in one place</strong><small>Courses, assessments, assignments, and certificates stay connected.</small></span></div>
           </div>
-          <div className="portal-hero-card">
-            <span className="portal-hero-card-icon" aria-hidden="true">✦</span>
-            <span>Today’s focus</span>
-            <strong>{provider ? `${providerLabel(provider)} pathway` : "Your learning library"}</strong>
-            <small>Small steps. Visible progress.</small>
-            <a href="#my-learning">Open My Learning <span aria-hidden="true">→</span></a>
-          </div>
         </header>
 
         <section className="student-login-activity-section" id="login-activity">
