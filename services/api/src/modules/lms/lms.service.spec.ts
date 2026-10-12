@@ -2154,7 +2154,7 @@ test("course progress derives lesson and assessment totals by module", async () 
 test("learner course progress includes each active enrollment date", async () => {
   const enrolledAt = "2026-08-10T08:30:00.000Z";
   const { service } = serviceWith(async (text) => {
-    if (text.startsWith("SELECT course_id, enrolled_at")) {
+    if (text.startsWith("SELECT e.course_id, e.enrolled_at")) {
       return { rows: [{ course_id: "course-1", enrolled_at: enrolledAt }] };
     }
     if (text.startsWith("SELECT c.id")) {
@@ -2192,7 +2192,7 @@ test("learner progress includes purchased, institution-assigned, and completed a
   ];
   let enrollmentQuery = "";
   const { service } = serviceWith(async (text, values) => {
-    if (text.startsWith("SELECT course_id, enrolled_at")) {
+    if (text.startsWith("SELECT e.course_id, e.enrolled_at")) {
       enrollmentQuery = text;
       return { rows: enrollmentRows };
     }
@@ -2250,15 +2250,11 @@ test("learner progress includes purchased, institution-assigned, and completed a
 test("learner progress is empty when there are no eligible active enrollments", async () => {
   let queriedProgress = false;
   const { service } = serviceWith(async (text) => {
-    if (text.startsWith("SELECT course_id, enrolled_at")) {
-      queriedProgress = true;
-      assert.match(text, /status = 'ACTIVE'/);
-      return { rows: [] };
-    }
     if (text.startsWith("SELECT e.course_id, e.enrolled_at")) {
       queriedProgress = true;
+      assert.match(text, /status = 'ACTIVE'/);
       assert.match(text, /ca\.institution_id = sp\.institution_id AND ca\.status = 'ACTIVE'/);
-      assert.match(text, /c\.status = 'PUBLISHED'/);
+      assert.match(text, /c\.status = 'PUBLISHED' AND p\.status = 'PUBLISHED' AND i\.status = 'ACTIVE'/);
       return { rows: [] };
     }
     assert.fail(`Unexpected query when no active enrollments exist: ${text}`);
