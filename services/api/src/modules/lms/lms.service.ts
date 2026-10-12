@@ -3321,10 +3321,33 @@ export class LmsService {
 
   async listLearnerProgress(user: AuthenticatedUser) {
     const result = await this.db.query<{ course_id: string; enrolled_at: string }>(
-      `SELECT course_id, enrolled_at
-       FROM lms_enrollments
-       WHERE tenant_id = $1 AND learner_id = $2 AND status = 'ACTIVE'
-       ORDER BY enrolled_at DESC, course_id ASC`,
+      `SELECT e.course_id, e.enrolled_at
+       FROM lms_enrollments e
+       JOIN courses c ON c.id = e.course_id AND c.tenant_id = e.tenant_id
+       JOIN programmes p ON p.id = c.programme_id AND p.tenant_id = c.tenant_id
+       JOIN institutions i ON i.id = p.institution_id AND i.tenant_id = c.tenant_id
+       JOIN lms_student_profiles sp
+         ON sp.tenant_id = e.tenant_id AND sp.user_id = e.learner_id AND sp.status = 'ACTIVE'
+       WHERE e.tenant_id = $1 AND e.learner_id = $2 AND e.status = 'ACTIVE'
+         AND c.status = 'PUBLISHED' AND p.status = 'PUBLISHED' AND i.status = 'ACTIVE'
+         AND (
+           (sp.student_type = 'DIRECT_STUDENT' AND e.institution_id IS NULL AND e.campus_id IS NULL)
+           OR (
+             sp.student_type = 'COLLEGE_STUDENT'
+             AND e.institution_id = c.institution_id
+             AND e.campus_id IS NOT DISTINCT FROM c.campus_id
+             AND EXISTS (
+               SELECT 1
+               FROM lms_course_institution_allocations ca
+               JOIN institutions allocated_i
+                 ON allocated_i.tenant_id = ca.tenant_id AND allocated_i.id = ca.institution_id
+                AND allocated_i.status = 'ACTIVE'
+               WHERE ca.tenant_id = e.tenant_id AND ca.course_id = e.course_id
+                 AND ca.institution_id = sp.institution_id AND ca.status = 'ACTIVE'
+             )
+           )
+         )
+       ORDER BY e.enrolled_at DESC, e.course_id ASC`,
       [user.tenantId, user.id],
     );
     return Promise.all(result.rows.map(async ({ course_id, enrolled_at }) => ({

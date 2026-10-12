@@ -2184,6 +2184,90 @@ test("learner course progress includes each active enrollment date", async () =>
   assert.equal(result[0].course.thumbnail, "https://courses.example.test/digital-skills.png");
 });
 
+test("learner progress includes purchased, institution-assigned, and completed active enrollments", async () => {
+  const enrollmentRows = [
+    { course_id: "purchased-course", enrolled_at: "2026-08-10T08:30:00.000Z", assignment_source: "DIRECT" },
+    { course_id: "college-course", enrolled_at: "2026-08-11T08:30:00.000Z", assignment_source: "ADMIN" },
+    { course_id: "completed-course", enrolled_at: "2026-08-12T08:30:00.000Z", assignment_source: "COLLEGE" },
+  ];
+  let enrollmentQuery = "";
+  const { service } = serviceWith(async (text, values) => {
+    if (text.startsWith("SELECT course_id, enrolled_at")) {
+      enrollmentQuery = text;
+      return { rows: enrollmentRows };
+    }
+    if (text.startsWith("SELECT c.id")) {
+      const courseId = String(values[0]);
+      return {
+        rows: [{
+          id: courseId,
+          tenant_id: user.tenantId,
+          institution_id: "institution-1",
+          title: `${courseId} title`,
+          code: courseId.toUpperCase(),
+          status: "PUBLISHED",
+          programme_status: "PUBLISHED",
+          institution_status: "ACTIVE",
+        }],
+      };
+    }
+    if (text.startsWith("SELECT 1")) return { rows: [{ allowed: 1 }] };
+    if (text.startsWith("SELECT cm.id") && values[0] === "completed-course") {
+      return {
+        rows: [{
+          module_id: "module-1",
+          module_title: "Completed module",
+          sequence: 1,
+          lesson_total: 1,
+          lesson_completed: 1,
+          assessment_total: 0,
+          assessment_completed: 0,
+          assignment_total: 0,
+          assignment_completed: 0,
+          lesson_items: [],
+        }],
+      };
+    }
+    if (text.startsWith("SELECT cm.id")) return { rows: [] };
+    return { rows: [] };
+  });
+
+  const result = await service.listLearnerProgress(user);
+
+  assert.match(enrollmentQuery, /status = 'ACTIVE'/);
+  assert.doesNotMatch(enrollmentQuery, /assignment_source/);
+  assert.match(enrollmentQuery, /c\.status = 'PUBLISHED' AND p\.status = 'PUBLISHED' AND i\.status = 'ACTIVE'/);
+  assert.match(enrollmentQuery, /ca\.institution_id = sp\.institution_id AND ca\.status = 'ACTIVE'/);
+  assert.match(enrollmentQuery, /allocated_i\.status = 'ACTIVE'/);
+  assert.deepEqual(result.map((progress) => progress.course.id), [
+    "purchased-course",
+    "college-course",
+    "completed-course",
+  ]);
+  assert.equal(result.find((progress) => progress.course.id === "completed-course")?.state, "COMPLETED");
+});
+
+test("learner progress is empty when there are no eligible active enrollments", async () => {
+  let queriedProgress = false;
+  const { service } = serviceWith(async (text) => {
+    if (text.startsWith("SELECT course_id, enrolled_at")) {
+      queriedProgress = true;
+      assert.match(text, /status = 'ACTIVE'/);
+      return { rows: [] };
+    }
+    if (text.startsWith("SELECT e.course_id, e.enrolled_at")) {
+      queriedProgress = true;
+      assert.match(text, /ca\.institution_id = sp\.institution_id AND ca\.status = 'ACTIVE'/);
+      assert.match(text, /c\.status = 'PUBLISHED'/);
+      return { rows: [] };
+    }
+    assert.fail(`Unexpected query when no active enrollments exist: ${text}`);
+  });
+
+  assert.deepEqual(await service.listLearnerProgress(user), []);
+  assert.equal(queriedProgress, true);
+});
+
 test("course progress rejects institution staff outside their authorized scope", async () => {
   const staff: AuthenticatedUser = {
     ...user,

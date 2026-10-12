@@ -1471,9 +1471,9 @@ export default function StudentPortalPage() {
   const [providerReady, setProviderReady] = useState(false);
   const [requestedCourseId, setRequestedCourseId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  // The initial dashboard load must not replace the portal with a generic
-  // load-error card. Clearing `error` lets the normal course, assessment and
-  // assignment sections render, so the portal stays usable.
+  const [dashboardLoadError, setDashboardLoadError] = useState("");
+  // A progress failure is essential to the learning view; supporting dashboard
+  // panels load independently so they cannot block or erase the course list.
   const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -1489,29 +1489,44 @@ export default function StudentPortalPage() {
   useEffect(() => {
     if (!providerReady) return;
     let active = true;
-    Promise.all([
-      fetch("/api/v1/progress", { credentials: "include" }).then(async (response) => {
+    const progressRequest = fetch("/api/v1/progress", { credentials: "include" }).then(async (response) => {
         const body = await response.json().catch(() => null) as { data?: Progress[]; error?: { message?: string } } | null;
         if (!response.ok) throw new Error(body?.error?.message || "We couldn't load your learning progress.");
-        return body?.data || [];
-      }),
-      fetchDashboardList<Assignment>("/api/v1/assignments"),
-      fetchDashboardList<Assessment>("/api/v1/assessments"),
-      fetchDashboardList<AssessmentHistoryItem>("/api/v1/assessment-history"),
-      fetchDashboardList<Certificate>("/api/v1/certificates"),
-    ])
-      .then(async ([progressBody, assignmentBody, assessmentBody, historyBody, certificateBody]) => {
         if (!active) return;
+        const progressBody = body?.data || [];
         const visibleProgress = provider
           ? progressBody.filter((progress) => providerForProgrammeName(progress.course.programme_name) === provider)
           : progressBody;
-        const visibleCourseIds = new Set(visibleProgress.map((progress) => progress.course.id));
+        setCourses(visibleProgress);
+        setError("");
+        setLoadFailed(false);
+        return visibleProgress;
+      }).catch((reason: unknown) => {
+        if (!active) return;
+        setError(reason instanceof Error ? reason.message : "We couldn't load your learning progress.");
+        setLoadFailed(false);
+        return [];
+      });
+    void progressRequest.finally(() => {
+      if (active) setLoading(false);
+    });
+    const dashboardRequest = Promise.all([
+      progressRequest,
+      Promise.all([
+        fetchDashboardList<Assignment>("/api/v1/assignments"),
+        fetchDashboardList<Assessment>("/api/v1/assessments"),
+        fetchDashboardList<AssessmentHistoryItem>("/api/v1/assessment-history"),
+        fetchDashboardList<Certificate>("/api/v1/certificates"),
+      ]),
+    ])
+      .then(async ([visibleProgress, [assignmentBody, assessmentBody, historyBody, certificateBody]]) => {
+        if (!active) return;
+        const visibleCourseIds = new Set((visibleProgress || []).map((progress) => progress.course.id));
         const isVisibleCourse = (courseId: string) => !provider || visibleCourseIds.has(courseId);
         const visibleAssignments = assignmentBody.filter((assignment) => isVisibleCourse(assignment.course_id));
         const visibleAssessments = assessmentBody.filter((assessment) => isVisibleCourse(assessment.course_id));
         const visibleHistory = historyBody.filter((item) => isVisibleCourse(item.course_id));
         const visibleCertificates = certificateBody.filter((certificate) => isVisibleCourse(certificate.course_id));
-        setCourses(visibleProgress);
         setAssignments(visibleAssignments);
         setAssessments(visibleAssessments);
         setAssessmentHistory(visibleHistory);
@@ -1523,16 +1538,12 @@ export default function StudentPortalPage() {
           return [assignment.id, body.data] as const;
         }));
         if (active) setSubmissions(Object.fromEntries(submissionEntries));
+        if (active) setDashboardLoadError("");
       })
       .catch(() => {
-        if (active) {
-          setError("");
-          setLoadFailed(true);
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
+        if (active) setDashboardLoadError("Some assessment, assignment, or certificate information could not be loaded. Your course list is still available.");
       });
+    void dashboardRequest;
     return () => {
       active = false;
     };
@@ -1825,6 +1836,7 @@ export default function StudentPortalPage() {
           </div>
         </div>
         {profileNotice && <div className="profile-notice" role="status"><span>{profileNotice}</span><button type="button" onClick={() => setProfileNotice("")} aria-label="Dismiss profile notice">×</button></div>}
+        {!loading && dashboardLoadError && <div className="profile-notice" role="status">{dashboardLoadError}</div>}
         <nav className="learner-nav" aria-label="Learner navigation">
           <a className="is-active" href="#my-learning"><span aria-hidden="true">◈</span>My Learning</a>
           <a href="#login-activity"><span aria-hidden="true">◷</span>Login activity</a>
