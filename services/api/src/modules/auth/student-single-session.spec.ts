@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { AuthService } from "./auth.service";
+import { AuthGuard } from "./auth.guard";
 import { hashPassword } from "./password-security";
+import { getSessionCookieName } from "./session-cookie";
 
 const PASSWORD = "StudentPass1!";
 const PASSWORD_HASH = hashPassword(PASSWORD);
@@ -226,6 +228,61 @@ for (const studentType of STUDENT_TYPES) {
     assert.equal(validSessions.filter(Boolean).length, 1);
   });
 }
+
+test("second login replaces the shared browser cookie while a separate device's old cookie is rejected", async () => {
+  const passwordHash = await PASSWORD_HASH;
+  const { db, service } = makeService("DIRECT_STUDENT", passwordHash);
+  const cookieName = getSessionCookieName();
+  const sharedBrowserCookies: Record<string, string> = {};
+
+  // Model the browser applying each auth/login Set-Cookie response to its
+  // shared cookie jar; every tab in this profile subsequently sends that jar.
+  const first = await loginWithSession(service, "DIRECT_STUDENT");
+  sharedBrowserCookies[cookieName] = first.token;
+  const firstSessionToken = sharedBrowserCookies[cookieName];
+  const separateDeviceCookie = firstSessionToken;
+
+  const second = await loginWithSession(service, "DIRECT_STUDENT");
+  sharedBrowserCookies[cookieName] = second.token;
+  const replacementToken = sharedBrowserCookies[cookieName];
+
+  assert.notEqual(replacementToken, firstSessionToken);
+  assert.deepEqual(db.activeSessions().map(({ id }) => id), ["session-2"]);
+  assert.equal(await service.resolveSession(firstSessionToken), null);
+  assert.ok(await service.resolveSession(replacementToken));
+
+  const guard = new AuthGuard(service);
+  const browserTabContext = () => ({
+    switchToHttp: () => ({
+      getRequest: () => ({
+        header: (name: string) => name === "cookie"
+          ? `${cookieName}=${encodeURIComponent(sharedBrowserCookies[cookieName])}`
+          : undefined,
+        context: {},
+      }),
+    }),
+  }) as never;
+
+  // Tabs in one browser profile read the same replacement cookie, so both
+  // requests use one authenticated session rather than two active sessions.
+  assert.equal(await guard.canActivate(browserTabContext()), true);
+  assert.equal(await guard.canActivate(browserTabContext()), true);
+
+  const separateDeviceContext = {
+    switchToHttp: () => ({
+      getRequest: () => ({
+        header: (name: string) => name === "cookie"
+          ? `${cookieName}=${encodeURIComponent(separateDeviceCookie)}`
+          : undefined,
+        context: {},
+      }),
+    }),
+  } as never;
+  await assert.rejects(
+    () => guard.canActivate(separateDeviceContext),
+    (error) => error?.status === 401,
+  );
+});
 
 test("STUDENT role without a profile takes over the previous session", async () => {
   const passwordHash = await PASSWORD_HASH;
